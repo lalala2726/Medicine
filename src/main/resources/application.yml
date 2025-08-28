@@ -1,0 +1,18 @@
+spring:
+  profiles:
+    active: druid
+  application:
+    name: Medical
+server:
+  port: 8080
+mybatis-plus:
+  configuration:
+    log-impl: org.apache.ibatis.logging.stdout.StdOutImpl
+  type-aliases-package: cn.zhangchuangla.medicine.**.entity
+  mapper-locations:
+    - classpath*:mapper/**/**.xml
+  global-config:
+    db-config:
+      logic-delete-field: isDeleted  # 全局逻辑删除字段名
+      logic-delete-value: 1         # 逻辑已删除值
+      logic-not-delete-value: 0     # 逻辑未删除值

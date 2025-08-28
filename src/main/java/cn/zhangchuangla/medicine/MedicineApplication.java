@@ -6,8 +6,17 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 @SpringBootApplication
 public class MedicineApplication {
 
-	public static void main(String[] args) {
-		SpringApplication.run(MedicineApplication.class, args);
-	}
+    public static void main(String[] args) {
+        SpringApplication.run(MedicineApplication.class, args);
+        String hint = """
+                  ____  _             _                 ____                               __       _\s
+                 / ___|| |_ __ _ _ __| |_ _   _ _ __   / ___| _   _  ___ ___ ___  ___ ___ / _|_   _| |
+                 \\___ \\| __/ _` | '__| __| | | | '_ \\  \\___ \\| | | |/ __/ __/ _ \\/ __/ __| |_| | | | |
+                  ___) | || (_| | |  | |_| |_| | |_) |  ___) | |_| | (_| (_|  __/\\__ \\__ \\  _| |_| | |
+                 |____/ \\__\\__˚,_|_|   \\__|\\__,_| .__/  |____/ \\__,_|\\___\\___\\___||___/___/_|  \\__,_|_|
+                                               |_|                                                   \s
+                """;
+        System.out.println(hint);
+    }
 
 }
