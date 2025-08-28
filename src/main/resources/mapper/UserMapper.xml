@@ -5,17 +5,17 @@
 <mapper namespace="cn.zhangchuangla.medicine.mapper.UserMapper">
 
     <resultMap id="BaseResultMap" type="cn.zhangchuangla.medicine.model.entity.User">
-            <id property="id" column="id" />
-            <result property="username" column="username" />
-            <result property="password" column="password" />
-            <result property="role" column="role" />
-            <result property="status" column="status" />
-            <result property="createTime" column="create_time" />
-            <result property="updateTime" column="update_time" />
-            <result property="createBy" column="create_by" />
-            <result property="updateBy" column="update_by" />
-            <result property="deleteTime" column="delete_time" />
-            <result property="isDelete" column="is_delete" />
+        <id property="id" column="id"/>
+        <result property="username" column="username"/>
+        <result property="password" column="password"/>
+        <result property="role" column="role"/>
+        <result property="status" column="status"/>
+        <result property="createTime" column="create_time"/>
+        <result property="updateTime" column="update_time"/>
+        <result property="createBy" column="create_by"/>
+        <result property="updateBy" column="update_by"/>
+        <result property="deleteTime" column="delete_time"/>
+        <result property="isDelete" column="is_delete"/>
     </resultMap>
 
     <sql id="Base_Column_List">

@@ -13,5 +13,10 @@ public class Constants {
      */
     public static final String[] JSON_WHITELIST_STR = {"org.springframework", "cn.zhangchuangla.medicine"};
 
+    /**
+     * 账号状态常量
+     */
+    public static final Integer ACCOUNT_UNLOCK_KEY = 0;
+
 
 }

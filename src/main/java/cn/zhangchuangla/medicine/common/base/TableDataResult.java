@@ -80,8 +80,8 @@ public class TableDataResult implements Serializable {
     }
 
 
-    public static ResponseResult<TableDataResult> build(PageResult<?> result) {
-        return ResponseResult.success(new TableDataResult(
+    public static AjaxResult<TableDataResult> build(PageResult<?> result) {
+        return AjaxResult.success(new TableDataResult(
                 result.getRows(),
                 result.getTotal(),
                 result.getPageSize(),
@@ -96,8 +96,8 @@ public class TableDataResult implements Serializable {
      * @param page 分页对象
      * @return TableDataResult 实例
      */
-    public static ResponseResult<TableDataResult> build(Page<?> page) {
-        return ResponseResult.success(new TableDataResult(
+    public static AjaxResult<TableDataResult> build(Page<?> page) {
+        return AjaxResult.success(new TableDataResult(
                 page.getRecords(),
                 page.getTotal(),
                 page.getSize(),
@@ -113,8 +113,8 @@ public class TableDataResult implements Serializable {
      * @param rows 自定义行数据
      * @return TableDataResult 实例
      */
-    public static ResponseResult<TableDataResult> build(Page<?> page, List<?> rows) {
-        return ResponseResult.success(
+    public static AjaxResult<TableDataResult> build(Page<?> page, List<?> rows) {
+        return AjaxResult.success(
                 new TableDataResult(
                         rows,
                         page.getTotal(),
@@ -132,8 +132,8 @@ public class TableDataResult implements Serializable {
      * @param extra 其他参数
      * @return TableDataResult 实例
      */
-    public static ResponseResult<TableDataResult> build(Page<?> page, List<?> rows, Map<String, Object> extra) {
-        return ResponseResult.success(
+    public static AjaxResult<TableDataResult> build(Page<?> page, List<?> rows, Map<String, Object> extra) {
+        return AjaxResult.success(
                 new TableDataResult(
                         rows,
                         page.getTotal(),

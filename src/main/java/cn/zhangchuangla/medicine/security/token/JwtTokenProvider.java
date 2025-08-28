@@ -9,8 +9,12 @@ import io.jsonwebtoken.security.Keys;
 import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.stereotype.Component;
 
 import javax.crypto.SecretKey;
+import java.nio.charset.StandardCharsets;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -23,13 +27,38 @@ import static cn.zhangchuangla.medicine.enums.ResponseResultCode.ACCESS_TOKEN_IN
  */
 @Slf4j
 @RequiredArgsConstructor
+@Component
 public class JwtTokenProvider {
     private final SecurityProperties securityProperties;
     private SecretKey jwtSecretKey;
 
     @PostConstruct
     public void init() {
-        byte[] keyBytes = Decoders.BASE64.decode(securityProperties.getSecret());
+        String secret = securityProperties.getSecret();
+        if (secret == null || secret.isBlank()) {
+            throw new IllegalArgumentException("security.secret 未配置，无法初始化JWT密钥。请在 application.yml 中配置 security.secret（建议使用至少32字节或Base64编码后的密钥）。");
+        }
+
+        byte[] keyBytes;
+        try {
+            // 优先尝试按Base64解码
+            keyBytes = Decoders.BASE64.decode(secret);
+        } catch (IllegalArgumentException ignored) {
+            // 非Base64时，使用明文的UTF-8字节
+            keyBytes = secret.getBytes(StandardCharsets.UTF_8);
+        }
+
+        // 确保长度满足HS256最小长度要求（>=32字节）。不足则对明文做SHA-256扩展；
+        // 如果已是Base64随机字节通常会>=32字节，直接使用即可。
+        if (keyBytes.length < 32) {
+            try {
+                MessageDigest sha256 = MessageDigest.getInstance("SHA-256");
+                keyBytes = sha256.digest(keyBytes);
+            } catch (NoSuchAlgorithmException e) {
+                throw new IllegalStateException("初始化JWT密钥失败: SHA-256不可用", e);
+            }
+        }
+
         this.jwtSecretKey = Keys.hmacShaKeyFor(keyBytes);
     }
 

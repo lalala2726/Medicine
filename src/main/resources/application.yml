@@ -16,3 +16,9 @@ mybatis-plus:
       logic-delete-field: isDeleted  # 全局逻辑删除字段名
       logic-delete-value: 1         # 逻辑已删除值
       logic-not-delete-value: 0     # 逻辑未删除值
+
+# 安全配置
+security:
+  header: Authorization
+  # 默认密钥（Base64编码的32字节）。生产环境请通过环境变量 SECURITY_SECRET 覆盖。
+  secret: zhangchuang2726zhangchuang2726zhangchuang2726
