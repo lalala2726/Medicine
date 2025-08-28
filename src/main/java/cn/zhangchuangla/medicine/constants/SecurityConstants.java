@@ -17,7 +17,7 @@ public class SecurityConstants {
     public static final String[] WHITELIST = {
             "/auth/login",
             "/captcha",
-            "/register",
+            "/auth/register",
             "/auth/refresh",
             "/druid/**",
             "/ws/**"

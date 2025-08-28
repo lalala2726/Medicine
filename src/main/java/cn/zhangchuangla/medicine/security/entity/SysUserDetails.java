@@ -61,7 +61,7 @@ public class SysUserDetails implements UserDetails, Serializable {
         this.user = user;
         this.userId = user.getId();
         this.username = user.getUsername();
-        String roles = user.getRole();
+        String roles = user.getRoles();
         // 初始化角色权限集合
         this.authorities = (roles != null && !roles.isEmpty())
                 ? Set.of(roles).stream()

@@ -102,7 +102,7 @@ public class TokenService {
         String accessToken = jwtTokenProvider.createJwt(accessTokenSessionId, username);
         // 获取用户角色并构建用户详情对象
         User user = userService.getUserByUsername(username);
-        String role = user.getRole();
+        String role = user.getRoles();
         HttpServletRequest httpServletRequest = SecurityUtils.getHttpServletRequest();
         String ipAddress = IPUtils.getIpAddress(httpServletRequest);
         String region = IPUtils.getRegion(ipAddress);

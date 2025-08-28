@@ -49,7 +49,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User>
     public Set<String> getUserRolesByUserId(Long userId) {
         LambdaQueryChainWrapper<User> eq = lambdaQuery().eq(User::getId, userId);
         User user = eq.one();
-        return Set.of(user.getRole());
+        return Set.of(user.getRoles());
     }
 
     /**
@@ -62,7 +62,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User>
     public Set<String> getUserRolesByUserName(String username) {
         LambdaQueryChainWrapper<User> eq = lambdaQuery().eq(User::getUsername, username);
         User user = eq.one();
-        return Set.of(user.getRole());
+        return Set.of(user.getRoles());
     }
 }
 

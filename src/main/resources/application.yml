@@ -3,6 +3,12 @@ spring:
     active: druid
   application:
     name: Medical
+  data:
+    redis:
+      host: localhost
+      port: 6379
+      database: 0
+      password: zhangchuang2726
 server:
   port: 8080
 mybatis-plus:
