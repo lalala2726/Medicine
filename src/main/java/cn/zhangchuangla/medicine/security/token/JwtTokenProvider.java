@@ -1,0 +1,85 @@
+package cn.zhangchuangla.medicine.security.token;
+
+import cn.zhangchuangla.medicine.common.exception.AuthorizationException;
+import cn.zhangchuangla.medicine.constants.SecurityConstants;
+import cn.zhangchuangla.medicine.security.property.SecurityProperties;
+import io.jsonwebtoken.*;
+import io.jsonwebtoken.io.Decoders;
+import io.jsonwebtoken.security.Keys;
+import jakarta.annotation.PostConstruct;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+
+import javax.crypto.SecretKey;
+import java.util.HashMap;
+import java.util.Map;
+
+import static cn.zhangchuangla.medicine.enums.ResponseResultCode.ACCESS_TOKEN_INVALID;
+
+/**
+ * @author Chuang
+ * <p>
+ * created on 2025/8/28 14:19
+ */
+@Slf4j
+@RequiredArgsConstructor
+public class JwtTokenProvider {
+    private final SecurityProperties securityProperties;
+    private SecretKey jwtSecretKey;
+
+    @PostConstruct
+    public void init() {
+        byte[] keyBytes = Decoders.BASE64.decode(securityProperties.getSecret());
+        this.jwtSecretKey = Keys.hmacShaKeyFor(keyBytes);
+    }
+
+
+    /**
+     * 创建JWT。不再包含tokenType。
+     *
+     * @param tokenId  令牌的唯一ID (对于访问令牌是accessTokenId，对于刷新令牌是refreshTokenId)
+     * @param username 用户名
+     * @return JWT字符串
+     */
+    public String createJwt(String tokenId, String username) {
+        Map<String, Object> claims = new HashMap<>();
+        claims.put(SecurityConstants.CLAIM_KEY_SESSION_ID, tokenId);
+        claims.put(SecurityConstants.CLAIM_KEY_USERNAME, username);
+        return Jwts.builder()
+                .setClaims(claims)
+                .signWith(jwtSecretKey)
+                .compact();
+    }
+
+
+    /**
+     * 从JWT中解析Claims。
+     * 遇到已知错误（过期、签名错误等）时抛出自定义异常。
+     *
+     * @param token JWT字符串
+     * @return Claims对象，包含JWT的声明信息
+     * @throws AuthorizationException 如果JWT无效 (例如格式错误、签名错误、过期)
+     */
+    public Claims getClaimsFromToken(String token) {
+        try {
+            Jws<Claims> jwsClaims = Jwts.parserBuilder()
+                    .setSigningKey(jwtSecretKey)
+                    .build()
+                    .parseClaimsJws(token);
+            return jwsClaims.getBody();
+        } catch (ExpiredJwtException e) {
+            log.warn("JWT已过期, message: {}", e.getMessage());
+            // 或者更具体的 REFRESH_TOKEN_EXPIRED
+            throw new AuthorizationException(ACCESS_TOKEN_INVALID);
+        } catch (UnsupportedJwtException e) {
+            log.warn("不支持的JWT格式, message: {}", e.getMessage());
+            throw new AuthorizationException(ACCESS_TOKEN_INVALID);
+        } catch (MalformedJwtException e) {
+            log.warn("JWT结构错误, message: {}", e.getMessage());
+            throw new AuthorizationException(ACCESS_TOKEN_INVALID);
+        } catch (IllegalArgumentException e) { // 通常是token为空或null
+            log.warn("JWT claims字符串为空或无效参数, message: {}", e.getMessage());
+            throw new AuthorizationException(ACCESS_TOKEN_INVALID);
+        }
+    }
+}
