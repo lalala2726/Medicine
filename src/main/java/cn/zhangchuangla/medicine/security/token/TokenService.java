@@ -22,6 +22,7 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.stereotype.Service;
 
+import java.util.Collections;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -29,8 +30,8 @@ import static cn.zhangchuangla.medicine.constants.SecurityConstants.CLAIM_KEY_SE
 
 /**
  * @author Chuang
- * <p>
- * created on 2025/8/28 14:19
+ *         <p>
+ *         created on 2025/8/28 14:19
  */
 @Service
 @RequiredArgsConstructor
@@ -40,7 +41,6 @@ public class TokenService {
     private final JwtTokenProvider jwtTokenProvider;
     private final RedisTokenStore redisTokenStore;
     private final UserService userService;
-
 
     public LoginSessionDTO createToken(Authentication authentication) {
         SysUserDetails userDetails = (SysUserDetails) authentication.getPrincipal();
@@ -53,17 +53,23 @@ public class TokenService {
         String ipAddress = IPUtils.getIpAddress(httpServletRequest);
         String location = IPUtils.getRegion(ipAddress);
 
+        // 角色集合（可能为空），从用户服务加载
+        Set<String> roles = userService.getUserRolesByUserId(id);
+
         OnlineLoginUser onlineLoginUser = OnlineLoginUser.builder()
                 .accessTokenId(accessTokenSessionId)
                 .refreshTokenId(refreshTokenSessionId)
                 .userId(id)
                 .username(username)
+                .user(user)
+                .roles(roles)
                 .ip(ipAddress)
                 .location(location)
                 .build();
 
         redisTokenStore.setRefreshToken(refreshTokenSessionId, accessTokenSessionId);
         redisTokenStore.setAccessToken(accessTokenSessionId, onlineLoginUser);
+        // JWT 本身不设置过期，由 Redis TTL 判定会话有效性
         String jwtAccessToken = jwtTokenProvider.createJwt(accessTokenSessionId, username);
         String jwtRefreshToken = jwtTokenProvider.createJwt(refreshTokenSessionId, username);
 
@@ -86,7 +92,7 @@ public class TokenService {
      */
     public AuthTokenVo refreshToken(String jwtRefreshToken) {
 
-        //先经过JWT验证
+        // 先经过JWT验证
         Claims refreshClaims = jwtTokenProvider.getClaimsFromToken(jwtRefreshToken);
         if (refreshClaims == null) {
             throw new AuthorizationException(ResponseResultCode.REFRESH_TOKEN_INVALID);
@@ -99,10 +105,11 @@ public class TokenService {
         String username = refreshClaims.get(SecurityConstants.CLAIM_KEY_USERNAME, String.class);
         // 创建新的访问令牌
         String accessTokenSessionId = UUIDUtils.simple();
+        // 刷新后的访问令牌也不设置 exp，由 Redis TTL 管控
         String accessToken = jwtTokenProvider.createJwt(accessTokenSessionId, username);
         // 获取用户角色并构建用户详情对象
         User user = userService.getUserByUsername(username);
-        String role = user.getRoles();
+        Set<String> roles = userService.getUserRolesByUserId(user.getId());
         HttpServletRequest httpServletRequest = SecurityUtils.getHttpServletRequest();
         String ipAddress = IPUtils.getIpAddress(httpServletRequest);
         String region = IPUtils.getRegion(ipAddress);
@@ -112,13 +119,15 @@ public class TokenService {
                 .refreshTokenId(refreshTokenSessionId)
                 .userId(user.getId())
                 .username(username)
+                .user(user)
+                .roles(roles)
                 .ip(ipAddress)
                 .location(region)
                 .build();
 
         // 保存刷新令牌
         redisTokenStore.setAccessToken(accessTokenSessionId, onlineLoginUser);
-        //重新设置新的访问令牌和刷新令牌的映射关系
+        // 重新设置新的访问令牌和刷新令牌的映射关系
         redisTokenStore.mapRefreshTokenToAccessToken(refreshTokenSessionId, accessTokenSessionId);
 
         return AuthTokenVo.builder()
@@ -151,20 +160,21 @@ public class TokenService {
 
         OnlineLoginUser onlineUser = redisTokenStore.getAccessToken(accessTokenId);
 
-        //更新访问时间
+        // 更新访问时间
         boolean updateSuccess = redisTokenStore.updateAccessTime(accessTokenId);
         if (!updateSuccess) {
             log.warn("更新访问时间失败，令牌可能已被删除: {}", accessTokenId);
             return null;
         }
+        log.info("更新访问时间成功: {}", accessTokenId);
 
-        Set<SimpleGrantedAuthority> authorities = onlineUser.getRoles().stream()
+        Set<String> userRoles = onlineUser.getRoles() != null ? onlineUser.getRoles() : Collections.emptySet();
+        Set<SimpleGrantedAuthority> authorities = userRoles.stream()
                 .map(role -> new SimpleGrantedAuthority(SecurityConstants.ROLE_PREFIX + role))
                 .collect(Collectors.toSet());
         SysUserDetails userDetails = buildUserDetails(onlineUser, authorities);
         return new UsernamePasswordAuthenticationToken(userDetails, null, authorities);
     }
-
 
     /**
      * 构建用户详情对象。
@@ -174,12 +184,14 @@ public class TokenService {
      * @return SysUserDetails 对象
      */
     private SysUserDetails buildUserDetails(OnlineLoginUser onlineUser, Set<SimpleGrantedAuthority> authorities) {
-        SysUserDetails userDetails = new SysUserDetails();
-        userDetails.setUserId(onlineUser.getUserId());
-        userDetails.setUsername(onlineUser.getUsername());
+        SysUserDetails userDetails = onlineUser.getUser() != null ? new SysUserDetails(onlineUser.getUser())
+                : new SysUserDetails();
+        if (onlineUser.getUser() == null) {
+            userDetails.setUserId(onlineUser.getUserId());
+            userDetails.setUsername(onlineUser.getUsername());
+        }
         userDetails.setAuthorities(authorities);
         return userDetails;
     }
-
 
 }

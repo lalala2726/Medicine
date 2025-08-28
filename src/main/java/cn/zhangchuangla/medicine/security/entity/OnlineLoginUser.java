@@ -1,5 +1,6 @@
 package cn.zhangchuangla.medicine.security.entity;
 
+import cn.zhangchuangla.medicine.model.entity.User;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -11,15 +12,14 @@ import java.util.Set;
  * 在线用户信息对象
  *
  * @author Chuang
- * <p>
- * created on 2025/2/27 10:31
+ *         <p>
+ *         created on 2025/2/27 10:31
  */
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
 public class OnlineLoginUser {
-
 
     /**
      * 访问令牌ID
@@ -41,6 +41,10 @@ public class OnlineLoginUser {
      */
     private String username;
 
+    /**
+     * 完整用户实体（用于减少二次查询）
+     */
+    private User user;
 
     /**
      * 角色权限集合
@@ -66,6 +70,5 @@ public class OnlineLoginUser {
      * userAgent
      */
     private String userAgent;
-
 
 }

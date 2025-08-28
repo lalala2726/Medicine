@@ -5,6 +5,7 @@ import cn.zhangchuangla.medicine.constants.SecurityConstants;
 import cn.zhangchuangla.medicine.enums.ResponseResultCode;
 import cn.zhangchuangla.medicine.security.property.SecurityProperties;
 import cn.zhangchuangla.medicine.security.token.TokenService;
+import jakarta.annotation.Nonnull;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -44,8 +45,8 @@ public class TokenAuthenticationFilter extends OncePerRequestFilter {
      * @param filterChain 过滤器链
      */
     @Override
-    protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response,
-                                    FilterChain filterChain) throws ServletException, IOException {
+    protected void doFilterInternal(@Nonnull HttpServletRequest request, @Nonnull HttpServletResponse response,
+                                    @Nonnull FilterChain filterChain) throws ServletException, IOException {
         String header = securityProperties.getHeader();
         String token = request.getHeader(header);
         try {
@@ -53,6 +54,7 @@ public class TokenAuthenticationFilter extends OncePerRequestFilter {
                 // 直接解析令牌（内部会做验签与有效性检查），避免重复解析
                 Authentication authentication = tokenService.parseAccessToken(token);
                 if (authentication == null) {
+                    log.warn("解析访问令牌失败: {}", token);
                     ResponseUtils.writeErrMsg(response, ResponseResultCode.ACCESS_TOKEN_INVALID, HttpStatus.UNAUTHORIZED);
                     return;
                 }
@@ -60,6 +62,7 @@ public class TokenAuthenticationFilter extends OncePerRequestFilter {
             }
         } catch (Exception ex) {
             // 安全上下文清除保障（防止上下文残留）
+            log.warn("安全上下文清理", ex);
             SecurityContextHolder.clearContext();
             ResponseUtils.writeErrMsg(response, ResponseResultCode.ACCESS_TOKEN_INVALID, HttpStatus.UNAUTHORIZED);
             return;

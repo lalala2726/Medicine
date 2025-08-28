@@ -22,8 +22,8 @@ import static cn.zhangchuangla.medicine.enums.ResponseResultCode.ACCESS_TOKEN_IN
 
 /**
  * @author Chuang
- * <p>
- * created on 2025/8/28 14:19
+ *         <p>
+ *         created on 2025/8/28 14:19
  */
 @Slf4j
 @RequiredArgsConstructor
@@ -36,7 +36,8 @@ public class JwtTokenProvider {
     public void init() {
         String secret = securityProperties.getSecret();
         if (secret == null || secret.isBlank()) {
-            throw new IllegalArgumentException("security.secret 未配置，无法初始化JWT密钥。请在 application.yml 中配置 security.secret（建议使用至少32字节或Base64编码后的密钥）。");
+            throw new IllegalArgumentException(
+                    "security.secret 未配置，无法初始化JWT密钥。请在 application.yml 中配置 security.secret（建议使用至少32字节或Base64编码后的密钥）。");
         }
 
         byte[] keyBytes;
@@ -62,7 +63,6 @@ public class JwtTokenProvider {
         this.jwtSecretKey = Keys.hmacShaKeyFor(keyBytes);
     }
 
-
     /**
      * 创建JWT。不再包含tokenType。
      *
@@ -80,7 +80,6 @@ public class JwtTokenProvider {
                 .compact();
     }
 
-
     /**
      * 从JWT中解析Claims。
      * 遇到已知错误（过期、签名错误等）时抛出自定义异常。
@@ -91,6 +90,7 @@ public class JwtTokenProvider {
      */
     public Claims getClaimsFromToken(String token) {
         try {
+            log.info("解析JWT: {}", token);
             Jws<Claims> jwsClaims = Jwts.parserBuilder()
                     .setSigningKey(jwtSecretKey)
                     .build()
@@ -98,7 +98,6 @@ public class JwtTokenProvider {
             return jwsClaims.getBody();
         } catch (ExpiredJwtException e) {
             log.warn("JWT已过期, message: {}", e.getMessage());
-            // 或者更具体的 REFRESH_TOKEN_EXPIRED
             throw new AuthorizationException(ACCESS_TOKEN_INVALID);
         } catch (UnsupportedJwtException e) {
             log.warn("不支持的JWT格式, message: {}", e.getMessage());
