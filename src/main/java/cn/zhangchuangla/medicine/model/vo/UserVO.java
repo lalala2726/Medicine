@@ -13,12 +13,15 @@ public class UserVO {
     @Schema(description = "用户ID")
     private Long id;
 
+    @Schema(description = "昵称")
+    private String nickname;
+
+    @Schema(description = "头像")
+    private String avatar;
+
     @Schema(description = "用户名")
     private String username;
 
     @Schema(description = "角色标识")
     private String roles;
-
-    @Schema(description = "账户状态")
-    private Integer status;
 }

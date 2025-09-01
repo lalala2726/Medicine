@@ -26,6 +26,16 @@ public class User {
     private String username;
 
     /**
+     * 昵称
+     */
+    private String nickname;
+
+    /**
+     * 头像
+     */
+    private String avatar;
+
+    /**
      * 密码
      */
     private String password;
