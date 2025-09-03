@@ -8,7 +8,7 @@ import cn.zhangchuangla.medicine.model.entity.User;
 import cn.zhangchuangla.medicine.model.request.LoginRequest;
 import cn.zhangchuangla.medicine.model.request.RefreshRequest;
 import cn.zhangchuangla.medicine.model.request.RegisterRequest;
-import cn.zhangchuangla.medicine.model.vo.UserVO;
+import cn.zhangchuangla.medicine.model.vo.user.CurrentUserInfoVo;
 import cn.zhangchuangla.medicine.security.entity.AuthTokenVo;
 import cn.zhangchuangla.medicine.security.utils.SecurityUtils;
 import cn.zhangchuangla.medicine.service.AuthService;
@@ -86,10 +86,10 @@ public class AuthController extends BaseController {
      */
     @Operation(summary = "获取当前用户信息", description = "根据认证上下文返回当前登录用户信息")
     @GetMapping("/currentUser")
-    public AjaxResult<UserVO> currentUser() {
+    public AjaxResult<CurrentUserInfoVo> currentUser() {
         Long userId = SecurityUtils.getUserId();
         User user = userService.getUserById(userId);
-        UserVO vo = BeanCotyUtils.copyProperties(user, UserVO.class);
+        CurrentUserInfoVo vo = BeanCotyUtils.copyProperties(user, CurrentUserInfoVo.class);
         return success(vo);
     }
 

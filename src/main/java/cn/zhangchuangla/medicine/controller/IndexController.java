@@ -14,7 +14,7 @@ import org.springframework.web.bind.annotation.RestController;
 @RequestMapping("/")
 @RestController
 @Anonymous
-public class Index {
+public class IndexController {
 
 
     @GetMapping
