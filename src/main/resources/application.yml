@@ -1,6 +1,6 @@
 spring:
   profiles:
-    active: druid
+    active: druid,llm
   application:
     name: Medical
   data:

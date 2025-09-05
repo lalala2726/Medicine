@@ -1,0 +1,18 @@
+spring:
+  ai:
+    dashscope:
+      api-key: ${OPENAI_API_KEY}
+      chat:
+        options:
+          model: qwen-plus
+          temperature: 0.7
+    vectorstore:
+      milvus:
+        client:
+          host: localhost
+          port: 19530
+          password: milvus
+          username: root
+        collection-name: medicine_embeddings
+        index-type: HNSW
+        metric-type: COSINE
