@@ -1,11 +1,5 @@
 spring:
   ai:
-    dashscope:
-      api-key: ${OPENAI_API_KEY}
-      chat:
-        options:
-          model: qwen-plus
-          temperature: 0.7
     vectorstore:
       milvus:
         client:
@@ -16,3 +10,9 @@ spring:
         collection-name: medicine_embeddings
         index-type: HNSW
         metric-type: COSINE
+    openai:
+      api-key: ${DEEPSEEK_API_KEY}
+      base-url: https://api.deepseek.com/
+      chat:
+        options:
+          model: deepseek-chat
