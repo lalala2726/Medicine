@@ -9,6 +9,9 @@ spring:
       port: 6379
       database: 0
       password: zhangchuang2726
+  autoconfigure:
+    exclude:
+      - org.springframework.ai.vectorstore.milvus.autoconfigure.MilvusVectorStoreAutoConfiguration
 server:
   port: 8080
 mybatis-plus:

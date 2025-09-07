@@ -5,70 +5,60 @@ import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableName;
 import lombok.Data;
 
-import java.sql.Date;
+import java.util.Date;
 
 /**
- * 用户
+ * LLM配置表
  */
-@TableName(value = "user")
+@TableName(value = "llm_config")
 @Data
-public class User {
+public class LlmConfig {
 
     /**
-     * 用户ID
+     * ID
      */
     @TableId(type = IdType.AUTO)
     private Long id;
 
     /**
-     * 用户名
+     * 模型提供商名称
      */
-    private String username;
+    private String provider;
 
     /**
-     * 昵称
+     * 模型
      */
-    private String nickname;
+    private String model;
 
     /**
-     * 头像
+     * API KEY
      */
-    private String avatar;
+    private String apiKey;
 
     /**
-     * 邮箱
+     * 基础URL
      */
-    private String email;
-
-    /**
-     * 手机号
-     */
-    private String phoneNumber;
-
-    /**
-     * 性别
-     */
-    private Integer gender;
-
-    /**
-     * 生日
-     */
-    private Date birthday;
-
-    /**
-     * 密码
-     */
-    private String password;
-
-    /**
-     * 角色
-     */
-    private String roles;
+    private String baseUrl;
 
     /**
      * 状态
      */
     private Integer status;
+
+    /**
+     * 最大Tokens
+     */
+    private Integer maxTokens;
+
+    /**
+     * 温度
+     */
+    private Double temperature;
+
+    /**
+     * 是否默认
+     */
+    private Integer isDefault;
 
     /**
      * 创建时间

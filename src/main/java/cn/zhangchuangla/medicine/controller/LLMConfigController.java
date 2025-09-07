@@ -1,0 +1,151 @@
+package cn.zhangchuangla.medicine.controller;
+
+import cn.zhangchuangla.medicine.annotation.Anonymous;
+import cn.zhangchuangla.medicine.common.base.AjaxResult;
+import cn.zhangchuangla.medicine.common.base.BaseController;
+import cn.zhangchuangla.medicine.common.base.TableDataResult;
+import cn.zhangchuangla.medicine.llm.config.LlmModelFactory;
+import cn.zhangchuangla.medicine.model.entity.LlmConfig;
+import cn.zhangchuangla.medicine.model.request.llmconfig.LlmConfigAddRequest;
+import cn.zhangchuangla.medicine.model.request.llmconfig.LlmConfigListQueryRequest;
+import cn.zhangchuangla.medicine.model.request.llmconfig.LlmConfigUpdateRequest;
+import cn.zhangchuangla.medicine.model.vo.llmconfig.LlmConfigListVo;
+import cn.zhangchuangla.medicine.model.vo.llmconfig.LlmConfigVo;
+import cn.zhangchuangla.medicine.service.LlmConfigService;
+import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
+import io.swagger.v3.oas.annotations.Operation;
+import lombok.RequiredArgsConstructor;
+import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
+
+/**
+ * LLM配置控制器
+ *
+ * @author Chuang
+ * <p>
+ * created on 2025/9/6 20:39
+ */
+@RestController
+@RequestMapping("/llm/config")
+@RequiredArgsConstructor
+@Anonymous
+public class LLMConfigController extends BaseController {
+
+    private final LlmConfigService llmConfigService;
+    private final LlmModelFactory llmModelFactory;
+
+    /**
+     * 获取LLM配置列表
+     *
+     * @param request LLM配置列表查询参数
+     * @return LLM配置列表视图对象集合
+     */
+    @GetMapping("/list")
+    @Operation(summary = "LLM配置列表")
+    public AjaxResult<TableDataResult> listLlmConfig(LlmConfigListQueryRequest request) {
+        Page<LlmConfig> llmConfigPage = llmConfigService.listLlmConfig(request);
+        List<LlmConfigListVo> llmConfigListVos = copyListProperties(llmConfigPage, LlmConfigListVo.class);
+        return getTableData(llmConfigPage, llmConfigListVos);
+    }
+
+    /**
+     * 获取LLM配置详情
+     *
+     * @param id 配置ID
+     * @return LLM配置详情
+     */
+    @GetMapping("/{id:\\d+}")
+    @Operation(summary = "LLM配置详情")
+    public AjaxResult<LlmConfigVo> getLlmConfigById(@PathVariable("id") Long id) {
+        LlmConfig llmConfig = llmConfigService.getLlmConfigById(id);
+        LlmConfigVo llmConfigVo = copyProperties(llmConfig, LlmConfigVo.class);
+        return success(llmConfigVo);
+    }
+
+    /**
+     * 添加LLM配置
+     *
+     * @param request 添加LLM配置参数
+     * @return 添加结果
+     */
+    @PostMapping
+    @Operation(summary = "添加LLM配置")
+    public AjaxResult<Void> addLlmConfig(@RequestBody LlmConfigAddRequest request) {
+        boolean result = llmConfigService.addLlmConfig(request);
+        return toAjax(result);
+    }
+
+    /**
+     * 修改LLM配置
+     *
+     * @param request 修改LLM配置参数
+     * @return 修改结果
+     */
+    @PutMapping
+    @Operation(summary = "修改LLM配置")
+    public AjaxResult<Void> updateLlmConfig(@RequestBody LlmConfigUpdateRequest request) {
+        boolean result = llmConfigService.updateLlmConfig(request);
+        return toAjax(result);
+    }
+
+    /**
+     * 删除LLM配置
+     *
+     * @param ids 配置ID列表
+     * @return 删除结果
+     */
+    @DeleteMapping("/{ids}")
+    @Operation(summary = "删除LLM配置")
+    public AjaxResult<Void> deleteLlmConfig(@PathVariable("ids") List<Long> ids) {
+        boolean result = llmConfigService.deleteLlmConfig(ids);
+        return toAjax(result);
+    }
+
+    /**
+     * 获取默认LLM配置
+     *
+     * @return 默认LLM配置
+     */
+    @GetMapping("/default")
+    @Operation(summary = "获取默认LLM配置")
+    public AjaxResult<LlmConfigVo> getDefaultLlmConfig() {
+        LlmConfig llmConfig = llmConfigService.getDefaultLlmConfig();
+        LlmConfigVo llmConfigVo = copyProperties(llmConfig, LlmConfigVo.class);
+        return success(llmConfigVo);
+    }
+
+    /**
+     * 刷新LLM配置缓存
+     * 当配置发生变化时调用此方法，使配置立即生效
+     *
+     * @return 刷新结果
+     */
+    @PostMapping("/refresh-cache")
+    @Operation(summary = "刷新LLM配置缓存")
+    public AjaxResult<String> refreshCache() {
+        try {
+            // 刷新服务层缓存
+            llmConfigService.refreshConfigCache();
+
+            // 刷新模型工厂缓存
+            llmModelFactory.reloadConfigs();
+
+            return success("LLM配置缓存刷新成功");
+        } catch (Exception e) {
+            return error("刷新缓存失败：" + e.getMessage());
+        }
+    }
+
+    /**
+     * 获取当前激活的模型提供商
+     *
+     * @return 当前提供商信息
+     */
+    @GetMapping("/current-provider")
+    @Operation(summary = "获取当前激活的模型提供商")
+    public AjaxResult<String> getCurrentProvider() {
+        return success(llmModelFactory.getCurrentProvider());
+    }
+
+}

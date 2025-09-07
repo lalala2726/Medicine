@@ -1,18 +1,20 @@
 spring:
   ai:
-    vectorstore:
-      milvus:
-        client:
-          host: localhost
-          port: 19530
-          password: milvus
-          username: root
-        collection-name: medicine_embeddings
-        index-type: HNSW
-        metric-type: COSINE
+    # 启用DeepSeek模型（使用OpenAI兼容接口）
+    model: deepseek
     openai:
-      api-key: ${DEEPSEEK_API_KEY}
+      api-key: ${DEEPSEEK_API_KEY:your-deepseek-api-key}
       base-url: https://api.deepseek.com/
       chat:
         options:
           model: deepseek-chat
+          temperature: 0.7
+          max-tokens: 4000
+    # 阿里云DashScope配置
+    dashscope:
+      api-key: ${DASHSCOPE_API_KEY:your-dashscope-api-key}
+      chat:
+        options:
+          model: qwen-turbo
+          temperature: 0.7
+          max-tokens: 4000

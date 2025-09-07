@@ -1,6 +1,7 @@
 package cn.zhangchuangla.medicine.llm.tools;
 
 import org.springframework.ai.tool.annotation.Tool;
+import org.springframework.stereotype.Component;
 
 import java.time.Instant;
 import java.time.LocalDateTime;
@@ -16,6 +17,7 @@ import java.util.TimeZone;
  * @author Chuang
  * @since 2025/9/5 19:15
  */
+@Component
 public class DateTimeTools {
 
     /**
