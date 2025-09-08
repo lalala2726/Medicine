@@ -6,9 +6,9 @@ import cn.zhangchuangla.medicine.common.base.BaseController;
 import cn.zhangchuangla.medicine.common.base.TableDataResult;
 import cn.zhangchuangla.medicine.llm.config.LlmModelFactory;
 import cn.zhangchuangla.medicine.model.entity.LlmConfig;
-import cn.zhangchuangla.medicine.model.request.llmconfig.LlmConfigAddRequest;
-import cn.zhangchuangla.medicine.model.request.llmconfig.LlmConfigListQueryRequest;
-import cn.zhangchuangla.medicine.model.request.llmconfig.LlmConfigUpdateRequest;
+import cn.zhangchuangla.medicine.model.request.llm.LlmConfigAddRequest;
+import cn.zhangchuangla.medicine.model.request.llm.LlmConfigListQueryRequest;
+import cn.zhangchuangla.medicine.model.request.llm.LlmConfigUpdateRequest;
 import cn.zhangchuangla.medicine.model.vo.llmconfig.LlmConfigListVo;
 import cn.zhangchuangla.medicine.model.vo.llmconfig.LlmConfigVo;
 import cn.zhangchuangla.medicine.service.LlmConfigService;
@@ -121,7 +121,7 @@ public class LLMConfigController extends BaseController {
      *
      * @return 刷新结果
      */
-    @PostMapping("/refresh-cache")
+    @PostMapping("/refreshCache")
     @Operation(summary = "刷新LLM配置缓存")
     public AjaxResult<String> refreshCache() {
         try {
@@ -142,7 +142,7 @@ public class LLMConfigController extends BaseController {
      *
      * @return 当前提供商信息
      */
-    @GetMapping("/current-provider")
+    @GetMapping("/currentProvider")
     @Operation(summary = "获取当前激活的模型提供商")
     public AjaxResult<String> getCurrentProvider() {
         return success(llmModelFactory.getCurrentProvider());

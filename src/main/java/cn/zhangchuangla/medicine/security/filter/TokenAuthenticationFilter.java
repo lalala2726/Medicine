@@ -55,7 +55,7 @@ public class TokenAuthenticationFilter extends OncePerRequestFilter {
                 Authentication authentication = tokenService.parseAccessToken(token);
                 if (authentication == null) {
                     log.warn("解析访问令牌失败: {}", token);
-                    ResponseUtils.writeErrMsg(response, ResponseResultCode.ACCESS_TOKEN_INVALID, HttpStatus.UNAUTHORIZED);
+                    ResponseUtils.writeErrMsg(response, ResponseResultCode.ACCESS_TOKEN_INVALID, HttpStatus.OK);
                     return;
                 }
                 SecurityContextHolder.getContext().setAuthentication(authentication);
@@ -64,7 +64,7 @@ public class TokenAuthenticationFilter extends OncePerRequestFilter {
             // 安全上下文清除保障（防止上下文残留）
             log.warn("安全上下文清理", ex);
             SecurityContextHolder.clearContext();
-            ResponseUtils.writeErrMsg(response, ResponseResultCode.ACCESS_TOKEN_INVALID, HttpStatus.UNAUTHORIZED);
+            ResponseUtils.writeErrMsg(response, ResponseResultCode.ACCESS_TOKEN_INVALID, HttpStatus.OK);
             return;
         }
 

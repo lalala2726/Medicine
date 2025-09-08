@@ -1,12 +1,13 @@
 package cn.zhangchuangla.medicine.service.impl;
 
+import cn.zhangchuangla.medicine.common.base.BaseService;
 import cn.zhangchuangla.medicine.common.redis.RedisCache;
 import cn.zhangchuangla.medicine.common.utils.Assert;
 import cn.zhangchuangla.medicine.mapper.LLMConfigMapper;
 import cn.zhangchuangla.medicine.model.entity.LlmConfig;
-import cn.zhangchuangla.medicine.model.request.llmconfig.LlmConfigAddRequest;
-import cn.zhangchuangla.medicine.model.request.llmconfig.LlmConfigListQueryRequest;
-import cn.zhangchuangla.medicine.model.request.llmconfig.LlmConfigUpdateRequest;
+import cn.zhangchuangla.medicine.model.request.llm.LlmConfigAddRequest;
+import cn.zhangchuangla.medicine.model.request.llm.LlmConfigListQueryRequest;
+import cn.zhangchuangla.medicine.model.request.llm.LlmConfigUpdateRequest;
 import cn.zhangchuangla.medicine.service.LlmConfigService;
 import com.baomidou.mybatisplus.extension.conditions.query.LambdaQueryChainWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
@@ -29,12 +30,11 @@ import java.util.concurrent.TimeUnit;
 @Service
 @RequiredArgsConstructor
 public class LlmConfigServiceImpl extends ServiceImpl<LLMConfigMapper, LlmConfig>
-        implements LlmConfigService {
+        implements LlmConfigService, BaseService {
 
     /**
      * 缓存键前缀
      */
-    private static final String LLM_CONFIG_CACHE_PREFIX = "llm:config:";
     private static final String LLM_DEFAULT_CONFIG_KEY = "llm:config:default";
     private static final String LLM_ENABLED_CONFIGS_KEY = "llm:config:enabled";
     private static final String LLM_CONFIG_PROVIDER_PREFIX = "llm:config:provider:";
@@ -295,26 +295,12 @@ public class LlmConfigServiceImpl extends ServiceImpl<LLMConfigMapper, LlmConfig
 
         LlmConfig llmConfig = new LlmConfig();
         BeanUtils.copyProperties(request, llmConfig);
-
-        // 设置默认值
-        if (llmConfig.getStatus() == null) {
-            llmConfig.setStatus(1);
+        // 将List<String>转换为String存储
+        if (request.getModel() != null && !request.getModel().isEmpty()) {
+            llmConfig.setModel(String.join(",", request.getModel()));
         }
-        if (llmConfig.getMaxTokens() == null) {
-            llmConfig.setMaxTokens(4096);
-        }
-        if (llmConfig.getTemperature() == null) {
-            llmConfig.setTemperature(0.7);
-        }
-        if (llmConfig.getIsDefault() == null) {
-            llmConfig.setIsDefault(0);
-        }
-
         // 设置创建信息
-        llmConfig.setCreateTime(new Date());
-        llmConfig.setUpdateTime(new Date());
-        llmConfig.setIsDelete(0);
-
+        llmConfig.setCreateBy(getUsername());
         return save(llmConfig);
     }
 
@@ -329,6 +315,10 @@ public class LlmConfigServiceImpl extends ServiceImpl<LLMConfigMapper, LlmConfig
         Assert.notNull(existingConfig, "配置不存在");
 
         BeanUtils.copyProperties(request, existingConfig);
+        // 将List<String>转换为String存储
+        if (request.getModel() != null && !request.getModel().isEmpty()) {
+            existingConfig.setModel(String.join(",", request.getModel()));
+        }
         existingConfig.setUpdateTime(new Date());
 
         return updateById(existingConfig);

@@ -1,9 +1,11 @@
-package cn.zhangchuangla.medicine.model.request.llmconfig;
+package cn.zhangchuangla.medicine.model.request.llm;
 
 import cn.zhangchuangla.medicine.common.base.BasePageRequest;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
+
+import java.util.List;
 
 /**
  * LLM配置
@@ -29,7 +31,7 @@ public class LlmConfigListQueryRequest extends BasePageRequest {
      * 模型
      */
     @Schema(description = "模型", type = "string", example = "gpt-4")
-    private String model;
+    private List<String> model;
 
     /**
      * 状态

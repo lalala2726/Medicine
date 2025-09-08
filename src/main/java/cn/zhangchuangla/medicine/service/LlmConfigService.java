@@ -1,9 +1,9 @@
 package cn.zhangchuangla.medicine.service;
 
 import cn.zhangchuangla.medicine.model.entity.LlmConfig;
-import cn.zhangchuangla.medicine.model.request.llmconfig.LlmConfigAddRequest;
-import cn.zhangchuangla.medicine.model.request.llmconfig.LlmConfigListQueryRequest;
-import cn.zhangchuangla.medicine.model.request.llmconfig.LlmConfigUpdateRequest;
+import cn.zhangchuangla.medicine.model.request.llm.LlmConfigAddRequest;
+import cn.zhangchuangla.medicine.model.request.llm.LlmConfigListQueryRequest;
+import cn.zhangchuangla.medicine.model.request.llm.LlmConfigUpdateRequest;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.IService;
 
@@ -11,7 +11,7 @@ import java.util.List;
 
 /**
  * LLM配置服务接口
- * 
+ *
  * @author Chuang
  */
 public interface LlmConfigService extends IService<LlmConfig> {
