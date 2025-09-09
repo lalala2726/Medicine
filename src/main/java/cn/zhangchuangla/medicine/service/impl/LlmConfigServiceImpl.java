@@ -32,6 +32,23 @@ import java.util.concurrent.TimeUnit;
 public class LlmConfigServiceImpl extends ServiceImpl<LLMConfigMapper, LlmConfig>
         implements LlmConfigService, BaseService {
 
+
+    /**
+     * 启用状态
+     */
+    private static final int ENABLED_STATUS = 0;
+
+    /**
+     * 默认
+     */
+    private static final int DEFAULT = 1;
+
+    /**
+     * 非默认
+     */
+    private static final int NOT_DEFAULT = 0;
+
+
     /**
      * 缓存键前缀
      */
@@ -141,9 +158,7 @@ public class LlmConfigServiceImpl extends ServiceImpl<LLMConfigMapper, LlmConfig
     private LlmConfig getDefaultLlmConfigFromDatabase() {
         try {
             return lambdaQuery()
-                    .eq(LlmConfig::getStatus, 1)
-                    .eq(LlmConfig::getIsDelete, 0)
-                    .eq(LlmConfig::getIsDefault, 1)
+                    .eq(LlmConfig::getStatus, ENABLED_STATUS)
                     .orderByDesc(LlmConfig::getCreateTime)
                     .one();
         } catch (Exception e) {
@@ -158,8 +173,7 @@ public class LlmConfigServiceImpl extends ServiceImpl<LLMConfigMapper, LlmConfig
     private List<LlmConfig> getEnabledLlmConfigsFromDatabase() {
         try {
             return lambdaQuery()
-                    .eq(LlmConfig::getStatus, 1)
-                    .eq(LlmConfig::getIsDelete, 0)
+                    .eq(LlmConfig::getStatus, ENABLED_STATUS)
                     .orderByDesc(LlmConfig::getCreateTime)
                     .list();
         } catch (Exception e) {
@@ -194,8 +208,7 @@ public class LlmConfigServiceImpl extends ServiceImpl<LLMConfigMapper, LlmConfig
         try {
             // 查询所有启用的配置
             LambdaQueryChainWrapper<LlmConfig> queryWrapper = lambdaQuery()
-                    .eq(LlmConfig::getStatus, 1)
-                    .eq(LlmConfig::getIsDelete, 0)
+                    .eq(LlmConfig::getStatus, ENABLED_STATUS)
                     .orderByDesc(LlmConfig::getCreateTime);
 
             List<LlmConfig> enabledConfigs = queryWrapper.list();
@@ -218,7 +231,7 @@ public class LlmConfigServiceImpl extends ServiceImpl<LLMConfigMapper, LlmConfig
                 redisCache.setCacheObject(providerKey, config, CACHE_EXPIRE_TIME, TimeUnit.SECONDS);
 
                 // 检查是否为默认配置
-                if (config.getIsDefault() != null && config.getIsDefault() == 1) {
+                if (config.getIsDefault() != null && config.getIsDefault() == DEFAULT) {
                     defaultConfig = config;
                 }
             }
@@ -299,6 +312,17 @@ public class LlmConfigServiceImpl extends ServiceImpl<LLMConfigMapper, LlmConfig
         if (request.getModel() != null && !request.getModel().isEmpty()) {
             llmConfig.setModel(String.join(",", request.getModel()));
         }
+        
+        // 检查是否要设置为默认配置
+        if (request.getIsDefault() != null && request.getIsDefault() == DEFAULT) {
+            // 如果设置为默认，先取消其他所有配置的默认状态
+            lambdaUpdate()
+                    .eq(LlmConfig::getIsDefault, DEFAULT)
+                    .set(LlmConfig::getIsDefault, NOT_DEFAULT)
+                    .set(LlmConfig::getUpdateTime, new Date())
+                    .update();
+        }
+        
         // 设置创建信息
         llmConfig.setCreateBy(getUsername());
         return save(llmConfig);
@@ -313,6 +337,17 @@ public class LlmConfigServiceImpl extends ServiceImpl<LLMConfigMapper, LlmConfig
 
         LlmConfig existingConfig = getById(request.getId());
         Assert.notNull(existingConfig, "配置不存在");
+
+        // 检查是否要设置为默认配置
+        if (request.getIsDefault() != null && request.getIsDefault() == DEFAULT) {
+            // 如果设置为默认，先取消其他所有配置的默认状态
+            lambdaUpdate()
+                    .eq(LlmConfig::getIsDefault, DEFAULT)
+                    .ne(LlmConfig::getId, request.getId())
+                    .set(LlmConfig::getIsDefault, NOT_DEFAULT)
+                    .set(LlmConfig::getUpdateTime, new Date())
+                    .update();
+        }
 
         BeanUtils.copyProperties(request, existingConfig);
         // 将List<String>转换为String存储
@@ -334,7 +369,6 @@ public class LlmConfigServiceImpl extends ServiceImpl<LLMConfigMapper, LlmConfig
         // 逻辑删除
         return lambdaUpdate()
                 .set(LlmConfig::getDeleteTime, new Date())
-                .set(LlmConfig::getIsDelete, 1)
                 .in(LlmConfig::getId, ids)
                 .update();
     }

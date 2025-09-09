@@ -19,4 +19,14 @@ public class Constants {
     public static final Integer ACCOUNT_UNLOCK_KEY = 0;
 
 
+    /**
+     * 已删除状态常量
+     */
+    public static final int DELETED = 1;
+
+    /**
+     * 未删除状态常量
+     */
+    public static final int NOT_DELETED = 0;
+
 }
