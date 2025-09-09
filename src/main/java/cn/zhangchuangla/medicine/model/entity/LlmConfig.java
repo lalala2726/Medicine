@@ -1,6 +1,7 @@
 package cn.zhangchuangla.medicine.model.entity;
 
 import com.baomidou.mybatisplus.annotation.IdType;
+import com.baomidou.mybatisplus.annotation.TableField;
 import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableName;
 import lombok.Data;
@@ -23,11 +24,13 @@ public class LlmConfig {
     /**
      * 模型提供商名称
      */
+    @TableField(value = "provider")
     private String provider;
 
     /**
      * 模型
      */
+    @TableField(value = "model")
     private String model;
 
     /**

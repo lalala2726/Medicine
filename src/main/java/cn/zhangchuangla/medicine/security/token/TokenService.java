@@ -30,8 +30,8 @@ import static cn.zhangchuangla.medicine.constants.SecurityConstants.CLAIM_KEY_SE
 
 /**
  * @author Chuang
- *         <p>
- *         created on 2025/8/28 14:19
+ * <p>
+ * created on 2025/8/28 14:19
  */
 @Service
 @RequiredArgsConstructor

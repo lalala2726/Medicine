@@ -56,7 +56,7 @@ public interface LlmConfigService extends IService<LlmConfig> {
      */
     boolean deleteLlmConfig(List<Long> ids);
 
-    
+
     /**
      * 获取所有启用的LLM配置
      * 用于大模型动态切换功能
@@ -73,10 +73,5 @@ public interface LlmConfigService extends IService<LlmConfig> {
      */
     LlmConfig getLlmConfigByProvider(String provider);
 
-    /**
-     * 刷新配置缓存
-     * 当配置发生变化时调用此方法清除缓存
-     */
-    void refreshConfigCache();
 
 }

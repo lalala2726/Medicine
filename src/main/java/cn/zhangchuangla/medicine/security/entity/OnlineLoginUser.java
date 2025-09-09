@@ -12,8 +12,8 @@ import java.util.Set;
  * 在线用户信息对象
  *
  * @author Chuang
- *         <p>
- *         created on 2025/2/27 10:31
+ * <p>
+ * created on 2025/2/27 10:31
  */
 @Data
 @NoArgsConstructor

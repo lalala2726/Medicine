@@ -19,7 +19,7 @@ public interface LLMConfigMapper extends BaseMapper<LlmConfig> {
      * LLM配置列表
      *
      * @param llmConfigPage 分页对象
-     * @param request  LLM配置列表查询请求参数
+     * @param request       LLM配置列表查询请求参数
      * @return LLM配置列表
      */
     Page<LlmConfig> listLlmConfig(Page<LlmConfig> llmConfigPage, @Param("request") LlmConfigListQueryRequest request);

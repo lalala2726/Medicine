@@ -13,23 +13,23 @@ import lombok.Data;
 @Data
 @Builder
 public class OpenAiChatOptions {
-    
+
     /**
      * 模型名称
      */
     private String model;
-    
-    
+
+
     /**
      * 顶层P值
      */
     private Double topP;
-    
+
     /**
      * 频率惩罚
      */
     private Double frequencyPenalty;
-    
+
     /**
      * 存在惩罚
      */

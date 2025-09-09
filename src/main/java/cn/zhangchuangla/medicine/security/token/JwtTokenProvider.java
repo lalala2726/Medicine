@@ -22,8 +22,8 @@ import static cn.zhangchuangla.medicine.enums.ResponseResultCode.ACCESS_TOKEN_IN
 
 /**
  * @author Chuang
- *         <p>
- *         created on 2025/8/28 14:19
+ * <p>
+ * created on 2025/8/28 14:19
  */
 @Slf4j
 @RequiredArgsConstructor
