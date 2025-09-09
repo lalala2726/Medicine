@@ -9,8 +9,9 @@ import cn.zhangchuangla.medicine.model.entity.LlmConfig;
 import cn.zhangchuangla.medicine.model.request.llm.LlmConfigAddRequest;
 import cn.zhangchuangla.medicine.model.request.llm.LlmConfigListQueryRequest;
 import cn.zhangchuangla.medicine.model.request.llm.LlmConfigUpdateRequest;
-import cn.zhangchuangla.medicine.model.vo.llmconfig.LlmConfigListVo;
-import cn.zhangchuangla.medicine.model.vo.llmconfig.LlmConfigVo;
+import cn.zhangchuangla.medicine.model.vo.llm.LLMOptions;
+import cn.zhangchuangla.medicine.model.vo.llm.LlmConfigListVo;
+import cn.zhangchuangla.medicine.model.vo.llm.LlmConfigVo;
 import cn.zhangchuangla.medicine.service.LlmConfigService;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import io.swagger.v3.oas.annotations.Operation;
@@ -74,6 +75,18 @@ public class LLMConfigController extends BaseController {
     public AjaxResult<Void> addLlmConfig(@RequestBody LlmConfigAddRequest request) {
         boolean result = llmConfigService.addLlmConfig(request);
         return toAjax(result);
+    }
+
+    /**
+     * 获取LLM配置选项
+     *
+     * @return LLM配置选项
+     */
+    @GetMapping("/options")
+    @Operation(summary = "获取LLM配置选项")
+    public AjaxResult<List<LLMOptions>> getLLMOptions() {
+        List<LLMOptions> llmOptions = llmConfigService.getLLMOptions();
+        return success(llmOptions);
     }
 
     /**

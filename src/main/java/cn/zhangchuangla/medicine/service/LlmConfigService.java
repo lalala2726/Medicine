@@ -4,6 +4,7 @@ import cn.zhangchuangla.medicine.model.entity.LlmConfig;
 import cn.zhangchuangla.medicine.model.request.llm.LlmConfigAddRequest;
 import cn.zhangchuangla.medicine.model.request.llm.LlmConfigListQueryRequest;
 import cn.zhangchuangla.medicine.model.request.llm.LlmConfigUpdateRequest;
+import cn.zhangchuangla.medicine.model.vo.llm.LLMOptions;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.IService;
 
@@ -73,5 +74,12 @@ public interface LlmConfigService extends IService<LlmConfig> {
      */
     LlmConfig getLlmConfigByProvider(String provider);
 
+
+    /**
+     * 获取所有LLM配置选项
+     *
+     * @return LLM配置选项列表
+     */
+    List<LLMOptions> getLLMOptions();
 
 }

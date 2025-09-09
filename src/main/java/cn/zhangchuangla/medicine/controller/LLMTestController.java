@@ -26,7 +26,7 @@ import java.util.Set;
 @Anonymous
 @RequestMapping("/llm")
 @RequiredArgsConstructor
-public class LLMController extends BaseController {
+public class LLMTestController extends BaseController {
 
     private final LlmService llmService;
     private final LlmModelFactory modelFactory;

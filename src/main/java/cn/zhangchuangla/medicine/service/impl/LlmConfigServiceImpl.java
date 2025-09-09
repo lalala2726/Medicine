@@ -7,7 +7,9 @@ import cn.zhangchuangla.medicine.model.entity.LlmConfig;
 import cn.zhangchuangla.medicine.model.request.llm.LlmConfigAddRequest;
 import cn.zhangchuangla.medicine.model.request.llm.LlmConfigListQueryRequest;
 import cn.zhangchuangla.medicine.model.request.llm.LlmConfigUpdateRequest;
+import cn.zhangchuangla.medicine.model.vo.llm.LLMOptions;
 import cn.zhangchuangla.medicine.service.LlmConfigService;
+import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.extension.conditions.query.LambdaQueryChainWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
@@ -15,8 +17,11 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.BeanUtils;
 import org.springframework.stereotype.Service;
 
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 /**
  * LLM配置服务实现类
@@ -77,6 +82,51 @@ public class LlmConfigServiceImpl extends ServiceImpl<LLMConfigMapper, LlmConfig
     @Override
     public LlmConfig getLlmConfigByProvider(String provider) {
         return getLlmConfigByProviderFromDatabase(provider);
+    }
+
+    /**
+     * 获取所有LLM配置选项
+     *
+     * @return LLM配置选项列表
+     */
+    @Override
+    public List<LLMOptions> getLLMOptions() {
+        LambdaQueryWrapper<LlmConfig> queryWrapper = new LambdaQueryWrapper<LlmConfig>()
+                .eq(LlmConfig::getStatus, ENABLED_STATUS);
+
+        List<LlmConfig> list = list(queryWrapper);
+
+        // 按provider分组，合并同一个provider下的所有模型
+        Map<String, List<String>> providerModelsMap = list.stream()
+                .collect(Collectors.groupingBy(
+                        LlmConfig::getProvider,
+                        Collectors.mapping(
+                                config -> {
+                                    String[] models = config.getModel().split(",");
+                                    return List.of(models);
+                                },
+                                Collectors.reducing(new ArrayList<>(), (list1, list2) -> {
+                                    List<String> merged = new ArrayList<>(list1);
+                                    merged.addAll(list2);
+                                    return merged;
+                                })
+                        )
+                ));
+
+        // 转换为LLMOptions列表
+        return providerModelsMap.entrySet().stream()
+                .map(entry -> {
+                    LLMOptions options = new LLMOptions();
+                    options.setProvider(entry.getKey());
+                    // 去重并排序模型列表
+                    List<String> uniqueModels = entry.getValue().stream()
+                            .distinct()
+                            .sorted()
+                            .collect(Collectors.toList());
+                    options.setModel(uniqueModels);
+                    return options;
+                })
+                .collect(Collectors.toList());
     }
 
 
