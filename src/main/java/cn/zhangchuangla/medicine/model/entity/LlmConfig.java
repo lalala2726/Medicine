@@ -46,21 +46,6 @@ public class LlmConfig {
     private Integer status;
 
     /**
-     * 最大Tokens
-     */
-    private Integer maxTokens;
-
-    /**
-     * 温度
-     */
-    private Double temperature;
-
-    /**
-     * 是否默认
-     */
-    private Integer isDefault;
-
-    /**
      * 创建时间
      */
     private Date createTime;

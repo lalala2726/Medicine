@@ -119,8 +119,6 @@ public class LlmService {
             configInfo.put("provider", config.getProvider());
             configInfo.put("model", config.getModel());
             configInfo.put("baseUrl", config.getBaseUrl());
-            configInfo.put("maxTokens", config.getMaxTokens());
-            configInfo.put("temperature", config.getTemperature());
             configInfo.put("enabled", config.getEnabled());
             result.put(key, configInfo);
         });

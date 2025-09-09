@@ -103,41 +103,6 @@ public class LLMConfigController extends BaseController {
     }
 
     /**
-     * 获取默认LLM配置
-     *
-     * @return 默认LLM配置
-     */
-    @GetMapping("/default")
-    @Operation(summary = "获取默认LLM配置")
-    public AjaxResult<LlmConfigVo> getDefaultLlmConfig() {
-        LlmConfig llmConfig = llmConfigService.getDefaultLlmConfig();
-        LlmConfigVo llmConfigVo = copyProperties(llmConfig, LlmConfigVo.class);
-        return success(llmConfigVo);
-    }
-
-    /**
-     * 刷新LLM配置缓存
-     * 当配置发生变化时调用此方法，使配置立即生效
-     *
-     * @return 刷新结果
-     */
-    @PostMapping("/refreshCache")
-    @Operation(summary = "刷新LLM配置缓存")
-    public AjaxResult<String> refreshCache() {
-        try {
-            // 刷新服务层缓存
-            llmConfigService.refreshConfigCache();
-
-            // 刷新模型工厂缓存
-            llmModelFactory.reloadConfigs();
-
-            return success("LLM配置缓存刷新成功");
-        } catch (Exception e) {
-            return error("刷新缓存失败：" + e.getMessage());
-        }
-    }
-
-    /**
      * 获取当前激活的模型提供商
      *
      * @return 当前提供商信息

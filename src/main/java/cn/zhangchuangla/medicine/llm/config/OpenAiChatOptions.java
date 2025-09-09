@@ -19,15 +19,6 @@ public class OpenAiChatOptions {
      */
     private String model;
     
-    /**
-     * 温度参数
-     */
-    private Double temperature;
-    
-    /**
-     * 最大令牌数
-     */
-    private Integer maxTokens;
     
     /**
      * 顶层P值

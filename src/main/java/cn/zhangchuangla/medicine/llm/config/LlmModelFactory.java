@@ -44,56 +44,9 @@ public class LlmModelFactory {
         this.chatModel = chatModel;
         this.llmConfigService = llmConfigService;
         // 从数据库加载配置
-        loadConfigsFromDatabase();
+        // todo 这边将配置信息放在Redis中
     }
 
-    /**
-     * 从数据库加载LLM配置
-     * 替代原来的硬编码配置，实现动态配置管理
-     */
-    private void loadConfigsFromDatabase() {
-        try {
-            log.info("开始从数据库加载LLM配置...");
-
-            // 获取所有启用的配置
-            java.util.List<LlmConfig> enabledConfigs = llmConfigService.getEnabledLlmConfigs();
-
-            if (enabledConfigs.isEmpty()) {
-                log.warn("数据库中没有找到启用的LLM配置，使用默认配置");
-                initializeDefaultConfigs();
-                return;
-            }
-
-            // 清空现有配置
-            configMap.clear();
-
-            // 转换数据库配置为内部配置格式
-            for (LlmConfig dbConfig : enabledConfigs) {
-                LlmProviderConfig providerConfig = convertToProviderConfig(dbConfig);
-                configMap.put(dbConfig.getProvider(), providerConfig);
-                log.info("已加载LLM配置: {} -> {}", dbConfig.getProvider(), dbConfig.getModel());
-            }
-
-            // 设置当前激活的提供商（优先使用默认配置，否则使用第一个可用配置）
-            LlmConfig defaultConfig = llmConfigService.getDefaultLlmConfig();
-            if (defaultConfig != null) {
-                this.currentProvider = defaultConfig.getProvider();
-                log.info("设置默认模型提供商: {}", currentProvider);
-            } else if (!enabledConfigs.isEmpty()) {
-                this.currentProvider = enabledConfigs.get(0).getProvider();
-                log.info("使用第一个可用模型提供商: {}", currentProvider);
-            } else {
-                this.currentProvider = "deepseek";
-                log.warn("未找到可用配置，使用默认提供商: {}", currentProvider);
-            }
-
-            log.info("成功加载 {} 个LLM配置", enabledConfigs.size());
-
-        } catch (Exception e) {
-            log.error("从数据库加载LLM配置失败，使用默认配置", e);
-            initializeDefaultConfigs();
-        }
-    }
 
     /**
      * 将数据库配置转换为内部配置格式
@@ -107,8 +60,6 @@ public class LlmModelFactory {
         providerConfig.setModel(dbConfig.getModel());
         providerConfig.setApiKey(dbConfig.getApiKey());
         providerConfig.setBaseUrl(dbConfig.getBaseUrl());
-        providerConfig.setMaxTokens(dbConfig.getMaxTokens() != null ? dbConfig.getMaxTokens() : 4000);
-        providerConfig.setTemperature(dbConfig.getTemperature() != null ? dbConfig.getTemperature() : 0.7);
         providerConfig.setEnabled(dbConfig.getStatus() != null && dbConfig.getStatus() == 1);
         return providerConfig;
     }
@@ -127,8 +78,6 @@ public class LlmModelFactory {
                 System.getenv("DEEPSEEK_API_KEY"),
                 "https://api.deepseek.com"
         );
-        deepseekConfig.setMaxTokens(4000);
-        deepseekConfig.setTemperature(0.7);
         configMap.put("deepseek", deepseekConfig);
 
         // 阿里云通义千问配置
@@ -138,8 +87,6 @@ public class LlmModelFactory {
                 System.getenv("OPENAI_API_KEY"),
                 "https://dashscope.aliyuncs.com/compatible-mode/v1"
         );
-        qwenConfig.setMaxTokens(4000);
-        qwenConfig.setTemperature(0.7);
         configMap.put("qwen", qwenConfig);
 
         // 设置默认提供商
@@ -263,17 +210,6 @@ public class LlmModelFactory {
         return new ConcurrentHashMap<>(configMap);
     }
 
-    /**
-     * 重新加载配置
-     * 当数据库配置发生变化时调用此方法刷新内存中的配置
-     */
-    public void reloadConfigs() {
-        log.info("开始重新加载LLM配置...");
-        loadConfigsFromDatabase();
-        // 清空ChatClient缓存，以便下次重新创建
-        chatClientMap.clear();
-        log.info("LLM配置重新加载完成");
-    }
 
     /**
      * 获取指定提供商的配置（直接从数据库查询）

@@ -56,13 +56,7 @@ public interface LlmConfigService extends IService<LlmConfig> {
      */
     boolean deleteLlmConfig(List<Long> ids);
 
-    /**
-     * 获取默认LLM配置
-     *
-     * @return 默认LLM配置
-     */
-    LlmConfig getDefaultLlmConfig();
-
+    
     /**
      * 获取所有启用的LLM配置
      * 用于大模型动态切换功能

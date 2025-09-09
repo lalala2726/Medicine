@@ -38,21 +38,11 @@ public class LlmConfigServiceImpl extends ServiceImpl<LLMConfigMapper, LlmConfig
      */
     private static final int ENABLED_STATUS = 0;
 
-    /**
-     * 默认
-     */
-    private static final int DEFAULT = 1;
-
-    /**
-     * 非默认
-     */
-    private static final int NOT_DEFAULT = 0;
 
 
     /**
      * 缓存键前缀
      */
-    private static final String LLM_DEFAULT_CONFIG_KEY = "llm:config:default";
     private static final String LLM_ENABLED_CONFIGS_KEY = "llm:config:enabled";
     private static final String LLM_CONFIG_PROVIDER_PREFIX = "llm:config:provider:";
     /**
@@ -84,28 +74,7 @@ public class LlmConfigServiceImpl extends ServiceImpl<LLMConfigMapper, LlmConfig
     }
 
 
-    /**
-     * 获取默认LLM配置
-     * 带缓存机制，提高查询性能
-     *
-     * @return 默认LLM配置
-     */
-    @Override
-    public LlmConfig getDefaultLlmConfig() {
-        try {
-            // 从Redis缓存获取
-            LlmConfig defaultConfig = redisCache.getCacheObject(LLM_DEFAULT_CONFIG_KEY);
-            if (defaultConfig == null) {
-                refreshConfigCache();
-                defaultConfig = redisCache.getCacheObject(LLM_DEFAULT_CONFIG_KEY);
-            }
-            return defaultConfig;
-        } catch (Exception e) {
-            log.warn("Redis缓存获取失败，直接查询数据库: {}", e.getMessage());
-            return getDefaultLlmConfigFromDatabase();
-        }
-    }
-
+  
     /**
      * 获取所有启用的LLM配置
      * 用于大模型动态切换功能，带缓存机制
@@ -152,20 +121,6 @@ public class LlmConfigServiceImpl extends ServiceImpl<LLMConfigMapper, LlmConfig
         }
     }
 
-    /**
-     * 从数据库获取默认配置（Redis不可用时的备用方案）
-     */
-    private LlmConfig getDefaultLlmConfigFromDatabase() {
-        try {
-            return lambdaQuery()
-                    .eq(LlmConfig::getStatus, ENABLED_STATUS)
-                    .orderByDesc(LlmConfig::getCreateTime)
-                    .one();
-        } catch (Exception e) {
-            log.error("从数据库获取默认配置失败", e);
-            return null;
-        }
-    }
 
     /**
      * 从数据库获取所有启用的配置（Redis不可用时的备用方案）
@@ -214,7 +169,6 @@ public class LlmConfigServiceImpl extends ServiceImpl<LLMConfigMapper, LlmConfig
             List<LlmConfig> enabledConfigs = queryWrapper.list();
 
             // 清除旧的缓存
-            redisCache.deleteObject(LLM_DEFAULT_CONFIG_KEY);
             redisCache.deleteObject(LLM_ENABLED_CONFIGS_KEY);
 
             // 删除所有提供商相关的缓存
@@ -224,21 +178,10 @@ public class LlmConfigServiceImpl extends ServiceImpl<LLMConfigMapper, LlmConfig
             }
 
             // 重新填充缓存
-            LlmConfig defaultConfig = null;
             for (LlmConfig config : enabledConfigs) {
                 // 缓存每个提供商的配置
                 String providerKey = LLM_CONFIG_PROVIDER_PREFIX + config.getProvider();
                 redisCache.setCacheObject(providerKey, config, CACHE_EXPIRE_TIME, TimeUnit.SECONDS);
-
-                // 检查是否为默认配置
-                if (config.getIsDefault() != null && config.getIsDefault() == DEFAULT) {
-                    defaultConfig = config;
-                }
-            }
-
-            // 缓存默认配置
-            if (defaultConfig != null) {
-                redisCache.setCacheObject(LLM_DEFAULT_CONFIG_KEY, defaultConfig, CACHE_EXPIRE_TIME, TimeUnit.SECONDS);
             }
 
             // 缓存所有启用的配置列表
@@ -313,15 +256,6 @@ public class LlmConfigServiceImpl extends ServiceImpl<LLMConfigMapper, LlmConfig
             llmConfig.setModel(String.join(",", request.getModel()));
         }
         
-        // 检查是否要设置为默认配置
-        if (request.getIsDefault() != null && request.getIsDefault() == DEFAULT) {
-            // 如果设置为默认，先取消其他所有配置的默认状态
-            lambdaUpdate()
-                    .eq(LlmConfig::getIsDefault, DEFAULT)
-                    .set(LlmConfig::getIsDefault, NOT_DEFAULT)
-                    .set(LlmConfig::getUpdateTime, new Date())
-                    .update();
-        }
         
         // 设置创建信息
         llmConfig.setCreateBy(getUsername());
@@ -338,16 +272,6 @@ public class LlmConfigServiceImpl extends ServiceImpl<LLMConfigMapper, LlmConfig
         LlmConfig existingConfig = getById(request.getId());
         Assert.notNull(existingConfig, "配置不存在");
 
-        // 检查是否要设置为默认配置
-        if (request.getIsDefault() != null && request.getIsDefault() == DEFAULT) {
-            // 如果设置为默认，先取消其他所有配置的默认状态
-            lambdaUpdate()
-                    .eq(LlmConfig::getIsDefault, DEFAULT)
-                    .ne(LlmConfig::getId, request.getId())
-                    .set(LlmConfig::getIsDefault, NOT_DEFAULT)
-                    .set(LlmConfig::getUpdateTime, new Date())
-                    .update();
-        }
 
         BeanUtils.copyProperties(request, existingConfig);
         // 将List<String>转换为String存储

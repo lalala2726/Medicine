@@ -35,12 +35,6 @@ public class LlmConfigListVo {
     private Integer status;
 
     /**
-     * 是否默认
-     */
-    @Schema(description = "是否默认", type = "int", example = "0")
-    private Integer isDefault;
-
-    /**
      * 创建时间
      */
     @Schema(description = "创建时间", type = "string", format = "date-time", example = "2025-01-01T00:00:00")

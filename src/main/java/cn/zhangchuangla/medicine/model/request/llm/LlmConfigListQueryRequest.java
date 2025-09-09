@@ -40,12 +40,6 @@ public class LlmConfigListQueryRequest extends BasePageRequest {
     private Integer status;
 
     /**
-     * 是否默认
-     */
-    @Schema(description = "是否默认", type = "int", example = "1")
-    private Integer isDefault;
-
-    /**
      * 创建人
      */
     @Schema(description = "创建人", type = "string", example = "admin")

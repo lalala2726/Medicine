@@ -31,15 +31,6 @@ public class LlmProviderConfig {
      */
     private String baseUrl;
     
-    /**
-     * 最大token数
-     */
-    private Integer maxTokens = 4000;
-    
-    /**
-     * 温度参数
-     */
-    private Double temperature = 0.7;
     
     /**
      * 是否启用

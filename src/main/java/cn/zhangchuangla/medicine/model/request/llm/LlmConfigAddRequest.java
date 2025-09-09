@@ -42,22 +42,4 @@ public class LlmConfigAddRequest {
     @Schema(description = "状态", type = "int", example = "1")
     private Integer status;
 
-    /**
-     * 最大Tokens
-     */
-    @Schema(description = "最大Tokens", type = "int", example = "4096")
-    private Integer maxTokens;
-
-    /**
-     * 温度
-     */
-    @Schema(description = "温度", type = "number", example = "0.7")
-    private Double temperature;
-
-    /**
-     * 是否默认
-     */
-    @Schema(description = "是否默认", type = "int", example = "0")
-    private Integer isDefault;
-
 }
