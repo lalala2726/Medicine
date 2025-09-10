@@ -2,6 +2,7 @@ package cn.zhangchuangla.medicine.controller;
 
 import cn.zhangchuangla.medicine.annotation.Anonymous;
 import cn.zhangchuangla.medicine.common.base.AjaxResult;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
@@ -14,6 +15,7 @@ import org.springframework.web.bind.annotation.RestController;
 @RequestMapping("/")
 @RestController
 @Anonymous
+@Tag(name = "首页", description = "首页")
 public class IndexController {
 
 

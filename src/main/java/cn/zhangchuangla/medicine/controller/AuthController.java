@@ -27,6 +27,7 @@ import org.springframework.web.bind.annotation.*;
 @RestController
 @Tag(name = "认证接口", description = "注册、登录、刷新、当前用户")
 @RequestMapping("/auth")
+@Tag(name = "认证接口", description = "用户注册、登录、刷新令牌,获取个人信息")
 public class AuthController extends BaseController {
 
     private final AuthService authService;

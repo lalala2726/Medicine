@@ -1,10 +1,8 @@
 package cn.zhangchuangla.medicine.controller;
 
-import cn.zhangchuangla.medicine.annotation.Anonymous;
 import cn.zhangchuangla.medicine.common.base.AjaxResult;
 import cn.zhangchuangla.medicine.common.base.BaseController;
 import cn.zhangchuangla.medicine.common.base.TableDataResult;
-import cn.zhangchuangla.medicine.llm.config.LlmModelFactory;
 import cn.zhangchuangla.medicine.model.entity.LlmConfig;
 import cn.zhangchuangla.medicine.model.request.llm.LlmConfigAddRequest;
 import cn.zhangchuangla.medicine.model.request.llm.LlmConfigListQueryRequest;
@@ -15,6 +13,7 @@ import cn.zhangchuangla.medicine.model.vo.llm.LlmConfigVo;
 import cn.zhangchuangla.medicine.service.LlmConfigService;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
 
@@ -30,11 +29,10 @@ import java.util.List;
 @RestController
 @RequestMapping("/llm/config")
 @RequiredArgsConstructor
-@Anonymous
+@Tag(name = "大模型配置接口", description = "提供大模型的管理")
 public class LLMConfigController extends BaseController {
 
     private final LlmConfigService llmConfigService;
-    private final LlmModelFactory llmModelFactory;
 
     /**
      * 获取LLM配置列表
@@ -115,15 +113,5 @@ public class LLMConfigController extends BaseController {
         return toAjax(result);
     }
 
-    /**
-     * 获取当前激活的模型提供商
-     *
-     * @return 当前提供商信息
-     */
-    @GetMapping("/currentProvider")
-    @Operation(summary = "获取当前激活的模型提供商")
-    public AjaxResult<String> getCurrentProvider() {
-        return success(llmModelFactory.getCurrentProvider());
-    }
 
 }

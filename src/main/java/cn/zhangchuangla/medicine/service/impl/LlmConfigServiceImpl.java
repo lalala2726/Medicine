@@ -81,7 +81,11 @@ public class LlmConfigServiceImpl extends ServiceImpl<LLMConfigMapper, LlmConfig
      */
     @Override
     public LlmConfig getLlmConfigByProvider(String provider) {
-        return getLlmConfigByProviderFromDatabase(provider);
+        return lambdaQuery()
+                .eq(LlmConfig::getStatus, ENABLED_STATUS)
+                .eq(LlmConfig::getProvider, provider)
+                .orderByDesc(LlmConfig::getCreateTime)
+                .one();
     }
 
     /**
@@ -142,23 +146,6 @@ public class LlmConfigServiceImpl extends ServiceImpl<LLMConfigMapper, LlmConfig
         } catch (Exception e) {
             log.error("从数据库获取启用配置失败", e);
             return new java.util.ArrayList<>();
-        }
-    }
-
-    /**
-     * 从数据库根据提供商获取配置
-     */
-    private LlmConfig getLlmConfigByProviderFromDatabase(String provider) {
-        try {
-            return lambdaQuery()
-                    .eq(LlmConfig::getStatus, 1)
-                    .eq(LlmConfig::getIsDelete, 0)
-                    .eq(LlmConfig::getProvider, provider)
-                    .orderByDesc(LlmConfig::getCreateTime)
-                    .one();
-        } catch (Exception e) {
-            log.error("从数据库获取提供商配置失败: {}", provider, e);
-            return null;
         }
     }
 
