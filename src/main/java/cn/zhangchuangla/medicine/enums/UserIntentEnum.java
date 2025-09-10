@@ -1,4 +1,4 @@
-package cn.zhangchuangla.medicine.llm.workflow.enums;
+package cn.zhangchuangla.medicine.enums;
 
 /**
  * 用户意图枚举

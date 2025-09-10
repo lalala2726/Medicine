@@ -1,9 +1,9 @@
 package cn.zhangchuangla.medicine.llm.workflow.node;
 
 import cn.zhangchuangla.medicine.constants.PromptConstant;
+import cn.zhangchuangla.medicine.enums.MedicineStateKeyEnum;
+import cn.zhangchuangla.medicine.enums.UserIntentEnum;
 import cn.zhangchuangla.medicine.llm.service.OpenAiClientFactory;
-import cn.zhangchuangla.medicine.llm.workflow.enums.MedicineStateKeyEnum;
-import cn.zhangchuangla.medicine.llm.workflow.enums.UserIntentEnum;
 import com.alibaba.cloud.ai.graph.OverAllState;
 import com.alibaba.cloud.ai.graph.action.NodeAction;
 import lombok.RequiredArgsConstructor;

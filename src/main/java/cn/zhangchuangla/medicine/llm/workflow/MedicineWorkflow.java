@@ -1,8 +1,8 @@
 package cn.zhangchuangla.medicine.llm.workflow;
 
-import cn.zhangchuangla.medicine.llm.workflow.enums.MedicineNodeEnum;
-import cn.zhangchuangla.medicine.llm.workflow.enums.MedicineStateKeyEnum;
-import cn.zhangchuangla.medicine.llm.workflow.enums.UserIntentEnum;
+import cn.zhangchuangla.medicine.enums.MedicineNodeEnum;
+import cn.zhangchuangla.medicine.enums.MedicineStateKeyEnum;
+import cn.zhangchuangla.medicine.enums.UserIntentEnum;
 import cn.zhangchuangla.medicine.llm.workflow.node.ConsultNode;
 import cn.zhangchuangla.medicine.llm.workflow.node.IntentNode;
 import cn.zhangchuangla.medicine.llm.workflow.node.MedicineNode;
