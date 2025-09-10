@@ -1,6 +1,8 @@
 package cn.zhangchuangla.medicine.controller;
 
 import cn.zhangchuangla.medicine.annotation.Anonymous;
+import cn.zhangchuangla.medicine.common.base.AjaxResult;
+import cn.zhangchuangla.medicine.common.base.BaseController;
 import com.alibaba.cloud.ai.graph.CompiledGraph;
 import com.alibaba.cloud.ai.graph.StateGraph;
 import com.alibaba.cloud.ai.graph.exception.GraphRunnerException;
@@ -14,7 +16,6 @@ import org.springframework.web.bind.annotation.RestController;
 
 import java.util.Map;
 
-
 /**
  * @author Chuang
  * <p>
@@ -24,7 +25,7 @@ import java.util.Map;
 @Tag(name = "LLM聊天接口", description = "LLM聊天接口")
 @Anonymous
 @RestController
-public class LLMChatController {
+public class LLMChatController extends BaseController {
 
     private final CompiledGraph compiledGraph;
 
@@ -33,12 +34,13 @@ public class LLMChatController {
         this.compiledGraph = writingAssistantGraph.compile();
     }
 
-
     @GetMapping("/test")
-    public Map<String, Object> chat(@RequestParam(value = "message", defaultValue = "您好!") String message) throws GraphRunnerException {
+    public AjaxResult<Map<String, Object>> chat(@RequestParam(value = "message", defaultValue = "您好!") String message)
+            throws GraphRunnerException {
         var resultFuture = compiledGraph.invoke(Map.of("userMessage", message));
         var result = resultFuture.get();
-        return result.data();
+        Map<String, Object> data = result.data();
+        return success(data);
 
     }
 }

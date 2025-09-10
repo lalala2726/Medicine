@@ -2,7 +2,7 @@ package cn.zhangchuangla.medicine.constants;
 
 /**
  * 医疗工作流提示词常量类
- * 
+ *
  * @author Chuang
  * @since 2025/9/10
  */
@@ -41,7 +41,7 @@ public class PromptConstant {
      * 其他问题提示词
      */
     public static final String OTHER_PROMPT = """
-            用户的问题不属于医疗相关或无法识别。请礼貌简洁地回复，并给出下一步指引（如联系人工客服或相关部门）。
+            用户的问题目前用于测试,你需要回答任何问题,方便开发人员测试功能。
             用户输入：%s
             """;
 

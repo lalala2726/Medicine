@@ -37,11 +37,15 @@ public class ModelConfigController extends BaseController {
         return success();
     }
 
+    /**
+     * 获取当前模型配置
+     *
+     * @return 模型配置
+     */
     @GetMapping
     @Operation(summary = "获取当前模型配置")
     public AjaxResult<ModelConfig> getCurrentModelConfig() {
         return success(modelConfigService.getChatConfig());
     }
-
 
 }
