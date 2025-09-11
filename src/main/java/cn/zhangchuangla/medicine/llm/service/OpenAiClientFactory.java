@@ -99,17 +99,18 @@ public class OpenAiClientFactory {
                 && Objects.equals(a.getMaxTokens(), b.getMaxTokens());
     }
 
-    private ChatClient buildChatClient(ModelConfig cfg) {
-        log.info("构建 OpenAI ChatClient, model={}, baseUrl={}", cfg.getModel(), cfg.getBaseUrl());
+    private ChatClient buildChatClient(ModelConfig config) {
+        log.info("构建 OpenAI ChatClient, model={}, baseUrl={}", config.getModel(), config.getBaseUrl());
         OpenAiApi api = OpenAiApi.builder()
-                .baseUrl(cfg.getBaseUrl())
-                .apiKey(cfg.getApiKey())
+                .baseUrl(config.getBaseUrl())
+                .apiKey(config.getApiKey())
                 .build();
         OpenAiChatModel model = OpenAiChatModel.builder()
                 .openAiApi(api)
                 .defaultOptions(OpenAiChatOptions.builder()
-                        .model(cfg.getModel())
-                        .temperature(cfg.getTemperature())
+                        .model(config.getModel())
+                        .maxTokens(config.getMaxTokens())
+                        .temperature(config.getTemperature())
                         .build())
                 .build();
         return ChatClient.builder(model).build();

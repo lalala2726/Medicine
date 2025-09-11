@@ -158,7 +158,6 @@ public class LLMConfigController extends BaseController {
     @PutMapping("/chat")
     @Operation(summary = "更新模型配置")
     public AjaxResult<Void> updateChatModelConfig(@Validated @RequestBody ModelConfigDto modelConfigDto) {
-        openAiClientFactory.chatClient();
         modelConfigService.updateChatConfig(modelConfigDto);
         return success();
     }

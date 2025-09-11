@@ -13,6 +13,8 @@ import org.springframework.beans.BeanUtils;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 
+import java.util.Arrays;
+
 /**
  * @author Chuang
  * <p>
@@ -43,10 +45,22 @@ public class ModelConfigService {
 
         LlmConfig llmConfigByProvider = llmConfigService.getLlmConfigByProvider(modelConfig.getProvider());
         Assert.notNull(llmConfigByProvider, "模型厂商不存在!请重新选择!");
-        if (!llmConfigByProvider.getModel().contains(modelConfig.getModel())) {
+
+        // 验证模型是否存在于该提供商的模型列表中
+        String[] availableModels = llmConfigByProvider.getModel().split(",");
+        boolean modelExists = Arrays.stream(availableModels)
+                .map(String::trim)
+                .anyMatch(model -> model.equals(modelConfig.getModel()));
+
+        if (!modelExists) {
             throw new ServiceException("请选择正确的模型名称");
         }
+
+        // 复制数据库配置，但保留前端传递的模型
+        String selectedModel = modelConfig.getModel();
         BeanUtils.copyProperties(llmConfigByProvider, modelConfig);
+        modelConfig.setModel(selectedModel);
+
         log.info("更新模型配置成功:{}", modelConfig);
         redisCache.setCacheObject(CHAT_CONFIG_KEY, modelConfig);
         // 发布配置更新事件，通知使用方刷新本地缓存/客户端
