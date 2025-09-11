@@ -3,7 +3,11 @@ package cn.zhangchuangla.medicine.controller;
 import cn.zhangchuangla.medicine.common.base.AjaxResult;
 import cn.zhangchuangla.medicine.common.base.BaseController;
 import cn.zhangchuangla.medicine.common.base.TableDataResult;
+import cn.zhangchuangla.medicine.common.utils.BeanCotyUtils;
+import cn.zhangchuangla.medicine.llm.service.ModelConfigService;
+import cn.zhangchuangla.medicine.model.dto.ModelConfigDto;
 import cn.zhangchuangla.medicine.model.entity.LlmConfig;
+import cn.zhangchuangla.medicine.model.entity.ModelConfig;
 import cn.zhangchuangla.medicine.model.request.llm.LlmConfigAddRequest;
 import cn.zhangchuangla.medicine.model.request.llm.LlmConfigListQueryRequest;
 import cn.zhangchuangla.medicine.model.request.llm.LlmConfigUpdateRequest;
@@ -15,6 +19,7 @@ import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -33,6 +38,7 @@ import java.util.List;
 public class LLMConfigController extends BaseController {
 
     private final LlmConfigService llmConfigService;
+    private final ModelConfigService modelConfigService;
 
     /**
      * 获取LLM配置列表
@@ -113,5 +119,30 @@ public class LLMConfigController extends BaseController {
         return toAjax(result);
     }
 
+    /**
+     * 更新模型配置
+     *
+     * @param modelConfigDto 模型配置
+     * @return 响应结果
+     */
+    @PutMapping("/chat")
+    @Operation(summary = "更新模型配置")
+    public AjaxResult<Void> updateChatModelConfig(@Validated @RequestBody ModelConfigDto modelConfigDto) {
+        modelConfigService.updateChatConfig(modelConfigDto);
+        return success();
+    }
+
+    /**
+     * 获取当前模型配置
+     *
+     * @return 模型配置
+     */
+    @GetMapping("/chat")
+    @Operation(summary = "获取当前模型配置")
+    public AjaxResult<ModelConfigDto> getCurrentChatModelConfig() {
+        ModelConfig chatConfig = modelConfigService.getChatConfig();
+        ModelConfigDto modelConfigDto = BeanCotyUtils.copyProperties(chatConfig, ModelConfigDto.class);
+        return success(modelConfigDto);
+    }
 
 }
