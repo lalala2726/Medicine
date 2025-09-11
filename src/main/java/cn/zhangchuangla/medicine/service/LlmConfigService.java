@@ -1,5 +1,6 @@
 package cn.zhangchuangla.medicine.service;
 
+import cn.zhangchuangla.medicine.common.base.Option;
 import cn.zhangchuangla.medicine.model.entity.LlmConfig;
 import cn.zhangchuangla.medicine.model.request.llm.LlmConfigAddRequest;
 import cn.zhangchuangla.medicine.model.request.llm.LlmConfigListQueryRequest;
@@ -82,4 +83,18 @@ public interface LlmConfigService extends IService<LlmConfig> {
      */
     List<LLMOptions> getLLMOptions();
 
+    /**
+     * 获取所有LLM提供商
+     *
+     * @return LLM提供商列表
+     */
+    List<Option<String>> getLLMProvider();
+
+    /**
+     * 获取所有LLM模型
+     *
+     * @param provider 提供商名称
+     * @return LLM模型列表
+     */
+    List<Option<String>> getLLMModel(String provider);
 }

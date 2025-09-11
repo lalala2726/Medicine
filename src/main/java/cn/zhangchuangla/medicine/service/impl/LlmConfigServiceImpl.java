@@ -1,6 +1,7 @@
 package cn.zhangchuangla.medicine.service.impl;
 
 import cn.zhangchuangla.medicine.common.base.BaseService;
+import cn.zhangchuangla.medicine.common.base.Option;
 import cn.zhangchuangla.medicine.common.utils.Assert;
 import cn.zhangchuangla.medicine.mapper.LLMConfigMapper;
 import cn.zhangchuangla.medicine.model.entity.LlmConfig;
@@ -17,10 +18,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.BeanUtils;
 import org.springframework.stereotype.Service;
 
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.stream.Collectors;
 
 /**
@@ -94,6 +92,7 @@ public class LlmConfigServiceImpl extends ServiceImpl<LLMConfigMapper, LlmConfig
      * @return LLM配置选项列表
      */
     @Override
+    @Deprecated
     public List<LLMOptions> getLLMOptions() {
         LambdaQueryWrapper<LlmConfig> queryWrapper = new LambdaQueryWrapper<LlmConfig>()
                 .eq(LlmConfig::getStatus, ENABLED_STATUS);
@@ -131,6 +130,63 @@ public class LlmConfigServiceImpl extends ServiceImpl<LLMConfigMapper, LlmConfig
                     return options;
                 })
                 .collect(Collectors.toList());
+    }
+
+    /**
+     * 获取LLM提供商选项
+     *
+     * @return LLM提供商选项列表
+     */
+    @Override
+    public List<Option<String>> getLLMProvider() {
+        try {
+            List<LlmConfig> configs = lambdaQuery()
+                    .eq(LlmConfig::getStatus, ENABLED_STATUS)
+                    .eq(LlmConfig::getIsDelete, 0)
+                    .select(LlmConfig::getProvider)
+                    .list();
+
+            return configs.stream()
+                    .map(config -> new Option<>(config.getProvider(), config.getProvider()))
+                    .distinct()
+                    .collect(Collectors.toList());
+        } catch (Exception e) {
+            log.error("获取LLM提供商列表失败", e);
+            return List.of();
+        }
+    }
+
+    /**
+     * 获取LLM模型选项
+     *
+     * @param provider 提供商名称
+     * @return LLM模型选项列表
+     */
+    @Override
+    public List<Option<String>> getLLMModel(String provider) {
+        if (provider == null || provider.trim().isEmpty()) {
+            return List.of();
+        }
+
+        try {
+            List<LlmConfig> configs = lambdaQuery()
+                    .eq(LlmConfig::getStatus, ENABLED_STATUS)
+                    .eq(LlmConfig::getIsDelete, 0)
+                    .eq(LlmConfig::getProvider, provider)
+                    .select(LlmConfig::getModel)
+                    .list();
+
+            return configs.stream()
+                    .flatMap(config -> Arrays.stream(config.getModel().split(",")))
+                    .map(String::trim)
+                    .filter(model -> !model.isEmpty())
+                    .map(model -> new Option<>(model, model))
+                    .distinct()
+                    .collect(Collectors.toList());
+        } catch (Exception e) {
+            log.error("获取LLM模型列表失败，provider: {}", provider, e);
+            return List.of();
+        }
     }
 
 

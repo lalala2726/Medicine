@@ -2,7 +2,9 @@ package cn.zhangchuangla.medicine.controller;
 
 import cn.zhangchuangla.medicine.common.base.AjaxResult;
 import cn.zhangchuangla.medicine.common.base.BaseController;
+import cn.zhangchuangla.medicine.common.base.Option;
 import cn.zhangchuangla.medicine.common.base.TableDataResult;
+import cn.zhangchuangla.medicine.common.utils.Assert;
 import cn.zhangchuangla.medicine.common.utils.BeanCotyUtils;
 import cn.zhangchuangla.medicine.llm.service.ModelConfigService;
 import cn.zhangchuangla.medicine.llm.service.OpenAiClientFactory;
@@ -93,6 +95,32 @@ public class LLMConfigController extends BaseController {
     public AjaxResult<List<LLMOptions>> getLLMOptions() {
         List<LLMOptions> llmOptions = llmConfigService.getLLMOptions();
         return success(llmOptions);
+    }
+
+    /**
+     * 获取LLM提供商选项
+     *
+     * @return LLM提供商选项
+     */
+    @GetMapping("/option/provider")
+    @Operation(summary = "获取LLM提供商选项")
+    public AjaxResult<List<Option<String>>> getLLMProvider() {
+        List<Option<String>> options = llmConfigService.getLLMProvider();
+        return success(options);
+    }
+
+    /**
+     * 获取LLM模型选项
+     *
+     * @param provider LLM提供商
+     * @return LLM模型选项
+     */
+    @GetMapping("/option/model")
+    @Operation(summary = "获取LLM模型选项")
+    public AjaxResult<List<Option<String>>> getLLMModel(@RequestParam("provider") String provider) {
+        Assert.hasText(provider, "LLM提供商不能为空!");
+        List<Option<String>> options = llmConfigService.getLLMModel(provider);
+        return success(options);
     }
 
     /**
