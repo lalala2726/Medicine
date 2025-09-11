@@ -52,6 +52,18 @@ public class OpenAiClientFactory {
     }
 
     /**
+     * 清空缓存的客户端和配置信息
+     * 用于后端更改模型配置后强制获取最新的客户端
+     */
+    public void clearCache() {
+        synchronized (this) {
+            cachedChatClient.set(null);
+            cachedModelConfig.set(null);
+            log.info("OpenAI ChatClient 缓存已清空");
+        }
+    }
+
+    /**
      * 监听模型配置变更事件，刷新客户端
      */
     @EventListener

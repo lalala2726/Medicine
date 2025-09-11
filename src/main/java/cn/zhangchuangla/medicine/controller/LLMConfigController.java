@@ -5,6 +5,7 @@ import cn.zhangchuangla.medicine.common.base.BaseController;
 import cn.zhangchuangla.medicine.common.base.TableDataResult;
 import cn.zhangchuangla.medicine.common.utils.BeanCotyUtils;
 import cn.zhangchuangla.medicine.llm.service.ModelConfigService;
+import cn.zhangchuangla.medicine.llm.service.OpenAiClientFactory;
 import cn.zhangchuangla.medicine.model.dto.ModelConfigDto;
 import cn.zhangchuangla.medicine.model.entity.LlmConfig;
 import cn.zhangchuangla.medicine.model.entity.ModelConfig;
@@ -39,6 +40,7 @@ public class LLMConfigController extends BaseController {
 
     private final LlmConfigService llmConfigService;
     private final ModelConfigService modelConfigService;
+    private final OpenAiClientFactory openAiClientFactory;
 
     /**
      * 获取LLM配置列表
@@ -128,6 +130,7 @@ public class LLMConfigController extends BaseController {
     @PutMapping("/chat")
     @Operation(summary = "更新模型配置")
     public AjaxResult<Void> updateChatModelConfig(@Validated @RequestBody ModelConfigDto modelConfigDto) {
+        openAiClientFactory.chatClient();
         modelConfigService.updateChatConfig(modelConfigDto);
         return success();
     }

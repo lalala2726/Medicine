@@ -5,7 +5,6 @@ package cn.zhangchuangla.medicine.enums;
  *
  * @author Chuang
  * @since 2025/9/10
- *
  */
 public enum MedicineNodeEnum {
 

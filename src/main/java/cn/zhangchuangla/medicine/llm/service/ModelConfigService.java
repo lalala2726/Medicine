@@ -31,6 +31,7 @@ public class ModelConfigService {
 
     private final ApplicationEventPublisher eventPublisher;
 
+
     /**
      * 更新聊天配置
      */
