@@ -1,8 +1,12 @@
 package cn.zhangchuangla.medicine.model.vo.chat;
 
 import io.swagger.v3.oas.annotations.media.Schema;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Data;
+import lombok.NoArgsConstructor;
 
+import java.io.Serial;
 import java.io.Serializable;
 
 /**
@@ -13,9 +17,25 @@ import java.io.Serializable;
  */
 @Data
 @Schema(description = "流式聊天响应块")
+@AllArgsConstructor
+@NoArgsConstructor
+@Builder
 public class StreamChatResponse implements Serializable {
 
+    @Serial
     private static final long serialVersionUID = 1L;
+
+    /**
+     * 会话UUID
+     */
+    @Schema(description = "会话UUID")
+    private String uuid;
+
+    /**
+     * 消息UUID（仅在结束包返回）
+     */
+    @Schema(description = "消息UUID（完成时返回）")
+    private String messageUuid;
 
     /**
      * 响应ID
@@ -35,84 +55,4 @@ public class StreamChatResponse implements Serializable {
     @Schema(description = "是否完成响应", example = "false")
     private Boolean finished;
 
-    /**
-     * 提供商名称
-     */
-    @Schema(description = "使用的提供商", example = "OpenAI")
-    private String provider;
-
-    /**
-     * 模型名称
-     */
-    @Schema(description = "使用的模型", example = "gpt-4")
-    private String model;
-
-    /**
-     * 使用Token数
-     */
-    @Schema(description = "消耗的Token数量", example = "150")
-    private Integer totalTokens;
-
-    /**
-     * 错误信息
-     */
-    @Schema(description = "错误信息", example = "")
-    private String error;
-
-    /**
-     * 创建响应构建器
-     */
-    public static Builder builder() {
-        return new Builder();
-    }
-
-    /**
-     * 响应构建器
-     */
-    public static class Builder {
-        private StreamChatResponse response;
-
-        public Builder() {
-            this.response = new StreamChatResponse();
-        }
-
-        public Builder responseId(String responseId) {
-            response.setResponseId(responseId);
-            return this;
-        }
-
-        public Builder content(String content) {
-            response.setContent(content);
-            return this;
-        }
-
-        public Builder finished(Boolean finished) {
-            response.setFinished(finished);
-            return this;
-        }
-
-        public Builder provider(String provider) {
-            response.setProvider(provider);
-            return this;
-        }
-
-        public Builder model(String model) {
-            response.setModel(model);
-            return this;
-        }
-
-        public Builder totalTokens(Integer totalTokens) {
-            response.setTotalTokens(totalTokens);
-            return this;
-        }
-
-        public Builder error(String error) {
-            response.setError(error);
-            return this;
-        }
-
-        public StreamChatResponse build() {
-            return response;
-        }
-    }
 }

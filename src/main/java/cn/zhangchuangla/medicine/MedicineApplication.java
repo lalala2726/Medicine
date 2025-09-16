@@ -1,9 +1,13 @@
 package cn.zhangchuangla.medicine;
 
+import org.mybatis.spring.annotation.MapperScan;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.transaction.annotation.EnableTransactionManagement;
 
 @SpringBootApplication
+@MapperScan("cn.zhangchuangla.medicine.mapper")
+@EnableTransactionManagement
 public class MedicineApplication {
 
     public static void main(String[] args) {

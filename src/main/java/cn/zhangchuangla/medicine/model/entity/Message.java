@@ -3,38 +3,62 @@ package cn.zhangchuangla.medicine.model.entity;
 import com.baomidou.mybatisplus.annotation.IdType;
 import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableName;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
 import lombok.Data;
-import lombok.NoArgsConstructor;
 
 import java.util.Date;
 
 /**
- * 会话实体类
+ * 会话消息表
  */
-@TableName(value = "conversation")
+@TableName(value = "message")
 @Data
-@AllArgsConstructor
-@NoArgsConstructor
-@Builder
-public class Conversation {
+public class Message {
 
     /**
-     * 会话ID
+     * 消息ID
      */
     @TableId(type = IdType.AUTO)
     private Long id;
 
     /**
-     * 会话UUID
+     * 消息UUID
      */
     private String uuid;
 
     /**
-     * 用户ID
+     * 会话ID
      */
-    private Long userId;
+    private Long conversationId;
+
+    /**
+     * 角色类型
+     */
+    private Object role;
+
+    /**
+     * 消息内容
+     */
+    private String content;
+
+    /**
+     * 输入token数
+     */
+    private Integer tokensIn;
+
+    /**
+     * 输出token数
+     */
+    private Integer tokensOut;
+
+    /**
+     * 结束原因: stop,length,tool_call等
+     */
+    private String finishReason;
+
+    /**
+     * 额外元信息(JSON),如工具调用参数/结果
+     */
+    private Object metaJson;
 
     /**
      * 创建时间
