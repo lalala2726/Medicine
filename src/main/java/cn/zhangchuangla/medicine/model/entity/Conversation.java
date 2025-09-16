@@ -1,0 +1,62 @@
+package cn.zhangchuangla.medicine.model.entity;
+
+import com.baomidou.mybatisplus.annotation.IdType;
+import com.baomidou.mybatisplus.annotation.TableId;
+import com.baomidou.mybatisplus.annotation.TableName;
+import lombok.Data;
+
+import java.util.Date;
+
+/**
+ * 会话实体类
+ */
+@TableName(value = "conversation")
+@Data
+public class Conversation {
+
+    /**
+     * 会话ID
+     */
+    @TableId(type = IdType.AUTO)
+    private Long id;
+
+    /**
+     * 会话UUID
+     */
+    private String uuid;
+
+    /**
+     * 用户ID
+     */
+    private Long userId;
+
+    /**
+     * 创建时间
+     */
+    private Date createTime;
+
+    /**
+     * 更新时间
+     */
+    private Date updateTime;
+
+    /**
+     * 创建人
+     */
+    private String createBy;
+
+    /**
+     * 更新人
+     */
+    private String updateBy;
+
+    /**
+     * 删除时间
+     */
+    private Date deleteTime;
+
+    /**
+     * 是否删除
+     */
+    private Integer isDelete;
+}
