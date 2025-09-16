@@ -115,4 +115,5 @@ public class OpenAiClientFactory {
                 .build();
         return ChatClient.builder(model).build();
     }
+
 }

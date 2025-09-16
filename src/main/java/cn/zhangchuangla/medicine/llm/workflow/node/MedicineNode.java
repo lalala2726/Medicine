@@ -33,15 +33,20 @@ public class MedicineNode implements NodeAction {
 
         String prompt = PromptConstant.MEDICINE_PROMPT.formatted(userMessage);
 
-        ChatClient chatClient = openAiClientFactory.chatClient();
-        String reply = chatClient.prompt(prompt).call().content();
+        try {
+            ChatClient chatClient = openAiClientFactory.chatClient();
+            String reply = chatClient.prompt(prompt).call().content();
 
-        if (reply == null || reply.trim().isEmpty()) {
-            log.warn("药品咨询节点返回空回复");
-            reply = PromptConstant.MEDICINE_ERROR_REPLY;
+            if (reply == null || reply.trim().isEmpty()) {
+                log.warn("药品咨询节点返回空回复");
+                reply = PromptConstant.MEDICINE_ERROR_REPLY;
+            }
+
+            log.debug("药品咨询节点生成回复: {}", reply);
+            return Map.of(MedicineStateKeyEnum.SYSTEM_RESPONSE.getKey(), reply);
+        } catch (Exception ex) {
+            log.error("药品咨询节点调用异常，返回兜底文案", ex);
+            return Map.of(MedicineStateKeyEnum.SYSTEM_RESPONSE.getKey(), PromptConstant.MEDICINE_ERROR_REPLY);
         }
-
-        log.debug("药品咨询节点生成回复: {}", reply);
-        return Map.of(MedicineStateKeyEnum.SYSTEM_RESPONSE.getKey(), reply);
     }
 }

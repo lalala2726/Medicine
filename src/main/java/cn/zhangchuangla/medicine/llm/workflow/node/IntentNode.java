@@ -34,13 +34,18 @@ public class IntentNode implements NodeAction {
 
         String prompt = PromptConstant.INTENT_PROMPT.formatted(userMessage);
 
-        ChatClient chatClient = openAiClientFactory.chatClient();
-        String content = chatClient.prompt(prompt).call().content();
+        try {
+            ChatClient chatClient = openAiClientFactory.chatClient();
+            String content = chatClient.prompt(prompt).call().content();
 
-        // 使用枚举进行类型安全的意图识别
-        UserIntentEnum intent = UserIntentEnum.fromString(content);
-        log.debug("识别到用户意图: {}", intent);
+            // 使用枚举进行类型安全的意图识别
+            UserIntentEnum intent = UserIntentEnum.fromString(content);
+            log.debug("识别到用户意图: {}", intent);
 
-        return Map.of(MedicineStateKeyEnum.USER_INTENT.getKey(), intent.getIntent());
+            return Map.of(MedicineStateKeyEnum.USER_INTENT.getKey(), intent.getIntent());
+        } catch (Exception ex) {
+            log.error("意图识别失败, 将降级为 OTHER 意图", ex);
+            return Map.of(MedicineStateKeyEnum.USER_INTENT.getKey(), UserIntentEnum.OTHER.getIntent());
+        }
     }
 }

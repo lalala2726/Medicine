@@ -41,7 +41,7 @@ public class PromptConstant {
      * 其他问题提示词
      */
     public static final String OTHER_PROMPT = """
-            用户的问题目前用于测试,你需要回答任何问题,方便开发人员测试功能。
+            用户的问题目前用于测试,你需要回答任何问题,方便开发人员测试功能,并且根据用户的消息正常回复
             用户输入：%s
             """;
 

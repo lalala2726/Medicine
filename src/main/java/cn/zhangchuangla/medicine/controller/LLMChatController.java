@@ -3,15 +3,17 @@ package cn.zhangchuangla.medicine.controller;
 import cn.zhangchuangla.medicine.annotation.Anonymous;
 import cn.zhangchuangla.medicine.common.base.AjaxResult;
 import cn.zhangchuangla.medicine.common.base.BaseController;
+import cn.zhangchuangla.medicine.model.vo.llm.chat.UserMessageRequest;
 import com.alibaba.cloud.ai.graph.CompiledGraph;
 import com.alibaba.cloud.ai.graph.StateGraph;
 import com.alibaba.cloud.ai.graph.exception.GraphRunnerException;
 import com.alibaba.cloud.ai.graph.exception.GraphStateException;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.beans.factory.annotation.Qualifier;
-import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.validation.annotation.Validated;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.util.Map;
@@ -34,10 +36,10 @@ public class LLMChatController extends BaseController {
         this.compiledGraph = writingAssistantGraph.compile();
     }
 
-    @GetMapping("/test")
-    public AjaxResult<Map<String, Object>> chat(@RequestParam(value = "message", defaultValue = "您好!") String message)
+    @PostMapping
+    public AjaxResult<Map<String, Object>> chat(@Validated @RequestBody UserMessageRequest request)
             throws GraphRunnerException {
-        var resultFuture = compiledGraph.invoke(Map.of("userMessage", message));
+        var resultFuture = compiledGraph.invoke(Map.of("userMessage", request.getMessage()));
         var result = resultFuture.get();
         Map<String, Object> data = result.data();
         return success(data);
