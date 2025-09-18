@@ -13,6 +13,7 @@ import org.springframework.ai.chat.client.ChatClient;
 import org.springframework.ai.support.ToolCallbacks;
 import org.springframework.stereotype.Component;
 
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -40,11 +41,14 @@ public class OtherNode implements NodeAction {
 
         try {
             ChatClient chatClient = openAiClientFactory.chatClient();
-            String reply = chatClient
+            List<String> parts = chatClient
                     .prompt(prompt)
                     .toolCallbacks(ToolCallbacks.from(dateTimeTools, userTools))
-                    .call()
-                    .content();
+                    .stream()
+                    .content()
+                    .collectList()
+                    .block();
+            String reply = (parts == null || parts.isEmpty()) ? null : String.join("", parts);
 
             if (reply == null || reply.trim().isEmpty()) {
                 log.warn("其他问题节点返回空回复");

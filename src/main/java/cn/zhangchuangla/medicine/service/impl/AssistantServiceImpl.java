@@ -28,8 +28,8 @@ import java.util.stream.Collectors;
 
 /**
  * @author Chuang
- * <p>
- * created on 2025/9/16 10:49
+ *         <p>
+ *         created on 2025/9/16 10:49
  */
 @Service
 public class AssistantServiceImpl implements AssistantService, BaseService {
@@ -39,8 +39,8 @@ public class AssistantServiceImpl implements AssistantService, BaseService {
     private final MessageService messageService;
 
     public AssistantServiceImpl(@Qualifier("medicineWorkflowService") StateGraph writingAssistantGraph,
-                                ConversationService conversationService,
-                                MessageService messageService)
+            ConversationService conversationService,
+            MessageService messageService)
             throws GraphStateException {
         this.compiledGraph = writingAssistantGraph.compile();
         this.conversationService = conversationService;
@@ -161,8 +161,7 @@ public class AssistantServiceImpl implements AssistantService, BaseService {
             try {
                 // 走工作流，得到最终系统回复（非token级，随后切片成流）
                 Map<String, Object> inputs = Map.of(
-                        cn.zhangchuangla.medicine.enums.MedicineStateKeyEnum.USER_MESSAGE.getKey(), userMessage
-                );
+                        cn.zhangchuangla.medicine.enums.MedicineStateKeyEnum.USER_MESSAGE.getKey(), userMessage);
                 // 直接使用invoke完成编排（参考 demo 用法）
                 var resultOpt = compiledGraph.invoke(inputs);
                 if (resultOpt.isEmpty()) {
@@ -170,7 +169,8 @@ public class AssistantServiceImpl implements AssistantService, BaseService {
                     return persistAndWrapAsStream(uuid, conversationId, fallback);
                 }
                 Map<String, Object> data = resultOpt.get().data();
-                Object systemReplyObj = data.get(cn.zhangchuangla.medicine.enums.MedicineStateKeyEnum.SYSTEM_RESPONSE.getKey());
+                Object systemReplyObj = data
+                        .get(cn.zhangchuangla.medicine.enums.MedicineStateKeyEnum.SYSTEM_RESPONSE.getKey());
                 String systemReply = systemReplyObj == null ? "" : String.valueOf(systemReplyObj);
                 if (!StringUtils.hasText(systemReply)) {
                     systemReply = "抱歉，暂时无法生成有效回复。";
