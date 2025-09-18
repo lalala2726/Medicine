@@ -4,6 +4,7 @@ import cn.zhangchuangla.medicine.common.base.BaseService;
 import cn.zhangchuangla.medicine.common.utils.UUIDUtils;
 import cn.zhangchuangla.medicine.model.entity.Conversation;
 import cn.zhangchuangla.medicine.model.entity.Message;
+import cn.zhangchuangla.medicine.model.request.assistant.HistoryRequest;
 import cn.zhangchuangla.medicine.model.vo.chat.StreamChatResponse;
 import cn.zhangchuangla.medicine.model.vo.llm.chat.ChatHistoryResponse;
 import cn.zhangchuangla.medicine.model.vo.llm.chat.UserMessageRequest;
@@ -60,10 +61,14 @@ public class AssistantServiceImpl implements AssistantService, BaseService {
 
     @Override
     @Transactional(readOnly = true)
-    public ChatHistoryResponse history(String uuid, Integer limit) {
-        if (!StringUtils.hasText(uuid)) {
+    public ChatHistoryResponse history(HistoryRequest request) {
+        if (request == null || !StringUtils.hasText(request.getUuid())) {
             throw new IllegalArgumentException("uuid不能为空");
         }
+
+        String uuid = request.getUuid();
+        Long cursor = request.getCursor();
+        int limit = request.getLimit() != null && request.getLimit() > 0 ? request.getLimit() : 20;
 
         LambdaQueryWrapper<Conversation> queryWrapper = new LambdaQueryWrapper<>();
         queryWrapper.eq(Conversation::getUuid, uuid)
@@ -73,11 +78,11 @@ public class AssistantServiceImpl implements AssistantService, BaseService {
             throw new RuntimeException("会话不存在: " + uuid);
         }
 
-        int size = (limit == null || limit <= 0) ? 50 : limit;
-        List<Message> messages = messageService.getConversationMessages(conversation.getId(), size);
+        List<Message> messages = messageService.getConversationMessagesCursor(conversation.getId(), cursor, limit);
         List<ChatHistoryResponse.MessageVO> vos = messages.stream()
                 .map(msg -> {
                     ChatHistoryResponse.MessageVO vo = new ChatHistoryResponse.MessageVO();
+                    vo.setId(msg.getId());
                     vo.setRole(String.valueOf(msg.getRole()));
                     vo.setContent(msg.getContent());
                     vo.setCreateTime(msg.getCreateTime());
@@ -88,6 +93,17 @@ public class AssistantServiceImpl implements AssistantService, BaseService {
         ChatHistoryResponse response = new ChatHistoryResponse();
         response.setUuid(uuid);
         response.setMessages(vos);
+
+        if (!vos.isEmpty()) {
+            Long lastMessageId = vos.get(vos.size() - 1).getId();
+            boolean hasMore = messageService.hasMoreMessages(conversation.getId(), lastMessageId);
+            response.setHasMore(hasMore);
+            response.setNextCursor(hasMore ? lastMessageId : null);
+        } else {
+            response.setHasMore(false);
+            response.setNextCursor(null);
+        }
+
         return response;
     }
 

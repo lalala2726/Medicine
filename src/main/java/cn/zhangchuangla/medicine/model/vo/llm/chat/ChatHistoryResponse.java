@@ -16,13 +16,24 @@ public class ChatHistoryResponse {
     @Schema(description = "消息列表")
     private List<MessageVO> messages;
 
+    @Schema(description = "是否还有更多消息")
+    private Boolean hasMore;
+
+    @Schema(description = "下一页游标ID（用于加载更多）")
+    private Long nextCursor;
+
     @Data
     @Schema(description = "历史消息")
     public static class MessageVO {
+        @Schema(description = "消息ID")
+        private Long id;
+
         @Schema(description = "角色")
         private String role;
+
         @Schema(description = "消息内容")
         private String content;
+
         @Schema(description = "创建时间")
         private Date createTime;
     }

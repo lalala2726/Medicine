@@ -65,6 +65,34 @@ public class MessageServiceImpl extends ServiceImpl<MessageMapper, Message>
     public List<Message> getConversationMessages(Long conversationId) {
         return getConversationMessages(conversationId, null);
     }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<Message> getConversationMessagesCursor(Long conversationId, Long cursor, Integer limit) {
+        LambdaQueryWrapper<Message> queryWrapper = new LambdaQueryWrapper<>();
+        queryWrapper.eq(Message::getConversationId, conversationId)
+                   .eq(Message::getIsDelete, 0);
+
+        if (cursor != null) {
+            queryWrapper.lt(Message::getId, cursor);
+        }
+
+        queryWrapper.orderByDesc(Message::getId)
+                   .last("LIMIT " + limit);
+
+        return list(queryWrapper);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public boolean hasMoreMessages(Long conversationId, Long lastMessageId) {
+        LambdaQueryWrapper<Message> queryWrapper = new LambdaQueryWrapper<>();
+        queryWrapper.eq(Message::getConversationId, conversationId)
+                   .eq(Message::getIsDelete, 0)
+                   .lt(Message::getId, lastMessageId);
+
+        return count(queryWrapper) > 0;
+    }
 }
 
 
