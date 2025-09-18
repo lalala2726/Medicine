@@ -43,7 +43,7 @@ public class DateTimeTools {
      * @return 当前时间戳字符串，如 "1725532800000"
      */
     @Tool(name = "getCurrentTimestamp", description = "Get current Unix timestamp in milliseconds")
-    String getCurrentTimestamp() {
+    public String getCurrentTimestamp() {
         long currentTimeMillis = System.currentTimeMillis();
         return String.valueOf(currentTimeMillis);
     }
@@ -54,7 +54,7 @@ public class DateTimeTools {
      * @return 格式化的日期时间字符串，如 "2025-09-05 19:15:30"
      */
     @Tool(name = "getCurrentDateTime", description = "Get current date and time in standard format")
-    String getCurrentDateTime() {
+    public String getCurrentDateTime() {
         LocalDateTime now = LocalDateTime.now();
         return now.format(DATETIME_FORMATTER);
     }
@@ -65,7 +65,7 @@ public class DateTimeTools {
      * @return 格式化的日期字符串，如 "2025-09-05"
      */
     @Tool(name = "getCurrentDate", description = "Get current date in yyyy-MM-dd format")
-    String getCurrentDate() {
+    public String getCurrentDate() {
         LocalDateTime now = LocalDateTime.now();
         return now.format(DATE_FORMATTER);
     }
@@ -76,7 +76,7 @@ public class DateTimeTools {
      * @return 格式化的时间字符串，如 "19:15:30"
      */
     @Tool(name = "getCurrentTime", description = "Get current time in HH:mm:ss format")
-    String getCurrentTime() {
+    public String getCurrentTime() {
         LocalDateTime now = LocalDateTime.now();
         return now.format(TIME_FORMATTER);
     }
@@ -87,7 +87,7 @@ public class DateTimeTools {
      * @return ISO 8601格式的时间字符串，如 "2025-09-05T19:15:30+08:00"
      */
     @Tool(name = "getIsoDateTime", description = "Get current date and time in ISO 8601 format with timezone")
-    String getIsoDateTime() {
+    public String getIsoDateTime() {
         ZonedDateTime now = ZonedDateTime.now();
         return now.format(ISO_FORMATTER);
     }
@@ -99,7 +99,7 @@ public class DateTimeTools {
      * @return 转换后的时间戳字符串，如 "1725532800000"
      */
     @Tool(name = "getTimestampFromDateTime", description = "Convert date time string to timestamp. Format: yyyy-MM-dd HH:mm:ss")
-    String getTimestampFromDateTime(String dateTimeStr) {
+    public String getTimestampFromDateTime(String dateTimeStr) {
         try {
             LocalDateTime dateTime = LocalDateTime.parse(dateTimeStr, DATETIME_FORMATTER);
             return String.valueOf(dateTime.atZone(ZoneId.systemDefault()).toInstant().toEpochMilli());
@@ -115,13 +115,12 @@ public class DateTimeTools {
      * @return 格式化的日期时间字符串，如 "2025-09-05 19:15:30"
      */
     @Tool(name = "getDateTimeFromTimestamp", description = "Convert timestamp to date time string")
-    String getDateTimeFromTimestamp(String timestampStr) {
+    public String getDateTimeFromTimestamp(String timestampStr) {
         try {
             long timestamp = Long.parseLong(timestampStr);
             LocalDateTime dateTime = LocalDateTime.ofInstant(
                     Instant.ofEpochMilli(timestamp),
-                    ZoneId.systemDefault()
-            );
+                    ZoneId.systemDefault());
             return dateTime.format(DATETIME_FORMATTER);
         } catch (Exception e) {
             return "Error: Invalid timestamp format";
@@ -134,7 +133,7 @@ public class DateTimeTools {
      * @return 时区ID，如 "Asia/Shanghai"
      */
     @Tool(name = "getTimezone", description = "Get current system timezone")
-    String getTimezone() {
+    public String getTimezone() {
         return TimeZone.getDefault().getID();
     }
 
@@ -145,7 +144,7 @@ public class DateTimeTools {
      * @return 指定时区的日期时间字符串，如 "2025-09-05 19:15:30"
      */
     @Tool(name = "getDateTimeInTimezone", description = "Get current date time in specific timezone")
-    String getDateTimeInTimezone(String timezone) {
+    public String getDateTimeInTimezone(String timezone) {
         try {
             ZonedDateTime now = ZonedDateTime.now(ZoneId.of(timezone));
             return now.format(DATETIME_FORMATTER);
@@ -160,7 +159,7 @@ public class DateTimeTools {
      * @return "true"表示是周末，"false"表示不是周末
      */
     @Tool(name = "isWeekend", description = "Check if today is weekend")
-    String isWeekend() {
+    public String isWeekend() {
         LocalDateTime now = LocalDateTime.now();
         int dayOfWeek = now.getDayOfWeek().getValue();
         return String.valueOf(dayOfWeek == 6 || dayOfWeek == 7);

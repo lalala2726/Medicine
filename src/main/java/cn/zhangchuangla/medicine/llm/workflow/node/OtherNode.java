@@ -3,11 +3,14 @@ package cn.zhangchuangla.medicine.llm.workflow.node;
 import cn.zhangchuangla.medicine.constants.PromptConstant;
 import cn.zhangchuangla.medicine.enums.MedicineStateKeyEnum;
 import cn.zhangchuangla.medicine.llm.service.OpenAiClientFactory;
+import cn.zhangchuangla.medicine.llm.tools.DateTimeTools;
+import cn.zhangchuangla.medicine.llm.tools.UserTools;
 import com.alibaba.cloud.ai.graph.OverAllState;
 import com.alibaba.cloud.ai.graph.action.NodeAction;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.ai.chat.client.ChatClient;
+import org.springframework.ai.support.ToolCallbacks;
 import org.springframework.stereotype.Component;
 
 import java.util.Map;
@@ -25,6 +28,8 @@ import java.util.Map;
 public class OtherNode implements NodeAction {
 
     private final OpenAiClientFactory openAiClientFactory;
+    private final DateTimeTools dateTimeTools;
+    private final UserTools userTools;
 
     @Override
     public Map<String, Object> apply(OverAllState state) {
@@ -35,7 +40,11 @@ public class OtherNode implements NodeAction {
 
         try {
             ChatClient chatClient = openAiClientFactory.chatClient();
-            String reply = chatClient.prompt(prompt).call().content();
+            String reply = chatClient
+                    .prompt(prompt)
+                    .toolCallbacks(ToolCallbacks.from(dateTimeTools, userTools))
+                    .call()
+                    .content();
 
             if (reply == null || reply.trim().isEmpty()) {
                 log.warn("其他问题节点返回空回复");

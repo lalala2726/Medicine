@@ -20,7 +20,7 @@ public class SecurityConstants {
             "/auth/register",
             "/auth/refresh",
             "/druid/**",
-            "/ws/**"
+            "/ws/**",
     };
 
     /**

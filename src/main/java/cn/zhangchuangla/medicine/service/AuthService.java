@@ -34,4 +34,11 @@ public interface AuthService {
      * @return 新的访问令牌与原刷新令牌
      */
     AuthTokenVo refresh(String refreshToken);
+
+    /**
+     * 退出登录
+     *
+     * @param accessToken 访问令牌
+     */
+    void logout(String accessToken);
 }

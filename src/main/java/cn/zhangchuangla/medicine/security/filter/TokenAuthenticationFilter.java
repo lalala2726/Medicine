@@ -25,8 +25,8 @@ import java.util.Arrays;
 
 /**
  * @author Chuang
- * <p>
- * created on 2025/8/28 14:14
+ *         <p>
+ *         created on 2025/8/28 14:14
  */
 @Slf4j
 @Component
@@ -46,7 +46,7 @@ public class TokenAuthenticationFilter extends OncePerRequestFilter {
      */
     @Override
     protected void doFilterInternal(@Nonnull HttpServletRequest request, @Nonnull HttpServletResponse response,
-                                    @Nonnull FilterChain filterChain) throws ServletException, IOException {
+            @Nonnull FilterChain filterChain) throws ServletException, IOException {
         String header = securityProperties.getHeader();
         String token = request.getHeader(header);
         try {
@@ -108,5 +108,22 @@ public class TokenAuthenticationFilter extends OncePerRequestFilter {
     private boolean isPathMatchAny(String path, String[] patterns, AntPathMatcher pathMatcher) {
         return Arrays.stream(patterns)
                 .anyMatch(pattern -> pathMatcher.match(pattern, path.trim()));
+    }
+
+    /**
+     * 在异步分发时也执行本过滤器，确保 SecurityContext 在异步/重新分派阶段仍然被正确设置，
+     * 避免在 SSE/异步请求过程中出现 AccessDenied。
+     */
+    @Override
+    protected boolean shouldNotFilterAsyncDispatch() {
+        return false;
+    }
+
+    /**
+     * 在错误分发阶段也执行，避免错误分派丢失认证上下文导致的二次鉴权失败。
+     */
+    @Override
+    protected boolean shouldNotFilterErrorDispatch() {
+        return false;
     }
 }
