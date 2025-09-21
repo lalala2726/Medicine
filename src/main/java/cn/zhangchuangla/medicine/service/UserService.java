@@ -11,7 +11,7 @@ import java.util.List;
 import java.util.Set;
 
 /**
- * @author zhangchuang
+ * @author Chuang
  */
 public interface UserService extends IService<User> {
 

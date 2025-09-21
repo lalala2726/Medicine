@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="cn.zhangchuangla.medicine.mapper.MedicineStockMapper">
+
+    <resultMap id="BaseResultMap" type="cn.zhangchuangla.medicine.model.entity.MedicineStock">
+            <id property="id" column="id" />
+            <result property="medicineId" column="medicine_id" />
+            <result property="batchNo" column="batch_no" />
+            <result property="quantity" column="quantity" />
+            <result property="expiryDate" column="expiry_date" />
+            <result property="warehouse" column="warehouse" />
+            <result property="createTime" column="create_time" />
+            <result property="updateTime" column="update_time" />
+    </resultMap>
+
+    <sql id="Base_Column_List">
+        id,medicine_id,batch_no,quantity,expiry_date,warehouse,
+        create_time,update_time
+    </sql>
+</mapper>
