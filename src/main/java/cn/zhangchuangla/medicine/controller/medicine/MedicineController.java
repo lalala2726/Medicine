@@ -4,6 +4,7 @@ import cn.zhangchuangla.medicine.common.base.AjaxResult;
 import cn.zhangchuangla.medicine.common.base.BaseController;
 import cn.zhangchuangla.medicine.common.base.TableDataResult;
 import cn.zhangchuangla.medicine.model.entity.Medicine;
+import cn.zhangchuangla.medicine.model.entity.MedicineImage;
 import cn.zhangchuangla.medicine.model.request.medicine.MedicineAddRequest;
 import cn.zhangchuangla.medicine.model.request.medicine.MedicineListQueryRequest;
 import cn.zhangchuangla.medicine.model.request.medicine.MedicineUpdateRequest;
@@ -17,6 +18,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.stream.Collectors;
 
 /**
  * 药品控制器
@@ -57,7 +59,40 @@ public class MedicineController extends BaseController {
     public AjaxResult<MedicineVo> getMedicineById(@PathVariable("id") Long id) {
         Medicine medicine = medicineService.getMedicineById(id);
         MedicineVo medicineVo = copyProperties(medicine, MedicineVo.class);
+
+        // 设置药品图片列表
+        List<MedicineImage> images = medicineService.getImagesByMedicineId(id);
+        medicineVo.setImageUrls(images.stream().map(MedicineImage::getUrl).collect(Collectors.toList()));
+
         return success(medicineVo);
+    }
+
+    /**
+     * 获取药品图片列表
+     *
+     * @param id 药品ID
+     * @return 药品图片列表
+     */
+    @GetMapping("/{id:\\d+}/images")
+    @Operation(summary = "获取药品图片列表")
+    public AjaxResult<List<String>> getMedicineImages(@PathVariable("id") Long id) {
+        List<MedicineImage> images = medicineService.getImagesByMedicineId(id);
+        List<String> imageUrls = images.stream().map(MedicineImage::getUrl).collect(Collectors.toList());
+        return success(imageUrls);
+    }
+
+    /**
+     * 更新药品图片
+     *
+     * @param id 药品ID
+     * @param imageUrls 图片URL列表
+     * @return 更新结果
+     */
+    @PutMapping("/{id:\\d+}/images")
+    @Operation(summary = "更新药品图片")
+    public AjaxResult<Void> updateMedicineImages(@PathVariable("id") Long id, @RequestBody List<String> imageUrls) {
+        boolean result = medicineService.updateMedicineImages(id, imageUrls);
+        return toAjax(result);
     }
 
     /**

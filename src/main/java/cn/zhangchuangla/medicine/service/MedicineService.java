@@ -1,6 +1,7 @@
 package cn.zhangchuangla.medicine.service;
 
 import cn.zhangchuangla.medicine.model.entity.Medicine;
+import cn.zhangchuangla.medicine.model.entity.MedicineImage;
 import cn.zhangchuangla.medicine.model.request.medicine.MedicineAddRequest;
 import cn.zhangchuangla.medicine.model.request.medicine.MedicineListQueryRequest;
 import cn.zhangchuangla.medicine.model.request.medicine.MedicineUpdateRequest;
@@ -56,5 +57,22 @@ public interface MedicineService extends IService<Medicine> {
      * @return 是否成功
      */
     boolean deleteMedicine(List<Long> ids);
+
+    /**
+     * 根据药品ID获取图片列表
+     *
+     * @param medicineId 药品ID
+     * @return 药品图片列表
+     */
+    List<MedicineImage> getImagesByMedicineId(Long medicineId);
+
+    /**
+     * 更新药品图片列表
+     *
+     * @param medicineId 药品ID
+     * @param imageUrls 图片URL列表
+     * @return 是否成功
+     */
+    boolean updateMedicineImages(Long medicineId, List<String> imageUrls);
 
 }

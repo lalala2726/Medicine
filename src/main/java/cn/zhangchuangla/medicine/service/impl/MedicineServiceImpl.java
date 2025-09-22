@@ -5,15 +5,19 @@ import cn.zhangchuangla.medicine.common.utils.BeanCotyUtils;
 import cn.zhangchuangla.medicine.mapper.MedicineMapper;
 import cn.zhangchuangla.medicine.model.entity.Medicine;
 import cn.zhangchuangla.medicine.model.entity.MedicineCategory;
+import cn.zhangchuangla.medicine.model.entity.MedicineImage;
 import cn.zhangchuangla.medicine.model.request.medicine.MedicineAddRequest;
 import cn.zhangchuangla.medicine.model.request.medicine.MedicineListQueryRequest;
 import cn.zhangchuangla.medicine.model.request.medicine.MedicineUpdateRequest;
 import cn.zhangchuangla.medicine.service.MedicineCategoryService;
+import cn.zhangchuangla.medicine.service.MedicineImageService;
 import cn.zhangchuangla.medicine.service.MedicineService;
 import com.baomidou.mybatisplus.extension.conditions.query.LambdaQueryChainWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
+import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Date;
 import java.util.List;
@@ -25,13 +29,11 @@ import java.util.List;
  * created on 2025/9/22 13:35
  */
 @Service
+@RequiredArgsConstructor
 public class MedicineServiceImpl extends ServiceImpl<MedicineMapper, Medicine> implements MedicineService {
 
     private final MedicineCategoryService medicineCategoryService;
-
-    public MedicineServiceImpl(MedicineCategoryService medicineCategoryService) {
-        this.medicineCategoryService = medicineCategoryService;
-    }
+    private final MedicineImageService medicineImageService;
 
     @Override
     public Page<Medicine> listMedicine(MedicineListQueryRequest request) {
@@ -93,6 +95,7 @@ public class MedicineServiceImpl extends ServiceImpl<MedicineMapper, Medicine> i
     }
 
     @Override
+    @Transactional(rollbackFor = Exception.class)
     public boolean addMedicine(MedicineAddRequest request) {
         Assert.notNull(request, "药品添加请求对象不能为空");
 
@@ -108,10 +111,19 @@ public class MedicineServiceImpl extends ServiceImpl<MedicineMapper, Medicine> i
         medicine.setCreateTime(new Date());
         medicine.setUpdateTime(new Date());
 
-        return save(medicine);
+        // 保存药品
+        boolean result = save(medicine);
+
+        // 保存药品图片
+        if (result && request.getImageUrls() != null && !request.getImageUrls().isEmpty()) {
+            saveMedicineImages(medicine.getId(), request.getImageUrls());
+        }
+
+        return result;
     }
 
     @Override
+    @Transactional(rollbackFor = Exception.class)
     public boolean updateMedicine(MedicineUpdateRequest request) {
         Assert.notNull(request, "药品修改请求对象不能为空");
         Assert.notNull(request.getId(), "药品ID不能为空");
@@ -141,21 +153,76 @@ public class MedicineServiceImpl extends ServiceImpl<MedicineMapper, Medicine> i
         Medicine medicine = BeanCotyUtils.copyProperties(request, Medicine.class);
         medicine.setUpdateTime(new Date());
 
-        return updateById(medicine);
+        // 更新药品基本信息
+        boolean result = updateById(medicine);
+
+        // 更新药品图片
+        if (request.getImageUrls() != null) {
+            updateMedicineImages(request.getId(), request.getImageUrls());
+        }
+
+        return result;
     }
 
     @Override
+    @Transactional(rollbackFor = Exception.class)
     public boolean deleteMedicine(List<Long> ids) {
         Assert.notNull(ids, "药品ID列表不能为空");
         Assert.notEmpty(ids, "药品ID列表不能为空");
 
-        // 检查药品是否存在
+        // 检查药品是否存在并删除相关图片
         for (Long id : ids) {
             Medicine medicine = getById(id);
             Assert.notNull(medicine, "ID为 " + id + " 的药品不存在");
+
+            // 删除药品相关图片
+            medicineImageService.deleteImagesByMedicineId(id);
         }
 
         return removeByIds(ids);
+    }
+
+    @Override
+    public List<MedicineImage> getImagesByMedicineId(Long medicineId) {
+        return medicineImageService.getImagesByMedicineId(medicineId);
+    }
+
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public boolean updateMedicineImages(Long medicineId, List<String> imageUrls) {
+        Assert.notNull(medicineId, "药品ID不能为空");
+        Assert.notNull(imageUrls, "图片URL列表不能为空");
+
+        // 检查药品是否存在
+        Medicine medicine = getById(medicineId);
+        Assert.notNull(medicine, "药品不存在");
+
+        // 删除现有图片
+        medicineImageService.deleteImagesByMedicineId(medicineId);
+
+        // 添加新图片
+        if (!imageUrls.isEmpty()) {
+            saveMedicineImages(medicineId, imageUrls);
+        }
+
+        return true;
+    }
+
+    /**
+     * 保存药品图片
+     *
+     * @param medicineId 药品ID
+     * @param imageUrls 图片URL列表
+     */
+    private void saveMedicineImages(Long medicineId, List<String> imageUrls) {
+        for (String url : imageUrls) {
+            MedicineImage image = new MedicineImage();
+            image.setMedicineId(medicineId);
+            image.setUrl(url);
+            image.setSort(imageUrls.indexOf(url));
+            image.setCreateTime(new Date());
+            medicineImageService.save(image);
+        }
     }
 
 }

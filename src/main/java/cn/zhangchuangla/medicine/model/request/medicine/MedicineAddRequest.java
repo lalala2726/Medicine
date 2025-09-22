@@ -5,6 +5,8 @@ import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import lombok.Data;
 
+import java.util.List;
+
 /**
  * 药品添加请求对象
  *
@@ -70,5 +72,11 @@ public class MedicineAddRequest {
      */
     @Schema(description = "药品说明书/描述", type = "string", example = "本品为青霉素类抗生素")
     private String description;
+
+    /**
+     * 药品图片URL列表
+     */
+    @Schema(description = "药品图片URL列表", type = "array", example = "[\"https://example.com/image1.jpg\", \"https://example.com/image2.jpg\"]")
+    private List<String> imageUrls;
 
 }
