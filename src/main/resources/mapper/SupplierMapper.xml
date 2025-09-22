@@ -18,4 +18,30 @@
         id,name,contact,phone,address,create_time,
         update_time
     </sql>
+
+    <!-- 分页查询供应商列表 -->
+    <select id="listSupplier" resultMap="BaseResultMap">
+        SELECT
+        <include refid="Base_Column_List"/>
+        FROM supplier
+        <where>
+            <if test="request.id != null">
+                AND id = #{request.id}
+            </if>
+            <if test="request.name != null and request.name != ''">
+                AND name LIKE CONCAT('%', #{request.name}, '%')
+            </if>
+            <if test="request.contact != null and request.contact != ''">
+                AND contact LIKE CONCAT('%', #{request.contact}, '%')
+            </if>
+            <if test="request.phone != null and request.phone != ''">
+                AND phone LIKE CONCAT('%', #{request.phone}, '%')
+            </if>
+            <if test="request.address != null and request.address != ''">
+                AND address LIKE CONCAT('%', #{request.address}, '%')
+            </if>
+        </where>
+        ORDER BY create_time DESC
+    </select>
+
 </mapper>

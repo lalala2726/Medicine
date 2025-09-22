@@ -33,7 +33,6 @@
         FROM medicine m
         LEFT JOIN medicine_category mc ON m.category_id = mc.id
         <where>
-            1=1
             <if test="request.id != null">
                 AND m.id = #{request.id}
             </if>
