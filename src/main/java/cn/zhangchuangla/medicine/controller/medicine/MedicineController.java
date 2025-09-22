@@ -27,7 +27,7 @@ import java.util.stream.Collectors;
  * created on 2025/9/22 13:35
  */
 @RestController
-@RequestMapping("/medicine")
+@RequestMapping("/medicine/manage")
 @RequiredArgsConstructor
 @Tag(name = "药品接口", description = "提供药品的增删改查")
 public class MedicineController extends BaseController {
