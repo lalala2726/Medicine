@@ -4,24 +4,62 @@
         "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="cn.zhangchuangla.medicine.mapper.MedicineMapper">
 
+    <!-- 通用查询映射结果 -->
     <resultMap id="BaseResultMap" type="cn.zhangchuangla.medicine.model.entity.Medicine">
-            <id property="id" column="id" />
-            <result property="categoryId" column="category_id" />
-            <result property="name" column="name" />
-            <result property="genericName" column="generic_name" />
-            <result property="approvalNumber" column="approval_number" />
-            <result property="specification" column="specification" />
-            <result property="manufacturer" column="manufacturer" />
-            <result property="prescription" column="prescription" />
-            <result property="status" column="status" />
-            <result property="description" column="description" />
-            <result property="createTime" column="create_time" />
-            <result property="updateTime" column="update_time" />
+        <id property="id" column="id" />
+        <result property="categoryId" column="category_id" />
+        <result property="name" column="name" />
+        <result property="genericName" column="generic_name" />
+        <result property="approvalNumber" column="approval_number" />
+        <result property="specification" column="specification" />
+        <result property="manufacturer" column="manufacturer" />
+        <result property="prescription" column="prescription" />
+        <result property="status" column="status" />
+        <result property="description" column="description" />
+        <result property="createTime" column="create_time" />
+        <result property="updateTime" column="update_time" />
     </resultMap>
 
+    <!-- 通用查询结果列 -->
     <sql id="Base_Column_List">
-        id,category_id,name,generic_name,approval_number,specification,
-        manufacturer,prescription,status,description,create_time,
-        update_time
+        id, category_id, name, generic_name, approval_number, specification, manufacturer, prescription, status, description, create_time, update_time
     </sql>
+
+    <!-- 分页查询药品列表 -->
+    <select id="listMedicine" resultMap="BaseResultMap">
+        SELECT
+            m.*,
+            mc.name as category_name
+        FROM medicine m
+        LEFT JOIN medicine_category mc ON m.category_id = mc.id
+        <where>
+            1=1
+            <if test="request.id != null">
+                AND m.id = #{request.id}
+            </if>
+            <if test="request.name != null and request.name != ''">
+                AND (m.name LIKE CONCAT('%', #{request.name}, '%') OR m.generic_name LIKE CONCAT('%', #{request.name}, '%'))
+            </if>
+            <if test="request.genericName != null and request.genericName != ''">
+                AND m.generic_name LIKE CONCAT('%', #{request.genericName}, '%')
+            </if>
+            <if test="request.categoryId != null">
+                AND m.category_id = #{request.categoryId}
+            </if>
+            <if test="request.manufacturer != null and request.manufacturer != ''">
+                AND m.manufacturer LIKE CONCAT('%', #{request.manufacturer}, '%')
+            </if>
+            <if test="request.approvalNumber != null and request.approvalNumber != ''">
+                AND m.approval_number LIKE CONCAT('%', #{request.approvalNumber}, '%')
+            </if>
+            <if test="request.prescription != null">
+                AND m.prescription = #{request.prescription}
+            </if>
+            <if test="request.status != null">
+                AND m.status = #{request.status}
+            </if>
+        </where>
+        ORDER BY m.create_time DESC
+    </select>
+
 </mapper>
