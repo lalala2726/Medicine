@@ -42,7 +42,6 @@ public class LLMConfigController extends BaseController {
 
     private final LlmConfigService llmConfigService;
     private final ModelConfigService modelConfigService;
-    private final OpenAiClientFactory openAiClientFactory;
 
     /**
      * 获取LLM配置列表
