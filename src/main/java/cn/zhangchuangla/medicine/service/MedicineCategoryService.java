@@ -1,5 +1,6 @@
 package cn.zhangchuangla.medicine.service;
 
+import cn.zhangchuangla.medicine.common.base.Option;
 import cn.zhangchuangla.medicine.model.entity.MedicineCategory;
 import cn.zhangchuangla.medicine.model.request.medicine.MedicineCategoryAddRequest;
 import cn.zhangchuangla.medicine.model.request.medicine.MedicineCategoryListQueryRequest;
@@ -56,5 +57,12 @@ public interface MedicineCategoryService extends IService<MedicineCategory> {
      * @return 是否成功
      */
     boolean deleteCategory(List<Long> ids);
+
+    /**
+     * 获取药品分类树形结构
+     *
+     * @return 分类树形结构
+     */
+    List<Option<Long>> tree();
 
 }

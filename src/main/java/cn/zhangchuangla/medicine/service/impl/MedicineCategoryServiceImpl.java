@@ -1,6 +1,7 @@
 package cn.zhangchuangla.medicine.service.impl;
 
 import cn.zhangchuangla.medicine.common.base.BaseService;
+import cn.zhangchuangla.medicine.common.base.Option;
 import cn.zhangchuangla.medicine.common.utils.Assert;
 import cn.zhangchuangla.medicine.common.utils.BeanCotyUtils;
 import cn.zhangchuangla.medicine.mapper.MedicineCategoryMapper;
@@ -16,6 +17,7 @@ import org.springframework.stereotype.Service;
 
 import java.util.Date;
 import java.util.List;
+import java.util.stream.Collectors;
 
 /**
  * 药品分类服务实现类
@@ -63,8 +65,7 @@ public class MedicineCategoryServiceImpl extends ServiceImpl<MedicineCategoryMap
 
         // 检查分类名称是否已存在
         LambdaQueryChainWrapper<MedicineCategory> checkWrapper = lambdaQuery()
-                .eq(MedicineCategory::getName, request.getName())
-                .eq(MedicineCategory::getIsDelete, 0);
+                .eq(MedicineCategory::getName, request.getName());
         MedicineCategory existingCategory = checkWrapper.one();
         Assert.isNull(existingCategory, "分类名称已存在");
 
@@ -125,6 +126,53 @@ public class MedicineCategoryServiceImpl extends ServiceImpl<MedicineCategoryMap
         }
 
         return removeByIds(ids);
+    }
+
+    /**
+     * 获取药品分类树形结构
+     *
+     * @return 树形结构
+     */
+    @Override
+    public List<Option<Long>> tree() {
+        // 获取所有未删除的分类
+        List<MedicineCategory> allCategories = lambdaQuery()
+                .orderByAsc(MedicineCategory::getSort)
+                .list();
+
+        // 构建树形结构
+        return buildTree(allCategories, 0L);
+    }
+
+    /**
+     * 递归构建树形结构
+     *
+     * @param categories 所有分类列表
+     * @param parentId 父分类ID
+     * @return 树形结构
+     */
+    private List<Option<Long>> buildTree(List<MedicineCategory> categories, Long parentId) {
+        return categories.stream()
+                .filter(category -> category.getParentId().equals(parentId))
+                .sorted((c1, c2) -> {
+                    int sort1 = c1.getSort() != null ? c1.getSort() : 0;
+                    int sort2 = c2.getSort() != null ? c2.getSort() : 0;
+                    return Integer.compare(sort1, sort2);
+                })
+                .map(category -> {
+                    Option<Long> option = new Option<>();
+                    option.setLabel(category.getName());
+                    option.setValue(category.getId());
+
+                    // 递归查找子分类
+                    List<Option<Long>> children = buildTree(categories, category.getId());
+                    if (!children.isEmpty()) {
+                        option.setChildren(children);
+                    }
+
+                    return option;
+                })
+                .collect(Collectors.toList());
     }
 
 }

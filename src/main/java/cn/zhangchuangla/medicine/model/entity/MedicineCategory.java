@@ -2,7 +2,6 @@ package cn.zhangchuangla.medicine.model.entity;
 
 import com.baomidou.mybatisplus.annotation.IdType;
 import com.baomidou.mybatisplus.annotation.TableId;
-import com.baomidou.mybatisplus.annotation.TableLogic;
 import com.baomidou.mybatisplus.annotation.TableName;
 import lombok.Data;
 
@@ -14,7 +13,7 @@ import java.util.Date;
  * @author Chuang
  * created on 2025/9/21 19:45
  */
-@TableName(value ="medicine_category")
+@TableName(value = "medicine_category")
 @Data
 public class MedicineCategory {
 
@@ -64,15 +63,5 @@ public class MedicineCategory {
      */
     private String updateBy;
 
-    /**
-     * 删除时间
-     */
-    private Date deleteTime;
-
-    /**
-     * 删除标志（0代表存在 1代表删除）
-     */
-    @TableLogic
-    private Integer isDelete;
 
 }

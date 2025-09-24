@@ -2,6 +2,7 @@ package cn.zhangchuangla.medicine.controller.medicine;
 
 import cn.zhangchuangla.medicine.common.base.AjaxResult;
 import cn.zhangchuangla.medicine.common.base.BaseController;
+import cn.zhangchuangla.medicine.common.base.Option;
 import cn.zhangchuangla.medicine.common.base.TableDataResult;
 import cn.zhangchuangla.medicine.model.entity.MedicineCategory;
 import cn.zhangchuangla.medicine.model.request.medicine.MedicineCategoryAddRequest;
@@ -44,6 +45,18 @@ public class MedicineCategoryController extends BaseController {
         Page<MedicineCategory> page = medicineCategoryService.listMedicineCategory(request);
         List<CategoryListVo> categoryListVos = copyListProperties(page, CategoryListVo.class);
         return getTableData(page, categoryListVos);
+    }
+
+    /**
+     * 获取药品分类树
+     *
+     * @return 药品分类树
+     */
+    @GetMapping("/tree")
+    @Operation(summary = "获取药品分类树")
+    public AjaxResult<List<Option<Long>>> tree() {
+        List<Option<Long>> options = medicineCategoryService.tree();
+        return success(options);
     }
 
     /**
