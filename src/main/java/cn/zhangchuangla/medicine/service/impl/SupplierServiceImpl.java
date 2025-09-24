@@ -1,6 +1,7 @@
 package cn.zhangchuangla.medicine.service.impl;
 
 import cn.zhangchuangla.medicine.common.base.BaseService;
+import cn.zhangchuangla.medicine.common.base.Option;
 import cn.zhangchuangla.medicine.common.utils.Assert;
 import cn.zhangchuangla.medicine.mapper.SupplierMapper;
 import cn.zhangchuangla.medicine.model.entity.Supplier;
@@ -24,9 +25,8 @@ public class SupplierServiceImpl extends ServiceImpl<SupplierMapper, Supplier>
 
     @Override
     public Page<Supplier> listSupplier(SupplierListQueryRequest request) {
-        SupplierListQueryRequest query = request == null ? new SupplierListQueryRequest() : request;
-        Page<Supplier> page = new Page<>(query.getPageNum(), query.getPageSize());
-        return baseMapper.listSupplier(page, query);
+        Page<Supplier> page = new Page<>(request.getPageNum(), request.getPageSize());
+        return baseMapper.listSupplier(page, request);
     }
 
     @Override
@@ -85,5 +85,11 @@ public class SupplierServiceImpl extends ServiceImpl<SupplierMapper, Supplier>
         }
 
         return removeByIds(ids);
+    }
+
+    @Override
+    public List<Option<Long>> option() {
+        List<Supplier> list = list();
+        return list.stream().map(supplier -> new Option<>(supplier.getId(), supplier.getName())).toList();
     }
 }

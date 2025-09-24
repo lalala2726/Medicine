@@ -2,6 +2,7 @@ package cn.zhangchuangla.medicine.controller.medicine;
 
 import cn.zhangchuangla.medicine.common.base.AjaxResult;
 import cn.zhangchuangla.medicine.common.base.BaseController;
+import cn.zhangchuangla.medicine.common.base.Option;
 import cn.zhangchuangla.medicine.common.base.TableDataResult;
 import cn.zhangchuangla.medicine.model.entity.Supplier;
 import cn.zhangchuangla.medicine.model.request.medicine.SupplierAddRequest;
@@ -38,6 +39,16 @@ public class SupplierController extends BaseController {
         Page<Supplier> page = supplierService.listSupplier(request);
         List<SupplierListVo> supplierListVos = copyListProperties(page, SupplierListVo.class);
         return getTableData(page, supplierListVos);
+    }
+
+    /**
+     * 获取供应商选项
+     */
+    @GetMapping("/option")
+    @Operation(summary = "获取供应商选项")
+    public AjaxResult<List<Option<Long>>> option() {
+        List<Option<Long>> options = supplierService.option();
+        return success(options);
     }
 
     /**

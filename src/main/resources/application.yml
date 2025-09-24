@@ -31,3 +31,5 @@ security:
   header: Authorization
   # 默认密钥（Base64编码的32字节）。生产环境请通过环境变量 SECURITY_SECRET 覆盖。
   secret: zhangchuang2726zhangchuang2726zhangchuang2726
+  access-token-expire-time: 18000000
+  refresh-token-expire-time: 25920000

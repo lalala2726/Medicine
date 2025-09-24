@@ -1,5 +1,6 @@
 package cn.zhangchuangla.medicine.service;
 
+import cn.zhangchuangla.medicine.common.base.Option;
 import cn.zhangchuangla.medicine.model.entity.Supplier;
 import cn.zhangchuangla.medicine.model.request.medicine.SupplierAddRequest;
 import cn.zhangchuangla.medicine.model.request.medicine.SupplierListQueryRequest;
@@ -38,5 +39,10 @@ public interface SupplierService extends IService<Supplier> {
      * 删除供应商
      */
     boolean deleteSupplier(List<Long> ids);
+
+    /**
+     * 获取供应商下拉选项
+     */
+    List<Option<Long>> option();
 
 }
