@@ -9,6 +9,7 @@ import cn.zhangchuangla.medicine.model.request.medicine.MedicineCategoryAddReque
 import cn.zhangchuangla.medicine.model.request.medicine.MedicineCategoryListQueryRequest;
 import cn.zhangchuangla.medicine.model.request.medicine.MedicineCategoryUpdateRequest;
 import cn.zhangchuangla.medicine.model.vo.medicine.CategoryListVo;
+import cn.zhangchuangla.medicine.model.vo.medicine.MedicineCategoryTree;
 import cn.zhangchuangla.medicine.model.vo.medicine.MedicineCategoryVo;
 import cn.zhangchuangla.medicine.service.MedicineCategoryService;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
@@ -47,15 +48,29 @@ public class MedicineCategoryController extends BaseController {
         return getTableData(page, categoryListVos);
     }
 
+
     /**
      * 获取药品分类树
      *
      * @return 药品分类树
      */
     @GetMapping("/tree")
-    @Operation(summary = "获取药品分类树")
-    public AjaxResult<List<Option<Long>>> tree() {
-        List<Option<Long>> options = medicineCategoryService.tree();
+    @Operation(summary = "获取商品下拉树")
+    public AjaxResult<List<MedicineCategoryTree>> tree() {
+        List<MedicineCategoryTree> options = medicineCategoryService.tree();
+        return success(options);
+    }
+
+
+    /**
+     * 获取药品分类树
+     *
+     * @return 药品分类树
+     */
+    @GetMapping("/option")
+    @Operation(summary = "获取商品下拉选项")
+    public AjaxResult<List<Option<Long>>> option() {
+        List<Option<Long>> options = medicineCategoryService.option();
         return success(options);
     }
 

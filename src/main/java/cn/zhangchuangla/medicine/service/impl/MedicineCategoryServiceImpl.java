@@ -9,6 +9,7 @@ import cn.zhangchuangla.medicine.model.entity.MedicineCategory;
 import cn.zhangchuangla.medicine.model.request.medicine.MedicineCategoryAddRequest;
 import cn.zhangchuangla.medicine.model.request.medicine.MedicineCategoryListQueryRequest;
 import cn.zhangchuangla.medicine.model.request.medicine.MedicineCategoryUpdateRequest;
+import cn.zhangchuangla.medicine.model.vo.medicine.MedicineCategoryTree;
 import cn.zhangchuangla.medicine.service.MedicineCategoryService;
 import com.baomidou.mybatisplus.extension.conditions.query.LambdaQueryChainWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
@@ -125,6 +126,15 @@ public class MedicineCategoryServiceImpl extends ServiceImpl<MedicineCategoryMap
             Assert.notNull(category, "ID为 " + id + " 的分类不存在");
         }
 
+        // 如果存在子分类，则不允许删除
+        for (Long id : ids) {
+            if (lambdaQuery()
+                    .eq(MedicineCategory::getParentId, id)
+                    .count() > 0) {
+                return false;
+            }
+        }
+
         return removeByIds(ids);
     }
 
@@ -134,7 +144,23 @@ public class MedicineCategoryServiceImpl extends ServiceImpl<MedicineCategoryMap
      * @return 树形结构
      */
     @Override
-    public List<Option<Long>> tree() {
+    public List<Option<Long>> option() {
+        // 获取所有未删除的分类
+        List<MedicineCategory> allCategories = lambdaQuery()
+                .orderByAsc(MedicineCategory::getSort)
+                .list();
+
+        // 构建树形结构
+        return buildOption(allCategories, 0L);
+    }
+
+    /**
+     * 获取药品分类树形结构
+     *
+     * @return 树形结构
+     */
+    @Override
+    public List<MedicineCategoryTree> tree() {
         // 获取所有未删除的分类
         List<MedicineCategory> allCategories = lambdaQuery()
                 .orderByAsc(MedicineCategory::getSort)
@@ -144,14 +170,15 @@ public class MedicineCategoryServiceImpl extends ServiceImpl<MedicineCategoryMap
         return buildTree(allCategories, 0L);
     }
 
+
     /**
      * 递归构建树形结构
      *
      * @param categories 所有分类列表
-     * @param parentId 父分类ID
+     * @param parentId   父分类ID
      * @return 树形结构
      */
-    private List<Option<Long>> buildTree(List<MedicineCategory> categories, Long parentId) {
+    private List<Option<Long>> buildOption(List<MedicineCategory> categories, Long parentId) {
         return categories.stream()
                 .filter(category -> category.getParentId().equals(parentId))
                 .sorted((c1, c2) -> {
@@ -165,12 +192,45 @@ public class MedicineCategoryServiceImpl extends ServiceImpl<MedicineCategoryMap
                     option.setValue(category.getId());
 
                     // 递归查找子分类
-                    List<Option<Long>> children = buildTree(categories, category.getId());
+                    List<Option<Long>> children = buildOption(categories, category.getId());
                     if (!children.isEmpty()) {
                         option.setChildren(children);
                     }
 
                     return option;
+                })
+                .collect(Collectors.toList());
+    }
+
+    /**
+     * 递归构建树形结构
+     *
+     * @param categories 所有分类列表
+     * @param parentId   父分类ID
+     * @return 树形结构
+     */
+    private List<MedicineCategoryTree> buildTree(List<MedicineCategory> categories, Long parentId) {
+        return categories.stream()
+                .filter(category -> category.getParentId().equals(parentId))
+                .sorted((c1, c2) -> {
+                    int sort1 = c1.getSort() != null ? c1.getSort() : 0;
+                    int sort2 = c2.getSort() != null ? c2.getSort() : 0;
+                    return Integer.compare(sort1, sort2);
+                })
+                .map(category -> {
+                    MedicineCategoryTree tree = new MedicineCategoryTree();
+                    tree.setId(category.getId());
+                    tree.setName(category.getName());
+                    tree.setParentId(category.getParentId());
+                    tree.setDescription(category.getDescription());
+
+                    // 递归查找子分类
+                    List<MedicineCategoryTree> children = buildTree(categories, category.getId());
+                    if (!children.isEmpty()) {
+                        tree.setChildren(children);
+                    }
+
+                    return tree;
                 })
                 .collect(Collectors.toList());
     }

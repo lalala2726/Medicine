@@ -5,6 +5,7 @@ import cn.zhangchuangla.medicine.model.entity.MedicineCategory;
 import cn.zhangchuangla.medicine.model.request.medicine.MedicineCategoryAddRequest;
 import cn.zhangchuangla.medicine.model.request.medicine.MedicineCategoryListQueryRequest;
 import cn.zhangchuangla.medicine.model.request.medicine.MedicineCategoryUpdateRequest;
+import cn.zhangchuangla.medicine.model.vo.medicine.MedicineCategoryTree;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.IService;
 
@@ -63,6 +64,13 @@ public interface MedicineCategoryService extends IService<MedicineCategory> {
      *
      * @return 分类树形结构
      */
-    List<Option<Long>> tree();
+    List<Option<Long>> option();
+
+    /**
+     * 获取药品分类树形结构
+     *
+     * @return 分类树形结构
+     */
+    List<MedicineCategoryTree> tree();
 
 }
