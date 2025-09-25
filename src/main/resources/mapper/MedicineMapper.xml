@@ -12,7 +12,7 @@
         <result property="genericName" column="generic_name"/>
         <result property="approvalNumber" column="approval_number"/>
         <result property="specification" column="specification"/>
-        <result property="manufacturer" column="manufacturer"/>
+        <result property="supplierId" column="supplier_id"/>
         <result property="prescription" column="prescription"/>
         <result property="status" column="status"/>
         <result property="description" column="description"/>
@@ -22,7 +22,7 @@
 
     <!-- 通用查询结果列 -->
     <sql id="Base_Column_List">
-        id, category_id, name, generic_name, approval_number, specification, manufacturer, prescription, status, description, create_time, update_time
+        id, category_id, name, generic_name, approval_number, specification, supplier_id, prescription, status, description, create_time, update_time
     </sql>
 
     <!-- 分页查询药品列表 -->
@@ -46,8 +46,8 @@
             <if test="request.categoryId != null">
                 AND m.category_id = #{request.categoryId}
             </if>
-            <if test="request.manufacturer != null and request.manufacturer != ''">
-                AND m.manufacturer LIKE CONCAT('%', #{request.manufacturer}, '%')
+            <if test="request.supplierId != null">
+                AND m.supplier_id = #{request.supplierId}
             </if>
             <if test="request.approvalNumber != null and request.approvalNumber != ''">
                 AND m.approval_number LIKE CONCAT('%', #{request.approvalNumber}, '%')

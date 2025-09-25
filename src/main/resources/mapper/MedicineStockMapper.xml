@@ -39,7 +39,7 @@
     <sql id="MedicineStock_With_Medicine_Column_List">
         ms.id, ms.medicine_id, ms.batch_no, ms.quantity, ms.expiry_date, ms.warehouse,
         ms.create_time, ms.update_time,
-        m.name as medicine_name, m.generic_name, m.specification, m.manufacturer
+        m.name as medicine_name, m.generic_name, m.specification, m.supplier_id
     </sql>
 
     <!-- 分页查询药品库存列表 -->

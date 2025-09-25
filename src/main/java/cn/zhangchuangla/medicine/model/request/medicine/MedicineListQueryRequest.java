@@ -41,10 +41,10 @@ public class MedicineListQueryRequest extends BasePageRequest {
     private Long categoryId;
 
     /**
-     * 生产厂家
+     * 生产厂家ID
      */
-    @Schema(description = "生产厂家", type = "string", example = "哈药集团")
-    private String manufacturer;
+    @Schema(description = "生产厂家ID", type = "string", example = "10")
+    private Long supplierId;
 
     /**
      * 批准文号

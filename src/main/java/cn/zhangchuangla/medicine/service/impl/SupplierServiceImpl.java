@@ -14,6 +14,7 @@ import cn.zhangchuangla.medicine.model.request.medicine.SupplierListQueryRequest
 import cn.zhangchuangla.medicine.model.request.medicine.SupplierUpdateRequest;
 import cn.zhangchuangla.medicine.service.SupplierService;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.baomidou.mybatisplus.extension.conditions.query.LambdaQueryChainWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import lombok.RequiredArgsConstructor;
@@ -88,22 +89,20 @@ public class SupplierServiceImpl extends ServiceImpl<SupplierMapper, Supplier>
     public boolean deleteSupplier(List<Long> ids) {
         Assert.notEmpty(ids, "供应商ID列表不能为空");
 
+        // 去除无效的ID
+        LambdaQueryWrapper<Supplier> wrapper = new LambdaQueryWrapper<Supplier>().in(Supplier::getId, ids);
+        List<Supplier> suppliers = list(wrapper);
+        ids.removeIf(id -> suppliers.stream().noneMatch(supplier -> supplier.getId().equals(id)));
+
+        // 检查供应商是否已被药品关联
         for (Long id : ids) {
-            Supplier supplier = getById(id);
-            Assert.notNull(supplier, "ID为 " + id + " 的供应商不存在");
-        }
-
-        List<Supplier> suppliers = listByIds(ids);
-        List<String> supplierNames = suppliers.stream()
-                .map(Supplier::getName)
-                .toList();
-
-        // 如果该供应商已被药品选择为生产厂家，则不允许删除
-        long count = medicineMapper.selectCount(
-                new LambdaQueryWrapper<Medicine>().in(Medicine::getManufacturer, supplierNames)
-        );
-        if (count > 0) {
-            throw new ServiceException(ResponseResultCode.OPERATION_ERROR, "该供应商已被药品选择为生产厂家，请先解除关联关系");
+            long medicineCount = new LambdaQueryChainWrapper<>(medicineMapper)
+                    .eq(Medicine::getSupplierId, id)
+                    .count();
+            if (medicineCount > 0) {
+                throw new ServiceException(ResponseResultCode.OPERATION_ERROR,
+                    "该供应商已被药品关联，无法删除");
+            }
         }
 
         return removeByIds(ids);

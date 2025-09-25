@@ -52,8 +52,8 @@ public class MedicineAddRequest {
     /**
      * 生产厂家
      */
-    @Schema(description = "生产厂家", type = "string", example = "哈药集团")
-    private String manufacturer;
+    @Schema(description = "生产厂家", type = "string", example = "10")
+    private Long supplierId;
 
     /**
      * 是否处方药（0-否，1-是）

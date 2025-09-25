@@ -46,9 +46,9 @@ public class Medicine {
     private String specification;
 
     /**
-     * 生产厂家
+     * 生产厂家ID
      */
-    private String manufacturer;
+    private Long supplierId;
 
     /**
      * 是否处方药（0-否，1-是）
