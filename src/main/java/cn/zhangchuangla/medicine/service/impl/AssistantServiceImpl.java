@@ -28,8 +28,8 @@ import java.util.stream.Collectors;
 
 /**
  * @author Chuang
- *         <p>
- *         created on 2025/9/16 10:49
+ * <p>
+ * created on 2025/9/16 10:49
  */
 @Service
 public class AssistantServiceImpl implements AssistantService, BaseService {
@@ -39,8 +39,8 @@ public class AssistantServiceImpl implements AssistantService, BaseService {
     private final MessageService messageService;
 
     public AssistantServiceImpl(@Qualifier("medicineWorkflowService") StateGraph writingAssistantGraph,
-            ConversationService conversationService,
-            MessageService messageService)
+                                ConversationService conversationService,
+                                MessageService messageService)
             throws GraphStateException {
         this.compiledGraph = writingAssistantGraph.compile();
         this.conversationService = conversationService;

@@ -51,13 +51,13 @@ public class MessageServiceImpl extends ServiceImpl<MessageMapper, Message>
     public List<Message> getConversationMessages(Long conversationId, Integer limit) {
         LambdaQueryWrapper<Message> queryWrapper = new LambdaQueryWrapper<>();
         queryWrapper.eq(Message::getConversationId, conversationId)
-                   .eq(Message::getIsDelete, 0)
-                   .orderByAsc(Message::getCreateTime);
-        
+                .eq(Message::getIsDelete, 0)
+                .orderByAsc(Message::getCreateTime);
+
         if (limit != null && limit > 0) {
             queryWrapper.last("LIMIT " + limit);
         }
-        
+
         return list(queryWrapper);
     }
 
@@ -71,14 +71,14 @@ public class MessageServiceImpl extends ServiceImpl<MessageMapper, Message>
     public List<Message> getConversationMessagesCursor(Long conversationId, Long cursor, Integer limit) {
         LambdaQueryWrapper<Message> queryWrapper = new LambdaQueryWrapper<>();
         queryWrapper.eq(Message::getConversationId, conversationId)
-                   .eq(Message::getIsDelete, 0);
+                .eq(Message::getIsDelete, 0);
 
         if (cursor != null) {
             queryWrapper.lt(Message::getId, cursor);
         }
 
         queryWrapper.orderByDesc(Message::getId)
-                   .last("LIMIT " + limit);
+                .last("LIMIT " + limit);
 
         return list(queryWrapper);
     }
@@ -88,8 +88,8 @@ public class MessageServiceImpl extends ServiceImpl<MessageMapper, Message>
     public boolean hasMoreMessages(Long conversationId, Long lastMessageId) {
         LambdaQueryWrapper<Message> queryWrapper = new LambdaQueryWrapper<>();
         queryWrapper.eq(Message::getConversationId, conversationId)
-                   .eq(Message::getIsDelete, 0)
-                   .lt(Message::getId, lastMessageId);
+                .eq(Message::getIsDelete, 0)
+                .lt(Message::getId, lastMessageId);
 
         return count(queryWrapper) > 0;
     }

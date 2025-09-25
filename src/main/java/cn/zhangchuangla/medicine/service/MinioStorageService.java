@@ -24,11 +24,11 @@ public interface MinioStorageService {
     /**
      * 上传文件
      *
-     * @param bucketName  存储桶名称
-     * @param objectName  对象名称（包含路径）
-     * @param inputStream 文件输入流
+     * @param bucketName    存储桶名称
+     * @param objectName    对象名称（包含路径）
+     * @param inputStream   文件输入流
      * @param contentLength 文件大小（字节）
-     * @param contentType 文件类型
+     * @param contentType   文件类型
      * @return 文件访问地址
      */
     String uploadFile(String bucketName, String objectName, InputStream inputStream, long contentLength, String contentType);

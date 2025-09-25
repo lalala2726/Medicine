@@ -54,8 +54,8 @@ public class MedicineServiceImpl extends ServiceImpl<MedicineMapper, Medicine> i
     /**
      * 检查药品名称是否重复（排除指定ID）
      *
-     * @param name       药品名称
-     * @param excludeId  排除的药品ID（用于更新时排除自身）
+     * @param name      药品名称
+     * @param excludeId 排除的药品ID（用于更新时排除自身）
      * @return 重复的药品对象，如果不存在返回null
      */
     private Medicine checkMedicineNameDuplicate(String name, Long excludeId) {
@@ -212,7 +212,7 @@ public class MedicineServiceImpl extends ServiceImpl<MedicineMapper, Medicine> i
      * 保存药品图片
      *
      * @param medicineId 药品ID
-     * @param imageUrls 图片URL列表
+     * @param imageUrls  图片URL列表
      */
     private void saveMedicineImages(Long medicineId, List<String> imageUrls) {
         for (String url : imageUrls) {

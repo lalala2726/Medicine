@@ -84,7 +84,7 @@ public class MedicineController extends BaseController {
     /**
      * 更新药品图片
      *
-     * @param id 药品ID
+     * @param id        药品ID
      * @param imageUrls 图片URL列表
      * @return 更新结果
      */

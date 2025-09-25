@@ -10,7 +10,7 @@ import java.util.Date;
 /**
  * 药品库存表
  */
-@TableName(value ="medicine_stock")
+@TableName(value = "medicine_stock")
 @Data
 public class MedicineStock {
 

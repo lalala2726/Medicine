@@ -11,7 +11,7 @@ import java.util.Date;
 /**
  * 药品价格表
  */
-@TableName(value ="medicine_price")
+@TableName(value = "medicine_price")
 @Data
 public class MedicinePrice {
 

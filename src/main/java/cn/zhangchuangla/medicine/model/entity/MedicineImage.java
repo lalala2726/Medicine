@@ -10,7 +10,7 @@ import java.util.Date;
 /**
  * 药品图片表
  */
-@TableName(value ="medicine_image")
+@TableName(value = "medicine_image")
 @Data
 public class MedicineImage {
 

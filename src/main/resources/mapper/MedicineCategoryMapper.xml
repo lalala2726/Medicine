@@ -6,17 +6,17 @@
 
     <!-- 通用查询映射结果 -->
     <resultMap id="BaseResultMap" type="cn.zhangchuangla.medicine.model.entity.MedicineCategory">
-        <id property="id" column="id" />
-        <result property="name" column="name" />
-        <result property="parentId" column="parent_id" />
-        <result property="description" column="description" />
-        <result property="sort" column="sort" />
-        <result property="createTime" column="create_time" />
-        <result property="updateTime" column="update_time" />
-        <result property="createBy" column="create_by" />
-        <result property="updateBy" column="update_by" />
-        <result property="deleteTime" column="delete_time" />
-        <result property="isDelete" column="is_delete" />
+        <id property="id" column="id"/>
+        <result property="name" column="name"/>
+        <result property="parentId" column="parent_id"/>
+        <result property="description" column="description"/>
+        <result property="sort" column="sort"/>
+        <result property="createTime" column="create_time"/>
+        <result property="updateTime" column="update_time"/>
+        <result property="createBy" column="create_by"/>
+        <result property="updateBy" column="update_by"/>
+        <result property="deleteTime" column="delete_time"/>
+        <result property="isDelete" column="is_delete"/>
     </resultMap>
 
     <!-- 通用查询结果列 -->
@@ -26,7 +26,8 @@
 
     <!-- 分页查询药品分类列表 -->
     <select id="listMedicineCategory" resultMap="BaseResultMap">
-        SELECT <include refid="Base_Column_List" />
+        SELECT
+        <include refid="Base_Column_List"/>
         FROM medicine_category
         <where>
             is_delete = 0

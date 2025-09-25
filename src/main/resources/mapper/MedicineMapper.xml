@@ -6,18 +6,18 @@
 
     <!-- 通用查询映射结果 -->
     <resultMap id="BaseResultMap" type="cn.zhangchuangla.medicine.model.entity.Medicine">
-        <id property="id" column="id" />
-        <result property="categoryId" column="category_id" />
-        <result property="name" column="name" />
-        <result property="genericName" column="generic_name" />
-        <result property="approvalNumber" column="approval_number" />
-        <result property="specification" column="specification" />
-        <result property="manufacturer" column="manufacturer" />
-        <result property="prescription" column="prescription" />
-        <result property="status" column="status" />
-        <result property="description" column="description" />
-        <result property="createTime" column="create_time" />
-        <result property="updateTime" column="update_time" />
+        <id property="id" column="id"/>
+        <result property="categoryId" column="category_id"/>
+        <result property="name" column="name"/>
+        <result property="genericName" column="generic_name"/>
+        <result property="approvalNumber" column="approval_number"/>
+        <result property="specification" column="specification"/>
+        <result property="manufacturer" column="manufacturer"/>
+        <result property="prescription" column="prescription"/>
+        <result property="status" column="status"/>
+        <result property="description" column="description"/>
+        <result property="createTime" column="create_time"/>
+        <result property="updateTime" column="update_time"/>
     </resultMap>
 
     <!-- 通用查询结果列 -->
@@ -28,8 +28,8 @@
     <!-- 分页查询药品列表 -->
     <select id="listMedicine" resultMap="BaseResultMap">
         SELECT
-            m.*,
-            mc.name as category_name
+        m.*,
+        mc.name as category_name
         FROM medicine m
         LEFT JOIN medicine_category mc ON m.category_id = mc.id
         <where>
@@ -37,7 +37,8 @@
                 AND m.id = #{request.id}
             </if>
             <if test="request.name != null and request.name != ''">
-                AND (m.name LIKE CONCAT('%', #{request.name}, '%') OR m.generic_name LIKE CONCAT('%', #{request.name}, '%'))
+                AND (m.name LIKE CONCAT('%', #{request.name}, '%') OR m.generic_name LIKE CONCAT('%', #{request.name},
+                '%'))
             </if>
             <if test="request.genericName != null and request.genericName != ''">
                 AND m.generic_name LIKE CONCAT('%', #{request.genericName}, '%')

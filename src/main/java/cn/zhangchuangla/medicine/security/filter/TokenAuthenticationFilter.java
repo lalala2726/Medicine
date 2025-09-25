@@ -25,8 +25,8 @@ import java.util.Arrays;
 
 /**
  * @author Chuang
- *         <p>
- *         created on 2025/8/28 14:14
+ * <p>
+ * created on 2025/8/28 14:14
  */
 @Slf4j
 @Component
@@ -46,7 +46,7 @@ public class TokenAuthenticationFilter extends OncePerRequestFilter {
      */
     @Override
     protected void doFilterInternal(@Nonnull HttpServletRequest request, @Nonnull HttpServletResponse response,
-            @Nonnull FilterChain filterChain) throws ServletException, IOException {
+                                    @Nonnull FilterChain filterChain) throws ServletException, IOException {
         String header = securityProperties.getHeader();
         String token = request.getHeader(header);
         try {

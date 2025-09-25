@@ -6,28 +6,28 @@
 
     <!-- 通用查询映射结果 -->
     <resultMap id="BaseResultMap" type="cn.zhangchuangla.medicine.model.entity.MedicineStock">
-        <id property="id" column="id" />
-        <result property="medicineId" column="medicine_id" />
-        <result property="batchNo" column="batch_no" />
-        <result property="quantity" column="quantity" />
-        <result property="expiryDate" column="expiry_date" />
-        <result property="warehouse" column="warehouse" />
-        <result property="createTime" column="create_time" />
-        <result property="updateTime" column="update_time" />
+        <id property="id" column="id"/>
+        <result property="medicineId" column="medicine_id"/>
+        <result property="batchNo" column="batch_no"/>
+        <result property="quantity" column="quantity"/>
+        <result property="expiryDate" column="expiry_date"/>
+        <result property="warehouse" column="warehouse"/>
+        <result property="createTime" column="create_time"/>
+        <result property="updateTime" column="update_time"/>
     </resultMap>
 
     <!-- 带药品信息的查询映射结果 -->
     <resultMap id="MedicineStockWithMedicineResultMap" type="cn.zhangchuangla.medicine.model.entity.MedicineStock">
-        <id property="id" column="id" />
-        <result property="medicineId" column="medicine_id" />
-        <result property="batchNo" column="batch_no" />
-        <result property="quantity" column="quantity" />
-        <result property="expiryDate" column="expiry_date" />
-        <result property="warehouse" column="warehouse" />
-        <result property="createTime" column="create_time" />
-        <result property="updateTime" column="update_time" />
+        <id property="id" column="id"/>
+        <result property="medicineId" column="medicine_id"/>
+        <result property="batchNo" column="batch_no"/>
+        <result property="quantity" column="quantity"/>
+        <result property="expiryDate" column="expiry_date"/>
+        <result property="warehouse" column="warehouse"/>
+        <result property="createTime" column="create_time"/>
+        <result property="updateTime" column="update_time"/>
         <!-- 药品信息 -->
-        <result property="medicineId" column="medicine_id" />
+        <result property="medicineId" column="medicine_id"/>
     </resultMap>
 
     <!-- 通用查询结果列 -->
@@ -44,7 +44,8 @@
 
     <!-- 分页查询药品库存列表 -->
     <select id="listMedicineStock" resultMap="MedicineStockWithMedicineResultMap">
-        SELECT <include refid="MedicineStock_With_Medicine_Column_List" />
+        SELECT
+        <include refid="MedicineStock_With_Medicine_Column_List"/>
         FROM medicine_stock ms
         LEFT JOIN medicine m ON ms.medicine_id = m.id
         <where>

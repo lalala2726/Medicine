@@ -5,14 +5,14 @@
 <mapper namespace="cn.zhangchuangla.medicine.mapper.InventoryLogMapper">
 
     <resultMap id="BaseResultMap" type="cn.zhangchuangla.medicine.model.entity.InventoryLog">
-            <id property="id" column="id" />
-            <result property="medicineId" column="medicine_id" />
-            <result property="batchNo" column="batch_no" />
-            <result property="changeType" column="change_type" />
-            <result property="changeQty" column="change_qty" />
-            <result property="operator" column="operator" />
-            <result property="remark" column="remark" />
-            <result property="createTime" column="create_time" />
+        <id property="id" column="id"/>
+        <result property="medicineId" column="medicine_id"/>
+        <result property="batchNo" column="batch_no"/>
+        <result property="changeType" column="change_type"/>
+        <result property="changeQty" column="change_qty"/>
+        <result property="operator" column="operator"/>
+        <result property="remark" column="remark"/>
+        <result property="createTime" column="create_time"/>
     </resultMap>
 
     <sql id="Base_Column_List">

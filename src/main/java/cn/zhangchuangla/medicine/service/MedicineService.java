@@ -70,7 +70,7 @@ public interface MedicineService extends IService<Medicine> {
      * 更新药品图片列表
      *
      * @param medicineId 药品ID
-     * @param imageUrls 图片URL列表
+     * @param imageUrls  图片URL列表
      * @return 是否成功
      */
     boolean updateMedicineImages(Long medicineId, List<String> imageUrls);

@@ -10,7 +10,7 @@ import java.util.Date;
 /**
  * 供应商表
  */
-@TableName(value ="supplier")
+@TableName(value = "supplier")
 @Data
 public class Supplier {
 

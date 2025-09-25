@@ -17,6 +17,7 @@ public interface AssistantService {
 
     /**
      * 获取会话历史（分页）
+     *
      * @param request 分页请求参数
      */
     ChatHistoryResponse history(HistoryRequest request);

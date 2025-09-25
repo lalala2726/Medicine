@@ -5,15 +5,15 @@
 <mapper namespace="cn.zhangchuangla.medicine.mapper.MedicinePriceMapper">
 
     <resultMap id="BaseResultMap" type="cn.zhangchuangla.medicine.model.entity.MedicinePrice">
-            <id property="id" column="id" />
-            <result property="medicineId" column="medicine_id" />
-            <result property="retailPrice" column="retail_price" />
-            <result property="memberPrice" column="member_price" />
-            <result property="promotionPrice" column="promotion_price" />
-            <result property="startTime" column="start_time" />
-            <result property="endTime" column="end_time" />
-            <result property="createTime" column="create_time" />
-            <result property="updateTime" column="update_time" />
+        <id property="id" column="id"/>
+        <result property="medicineId" column="medicine_id"/>
+        <result property="retailPrice" column="retail_price"/>
+        <result property="memberPrice" column="member_price"/>
+        <result property="promotionPrice" column="promotion_price"/>
+        <result property="startTime" column="start_time"/>
+        <result property="endTime" column="end_time"/>
+        <result property="createTime" column="create_time"/>
+        <result property="updateTime" column="update_time"/>
     </resultMap>
 
     <sql id="Base_Column_List">

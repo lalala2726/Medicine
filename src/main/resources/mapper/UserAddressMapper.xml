@@ -5,20 +5,20 @@
 <mapper namespace="cn.zhangchuangla.medicine.mapper.UserAddressMapper">
 
     <resultMap id="BaseResultMap" type="cn.zhangchuangla.medicine.model.entity.UserAddress">
-            <id property="id" column="id" />
-            <result property="userId" column="user_id" />
-            <result property="consignee" column="consignee" />
-            <result property="phone" column="phone" />
-            <result property="province" column="province" />
-            <result property="city" column="city" />
-            <result property="district" column="district" />
-            <result property="detail" column="detail" />
-            <result property="postalCode" column="postal_code" />
-            <result property="isDefault" column="is_default" />
-            <result property="createTime" column="create_time" />
-            <result property="updateTime" column="update_time" />
-            <result property="deleteTime" column="delete_time" />
-            <result property="isDelete" column="is_delete" />
+        <id property="id" column="id"/>
+        <result property="userId" column="user_id"/>
+        <result property="consignee" column="consignee"/>
+        <result property="phone" column="phone"/>
+        <result property="province" column="province"/>
+        <result property="city" column="city"/>
+        <result property="district" column="district"/>
+        <result property="detail" column="detail"/>
+        <result property="postalCode" column="postal_code"/>
+        <result property="isDefault" column="is_default"/>
+        <result property="createTime" column="create_time"/>
+        <result property="updateTime" column="update_time"/>
+        <result property="deleteTime" column="delete_time"/>
+        <result property="isDelete" column="is_delete"/>
     </resultMap>
 
     <sql id="Base_Column_List">
