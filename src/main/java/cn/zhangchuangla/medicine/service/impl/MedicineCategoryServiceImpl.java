@@ -2,18 +2,24 @@ package cn.zhangchuangla.medicine.service.impl;
 
 import cn.zhangchuangla.medicine.common.base.BaseService;
 import cn.zhangchuangla.medicine.common.base.Option;
+import cn.zhangchuangla.medicine.common.exception.ServiceException;
 import cn.zhangchuangla.medicine.common.utils.Assert;
 import cn.zhangchuangla.medicine.common.utils.BeanCotyUtils;
+import cn.zhangchuangla.medicine.enums.ResponseResultCode;
 import cn.zhangchuangla.medicine.mapper.MedicineCategoryMapper;
+import cn.zhangchuangla.medicine.mapper.MedicineMapper;
+import cn.zhangchuangla.medicine.model.entity.Medicine;
 import cn.zhangchuangla.medicine.model.entity.MedicineCategory;
 import cn.zhangchuangla.medicine.model.request.medicine.MedicineCategoryAddRequest;
 import cn.zhangchuangla.medicine.model.request.medicine.MedicineCategoryListQueryRequest;
 import cn.zhangchuangla.medicine.model.request.medicine.MedicineCategoryUpdateRequest;
 import cn.zhangchuangla.medicine.model.vo.medicine.MedicineCategoryTree;
 import cn.zhangchuangla.medicine.service.MedicineCategoryService;
+import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.extension.conditions.query.LambdaQueryChainWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
+import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
 import java.util.Date;
@@ -27,8 +33,11 @@ import java.util.stream.Collectors;
  * created on 2025/9/21 19:45
  */
 @Service
+@RequiredArgsConstructor
 public class MedicineCategoryServiceImpl extends ServiceImpl<MedicineCategoryMapper, MedicineCategory>
         implements MedicineCategoryService, BaseService {
+
+    private final MedicineMapper medicineMapper;
 
     /**
      * 分页查询药品分类列表
@@ -133,6 +142,13 @@ public class MedicineCategoryServiceImpl extends ServiceImpl<MedicineCategoryMap
                     .count() > 0) {
                 return false;
             }
+        }
+
+        long count = medicineMapper.selectCount(
+                new LambdaQueryWrapper<Medicine>().in(Medicine::getCategoryId, ids)
+        );
+        if (count > 0) {
+            throw new ServiceException(ResponseResultCode.DELETE_ERROR, "该分类已被药品选择为药品分类，请先解除关联关系");
         }
 
         return removeByIds(ids);

@@ -2,15 +2,21 @@ package cn.zhangchuangla.medicine.service.impl;
 
 import cn.zhangchuangla.medicine.common.base.BaseService;
 import cn.zhangchuangla.medicine.common.base.Option;
+import cn.zhangchuangla.medicine.common.exception.ServiceException;
 import cn.zhangchuangla.medicine.common.utils.Assert;
+import cn.zhangchuangla.medicine.enums.ResponseResultCode;
+import cn.zhangchuangla.medicine.mapper.MedicineMapper;
 import cn.zhangchuangla.medicine.mapper.SupplierMapper;
+import cn.zhangchuangla.medicine.model.entity.Medicine;
 import cn.zhangchuangla.medicine.model.entity.Supplier;
 import cn.zhangchuangla.medicine.model.request.medicine.SupplierAddRequest;
 import cn.zhangchuangla.medicine.model.request.medicine.SupplierListQueryRequest;
 import cn.zhangchuangla.medicine.model.request.medicine.SupplierUpdateRequest;
 import cn.zhangchuangla.medicine.service.SupplierService;
+import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
+import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
 import java.util.Date;
@@ -20,8 +26,11 @@ import java.util.List;
  * @author Chuang
  */
 @Service
+@RequiredArgsConstructor
 public class SupplierServiceImpl extends ServiceImpl<SupplierMapper, Supplier>
         implements SupplierService, BaseService {
+
+    private final MedicineMapper medicineMapper;
 
     @Override
     public Page<Supplier> listSupplier(SupplierListQueryRequest request) {
@@ -82,6 +91,19 @@ public class SupplierServiceImpl extends ServiceImpl<SupplierMapper, Supplier>
         for (Long id : ids) {
             Supplier supplier = getById(id);
             Assert.notNull(supplier, "ID为 " + id + " 的供应商不存在");
+        }
+
+        List<Supplier> suppliers = listByIds(ids);
+        List<String> supplierNames = suppliers.stream()
+                .map(Supplier::getName)
+                .toList();
+
+        // 如果该供应商已被药品选择为生产厂家，则不允许删除
+        long count = medicineMapper.selectCount(
+                new LambdaQueryWrapper<Medicine>().in(Medicine::getManufacturer, supplierNames)
+        );
+        if (count > 0) {
+            throw new ServiceException(ResponseResultCode.OPERATION_ERROR, "该供应商已被药品选择为生产厂家，请先解除关联关系");
         }
 
         return removeByIds(ids);
