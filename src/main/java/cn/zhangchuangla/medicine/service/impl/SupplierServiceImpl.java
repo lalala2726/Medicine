@@ -14,7 +14,6 @@ import cn.zhangchuangla.medicine.model.request.medicine.SupplierListQueryRequest
 import cn.zhangchuangla.medicine.model.request.medicine.SupplierUpdateRequest;
 import cn.zhangchuangla.medicine.service.SupplierService;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
-import com.baomidou.mybatisplus.extension.conditions.query.LambdaQueryChainWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import lombok.RequiredArgsConstructor;
@@ -22,6 +21,7 @@ import org.springframework.stereotype.Service;
 
 import java.util.Date;
 import java.util.List;
+import java.util.stream.Stream;
 
 /**
  * @author Chuang
@@ -88,23 +88,20 @@ public class SupplierServiceImpl extends ServiceImpl<SupplierMapper, Supplier>
     @Override
     public boolean deleteSupplier(List<Long> ids) {
         Assert.notEmpty(ids, "供应商ID列表不能为空");
-
-        // 去除无效的ID
-        LambdaQueryWrapper<Supplier> wrapper = new LambdaQueryWrapper<Supplier>().in(Supplier::getId, ids);
-        List<Supplier> suppliers = list(wrapper);
-        ids.removeIf(id -> suppliers.stream().noneMatch(supplier -> supplier.getId().equals(id)));
-
         // 检查供应商是否已被药品关联
-        for (Long id : ids) {
-            long medicineCount = new LambdaQueryChainWrapper<>(medicineMapper)
-                    .eq(Medicine::getSupplierId, id)
-                    .count();
-            if (medicineCount > 0) {
-                throw new ServiceException(ResponseResultCode.OPERATION_ERROR,
-                    "该供应商已被药品关联，无法删除");
-            }
-        }
+        LambdaQueryWrapper<Supplier> supplierLambdaQueryWrapper = new LambdaQueryWrapper<Supplier>()
+                .in(Supplier::getId, ids);
 
+        Stream<Long> supplierIds = list(supplierLambdaQueryWrapper)
+                .stream()
+                .map(Supplier::getId);
+
+        LambdaQueryWrapper<Medicine> medicineLambdaQueryWrapper = new LambdaQueryWrapper<Medicine>()
+                .in(Medicine::getSupplierId, supplierIds);
+        Long selectCount = medicineMapper.selectCount(medicineLambdaQueryWrapper);
+        if (selectCount > 0) {
+            throw new ServiceException(ResponseResultCode.OPERATION_ERROR, "供应商已被药品关联，请先解除关联关系");
+        }
         return removeByIds(ids);
     }
 
