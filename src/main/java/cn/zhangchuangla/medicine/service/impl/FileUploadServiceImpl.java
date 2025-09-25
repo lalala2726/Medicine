@@ -1,12 +1,15 @@
 package cn.zhangchuangla.medicine.service.impl;
 
+import cn.zhangchuangla.medicine.common.exception.ServiceException;
+import cn.zhangchuangla.medicine.config.FileUploadProperties;
+import cn.zhangchuangla.medicine.enums.FileStorageMode;
+import cn.zhangchuangla.medicine.factory.FileStorageStrategyFactory;
 import cn.zhangchuangla.medicine.model.vo.FileUploadVo;
 import cn.zhangchuangla.medicine.service.FileUploadService;
-import cn.zhangchuangla.medicine.service.MinioStorageService;
+import cn.zhangchuangla.medicine.strategy.FileStorageStrategy;
 import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -27,22 +30,15 @@ import java.util.UUID;
 @RequiredArgsConstructor
 public class FileUploadServiceImpl implements FileUploadService {
 
-    private final MinioStorageService minioStorageService;
-
-    @Value("${minio.bucket-name}")
-    private String bucketName;
-
-    @Value("${file.upload.allowed-types:image/jpeg,image/png,image/gif,image/webp,application/pdf}")
-    private String allowedTypes;
+    private final FileStorageStrategyFactory strategyFactory;
+    private final FileUploadProperties fileUploadProperties;
 
     private Set<String> allowedTypeSet;
 
     @PostConstruct
     public void init() {
-        // 初始化允许的文件类型集合
-        if (allowedTypes != null && !allowedTypes.trim().isEmpty()) {
-            allowedTypeSet = Set.of(allowedTypes.split(","));
-        } else {
+        allowedTypeSet = fileUploadProperties.getAllowedTypeSet();
+        if (allowedTypeSet == null) {
             allowedTypeSet = Collections.emptySet();
         }
     }
@@ -75,8 +71,12 @@ public class FileUploadServiceImpl implements FileUploadService {
             // 构建完整的对象路径
             String objectName = folderPath + "/" + uniqueFileName;
 
-            // 上传文件到MinIO
-            String fileUrl = minioStorageService.uploadFile(bucketName, objectName, file.getInputStream(), file.getSize(), file.getContentType());
+            // 根据配置选择存储策略
+            FileStorageMode mode = fileUploadProperties.getMode();
+            FileStorageStrategy strategy = strategyFactory.getStrategy(mode);
+
+            // 上传文件并返回访问地址
+            String fileUrl = strategy.upload(objectName, file);
 
             // 构建返回结果
             FileUploadVo uploadVo = new FileUploadVo();
@@ -90,7 +90,7 @@ public class FileUploadServiceImpl implements FileUploadService {
 
         } catch (Exception e) {
             log.error("File upload failed", e);
-            throw new RuntimeException("文件上传失败: " + e.getMessage(), e);
+            throw new ServiceException("文件上传失败");
         }
     }
 

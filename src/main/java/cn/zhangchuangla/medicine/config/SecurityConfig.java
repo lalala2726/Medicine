@@ -24,6 +24,8 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
+import static cn.zhangchuangla.medicine.constants.Constants.STATIC_FILE;
+
 /**
  * @author Chuang
  */
@@ -62,6 +64,7 @@ public class SecurityConfig {
                     auth.requestMatchers(SecurityConstants.WHITELIST).permitAll();
                     auth.requestMatchers(SecurityConstants.SWAGGER_WHITELIST).permitAll();
                     auth.requestMatchers(SecurityConstants.STATIC_RESOURCES_WHITELIST).permitAll();
+                    auth.requestMatchers(STATIC_FILE + "/**").permitAll();
                     if (!anonymousUrls.isEmpty()) {
                         auth.requestMatchers(anonymousUrls.toArray(new String[0])).permitAll();
                     }

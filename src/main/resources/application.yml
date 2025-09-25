@@ -49,3 +49,6 @@ minio:
 file:
   upload:
     allowed-types: image/jpeg,image/png,image/gif,image/webp,application/pdf
+    mode: local
+    domain: http://localhost:8080
+    local-path: /Users/zhangchuang/DevelopFileUpload/medicine

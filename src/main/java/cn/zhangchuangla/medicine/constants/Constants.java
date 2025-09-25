@@ -29,4 +29,6 @@ public class Constants {
      */
     public static final int NOT_DELETED = 0;
 
+    public static final String STATIC_FILE = "files";
+
 }
