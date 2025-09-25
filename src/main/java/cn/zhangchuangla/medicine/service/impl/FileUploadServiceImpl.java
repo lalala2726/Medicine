@@ -1,7 +1,7 @@
 package cn.zhangchuangla.medicine.service.impl;
 
 import cn.zhangchuangla.medicine.common.exception.ServiceException;
-import cn.zhangchuangla.medicine.config.FileUploadProperties;
+import cn.zhangchuangla.medicine.config.property.FileUploadProperties;
 import cn.zhangchuangla.medicine.enums.FileStorageMode;
 import cn.zhangchuangla.medicine.factory.FileStorageStrategyFactory;
 import cn.zhangchuangla.medicine.model.vo.FileUploadVo;

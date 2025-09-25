@@ -2,7 +2,7 @@ package cn.zhangchuangla.medicine.common.base;
 
 import cn.zhangchuangla.medicine.common.utils.BeanCotyUtils;
 import cn.zhangchuangla.medicine.security.entity.SysUserDetails;
-import cn.zhangchuangla.medicine.security.utils.SecurityUtils;
+import cn.zhangchuangla.medicine.utils.SecurityUtils;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 
 import java.util.List;

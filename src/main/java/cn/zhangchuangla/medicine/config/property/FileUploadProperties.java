@@ -1,4 +1,4 @@
-package cn.zhangchuangla.medicine.config;
+package cn.zhangchuangla.medicine.config.property;
 
 import cn.zhangchuangla.medicine.enums.FileStorageMode;
 import lombok.Getter;

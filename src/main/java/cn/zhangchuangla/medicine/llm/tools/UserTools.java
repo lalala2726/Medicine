@@ -3,8 +3,8 @@ package cn.zhangchuangla.medicine.llm.tools;
 import cn.zhangchuangla.medicine.common.utils.BeanCotyUtils;
 import cn.zhangchuangla.medicine.model.entity.User;
 import cn.zhangchuangla.medicine.model.vo.user.UserVo;
-import cn.zhangchuangla.medicine.security.utils.SecurityUtils;
 import cn.zhangchuangla.medicine.service.UserService;
+import cn.zhangchuangla.medicine.utils.SecurityUtils;
 import org.springframework.ai.tool.annotation.Tool;
 import org.springframework.stereotype.Component;
 

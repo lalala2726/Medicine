@@ -1,4 +1,4 @@
-package cn.zhangchuangla.medicine.security.utils;
+package cn.zhangchuangla.medicine.utils;
 
 import cn.zhangchuangla.medicine.common.exception.LoginException;
 import cn.zhangchuangla.medicine.constants.RolesConstant;

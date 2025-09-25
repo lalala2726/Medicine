@@ -1,5 +1,6 @@
 package cn.zhangchuangla.medicine.config;
 
+import cn.zhangchuangla.medicine.config.property.FileUploadProperties;
 import cn.zhangchuangla.medicine.enums.FileStorageMode;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;

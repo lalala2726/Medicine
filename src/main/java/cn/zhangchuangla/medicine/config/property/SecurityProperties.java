@@ -1,4 +1,4 @@
-package cn.zhangchuangla.medicine.security.property;
+package cn.zhangchuangla.medicine.config.property;
 
 import jakarta.validation.constraints.Min;
 import lombok.Data;

@@ -1,9 +1,9 @@
 package cn.zhangchuangla.medicine.security.filter;
 
 import cn.zhangchuangla.medicine.common.utils.ResponseUtils;
+import cn.zhangchuangla.medicine.config.property.SecurityProperties;
 import cn.zhangchuangla.medicine.constants.SecurityConstants;
 import cn.zhangchuangla.medicine.enums.ResponseResultCode;
-import cn.zhangchuangla.medicine.security.property.SecurityProperties;
 import cn.zhangchuangla.medicine.security.token.TokenService;
 import jakarta.annotation.Nonnull;
 import jakarta.servlet.FilterChain;
