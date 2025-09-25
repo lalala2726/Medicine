@@ -3,6 +3,10 @@ spring:
     active: druid,llm
   application:
     name: Medical
+  servlet:
+    multipart:
+      max-file-size: 50MB
+      max-request-size: 50MB
   data:
     redis:
       host: localhost
@@ -33,3 +37,15 @@ security:
   secret: zhangchuang2726zhangchuang2726zhangchuang2726
   access-token-expire-time: 18000000
   refresh-token-expire-time: 25920000
+
+# MinIO文件存储配置
+minio:
+  endpoint: http://localhost:9000
+  access-key: hwtIas6TEtyRqAswXAlc
+  secret-key: RJ8SMU8qDtxwjmxyaY4JlVc3XPSSBMbllrGoyOxZ
+  bucket-name: medicine
+
+# 文件上传配置
+file:
+  upload:
+    allowed-types: image/jpeg,image/png,image/gif,image/webp,application/pdf
