@@ -8,8 +8,8 @@ import reactor.core.publisher.FluxSink;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
- * Default progress reporter that serialises progress updates into
- * {@link StreamChatResponse} SSE payloads.
+ * 默认进度报告器，将进度更新序列化为
+ * {@link StreamChatResponse} SSE 负载数据。
  */
 public class DefaultWorkflowProgressReporter implements WorkflowProgressReporter {
 

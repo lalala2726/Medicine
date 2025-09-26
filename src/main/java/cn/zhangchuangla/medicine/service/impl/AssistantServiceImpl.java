@@ -246,31 +246,11 @@ public class AssistantServiceImpl implements AssistantService, BaseService {
     }
 
     private void streamAssistantResponse(DefaultWorkflowProgressReporter reporter, Long conversationId, String fullText, ChatStageEnum finalStage) {
-        List<String> chunks = splitToChunks(fullText);
-        StringBuilder accumulator = new StringBuilder();
-        for (String chunk : chunks) {
-            accumulator.append(chunk);
-            reporter.publishResponseChunk(chunk);
+        String finalText = StringUtils.hasText(fullText) ? fullText : "";
+        if (StringUtils.hasText(finalText)) {
+            reporter.publishResponseChunk(finalText);
         }
-        Message assistantMsg = messageService.saveAssistantMessage(conversationId, accumulator.toString());
+        Message assistantMsg = messageService.saveAssistantMessage(conversationId, finalText);
         reporter.publishResponseCompleted(assistantMsg.getUuid(), finalStage);
-    }
-
-    private List<String> splitToChunks(String text) {
-        if (!StringUtils.hasText(text)) {
-            return List.of("");
-        }
-        int len = text.length();
-        if (len <= 80) {
-            return List.of(text);
-        }
-        int parts = (len + 80 - 1) / 80;
-        return java.util.stream.IntStream.range(0, parts)
-                .mapToObj(i -> {
-                    int start = i * 80;
-                    int end = Math.min(start + 80, len);
-                    return text.substring(start, end);
-                })
-                .collect(Collectors.toList());
     }
 }

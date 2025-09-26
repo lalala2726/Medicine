@@ -3,18 +3,17 @@ package cn.zhangchuangla.medicine.llm.workflow.progress;
 import cn.zhangchuangla.medicine.enums.ChatStageEnum;
 
 /**
- * Reporter used by the workflow to push real-time progress updates back to the caller.
- * Implementations are responsible for converting the progress into SSE messages or any
- * other transport specific payload.
+ * 工作流使用的报告器，用于将实时进度更新推送回调用者。
+ * 实现负责将进度转换为 SSE 消息或任何其他特定传输的负载数据。
  */
 public interface WorkflowProgressReporter {
 
     /**
-     * Publish a workflow stage update.
+     * 发布工作流阶段更新。
      *
-     * @param stage stage code to publish
-     * @param message human readable description
-     * @param finished whether this stage finishes the workflow stream
+     * @param stage 要发布的阶段代码
+     * @param message 人类可读的描述
+     * @param finished 此阶段是否完成工作流流
      */
     void publishStage(ChatStageEnum stage, String message, boolean finished);
 
@@ -23,39 +22,39 @@ public interface WorkflowProgressReporter {
     }
 
     /**
-     * Notify a tool invocation start.
+     * 通知工具调用开始。
      *
-     * @param toolName Spring AI tool name
-     * @param message contextual information for UI display
+     * @param toolName Spring AI 工具名称
+     * @param message 用于 UI 显示的上下文信息
      */
     void publishToolInvoke(String toolName, String message);
 
     /**
-     * Notify a tool invocation result.
+     * 通知工具调用结果。
      *
-     * @param toolName Spring AI tool name
-     * @param result short text result for display
+     * @param toolName Spring AI 工具名称
+     * @param result 用于显示的简短文本结果
      */
     void publishToolResult(String toolName, String result);
 
     /**
-     * Emit a heartbeat message so SSE clients keep the TCP connection alive.
+     * 发送心跳消息，使 SSE 客户端保持 TCP 连接活跃。
      */
     default void publishHeartbeat() {
         publishStage(ChatStageEnum.HEARTBEAT, null);
     }
 
     /**
-     * Send a piece of response content in streaming mode.
+     * 在流式模式下发送一段响应内容。
      *
-     * @param content stream fragment
+     * @param content 流片段
      */
     void publishResponseChunk(String content);
 
     /**
-     * Complete the assistant response with the persisted message uuid.
+     * 使用持久化的消息 uuid 完成助手响应。
      *
-     * @param messageUuid identifier generated after storing assistant message
+     * @param messageUuid 存储助手消息后生成的标识符
      */
     default void publishResponseCompleted(String messageUuid) {
         publishResponseCompleted(messageUuid, ChatStageEnum.COMPLETED);
@@ -64,7 +63,7 @@ public interface WorkflowProgressReporter {
     void publishResponseCompleted(String messageUuid, ChatStageEnum finalStage);
 
     /**
-     * @return {@code true} if downstream consumer has cancelled the stream
+     * @return 如果下游消费者已取消流，则返回 {@code true}
      */
     boolean isCancelled();
 }

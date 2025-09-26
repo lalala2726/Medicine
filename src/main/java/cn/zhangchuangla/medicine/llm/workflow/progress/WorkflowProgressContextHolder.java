@@ -5,10 +5,9 @@ import cn.zhangchuangla.medicine.enums.ChatStageEnum;
 import java.util.Optional;
 
 /**
- * Thread local holder that allows workflow nodes and tools to access the current
- * progress reporter without coupling to transport specific details. The Graph engine
- * executes nodes sequentially on the caller thread, therefore a {@link ThreadLocal}
- * provides a lightweight hand-off mechanism.
+ * 线程本地持有器，允许工作流节点和工具访问当前的进度报告器，
+ * 而无需耦合到特定传输的详细信息。Graph 引擎在调用者线程上顺序执行节点，
+ * 因此 {@link ThreadLocal} 提供了轻量级的传递机制。
  */
 public final class WorkflowProgressContextHolder {
 
@@ -49,8 +48,8 @@ public final class WorkflowProgressContextHolder {
     }
 
     /**
-     * Propagate a heartbeat event to the current reporter (if any).
-     * Keeps SSE clients aware that the backend is still working.
+     * 将心跳事件传播到当前报告器（如果存在）。
+     * 让 SSE 客户端了解后端仍在工作。
      */
     public static void publishHeartbeat() {
         current().ifPresent(WorkflowProgressReporter::publishHeartbeat);
