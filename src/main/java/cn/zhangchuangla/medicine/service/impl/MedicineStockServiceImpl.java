@@ -31,9 +31,11 @@ public class MedicineStockServiceImpl extends ServiceImpl<MedicineStockMapper, M
         implements MedicineStockService, BaseService {
 
     private final MedicineService medicineService;
+    private final MedicineStockMapper medicineStockMapper;
 
-    public MedicineStockServiceImpl(MedicineService medicineService) {
+    public MedicineStockServiceImpl(MedicineService medicineService, MedicineStockMapper medicineStockMapper) {
         this.medicineService = medicineService;
+        this.medicineStockMapper = medicineStockMapper;
     }
 
     /**
@@ -55,9 +57,9 @@ public class MedicineStockServiceImpl extends ServiceImpl<MedicineStockMapper, M
      * @return 药品库存详情
      */
     @Override
-    public MedicineStock getMedicineStockById(Long id) {
+    public MedicineStockDto getMedicineStockById(Long id) {
         Assert.notNull(id, "库存ID不能为空");
-        return getById(id);
+        return medicineStockMapper.getMedicineStockById(id);
     }
 
     /**

@@ -4,7 +4,6 @@ import cn.zhangchuangla.medicine.common.base.AjaxResult;
 import cn.zhangchuangla.medicine.common.base.BaseController;
 import cn.zhangchuangla.medicine.common.base.TableDataResult;
 import cn.zhangchuangla.medicine.model.dto.MedicineStockDto;
-import cn.zhangchuangla.medicine.model.entity.MedicineStock;
 import cn.zhangchuangla.medicine.model.request.medicine.MedicineStockAddRequest;
 import cn.zhangchuangla.medicine.model.request.medicine.MedicineStockQueryRequest;
 import cn.zhangchuangla.medicine.model.request.medicine.MedicineStockUpdateRequest;
@@ -61,8 +60,9 @@ public class MedicineStockController extends BaseController {
     @GetMapping("/{id:\\d+}")
     @Operation(summary = "获取药品库存详情")
     public AjaxResult<MedicineStockVo> getMedicineStockById(@PathVariable("id") Long id) {
-        MedicineStock stock = medicineStockService.getMedicineStockById(id);
+        MedicineStockDto stock = medicineStockService.getMedicineStockById(id);
         MedicineStockVo stockVo = copyProperties(stock, MedicineStockVo.class);
+        stockVo.setMedicineName(stock.getMedicine().getName());
         return success(stockVo);
     }
 

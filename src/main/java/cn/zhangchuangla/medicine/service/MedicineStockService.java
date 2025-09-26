@@ -32,7 +32,7 @@ public interface MedicineStockService extends IService<MedicineStock> {
      * @param id 库存ID
      * @return 药品库存详情
      */
-    MedicineStock getMedicineStockById(Long id);
+    MedicineStockDto getMedicineStockById(Long id);
 
     /**
      * 添加药品库存

@@ -1,9 +1,6 @@
 package cn.zhangchuangla.medicine.model.dto;
 
 import cn.zhangchuangla.medicine.model.entity.Medicine;
-import com.baomidou.mybatisplus.annotation.IdType;
-import com.baomidou.mybatisplus.annotation.TableId;
-import com.baomidou.mybatisplus.annotation.TableName;
 import lombok.Data;
 
 import java.util.Date;
@@ -11,14 +8,12 @@ import java.util.Date;
 /**
  * 药品库存表
  */
-@TableName(value = "medicine_stock")
 @Data
 public class MedicineStockDto {
 
     /**
      * 库存ID
      */
-    @TableId(type = IdType.AUTO)
     private Long id;
 
     /**

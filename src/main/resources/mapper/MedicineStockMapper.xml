@@ -51,25 +51,25 @@
     <!-- 分页查询药品库存列表 -->
     <select id="listMedicineStock" resultMap="StockDtoMap">
         select stock.id as id,
-               stock.medicine_id as medicine_id,
-               stock.batch_no as batch_no,
-               stock.quantity as quantity,
-               stock.expiry_date as expiry_date,
-               stock.warehouse as warehouse,
-               stock.create_time as create_time,
-               stock.update_time as update_time,
-               medicine.id as med_id,
-               medicine.category_id as med_category_id,
-               medicine.name as med_name,
-               medicine.generic_name as med_generic_name,
-               medicine.approval_number as med_approval_number,
-               medicine.specification as med_specification,
-               medicine.supplier_id as med_supplier_id,
-               medicine.prescription as med_prescription,
-               medicine.status as med_status,
-               medicine.description as med_description,
-               medicine.create_time as med_create_time,
-               medicine.update_time as med_update_time
+        stock.medicine_id as medicine_id,
+        stock.batch_no as batch_no,
+        stock.quantity as quantity,
+        stock.expiry_date as expiry_date,
+        stock.warehouse as warehouse,
+        stock.create_time as create_time,
+        stock.update_time as update_time,
+        medicine.id as med_id,
+        medicine.category_id as med_category_id,
+        medicine.name as med_name,
+        medicine.generic_name as med_generic_name,
+        medicine.approval_number as med_approval_number,
+        medicine.specification as med_specification,
+        medicine.supplier_id as med_supplier_id,
+        medicine.prescription as med_prescription,
+        medicine.status as med_status,
+        medicine.description as med_description,
+        medicine.create_time as med_create_time,
+        medicine.update_time as med_update_time
         from medicine_stock stock
         join medicine on stock.medicine_id = medicine.id
         <where>
@@ -106,6 +106,31 @@
             </if>
         </where>
         ORDER BY stock.create_time DESC
+    </select>
+    <select id="getMedicineStockById" resultMap="StockDtoMap">
+        select stock.id                 as id,
+               stock.medicine_id        as medicine_id,
+               stock.batch_no           as batch_no,
+               stock.quantity           as quantity,
+               stock.expiry_date        as expiry_date,
+               stock.warehouse          as warehouse,
+               stock.create_time        as create_time,
+               stock.update_time        as update_time,
+               medicine.id              as med_id,
+               medicine.category_id     as med_category_id,
+               medicine.name            as med_name,
+               medicine.generic_name    as med_generic_name,
+               medicine.approval_number as med_approval_number,
+               medicine.specification   as med_specification,
+               medicine.supplier_id     as med_supplier_id,
+               medicine.prescription    as med_prescription,
+               medicine.status          as med_status,
+               medicine.description     as med_description,
+               medicine.create_time     as med_create_time,
+               medicine.update_time     as med_update_time
+        from medicine_stock stock
+                 join medicine on stock.medicine_id = medicine.id
+        where stock.id = #{id}
     </select>
 
 

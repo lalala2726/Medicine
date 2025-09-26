@@ -26,6 +26,13 @@ public interface MedicineStockMapper extends BaseMapper<MedicineStock> {
      */
     Page<MedicineStockDto> listMedicineStock(Page<MedicineStock> page, @Param("request") MedicineStockQueryRequest request);
 
+    /**
+     * 根据ID获取药品库存详情
+     *
+     * @param id 库存ID
+     * @return 药品库存详情
+     */
+    MedicineStockDto getMedicineStockById(@Param("id") Long id);
 }
 
 

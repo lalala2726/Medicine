@@ -24,5 +24,4 @@ public interface MedicineMapper extends BaseMapper<Medicine> {
      * @return 药品分页列表
      */
     Page<Medicine> listMedicine(Page<Medicine> page, @Param("request") MedicineListQueryRequest request);
-
 }
