@@ -31,22 +31,22 @@ class AssistantControllerTests {
         StreamChatResponse start = StreamChatResponse.builder()
                 .uuid("test-uuid")
                 .stage(ChatStageEnum.WORKFLOW_START.getCode())
-                .content("测试流程启动")
+                .stageMessage("测试流程启动")
                 .finished(Boolean.FALSE)
                 .build();
 
         StreamChatResponse analysis = StreamChatResponse.builder()
                 .uuid("test-uuid")
                 .stage(ChatStageEnum.ROUTE_CONSULT.getCode())
-                .content("进入分析阶段")
+                .stageMessage("进入分析阶段")
                 .finished(Boolean.TRUE)
                 .build();
 
-        when(assistantService.testChat(any(UserMessageRequest.class)))
+        when(assistantService.chat(any(UserMessageRequest.class)))
                 .thenReturn(Flux.just(start, analysis));
 
         Flux<StreamChatResponse> responseFlux = webTestClient.post()
-                .uri("/assistant/chat/test")
+                .uri("/assistant/chat/stream")
                 .contentType(MediaType.APPLICATION_JSON)
                 .bodyValue("""
                         {"message":"hello","uuid":"test-uuid"}
@@ -63,6 +63,6 @@ class AssistantControllerTests {
                         && Boolean.TRUE.equals(resp.getFinished()))
                 .verifyComplete();
 
-        verify(assistantService).testChat(any(UserMessageRequest.class));
+        verify(assistantService).chat(any(UserMessageRequest.class));
     }
 }

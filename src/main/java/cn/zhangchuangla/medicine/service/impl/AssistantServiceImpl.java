@@ -2,6 +2,10 @@ package cn.zhangchuangla.medicine.service.impl;
 
 import cn.zhangchuangla.medicine.common.base.BaseService;
 import cn.zhangchuangla.medicine.common.utils.UUIDUtils;
+import cn.zhangchuangla.medicine.enums.ChatStageEnum;
+import cn.zhangchuangla.medicine.enums.MedicineStateKeyEnum;
+import cn.zhangchuangla.medicine.llm.workflow.progress.DefaultWorkflowProgressReporter;
+import cn.zhangchuangla.medicine.llm.workflow.progress.WorkflowProgressContextHolder;
 import cn.zhangchuangla.medicine.model.entity.Conversation;
 import cn.zhangchuangla.medicine.model.entity.Message;
 import cn.zhangchuangla.medicine.model.request.assistant.HistoryRequest;
@@ -12,18 +16,27 @@ import cn.zhangchuangla.medicine.service.AssistantService;
 import cn.zhangchuangla.medicine.service.ConversationService;
 import cn.zhangchuangla.medicine.service.MessageService;
 import com.alibaba.cloud.ai.graph.CompiledGraph;
+import com.alibaba.cloud.ai.graph.NodeOutput;
+import com.alibaba.cloud.ai.graph.OverAllState;
 import com.alibaba.cloud.ai.graph.StateGraph;
+import com.alibaba.cloud.ai.graph.async.AsyncGenerator;
 import com.alibaba.cloud.ai.graph.exception.GraphStateException;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
+import reactor.core.Disposable;
 import reactor.core.publisher.Flux;
+import reactor.core.publisher.FluxSink;
+import reactor.core.scheduler.Schedulers;
 
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 /**
@@ -31,8 +44,14 @@ import java.util.stream.Collectors;
  * <p>
  * created on 2025/9/16 10:49
  */
+@Slf4j
 @Service
 public class AssistantServiceImpl implements AssistantService, BaseService {
+
+    /**
+     * Interval for sending SSE heartbeat messages (milliseconds).
+     */
+    private static final long HEARTBEAT_INTERVAL_MILLIS = 10_000L;
 
     private final CompiledGraph compiledGraph;
     private final ConversationService conversationService;
@@ -157,57 +176,84 @@ public class AssistantServiceImpl implements AssistantService, BaseService {
      * 通过工作流生成助手回复，并以SSE切片流式返回
      */
     private Flux<StreamChatResponse> streamWorkflowAndPersist(String uuid, Long conversationId, String userMessage) {
-        return Flux.defer(() -> {
-            try {
-                // 走工作流，得到最终系统回复（非token级，随后切片成流）
-                Map<String, Object> inputs = Map.of(
-                        cn.zhangchuangla.medicine.enums.MedicineStateKeyEnum.USER_MESSAGE.getKey(), userMessage);
-                // 直接使用invoke完成编排（参考 demo 用法）
-                var resultOpt = compiledGraph.invoke(inputs);
-                if (resultOpt.isEmpty()) {
-                    String fallback = "抱歉，暂时无法生成回复，请稍后重试。";
-                    return persistAndWrapAsStream(uuid, conversationId, fallback);
+        return Flux.create((FluxSink<StreamChatResponse> sink) -> {
+            DefaultWorkflowProgressReporter reporter = new DefaultWorkflowProgressReporter(uuid, sink);
+            // Heartbeat keeps the SSE connection alive while the workflow performs long-running tasks.
+            Disposable heartbeat = Schedulers.parallel().schedulePeriodically(() -> {
+                if (!reporter.isCancelled()) {
+                    reporter.publishHeartbeat();
                 }
-                Map<String, Object> data = resultOpt.get().data();
-                Object systemReplyObj = data
-                        .get(cn.zhangchuangla.medicine.enums.MedicineStateKeyEnum.SYSTEM_RESPONSE.getKey());
-                String systemReply = systemReplyObj == null ? "" : String.valueOf(systemReplyObj);
-                if (!StringUtils.hasText(systemReply)) {
-                    systemReply = "抱歉，暂时无法生成有效回复。";
+            }, HEARTBEAT_INTERVAL_MILLIS, HEARTBEAT_INTERVAL_MILLIS, TimeUnit.MILLISECONDS);
+            sink.onCancel(heartbeat);
+            sink.onDispose(heartbeat);
+            Schedulers.boundedElastic().schedule(() -> {
+                WorkflowProgressContextHolder.setReporter(reporter);
+                try {
+                    reporter.publishStage(ChatStageEnum.RECEIVED, ChatStageEnum.RECEIVED.getDescription());
+                    reporter.publishStage(ChatStageEnum.WORKFLOW_START, ChatStageEnum.WORKFLOW_START.getDescription());
+
+                    Map<String, Object> inputs = Map.of(
+                            MedicineStateKeyEnum.USER_MESSAGE.getKey(), userMessage);
+
+                    AsyncGenerator<NodeOutput> generator = compiledGraph.stream(inputs);
+                    OverAllState lastState = null;
+                    for (NodeOutput nodeOutput : generator) {
+                        if (reporter.isCancelled()) {
+                            return;
+                        }
+                        lastState = nodeOutput.state();
+                        ChatStageEnum.fromNodeId(nodeOutput.node())
+                                .ifPresent(stage -> reporter.publishStage(stage, stage.getDescription()));
+                    }
+
+                    if (reporter.isCancelled()) {
+                        return;
+                    }
+
+                    if (lastState == null) {
+                        lastState = AsyncGenerator.resultValue(generator)
+                                .filter(OverAllState.class::isInstance)
+                                .map(OverAllState.class::cast)
+                                .orElse(null);
+                    }
+
+                    String systemReply = Optional.ofNullable(lastState)
+                            .map(OverAllState::data)
+                            .map(data -> data.get(MedicineStateKeyEnum.SYSTEM_RESPONSE.getKey()))
+                            .map(Object::toString)
+                            .filter(StringUtils::hasText)
+                            .orElse("抱歉，暂时无法生成有效回复。");
+
+                    reporter.publishStage(ChatStageEnum.RESPONSE_STREAM, ChatStageEnum.RESPONSE_STREAM.getDescription());
+                    streamAssistantResponse(reporter, conversationId, systemReply, ChatStageEnum.COMPLETED);
+                } catch (Exception ex) {
+                    String fallback = "抱歉，服务暂时不可用，请稍后再试。";
+                    log.error("workflow execution failed", ex);
+                    reporter.publishStage(ChatStageEnum.FAILED, fallback, false);
+                    reporter.publishStage(ChatStageEnum.RESPONSE_STREAM, ChatStageEnum.RESPONSE_STREAM.getDescription());
+                    streamAssistantResponse(reporter, conversationId, fallback, ChatStageEnum.FAILED);
+                } finally {
+                    if (!heartbeat.isDisposed()) {
+                        heartbeat.dispose();
+                    }
+                    WorkflowProgressContextHolder.clear();
+                    if (!sink.isCancelled()) {
+                        sink.complete();
+                    }
                 }
-                return persistAndWrapAsStream(uuid, conversationId, systemReply);
-            } catch (Exception ex) {
-                String fallback = "抱歉，服务暂时不可用，请稍后再试。";
-                return persistAndWrapAsStream(uuid, conversationId, fallback);
-            }
-        });
+            });
+        }, FluxSink.OverflowStrategy.BUFFER);
     }
 
-    private Flux<StreamChatResponse> persistAndWrapAsStream(String uuid, Long conversationId, String fullText) {
-        // 切片为小块以SSE流式输出
+    private void streamAssistantResponse(DefaultWorkflowProgressReporter reporter, Long conversationId, String fullText, ChatStageEnum finalStage) {
         List<String> chunks = splitToChunks(fullText);
-        StringBuilder acc = new StringBuilder();
-        Flux<StreamChatResponse> body = Flux.fromIterable(chunks)
-                .map(part -> {
-                    acc.append(part);
-                    return StreamChatResponse.builder()
-                            .uuid(uuid)
-                            .content(part)
-                            .finished(false)
-                            .build();
-                });
-
-        return body.concatWith(Flux.defer(() -> {
-            // 完成后统一落库，并返回结束事件
-            Message assistantMsg = messageService.saveAssistantMessage(conversationId, acc.toString());
-            StreamChatResponse end = StreamChatResponse.builder()
-                    .uuid(uuid)
-                    .messageUuid(assistantMsg.getUuid())
-                    .content("")
-                    .finished(true)
-                    .build();
-            return Flux.just(end);
-        }));
+        StringBuilder accumulator = new StringBuilder();
+        for (String chunk : chunks) {
+            accumulator.append(chunk);
+            reporter.publishResponseChunk(chunk);
+        }
+        Message assistantMsg = messageService.saveAssistantMessage(conversationId, accumulator.toString());
+        reporter.publishResponseCompleted(assistantMsg.getUuid(), finalStage);
     }
 
     private List<String> splitToChunks(String text) {

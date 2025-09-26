@@ -1,10 +1,12 @@
 package cn.zhangchuangla.medicine.llm.workflow.node;
 
 import cn.zhangchuangla.medicine.constants.PromptConstant;
+import cn.zhangchuangla.medicine.enums.ChatStageEnum;
 import cn.zhangchuangla.medicine.enums.MedicineStateKeyEnum;
 import cn.zhangchuangla.medicine.llm.service.OpenAiClientFactory;
 import cn.zhangchuangla.medicine.llm.tools.DateTimeTools;
 import cn.zhangchuangla.medicine.llm.tools.UserTools;
+import cn.zhangchuangla.medicine.llm.workflow.progress.WorkflowProgressContextHolder;
 import com.alibaba.cloud.ai.graph.OverAllState;
 import com.alibaba.cloud.ai.graph.action.NodeAction;
 import lombok.RequiredArgsConstructor;
@@ -36,6 +38,7 @@ public class ConsultNode implements NodeAction {
     public Map<String, Object> apply(OverAllState state) {
         String userMessage = String.valueOf(state.value(MedicineStateKeyEnum.USER_MESSAGE.getKey()));
         log.debug("健康咨询节点处理用户消息: {}", userMessage);
+        WorkflowProgressContextHolder.publishStage(ChatStageEnum.ROUTE_CONSULT, ChatStageEnum.ROUTE_CONSULT.getDescription());
 
         String prompt = PromptConstant.CONSULT_PROMPT.formatted(userMessage);
 

@@ -12,10 +12,13 @@ public enum ChatStageEnum {
 
     RECEIVED("received", "消息已接收"),
     WORKFLOW_START("workflow_start", "工作流启动"),
+    HEARTBEAT("heartbeat", "心跳保持连接"),
     INTENT_ANALYSIS("intent_analysis", "意图识别"),
     ROUTE_MEDICINE("route_medicine", "药品咨询处理"),
     ROUTE_CONSULT("route_consult", "健康咨询处理"),
     ROUTE_OTHER("route_other", "其他问题处理"),
+    TOOL_INVOKE("tool_invoke", "正在调用工具"),
+    TOOL_RESULT("tool_result", "工具返回结果"),
     RESPONSE_STREAM("response_stream", "响应内容流式返回"),
     COMPLETED("completed", "流程完成"),
     FAILED("failed", "流程失败");

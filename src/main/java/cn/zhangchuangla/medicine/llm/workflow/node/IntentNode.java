@@ -1,9 +1,11 @@
 package cn.zhangchuangla.medicine.llm.workflow.node;
 
 import cn.zhangchuangla.medicine.constants.PromptConstant;
+import cn.zhangchuangla.medicine.enums.ChatStageEnum;
 import cn.zhangchuangla.medicine.enums.MedicineStateKeyEnum;
 import cn.zhangchuangla.medicine.enums.UserIntentEnum;
 import cn.zhangchuangla.medicine.llm.service.OpenAiClientFactory;
+import cn.zhangchuangla.medicine.llm.workflow.progress.WorkflowProgressContextHolder;
 import com.alibaba.cloud.ai.graph.OverAllState;
 import com.alibaba.cloud.ai.graph.action.NodeAction;
 import lombok.RequiredArgsConstructor;
@@ -31,6 +33,7 @@ public class IntentNode implements NodeAction {
     public Map<String, Object> apply(OverAllState state) {
         String userMessage = String.valueOf(state.value(MedicineStateKeyEnum.USER_MESSAGE.getKey()));
         log.debug("意图识别节点处理用户消息: {}", userMessage);
+        WorkflowProgressContextHolder.publishStage(ChatStageEnum.INTENT_ANALYSIS, ChatStageEnum.INTENT_ANALYSIS.getDescription());
 
         String prompt = PromptConstant.INTENT_PROMPT.formatted(userMessage);
 

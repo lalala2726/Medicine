@@ -1,6 +1,7 @@
 package cn.zhangchuangla.medicine.llm.tools;
 
 import cn.zhangchuangla.medicine.common.utils.BeanCotyUtils;
+import cn.zhangchuangla.medicine.llm.workflow.progress.WorkflowProgressContextHolder;
 import cn.zhangchuangla.medicine.model.entity.User;
 import cn.zhangchuangla.medicine.model.vo.user.UserVo;
 import cn.zhangchuangla.medicine.service.UserService;
@@ -31,9 +32,13 @@ public class UserTools {
      */
     @Tool(name = "getCurrentUser", description = "get current user info")
     public UserVo getCurrentUser() {
+        final String tool = "getCurrentUser";
+        WorkflowProgressContextHolder.publishToolInvoke(tool, "正在查询当前用户信息");
         Long userId = SecurityUtils.getUserId();
         User userById = userService.getUserById(userId);
-        return BeanCotyUtils.copyProperties(userById, UserVo.class);
+        UserVo userVo = BeanCotyUtils.copyProperties(userById, UserVo.class);
+        WorkflowProgressContextHolder.publishToolResult(tool, userVo != null ? "查询成功" : "未查询到用户信息");
+        return userVo;
     }
 
 }

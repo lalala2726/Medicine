@@ -7,7 +7,6 @@ import cn.zhangchuangla.medicine.model.vo.chat.StreamChatResponse;
 import cn.zhangchuangla.medicine.model.vo.llm.chat.ChatHistoryResponse;
 import cn.zhangchuangla.medicine.model.vo.llm.chat.UserMessageRequest;
 import cn.zhangchuangla.medicine.service.AssistantService;
-import com.alibaba.cloud.ai.graph.exception.GraphRunnerException;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.http.MediaType;
@@ -36,12 +35,10 @@ public class AssistantController extends BaseController {
      *
      * @param request 请求体
      * @return 返回流式聊天结果
-     * @throws GraphRunnerException 运行时异常
      */
     @PostMapping(value = "/chat/stream", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
     @Operation(summary = "发送聊天消息(流式)", description = "以SSE流式返回消息块，避免长等待超时")
-    public Flux<StreamChatResponse> chat(@Validated @RequestBody UserMessageRequest request)
-            throws GraphRunnerException {
+    public Flux<StreamChatResponse> chat(@Validated @RequestBody UserMessageRequest request) {
         return assistantService.chat(request);
     }
 
