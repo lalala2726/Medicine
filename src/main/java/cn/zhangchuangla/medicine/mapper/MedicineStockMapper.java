@@ -1,5 +1,6 @@
 package cn.zhangchuangla.medicine.mapper;
 
+import cn.zhangchuangla.medicine.model.dto.MedicineStockDto;
 import cn.zhangchuangla.medicine.model.entity.MedicineStock;
 import cn.zhangchuangla.medicine.model.request.medicine.MedicineStockQueryRequest;
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
@@ -23,7 +24,7 @@ public interface MedicineStockMapper extends BaseMapper<MedicineStock> {
      * @param request 查询参数
      * @return 药品库存分页列表
      */
-    Page<MedicineStock> listMedicineStock(Page<MedicineStock> page, @Param("request") MedicineStockQueryRequest request);
+    Page<MedicineStockDto> listMedicineStock(Page<MedicineStock> page, @Param("request") MedicineStockQueryRequest request);
 
 }
 

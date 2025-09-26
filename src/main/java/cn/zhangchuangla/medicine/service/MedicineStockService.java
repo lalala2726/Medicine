@@ -1,5 +1,6 @@
 package cn.zhangchuangla.medicine.service;
 
+import cn.zhangchuangla.medicine.model.dto.MedicineStockDto;
 import cn.zhangchuangla.medicine.model.entity.MedicineStock;
 import cn.zhangchuangla.medicine.model.request.medicine.MedicineStockAddRequest;
 import cn.zhangchuangla.medicine.model.request.medicine.MedicineStockQueryRequest;
@@ -23,7 +24,7 @@ public interface MedicineStockService extends IService<MedicineStock> {
      * @param request 查询参数
      * @return 药品库存分页列表
      */
-    Page<MedicineStock> listMedicineStock(MedicineStockQueryRequest request);
+    Page<MedicineStockDto> listMedicineStock(MedicineStockQueryRequest request);
 
     /**
      * 根据ID获取药品库存详情

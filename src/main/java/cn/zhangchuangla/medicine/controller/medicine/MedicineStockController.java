@@ -3,6 +3,7 @@ package cn.zhangchuangla.medicine.controller.medicine;
 import cn.zhangchuangla.medicine.common.base.AjaxResult;
 import cn.zhangchuangla.medicine.common.base.BaseController;
 import cn.zhangchuangla.medicine.common.base.TableDataResult;
+import cn.zhangchuangla.medicine.model.dto.MedicineStockDto;
 import cn.zhangchuangla.medicine.model.entity.MedicineStock;
 import cn.zhangchuangla.medicine.model.request.medicine.MedicineStockAddRequest;
 import cn.zhangchuangla.medicine.model.request.medicine.MedicineStockQueryRequest;
@@ -15,6 +16,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -40,9 +42,14 @@ public class MedicineStockController extends BaseController {
     @GetMapping("/list")
     @Operation(summary = "获取药品库存列表")
     public AjaxResult<TableDataResult> listMedicineStock(MedicineStockQueryRequest request) {
-        Page<MedicineStock> page = medicineStockService.listMedicineStock(request);
-        List<MedicineStockVo> stockVos = copyListProperties(page, MedicineStockVo.class);
-        return getTableData(page, stockVos);
+        Page<MedicineStockDto> page = medicineStockService.listMedicineStock(request);
+        ArrayList<MedicineStockVo> medicineStockVos = new ArrayList<>();
+        page.getRecords().forEach(stock -> {
+            MedicineStockVo stockVo = copyProperties(stock, MedicineStockVo.class);
+            stockVo.setMedicineName(stock.getMedicine().getName());
+            medicineStockVos.add(stockVo);
+        });
+        return getTableData(page, medicineStockVos);
     }
 
     /**

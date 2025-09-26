@@ -4,6 +4,7 @@ import cn.zhangchuangla.medicine.common.base.BaseService;
 import cn.zhangchuangla.medicine.common.utils.Assert;
 import cn.zhangchuangla.medicine.common.utils.BeanCotyUtils;
 import cn.zhangchuangla.medicine.mapper.MedicineStockMapper;
+import cn.zhangchuangla.medicine.model.dto.MedicineStockDto;
 import cn.zhangchuangla.medicine.model.entity.Medicine;
 import cn.zhangchuangla.medicine.model.entity.MedicineStock;
 import cn.zhangchuangla.medicine.model.request.medicine.MedicineStockAddRequest;
@@ -42,7 +43,7 @@ public class MedicineStockServiceImpl extends ServiceImpl<MedicineStockMapper, M
      * @return 药品库存分页列表
      */
     @Override
-    public Page<MedicineStock> listMedicineStock(MedicineStockQueryRequest request) {
+    public Page<MedicineStockDto> listMedicineStock(MedicineStockQueryRequest request) {
         Page<MedicineStock> page = new Page<>(request.getPageNum(), request.getPageSize());
         return baseMapper.listMedicineStock(page, request);
     }
