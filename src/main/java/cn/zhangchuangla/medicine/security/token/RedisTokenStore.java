@@ -1,6 +1,7 @@
 package cn.zhangchuangla.medicine.security.token;
 
 import cn.zhangchuangla.medicine.common.exception.AuthorizationException;
+import cn.zhangchuangla.medicine.common.exception.ServiceException;
 import cn.zhangchuangla.medicine.common.redis.RedisCache;
 import cn.zhangchuangla.medicine.common.utils.Assert;
 import cn.zhangchuangla.medicine.config.property.SecurityProperties;
@@ -199,5 +200,24 @@ public class RedisTokenStore {
         onlineLoginUser.setAccessTime(System.currentTimeMillis());
         redisCache.setCacheObject(accessTokenRedisKey, onlineLoginUser, expire);
         return true;
+    }
+
+    /**
+     * 通过访问令牌删除刷新令牌和访问令牌
+     *
+     * @param accessTokenId 访问令牌ID
+     */
+    public void deleteTokenByAccessId(String accessTokenId) {
+        String accessTokenRedisKey = RedisConstants.Auth.USER_ACCESS_TOKEN + accessTokenId;
+        OnlineLoginUser onlineLoginUser = redisCache.getCacheObject(accessTokenRedisKey);
+        if (onlineLoginUser == null) {
+            throw new ServiceException(ResponseResultCode.ACCESS_TOKEN_INVALID, "访问令牌无效!");
+        }
+        String refreshTokenId = onlineLoginUser.getRefreshTokenId();
+        //删除访问令牌
+        redisCache.deleteObject(accessTokenRedisKey);
+        //删除刷新令牌
+        String refreshToken = RedisConstants.Auth.USER_REFRESH_TOKEN + refreshTokenId;
+        redisCache.deleteObject(refreshToken);
     }
 }
