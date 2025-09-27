@@ -3,10 +3,12 @@ package cn.zhangchuangla.medicine.model.request.user;
 import cn.zhangchuangla.medicine.common.base.BasePageRequest;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
+import lombok.EqualsAndHashCode;
 
 /**
  * 用户
  */
+@EqualsAndHashCode(callSuper = true)
 @Schema(description = "用户列表查询参数")
 @Data
 public class UserListQueryRequest extends BasePageRequest {
