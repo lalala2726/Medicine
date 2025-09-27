@@ -13,6 +13,7 @@ import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -37,6 +38,13 @@ public class TokenAuthenticationFilter extends OncePerRequestFilter {
 
     private final TokenService tokenService;
 
+
+    /**
+     * 令牌前缀
+     */
+    @Value("${security.session.token-prefix}")
+    private static final String TOKEN_PREFIX = "Bearer";
+
     /**
      * 校验Token，包括验签和是否过期
      *
@@ -51,6 +59,10 @@ public class TokenAuthenticationFilter extends OncePerRequestFilter {
         String token = request.getHeader(header);
         try {
             if (StringUtils.isNotBlank(token)) {
+                // 如果有 TOKEN_PREFIX 前缀则移除
+                if (StringUtils.isNotBlank(TOKEN_PREFIX) && token.startsWith(TOKEN_PREFIX.trim() + " ")) {
+                    token = token.substring(TOKEN_PREFIX.length()).trim();
+                }
                 // 直接解析令牌（内部会做验签与有效性检查），避免重复解析
                 Authentication authentication = tokenService.parseAccessToken(token);
                 if (authentication == null) {
@@ -108,22 +120,5 @@ public class TokenAuthenticationFilter extends OncePerRequestFilter {
     private boolean isPathMatchAny(String path, String[] patterns, AntPathMatcher pathMatcher) {
         return Arrays.stream(patterns)
                 .anyMatch(pattern -> pathMatcher.match(pattern, path.trim()));
-    }
-
-    /**
-     * 在异步分发时也执行本过滤器，确保 SecurityContext 在异步/重新分派阶段仍然被正确设置，
-     * 避免在 SSE/异步请求过程中出现 AccessDenied。
-     */
-    @Override
-    protected boolean shouldNotFilterAsyncDispatch() {
-        return false;
-    }
-
-    /**
-     * 在错误分发阶段也执行，避免错误分派丢失认证上下文导致的二次鉴权失败。
-     */
-    @Override
-    protected boolean shouldNotFilterErrorDispatch() {
-        return false;
     }
 }
