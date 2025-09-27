@@ -42,27 +42,22 @@ public class OtherNode implements NodeAction {
 
         String prompt = PromptConstant.OTHER_PROMPT.formatted(userMessage);
 
-        try {
-            ChatClient chatClient = openAiClientFactory.chatClient();
-            List<String> parts = chatClient
-                    .prompt(prompt)
-                    .toolCallbacks(ToolCallbacks.from(dateTimeTools, userTools))
-                    .stream()
-                    .content()
-                    .collectList()
-                    .block();
-            String reply = (parts == null || parts.isEmpty()) ? null : String.join("", parts);
+        ChatClient chatClient = openAiClientFactory.chatClient();
+        List<String> parts = chatClient
+                .prompt(prompt)
+                .toolCallbacks(ToolCallbacks.from(dateTimeTools, userTools))
+                .stream()
+                .content()
+                .collectList()
+                .block();
+        String reply = (parts == null || parts.isEmpty()) ? null : String.join("", parts);
 
-            if (reply == null || reply.trim().isEmpty()) {
-                log.warn("其他问题节点返回空回复");
-                reply = PromptConstant.DEFAULT_ERROR_REPLY;
-            }
-
-            log.debug("其他问题节点生成回复: {}", reply);
-            return Map.of(MedicineStateKeyEnum.SYSTEM_RESPONSE.getKey(), reply);
-        } catch (Exception ex) {
-            log.error("其他问题节点调用异常，返回兜底文案", ex);
-            return Map.of(MedicineStateKeyEnum.SYSTEM_RESPONSE.getKey(), PromptConstant.DEFAULT_ERROR_REPLY);
+        if (reply == null || reply.trim().isEmpty()) {
+            log.warn("其他问题节点返回空回复");
+            reply = PromptConstant.DEFAULT_ERROR_REPLY;
         }
+
+        log.debug("其他问题节点生成回复: {}", reply);
+        return Map.of(MedicineStateKeyEnum.SYSTEM_RESPONSE.getKey(), reply);
     }
 }

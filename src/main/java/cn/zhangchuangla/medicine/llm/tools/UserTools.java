@@ -6,6 +6,7 @@ import cn.zhangchuangla.medicine.model.entity.User;
 import cn.zhangchuangla.medicine.model.vo.user.UserVo;
 import cn.zhangchuangla.medicine.service.UserService;
 import cn.zhangchuangla.medicine.utils.SecurityUtils;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.ai.tool.annotation.Tool;
 import org.springframework.stereotype.Component;
 
@@ -16,6 +17,7 @@ import org.springframework.stereotype.Component;
  * <p>
  * created on 2025/9/18 09:53
  */
+@Slf4j
 @Component
 public class UserTools {
 

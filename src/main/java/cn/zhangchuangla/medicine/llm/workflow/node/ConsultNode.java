@@ -41,28 +41,22 @@ public class ConsultNode implements NodeAction {
         WorkflowProgressContextHolder.publishStage(ChatStageEnum.ROUTE_CONSULT, ChatStageEnum.ROUTE_CONSULT.getDescription());
 
         String prompt = PromptConstant.CONSULT_PROMPT.formatted(userMessage);
+        ChatClient chatClient = openAiClientFactory.chatClient();
+        List<String> parts = chatClient
+                .prompt(prompt)
+                .toolCallbacks(ToolCallbacks.from(dateTimeTools, userTools))
+                .stream()
+                .content()
+                .collectList()
+                .block();
+        String reply = (parts == null || parts.isEmpty()) ? null : String.join("", parts);
 
-        try {
-            ChatClient chatClient = openAiClientFactory.chatClient();
-            List<String> parts = chatClient
-                    .prompt(prompt)
-                    .toolCallbacks(ToolCallbacks.from(dateTimeTools, userTools))
-                    .stream()
-                    .content()
-                    .collectList()
-                    .block();
-            String reply = (parts == null || parts.isEmpty()) ? null : String.join("", parts);
-
-            if (reply == null || reply.trim().isEmpty()) {
-                log.warn("健康咨询节点返回空回复");
-                reply = PromptConstant.CONSULT_ERROR_REPLY;
-            }
-
-            log.debug("健康咨询节点生成回复: {}", reply);
-            return Map.of(MedicineStateKeyEnum.SYSTEM_RESPONSE.getKey(), reply);
-        } catch (Exception ex) {
-            log.error("健康咨询节点调用异常，返回兜底文案", ex);
-            return Map.of(MedicineStateKeyEnum.SYSTEM_RESPONSE.getKey(), PromptConstant.CONSULT_ERROR_REPLY);
+        if (reply == null || reply.trim().isEmpty()) {
+            log.warn("健康咨询节点返回空回复");
+            reply = PromptConstant.CONSULT_ERROR_REPLY;
         }
+
+        log.debug("健康咨询节点生成回复: {}", reply);
+        return Map.of(MedicineStateKeyEnum.SYSTEM_RESPONSE.getKey(), reply);
     }
 }
