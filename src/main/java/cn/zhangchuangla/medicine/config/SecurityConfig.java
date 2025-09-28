@@ -4,6 +4,7 @@ import cn.zhangchuangla.medicine.annotation.Anonymous;
 import cn.zhangchuangla.medicine.constants.SecurityConstants;
 import cn.zhangchuangla.medicine.security.filter.TokenAuthenticationFilter;
 import cn.zhangchuangla.medicine.security.handel.AuthenticationEntryPointImpl;
+import jakarta.servlet.DispatcherType;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -71,6 +72,7 @@ public class SecurityConfig {
                     auth.requestMatchers(SecurityConstants.SWAGGER_WHITELIST).permitAll();
                     auth.requestMatchers(SecurityConstants.STATIC_RESOURCES_WHITELIST).permitAll();
                     auth.requestMatchers(STATIC_FILE + "/**").permitAll();
+                    auth.dispatcherTypeMatchers(DispatcherType.ASYNC).permitAll();
                     if (!anonymousUrls.isEmpty()) {
                         auth.requestMatchers(anonymousUrls.toArray(new String[0])).permitAll();
                     }
