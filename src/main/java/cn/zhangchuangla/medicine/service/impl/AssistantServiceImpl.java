@@ -1,6 +1,7 @@
 package cn.zhangchuangla.medicine.service.impl;
 
 import cn.zhangchuangla.medicine.common.base.BaseService;
+import cn.zhangchuangla.medicine.common.exception.ServiceException;
 import cn.zhangchuangla.medicine.common.utils.UUIDUtils;
 import cn.zhangchuangla.medicine.enums.ChatStageEnum;
 import cn.zhangchuangla.medicine.enums.MedicineStateKeyEnum;
@@ -66,11 +67,18 @@ public class AssistantServiceImpl implements AssistantService, BaseService {
         this.messageService = messageService;
     }
 
+    /**
+     * 处理用户聊天请求，根据UUID判断是新对话还是已有对话的继续
+     *
+     * @param userMessageRequest 用户消息请求对象，包含UUID和消息内容
+     * @return Flux<StreamChatResponse> 流式聊天响应
+     */
     @Override
     public Flux<StreamChatResponse> chat(UserMessageRequest userMessageRequest) {
         String uuid = userMessageRequest.getUuid();
         String userMessage = userMessageRequest.getMessage();
 
+        // 根据UUID是否存在判断是新建对话还是继续已有对话
         if (!StringUtils.hasText(uuid)) {
             return streamNewConversation(userMessage);
         } else {
@@ -78,26 +86,37 @@ public class AssistantServiceImpl implements AssistantService, BaseService {
         }
     }
 
+
+    /**
+     * 获取聊天历史记录
+     *
+     * @param request 历史记录请求参数，包含会话UUID、游标位置和限制数量
+     * @return 聊天历史记录响应对象，包含消息列表和分页信息
+     */
     @Override
     @Transactional(readOnly = true)
     public ChatHistoryResponse history(HistoryRequest request) {
         if (request == null || !StringUtils.hasText(request.getUuid())) {
-            throw new IllegalArgumentException("uuid不能为空");
+            throw new ServiceException("uuid不能为空");
         }
 
         String uuid = request.getUuid();
         Long cursor = request.getCursor();
+        // 处理分页限制，如果未设置或小于等于0则默认为20
         int limit = request.getLimit() != null && request.getLimit() > 0 ? request.getLimit() : 20;
 
+        // 查询会话信息，确保会话存在且未被删除
         LambdaQueryWrapper<Conversation> queryWrapper = new LambdaQueryWrapper<>();
         queryWrapper.eq(Conversation::getUuid, uuid)
                 .eq(Conversation::getIsDelete, 0);
         Conversation conversation = conversationService.getOne(queryWrapper);
         if (conversation == null) {
-            throw new RuntimeException("会话不存在: " + uuid);
+            throw new ServiceException("会话不存在: " + uuid);
         }
 
+        // 根据游标获取会话消息列表
         List<Message> messages = messageService.getConversationMessagesCursor(conversation.getId(), cursor, limit);
+        // 将消息实体转换为响应视图对象
         List<ChatHistoryResponse.MessageVO> vos = messages.stream()
                 .map(msg -> {
                     ChatHistoryResponse.MessageVO vo = new ChatHistoryResponse.MessageVO();
@@ -109,10 +128,12 @@ public class AssistantServiceImpl implements AssistantService, BaseService {
                 })
                 .collect(Collectors.toList());
 
+        // 构建响应结果
         ChatHistoryResponse response = new ChatHistoryResponse();
         response.setUuid(uuid);
         response.setMessages(vos);
 
+        // 设置分页相关信息，判断是否还有更多数据
         if (!vos.isEmpty()) {
             Long lastMessageId = vos.get(vos.size() - 1).getId();
             boolean hasMore = messageService.hasMoreMessages(conversation.getId(), lastMessageId);
@@ -126,8 +147,12 @@ public class AssistantServiceImpl implements AssistantService, BaseService {
         return response;
     }
 
+
     /**
      * 创建新会话
+     *
+     * @param userMessage 用户发送的消息内容
+     * @return 返回流式的聊天响应数据
      */
     private Flux<StreamChatResponse> streamNewConversation(String userMessage) {
         String newUuid = UUIDUtils.simple();
@@ -147,8 +172,13 @@ public class AssistantServiceImpl implements AssistantService, BaseService {
         return streamWorkflowAndPersist(newUuid, conversation.getId(), userMessage);
     }
 
+
     /**
      * 处理现有会话
+     *
+     * @param uuid        会话唯一标识符
+     * @param userMessage 用户发送的消息内容
+     * @return 流式返回聊天响应结果
      */
     private Flux<StreamChatResponse> streamExistingConversation(String uuid, String userMessage) {
         // 查询会话
@@ -172,31 +202,48 @@ public class AssistantServiceImpl implements AssistantService, BaseService {
         return streamWorkflowAndPersist(uuid, conversation.getId(), userMessage);
     }
 
+
     /**
-     * 通过工作流生成助手回复，并以SSE切片流式返回
+     * 通过工作流生成助手回复，并以SSE切片流式返回。
+     *
+     * @param uuid           请求唯一标识符，用于追踪请求流程
+     * @param conversationId 对话ID，用于关联当前对话上下文
+     * @param userMessage    用户输入的消息内容
+     * @return 返回一个Flux流，其中包含逐步生成的聊天响应片段（StreamChatResponse）
      */
     private Flux<StreamChatResponse> streamWorkflowAndPersist(String uuid, Long conversationId, String userMessage) {
         return Flux.create((FluxSink<StreamChatResponse> sink) -> {
+            // 创建进度报告器，负责将执行阶段信息推送给客户端
             DefaultWorkflowProgressReporter reporter = new DefaultWorkflowProgressReporter(uuid, sink);
-            // Heartbeat keeps the SSE connection alive while the workflow performs long-running tasks.
+
+            // 启动心跳任务，定期发送心跳包保持SSE连接活跃
             Disposable heartbeat = Schedulers.parallel().schedulePeriodically(() -> {
                 if (!reporter.isCancelled()) {
                     reporter.publishHeartbeat();
                 }
             }, HEARTBEAT_INTERVAL_MILLIS, HEARTBEAT_INTERVAL_MILLIS, TimeUnit.MILLISECONDS);
+
+            // 注册取消/释放时的心跳资源清理逻辑
             sink.onCancel(heartbeat);
             sink.onDispose(heartbeat);
+
+            // 在弹性调度线程中异步执行工作流处理逻辑
             Schedulers.boundedElastic().schedule(() -> {
                 WorkflowProgressContextHolder.setReporter(reporter);
                 try {
+                    // 发送初始接收与开始阶段状态
                     reporter.publishStage(ChatStageEnum.RECEIVED, ChatStageEnum.RECEIVED.getDescription());
                     reporter.publishStage(ChatStageEnum.WORKFLOW_START, ChatStageEnum.WORKFLOW_START.getDescription());
 
+                    // 构造工作流输入参数
                     Map<String, Object> inputs = Map.of(
                             MedicineStateKeyEnum.USER_MESSAGE.getKey(), userMessage);
 
+                    // 执行编译后的工作流图并获取输出流
                     AsyncGenerator<NodeOutput> generator = compiledGraph.stream(inputs);
                     OverAllState lastState = null;
+
+                    // 遍历节点输出，推送各阶段状态到前端
                     for (NodeOutput nodeOutput : generator) {
                         if (reporter.isCancelled()) {
                             return;
@@ -206,10 +253,12 @@ public class AssistantServiceImpl implements AssistantService, BaseService {
                                 .ifPresent(stage -> reporter.publishStage(stage, stage.getDescription()));
                     }
 
+                    // 若被中断则提前退出
                     if (reporter.isCancelled()) {
                         return;
                     }
 
+                    // 尝试从最终结果中提取整体状态对象
                     if (lastState == null) {
                         lastState = AsyncGenerator.resultValue(generator)
                                 .filter(OverAllState.class::isInstance)
@@ -217,6 +266,7 @@ public class AssistantServiceImpl implements AssistantService, BaseService {
                                 .orElse(null);
                     }
 
+                    // 提取系统回复文本内容，若为空则使用默认提示语
                     String systemReply = Optional.ofNullable(lastState)
                             .map(OverAllState::data)
                             .map(data -> data.get(MedicineStateKeyEnum.SYSTEM_RESPONSE.getKey()))
@@ -224,15 +274,20 @@ public class AssistantServiceImpl implements AssistantService, BaseService {
                             .filter(StringUtils::hasText)
                             .orElse("抱歉，暂时无法生成有效回复。");
 
+                    // 推送响应流开始阶段
                     reporter.publishStage(ChatStageEnum.RESPONSE_STREAM, ChatStageEnum.RESPONSE_STREAM.getDescription());
+
+                    // 流式传输助手响应内容至客户端
                     streamAssistantResponse(reporter, conversationId, systemReply, ChatStageEnum.COMPLETED);
                 } catch (Exception ex) {
+                    // 异常处理：记录日志、推送失败状态及兜底消息
                     String fallback = "抱歉，服务暂时不可用，请稍后再试。";
                     log.error("workflow execution failed", ex);
                     reporter.publishStage(ChatStageEnum.FAILED, fallback, false);
                     reporter.publishStage(ChatStageEnum.RESPONSE_STREAM, ChatStageEnum.RESPONSE_STREAM.getDescription());
                     streamAssistantResponse(reporter, conversationId, fallback, ChatStageEnum.FAILED);
                 } finally {
+                    // 清理资源：停止心跳、清除上下文、关闭sink
                     if (!heartbeat.isDisposed()) {
                         heartbeat.dispose();
                     }
@@ -245,12 +300,27 @@ public class AssistantServiceImpl implements AssistantService, BaseService {
         }, FluxSink.OverflowStrategy.BUFFER);
     }
 
+
+    /**
+     * 流式传输助手响应消息
+     *
+     * @param reporter       进度报告器，用于发布响应块和完成状态
+     * @param conversationId 对话ID，用于关联消息
+     * @param fullText       完整的响应文本内容
+     * @param finalStage     最终聊天阶段枚举值
+     */
     private void streamAssistantResponse(DefaultWorkflowProgressReporter reporter, Long conversationId, String fullText, ChatStageEnum finalStage) {
+        // 处理响应文本，确保不为null
         String finalText = StringUtils.hasText(fullText) ? fullText : "";
+
+        // 如果有文本内容，则发布响应块
         if (StringUtils.hasText(finalText)) {
             reporter.publishResponseChunk(finalText);
         }
+
+        // 保存助手消息并发布响应完成状态
         Message assistantMsg = messageService.saveAssistantMessage(conversationId, finalText);
         reporter.publishResponseCompleted(assistantMsg.getUuid(), finalStage);
     }
+
 }
