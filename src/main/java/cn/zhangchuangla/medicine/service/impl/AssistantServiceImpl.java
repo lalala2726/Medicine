@@ -25,6 +25,8 @@ import com.alibaba.cloud.ai.graph.exception.GraphStateException;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.security.core.context.SecurityContext;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
@@ -212,6 +214,17 @@ public class AssistantServiceImpl implements AssistantService, BaseService {
      * @return 返回一个Flux流，其中包含逐步生成的聊天响应片段（StreamChatResponse）
      */
     private Flux<StreamChatResponse> streamWorkflowAndPersist(String uuid, Long conversationId, String userMessage) {
+        SecurityContext securityContext = SecurityContextHolder.getContext();
+        SecurityContext contextSnapshot;
+        if (securityContext != null && securityContext.getAuthentication() != null) {
+            SecurityContext newContext = SecurityContextHolder.createEmptyContext();
+            newContext.setAuthentication(securityContext.getAuthentication());
+            contextSnapshot = newContext;
+        } else {
+            contextSnapshot = null;
+        }
+        final SecurityContext finalContextSnapshot = contextSnapshot;
+
         return Flux.create((FluxSink<StreamChatResponse> sink) -> {
             // 创建进度报告器，负责将执行阶段信息推送给客户端
             DefaultWorkflowProgressReporter reporter = new DefaultWorkflowProgressReporter(uuid, sink);
@@ -229,6 +242,11 @@ public class AssistantServiceImpl implements AssistantService, BaseService {
 
             // 在弹性调度线程中异步执行工作流处理逻辑
             Schedulers.boundedElastic().schedule(() -> {
+                if (finalContextSnapshot != null) {
+                    SecurityContextHolder.setContext(finalContextSnapshot);
+                } else {
+                    SecurityContextHolder.clearContext();
+                }
                 WorkflowProgressContextHolder.setReporter(reporter);
                 try {
                     // 发送初始接收与开始阶段状态
@@ -291,6 +309,7 @@ public class AssistantServiceImpl implements AssistantService, BaseService {
                     if (!heartbeat.isDisposed()) {
                         heartbeat.dispose();
                     }
+                    SecurityContextHolder.clearContext();
                     WorkflowProgressContextHolder.clear();
                     if (!sink.isCancelled()) {
                         sink.complete();

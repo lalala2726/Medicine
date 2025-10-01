@@ -7,6 +7,8 @@ import cn.zhangchuangla.medicine.llm.service.OpenAiClientFactory;
 import cn.zhangchuangla.medicine.llm.tools.DateTimeTools;
 import cn.zhangchuangla.medicine.llm.tools.UserTools;
 import cn.zhangchuangla.medicine.llm.workflow.progress.WorkflowProgressContextHolder;
+import cn.zhangchuangla.medicine.security.entity.SysUserDetails;
+import cn.zhangchuangla.medicine.utils.SecurityUtils;
 import com.alibaba.cloud.ai.graph.OverAllState;
 import com.alibaba.cloud.ai.graph.action.NodeAction;
 import lombok.RequiredArgsConstructor;
@@ -50,6 +52,9 @@ public class OtherNode implements NodeAction {
                 .content()
                 .collectList()
                 .block();
+
+        SysUserDetails loginUser = SecurityUtils.getLoginUser();
+        log.info("当前用户信息: {}", loginUser);
         String reply = (parts == null || parts.isEmpty()) ? null : String.join("", parts);
 
         if (reply == null || reply.trim().isEmpty()) {

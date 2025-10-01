@@ -1,11 +1,14 @@
 package cn.zhangchuangla.medicine.enums;
 
+import lombok.Getter;
+
 /**
  * 医疗工作流状态键枚举
  *
  * @author Chuang
  * @since 2025/9/10
  */
+@Getter
 public enum MedicineStateKeyEnum {
 
     USER_MESSAGE("userMessage", "用户消息"),
@@ -18,14 +21,6 @@ public enum MedicineStateKeyEnum {
     MedicineStateKeyEnum(String key, String description) {
         this.key = key;
         this.description = description;
-    }
-
-    public String getKey() {
-        return key;
-    }
-
-    public String getDescription() {
-        return description;
     }
 
     @Override
