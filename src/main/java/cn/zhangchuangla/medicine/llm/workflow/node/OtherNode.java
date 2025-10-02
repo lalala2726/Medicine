@@ -39,30 +39,34 @@ public class OtherNode implements NodeAction {
     @Override
     public Map<String, Object> apply(OverAllState state) {
         String userMessage = String.valueOf(state.value(MedicineStateKeyEnum.USER_MESSAGE.getKey()));
-        log.debug("其他问题节点处理用户消息: {}", userMessage);
         WorkflowProgressContextHolder.publishStage(ChatStageEnum.ROUTE_OTHER, ChatStageEnum.ROUTE_OTHER.getDescription());
-
-        String prompt = PromptConstant.OTHER_PROMPT.formatted(userMessage);
-
-        ChatClient chatClient = openAiClientFactory.chatClient();
-        List<String> parts = chatClient
-                .prompt(prompt)
-                .toolCallbacks(ToolCallbacks.from(dateTimeTools, userTools))
-                .stream()
-                .content()
-                .collectList()
-                .block();
-
+        // 获取当前用户信息，并传递给工具
         SysUserDetails loginUser = SecurityUtils.getLoginUser();
-        log.info("当前用户信息: {}", loginUser);
-        String reply = (parts == null || parts.isEmpty()) ? null : String.join("", parts);
+        try {
+            // 设置用户信息到工具中
+            userTools.setCurrentUser(loginUser);
+            String prompt = PromptConstant.OTHER_PROMPT.formatted(userMessage);
+            ChatClient chatClient = openAiClientFactory.chatClient();
+            List<String> parts = chatClient
+                    .prompt(prompt)
+                    .toolCallbacks(ToolCallbacks.from(dateTimeTools, userTools))
+                    .stream()
+                    .content()
+                    .collectList()
+                    .block();
 
-        if (reply == null || reply.trim().isEmpty()) {
-            log.warn("其他问题节点返回空回复");
-            reply = PromptConstant.DEFAULT_ERROR_REPLY;
+            String reply = (parts == null || parts.isEmpty()) ? null : String.join("", parts);
+
+            if (reply == null || reply.trim().isEmpty()) {
+                log.warn("其他问题节点返回空回复");
+                reply = PromptConstant.DEFAULT_ERROR_REPLY;
+            }
+
+            log.debug("其他问题节点生成回复: {}", reply);
+            return Map.of(MedicineStateKeyEnum.SYSTEM_RESPONSE.getKey(), reply);
+        } finally {
+            // 确保清理ThreadLocal，避免内存泄漏
+            userTools.clearCurrentUser();
         }
-
-        log.debug("其他问题节点生成回复: {}", reply);
-        return Map.of(MedicineStateKeyEnum.SYSTEM_RESPONSE.getKey(), reply);
     }
 }

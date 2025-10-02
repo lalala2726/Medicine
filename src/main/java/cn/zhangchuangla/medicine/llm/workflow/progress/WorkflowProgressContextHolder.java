@@ -23,6 +23,10 @@ public final class WorkflowProgressContextHolder {
         CONTEXT.set(reporter);
     }
 
+    public static WorkflowProgressReporter getReporter() {
+        return CONTEXT.get();
+    }
+
     public static void clear() {
         CONTEXT.remove();
     }
