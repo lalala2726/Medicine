@@ -7,8 +7,6 @@ import cn.zhangchuangla.medicine.llm.service.OpenAiClientFactory;
 import cn.zhangchuangla.medicine.llm.tools.DateTimeTools;
 import cn.zhangchuangla.medicine.llm.tools.UserTools;
 import cn.zhangchuangla.medicine.llm.workflow.progress.WorkflowProgressContextHolder;
-import cn.zhangchuangla.medicine.security.entity.SysUserDetails;
-import cn.zhangchuangla.medicine.utils.SecurityUtils;
 import com.alibaba.cloud.ai.graph.OverAllState;
 import com.alibaba.cloud.ai.graph.action.NodeAction;
 import lombok.RequiredArgsConstructor;
@@ -40,33 +38,24 @@ public class OtherNode implements NodeAction {
     public Map<String, Object> apply(OverAllState state) {
         String userMessage = String.valueOf(state.value(MedicineStateKeyEnum.USER_MESSAGE.getKey()));
         WorkflowProgressContextHolder.publishStage(ChatStageEnum.ROUTE_OTHER, ChatStageEnum.ROUTE_OTHER.getDescription());
-        // 获取当前用户信息，并传递给工具
-        SysUserDetails loginUser = SecurityUtils.getLoginUser();
-        try {
-            // 设置用户信息到工具中
-            userTools.setCurrentUser(loginUser);
-            String prompt = PromptConstant.OTHER_PROMPT.formatted(userMessage);
-            ChatClient chatClient = openAiClientFactory.chatClient();
-            List<String> parts = chatClient
-                    .prompt(prompt)
-                    .toolCallbacks(ToolCallbacks.from(dateTimeTools, userTools))
-                    .stream()
-                    .content()
-                    .collectList()
-                    .block();
+        String prompt = PromptConstant.OTHER_PROMPT.formatted(userMessage);
+        ChatClient chatClient = openAiClientFactory.chatClient();
+        List<String> parts = chatClient
+                .prompt(prompt)
+                .toolCallbacks(ToolCallbacks.from(dateTimeTools, userTools))
+                .stream()
+                .content()
+                .collectList()
+                .block();
 
-            String reply = (parts == null || parts.isEmpty()) ? null : String.join("", parts);
+        String reply = (parts == null || parts.isEmpty()) ? null : String.join("", parts);
 
-            if (reply == null || reply.trim().isEmpty()) {
-                log.warn("其他问题节点返回空回复");
-                reply = PromptConstant.DEFAULT_ERROR_REPLY;
-            }
-
-            log.debug("其他问题节点生成回复: {}", reply);
-            return Map.of(MedicineStateKeyEnum.SYSTEM_RESPONSE.getKey(), reply);
-        } finally {
-            // 确保清理ThreadLocal，避免内存泄漏
-            userTools.clearCurrentUser();
+        if (reply == null || reply.trim().isEmpty()) {
+            log.warn("其他问题节点返回空回复");
+            reply = PromptConstant.DEFAULT_ERROR_REPLY;
         }
+
+        log.debug("其他问题节点生成回复: {}", reply);
+        return Map.of(MedicineStateKeyEnum.SYSTEM_RESPONSE.getKey(), reply);
     }
 }

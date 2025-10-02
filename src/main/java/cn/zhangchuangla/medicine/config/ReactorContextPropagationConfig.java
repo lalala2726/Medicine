@@ -1,9 +1,7 @@
 package cn.zhangchuangla.medicine.config;
 
+import cn.zhangchuangla.medicine.llm.workflow.context.UserContextHolder;
 import cn.zhangchuangla.medicine.llm.workflow.progress.WorkflowProgressContextHolder;
-import cn.zhangchuangla.medicine.llm.workflow.progress.WorkflowProgressReporter;
-import cn.zhangchuangla.medicine.security.context.UserContextHolder;
-import cn.zhangchuangla.medicine.security.entity.SysUserDetails;
 import io.micrometer.context.ContextRegistry;
 import jakarta.annotation.PostConstruct;
 import lombok.extern.slf4j.Slf4j;
@@ -34,18 +32,18 @@ public class ReactorContextPropagationConfig {
                 if (context == null) {
                     SecurityContextHolder.clearContext();
                 } else {
-                    SecurityContextHolder.setContext((SecurityContext) context);
+                    SecurityContextHolder.setContext(context);
                 }
             },
             SecurityContextHolder::clearContext);
 
         registry.registerThreadLocalAccessor("workflow-progress-reporter",
-            () -> WorkflowProgressContextHolder.getReporter(),
+                WorkflowProgressContextHolder::getReporter,
             reporter -> {
                 if (reporter == null) {
                     WorkflowProgressContextHolder.clear();
                 } else {
-                    WorkflowProgressContextHolder.setReporter((WorkflowProgressReporter) reporter);
+                    WorkflowProgressContextHolder.setReporter(reporter);
                 }
             },
             WorkflowProgressContextHolder::clear);
@@ -56,7 +54,7 @@ public class ReactorContextPropagationConfig {
                 if (user == null) {
                     UserContextHolder.clear();
                 } else {
-                    UserContextHolder.set((SysUserDetails) user);
+                    UserContextHolder.set(user);
                 }
             },
             UserContextHolder::clear);

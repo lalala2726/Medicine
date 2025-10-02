@@ -5,6 +5,7 @@ import cn.zhangchuangla.medicine.common.exception.ServiceException;
 import cn.zhangchuangla.medicine.common.utils.UUIDUtils;
 import cn.zhangchuangla.medicine.enums.ChatStageEnum;
 import cn.zhangchuangla.medicine.enums.MedicineStateKeyEnum;
+import cn.zhangchuangla.medicine.llm.workflow.context.UserContextHolder;
 import cn.zhangchuangla.medicine.llm.workflow.progress.DefaultWorkflowProgressReporter;
 import cn.zhangchuangla.medicine.llm.workflow.progress.WorkflowProgressContextHolder;
 import cn.zhangchuangla.medicine.model.entity.Conversation;
@@ -16,6 +17,7 @@ import cn.zhangchuangla.medicine.model.vo.llm.chat.UserMessageRequest;
 import cn.zhangchuangla.medicine.service.AssistantService;
 import cn.zhangchuangla.medicine.service.ConversationService;
 import cn.zhangchuangla.medicine.service.MessageService;
+import cn.zhangchuangla.medicine.utils.SecurityUtils;
 import com.alibaba.cloud.ai.graph.CompiledGraph;
 import com.alibaba.cloud.ai.graph.NodeOutput;
 import com.alibaba.cloud.ai.graph.OverAllState;
@@ -25,7 +27,6 @@ import com.alibaba.cloud.ai.graph.exception.GraphStateException;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Qualifier;
-import org.springframework.security.core.context.SecurityContext;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -214,17 +215,7 @@ public class AssistantServiceImpl implements AssistantService, BaseService {
      * @return 返回一个Flux流，其中包含逐步生成的聊天响应片段（StreamChatResponse）
      */
     private Flux<StreamChatResponse> streamWorkflowAndPersist(String uuid, Long conversationId, String userMessage) {
-        SecurityContext securityContext = SecurityContextHolder.getContext();
-        SecurityContext contextSnapshot;
-        if (securityContext != null && securityContext.getAuthentication() != null) {
-            SecurityContext newContext = SecurityContextHolder.createEmptyContext();
-            newContext.setAuthentication(securityContext.getAuthentication());
-            contextSnapshot = newContext;
-        } else {
-            contextSnapshot = null;
-        }
-        final SecurityContext finalContextSnapshot = contextSnapshot;
-
+        UserContextHolder.set(SecurityUtils.getLoginUser());
         return Flux.create((FluxSink<StreamChatResponse> sink) -> {
             // 创建进度报告器，负责将执行阶段信息推送给客户端
             DefaultWorkflowProgressReporter reporter = new DefaultWorkflowProgressReporter(uuid, sink);
@@ -242,11 +233,6 @@ public class AssistantServiceImpl implements AssistantService, BaseService {
 
             // 在弹性调度线程中异步执行工作流处理逻辑
             Schedulers.boundedElastic().schedule(() -> {
-                if (finalContextSnapshot != null) {
-                    SecurityContextHolder.setContext(finalContextSnapshot);
-                } else {
-                    SecurityContextHolder.clearContext();
-                }
                 WorkflowProgressContextHolder.setReporter(reporter);
                 try {
                     // 发送初始接收与开始阶段状态
