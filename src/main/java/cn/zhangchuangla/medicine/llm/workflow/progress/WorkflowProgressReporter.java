@@ -11,8 +11,8 @@ public interface WorkflowProgressReporter {
     /**
      * 发布工作流阶段更新。
      *
-     * @param stage 要发布的阶段代码
-     * @param message 人类可读的描述
+     * @param stage    要发布的阶段代码
+     * @param message  人类可读的描述
      * @param finished 此阶段是否完成工作流流
      */
     void publishStage(ChatStageEnum stage, String message, boolean finished);
@@ -25,7 +25,7 @@ public interface WorkflowProgressReporter {
      * 通知工具调用开始。
      *
      * @param toolName Spring AI 工具名称
-     * @param message 用于 UI 显示的上下文信息
+     * @param message  用于 UI 显示的上下文信息
      */
     void publishToolInvoke(String toolName, String message);
 
@@ -33,7 +33,7 @@ public interface WorkflowProgressReporter {
      * 通知工具调用结果。
      *
      * @param toolName Spring AI 工具名称
-     * @param result 用于显示的简短文本结果
+     * @param result   用于显示的简短文本结果
      */
     void publishToolResult(String toolName, String result);
 

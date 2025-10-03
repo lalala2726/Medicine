@@ -24,40 +24,40 @@ public class ReactorContextPropagationConfig {
         ContextRegistry registry = ContextRegistry.getInstance();
 
         registry.registerThreadLocalAccessor("security-context",
-            () -> {
-                SecurityContext context = SecurityContextHolder.getContext();
-                return context != null && context.getAuthentication() != null ? context : null;
-            },
-            context -> {
-                if (context == null) {
-                    SecurityContextHolder.clearContext();
-                } else {
-                    SecurityContextHolder.setContext(context);
-                }
-            },
-            SecurityContextHolder::clearContext);
+                () -> {
+                    SecurityContext context = SecurityContextHolder.getContext();
+                    return context != null && context.getAuthentication() != null ? context : null;
+                },
+                context -> {
+                    if (context == null) {
+                        SecurityContextHolder.clearContext();
+                    } else {
+                        SecurityContextHolder.setContext(context);
+                    }
+                },
+                SecurityContextHolder::clearContext);
 
         registry.registerThreadLocalAccessor("workflow-progress-reporter",
                 WorkflowProgressContextHolder::getReporter,
-            reporter -> {
-                if (reporter == null) {
-                    WorkflowProgressContextHolder.clear();
-                } else {
-                    WorkflowProgressContextHolder.setReporter(reporter);
-                }
-            },
-            WorkflowProgressContextHolder::clear);
+                reporter -> {
+                    if (reporter == null) {
+                        WorkflowProgressContextHolder.clear();
+                    } else {
+                        WorkflowProgressContextHolder.setReporter(reporter);
+                    }
+                },
+                WorkflowProgressContextHolder::clear);
 
         registry.registerThreadLocalAccessor("user-tools-context",
-            UserContextHolder::get,
-            user -> {
-                if (user == null) {
-                    UserContextHolder.clear();
-                } else {
-                    UserContextHolder.set(user);
-                }
-            },
-            UserContextHolder::clear);
+                UserContextHolder::get,
+                user -> {
+                    if (user == null) {
+                        UserContextHolder.clear();
+                    } else {
+                        UserContextHolder.set(user);
+                    }
+                },
+                UserContextHolder::clear);
 
         log.info("Reactor automatic context propagation enabled for security, workflow and user contexts");
     }

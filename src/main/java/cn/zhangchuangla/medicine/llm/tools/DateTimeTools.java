@@ -16,19 +16,6 @@ import java.time.format.DateTimeFormatter;
  */
 @Component
 public class DateTimeTools {
-    private void notifyInvoke(String toolName, String message) {
-        WorkflowProgressContextHolder.publishToolInvoke(toolName, message);
-    }
-
-    private void notifyInvoke(String toolName) {
-        notifyInvoke(toolName, "正在调用 " + toolName + " 工具");
-    }
-
-    private void notifyResult(String toolName, String result) {
-        WorkflowProgressContextHolder.publishToolResult(toolName, result);
-    }
-
-
     /**
      * 日期格式化器：yyyy-MM-dd
      */
@@ -41,6 +28,18 @@ public class DateTimeTools {
      * 日期时间格式化器：yyyy-MM-dd HH:mm:ss
      */
     private static final DateTimeFormatter DATETIME_FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
+
+    private void notifyInvoke(String toolName, String message) {
+        WorkflowProgressContextHolder.publishToolInvoke(toolName, message);
+    }
+
+    private void notifyInvoke(String toolName) {
+        notifyInvoke(toolName, "正在调用 " + toolName + " 工具");
+    }
+
+    private void notifyResult(String toolName, String result) {
+        WorkflowProgressContextHolder.publishToolResult(toolName, result);
+    }
 
     /**
      * 获取当前Unix时间戳（毫秒）

@@ -16,15 +16,15 @@ public final class WorkflowProgressContextHolder {
     private WorkflowProgressContextHolder() {
     }
 
+    public static WorkflowProgressReporter getReporter() {
+        return CONTEXT.get();
+    }
+
     public static void setReporter(WorkflowProgressReporter reporter) {
         if (reporter == null) {
             throw new IllegalArgumentException("reporter cannot be null");
         }
         CONTEXT.set(reporter);
-    }
-
-    public static WorkflowProgressReporter getReporter() {
-        return CONTEXT.get();
     }
 
     public static void clear() {

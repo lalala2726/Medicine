@@ -34,16 +34,13 @@ import java.util.Arrays;
 @RequiredArgsConstructor
 public class TokenAuthenticationFilter extends OncePerRequestFilter {
 
-    private final SecurityProperties securityProperties;
-
-    private final TokenService tokenService;
-
-
     /**
      * 令牌前缀
      */
     @Value("${security.session.token-prefix}")
     private static final String TOKEN_PREFIX = "Bearer";
+    private final SecurityProperties securityProperties;
+    private final TokenService tokenService;
 
     /**
      * 校验Token，包括验签和是否过期

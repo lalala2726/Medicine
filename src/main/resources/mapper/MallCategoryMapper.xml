@@ -5,16 +5,16 @@
 <mapper namespace="cn.zhangchuangla.medicine.mapper.MallCategoryMapper">
 
     <resultMap id="BaseResultMap" type="cn.zhangchuangla.medicine.model.entity.MallCategory">
-            <id property="id" column="id" />
-            <result property="name" column="name" />
-            <result property="parentId" column="parent_id" />
-            <result property="description" column="description" />
-            <result property="sort" column="sort" />
-            <result property="status" column="status" />
-            <result property="createTime" column="create_time" />
-            <result property="updateTime" column="update_time" />
-            <result property="createBy" column="create_by" />
-            <result property="updateBy" column="update_by" />
+        <id property="id" column="id"/>
+        <result property="name" column="name"/>
+        <result property="parentId" column="parent_id"/>
+        <result property="description" column="description"/>
+        <result property="sort" column="sort"/>
+        <result property="status" column="status"/>
+        <result property="createTime" column="create_time"/>
+        <result property="updateTime" column="update_time"/>
+        <result property="createBy" column="create_by"/>
+        <result property="updateBy" column="update_by"/>
     </resultMap>
 
     <sql id="Base_Column_List">
