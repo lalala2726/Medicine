@@ -34,7 +34,7 @@ public class UserDetailsServiceImpl implements UserDetailsService {
      * @throws UsernameNotFoundException 如果用户不存在
      */
     @Override
-    public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
+    public UserDetails loadUserByUsername(String username) {
         try {
             // 获取系统用户信息
             User user = userService.getUserByUsername(username);
