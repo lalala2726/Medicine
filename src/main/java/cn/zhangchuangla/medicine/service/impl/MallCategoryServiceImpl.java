@@ -1,20 +1,68 @@
 package cn.zhangchuangla.medicine.service.impl;
 
+import cn.zhangchuangla.medicine.common.base.Option;
+import cn.zhangchuangla.medicine.common.exception.ServiceException;
 import cn.zhangchuangla.medicine.mapper.MallCategoryMapper;
 import cn.zhangchuangla.medicine.model.entity.MallCategory;
+import cn.zhangchuangla.medicine.model.request.mall.category.MallCategoryAddRequest;
+import cn.zhangchuangla.medicine.model.request.mall.category.MallCategoryListQueryRequest;
+import cn.zhangchuangla.medicine.model.request.mall.category.MallCategoryUpdateRequest;
 import cn.zhangchuangla.medicine.model.vo.mall.category.MallCategoryTree;
 import cn.zhangchuangla.medicine.service.MallCategoryService;
+import cn.zhangchuangla.medicine.utils.SecurityUtils;
+import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
+import org.springframework.beans.BeanUtils;
 import org.springframework.stereotype.Service;
 
+import java.util.Date;
 import java.util.List;
+import java.util.Objects;
 
 /**
+ * 商城商品分类服务实现类
+ * <p>
+ * 实现商城商品分类的业务逻辑处理，包括分类的增删改查、
+ * 分类树构建、分类选项获取等功能。
+ *
  * @author Chuang
+ * created on 2025/10/4 01:46
  */
 @Service
 public class MallCategoryServiceImpl extends ServiceImpl<MallCategoryMapper, MallCategory>
         implements MallCategoryService {
+
+    @Override
+    public Page<MallCategory> listMallCategory(MallCategoryListQueryRequest request) {
+        LambdaQueryWrapper<MallCategory> queryWrapper = new LambdaQueryWrapper<>();
+
+        // 按分类ID查询
+        if (request.getId() != null) {
+            queryWrapper.eq(MallCategory::getId, request.getId());
+        }
+
+        // 按分类名称模糊查询
+        if (request.getName() != null && !request.getName().trim().isEmpty()) {
+            queryWrapper.like(MallCategory::getName, request.getName().trim());
+        }
+
+        // 按父分类ID查询
+        if (request.getParentId() != null) {
+            queryWrapper.eq(MallCategory::getParentId, request.getParentId());
+        }
+
+        // 按分类描述模糊查询
+        if (request.getDescription() != null && !request.getDescription().trim().isEmpty()) {
+            queryWrapper.like(MallCategory::getDescription, request.getDescription().trim());
+        }
+
+        // 按排序值升序排序
+        queryWrapper.orderByAsc(MallCategory::getSort)
+                .orderByDesc(MallCategory::getCreateTime);
+
+        return page(new Page<>(request.getPageNum(), request.getPageSize()), queryWrapper);
+    }
 
     @Override
     public List<MallCategoryTree> categoryTree() {
@@ -25,6 +73,102 @@ public class MallCategoryServiceImpl extends ServiceImpl<MallCategoryMapper, Mal
         return buildTree(categories, 0L);
     }
 
+    @Override
+    public List<Option<Long>> option() {
+        LambdaQueryWrapper<MallCategory> queryWrapper = new LambdaQueryWrapper<>();
+        queryWrapper.eq(MallCategory::getStatus, 0)
+                .orderByAsc(MallCategory::getSort);
+
+        List<MallCategory> categories = list(queryWrapper);
+        return categories.stream()
+                .map(category -> new Option<>(category.getId(), category.getName()))
+                .toList();
+    }
+
+    @Override
+    public MallCategory getCategoryById(Long id) {
+        if (id == null) {
+            throw new ServiceException("分类ID不能为空");
+        }
+
+        MallCategory category = getById(id);
+        if (category == null) {
+            throw new ServiceException("分类不存在");
+        }
+
+        return category;
+    }
+
+    @Override
+    public boolean addCategory(MallCategoryAddRequest request) {
+        // 检查分类名称是否已存在
+        LambdaQueryWrapper<MallCategory> queryWrapper = new LambdaQueryWrapper<>();
+        queryWrapper.eq(MallCategory::getName, request.getName());
+        if (count(queryWrapper) > 0) {
+            throw new ServiceException("分类名称已存在");
+        }
+
+        MallCategory category = new MallCategory();
+        BeanUtils.copyProperties(request, category);
+        category.setStatus(0); // 默认启用
+        category.setCreateTime(new Date());
+        category.setCreateBy(SecurityUtils.getUsername());
+
+        return save(category);
+    }
+
+    @Override
+    public boolean updateCategory(MallCategoryUpdateRequest request) {
+        // 检查分类是否存在
+        MallCategory existingCategory = getById(request.getId());
+        if (existingCategory == null) {
+            throw new ServiceException("分类不存在");
+        }
+
+        // 如果修改了父分类，检查是否将自己设置为父分类
+        if (request.getParentId() != null && request.getParentId().equals(request.getId())) {
+            throw new ServiceException("不能将自己设置为父分类");
+        }
+
+        // 检查分类名称是否已存在（排除自己）
+        LambdaQueryWrapper<MallCategory> queryWrapper = new LambdaQueryWrapper<>();
+        queryWrapper.eq(MallCategory::getName, request.getName())
+                .ne(MallCategory::getId, request.getId());
+        if (count(queryWrapper) > 0) {
+            throw new ServiceException("分类名称已存在");
+        }
+
+        BeanUtils.copyProperties(request, existingCategory);
+        existingCategory.setUpdateTime(new Date());
+        existingCategory.setUpdateBy(SecurityUtils.getUsername());
+
+        return updateById(existingCategory);
+    }
+
+    @Override
+    public boolean deleteCategory(List<Long> ids) {
+        if (ids == null || ids.isEmpty()) {
+            throw new ServiceException("请选择要删除的分类");
+        }
+
+        for (Long id : ids) {
+            // 检查分类是否存在
+            MallCategory category = getById(id);
+            if (category == null) {
+                throw new ServiceException("分类不存在: " + id);
+            }
+
+            // 检查是否有子分类
+            LambdaQueryWrapper<MallCategory> queryWrapper = new LambdaQueryWrapper<>();
+            queryWrapper.eq(MallCategory::getParentId, id);
+            long childCount = count(queryWrapper);
+            if (childCount > 0) {
+                throw new ServiceException("分类【" + category.getName() + "】存在子分类，无法删除");
+            }
+        }
+
+        return removeByIds(ids);
+    }
 
     /**
      * 递归构建树形结构
@@ -35,7 +179,7 @@ public class MallCategoryServiceImpl extends ServiceImpl<MallCategoryMapper, Mal
      */
     private List<MallCategoryTree> buildTree(List<MallCategory> categories, Long parentId) {
         return categories.stream()
-                .filter(category -> category.getParentId().equals(parentId))
+                .filter(category -> Objects.equals(category.getParentId(), parentId))
                 .sorted((c1, c2) -> Integer.compare(c2.getSort(), c1.getSort()))
                 .map(category -> {
                     MallCategoryTree tree = new MallCategoryTree();
