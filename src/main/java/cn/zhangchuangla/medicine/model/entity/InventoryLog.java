@@ -41,6 +41,21 @@ public class InventoryLog {
     private Integer changeQty;
 
     /**
+     * 库存数量（变动前的数量）
+     */
+    private Integer beforeQty;
+
+    /**
+     * 库存数量（变动后的数量）
+     */
+    private Integer afterQty;
+
+    /**
+     * 变动原因
+     */
+    private String changeReason;
+
+    /**
      * 操作人
      */
     private String operator;

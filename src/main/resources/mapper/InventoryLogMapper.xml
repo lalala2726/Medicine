@@ -10,6 +10,9 @@
         <result property="batchNo" column="batch_no"/>
         <result property="changeType" column="change_type"/>
         <result property="changeQty" column="change_qty"/>
+        <result property="beforeQty" column="before_qty"/>
+        <result property="afterQty" column="after_qty"/>
+        <result property="changeReason" column="changeReason"/>
         <result property="operator" column="operator"/>
         <result property="remark" column="remark"/>
         <result property="createTime" column="create_time"/>
