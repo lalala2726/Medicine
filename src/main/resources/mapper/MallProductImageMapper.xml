@@ -5,11 +5,11 @@
 <mapper namespace="cn.zhangchuangla.medicine.mapper.MallProductImageMapper">
 
     <resultMap id="BaseResultMap" type="cn.zhangchuangla.medicine.model.entity.MallProductImage">
-            <id property="id" column="id" />
-            <result property="productId" column="product_id" />
-            <result property="imageUrl" column="image_url" />
-            <result property="sort" column="sort" />
-            <result property="createTime" column="create_time" />
+        <id property="id" column="id"/>
+        <result property="productId" column="product_id"/>
+        <result property="imageUrl" column="image_url"/>
+        <result property="sort" column="sort"/>
+        <result property="createTime" column="create_time"/>
     </resultMap>
 
     <sql id="Base_Column_List">

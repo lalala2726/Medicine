@@ -9,7 +9,13 @@ import java.math.BigDecimal;
 import java.util.Date;
 
 /**
- * 商城商品主表（支持绑定药品库存）
+ * 商城商品主实体类
+ * <p>
+ * 用于存储商城商品基本信息的数据库实体，支持与药品库存的绑定。
+ * 包含商品基本信息、价格、库存、分类关联、配送方式等核心业务字段。
+ *
+ * @author Chuang
+ * created on 2025/10/4 02:10
  */
 @TableName(value = "mall_product")
 @Data

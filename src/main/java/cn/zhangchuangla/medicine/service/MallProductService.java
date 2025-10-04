@@ -1,13 +1,63 @@
 package cn.zhangchuangla.medicine.service;
 
 import cn.zhangchuangla.medicine.model.entity.MallProduct;
+import cn.zhangchuangla.medicine.model.request.mall.MallProductAddRequest;
+import cn.zhangchuangla.medicine.model.request.mall.MallProductListQueryRequest;
+import cn.zhangchuangla.medicine.model.request.mall.MallProductUpdateRequest;
+import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.IService;
 
+import java.util.List;
+
 /**
-* @author Chuang
-* @description 针对表【mall_product(商城商品主表（支持绑定药品库存）)】的数据库操作Service
-* @createDate 2025-10-04 13:57:46
-*/
+ * 商城商品服务接口
+ * <p>
+ * 提供商城商品的业务逻辑处理，包括商品的增删改查、
+ * 商品列表查询、商品详情获取等功能。
+ *
+ * @author Chuang
+ * created on 2025/10/4 02:32
+ */
 public interface MallProductService extends IService<MallProduct> {
+
+    /**
+     * 获取商城商品列表
+     *
+     * @param request 查询参数
+     * @return 分页的商城商品列表
+     */
+    Page<MallProduct> listMallProduct(MallProductListQueryRequest request);
+
+    /**
+     * 根据ID获取商城商品
+     *
+     * @param id 商品ID
+     * @return 商城商品信息
+     */
+    MallProduct getMallProductById(Long id);
+
+    /**
+     * 添加商城商品
+     *
+     * @param request 添加参数
+     * @return 添加结果
+     */
+    boolean addMallProduct(MallProductAddRequest request);
+
+    /**
+     * 修改商城商品
+     *
+     * @param request 修改参数
+     * @return 修改结果
+     */
+    boolean updateMallProduct(MallProductUpdateRequest request);
+
+    /**
+     * 删除商城商品
+     *
+     * @param ids 商品ID列表
+     * @return 删除结果
+     */
+    boolean deleteMallProduct(List<Long> ids);
 
 }

@@ -5,11 +5,11 @@
 <mapper namespace="cn.zhangchuangla.medicine.mapper.MallProductDetailMapper">
 
     <resultMap id="BaseResultMap" type="cn.zhangchuangla.medicine.model.entity.MallProductDetail">
-            <id property="id" column="id" />
-            <result property="productId" column="product_id" />
-            <result property="content" column="content" />
-            <result property="createTime" column="create_time" />
-            <result property="updateTime" column="update_time" />
+        <id property="id" column="id"/>
+        <result property="productId" column="product_id"/>
+        <result property="content" column="content"/>
+        <result property="createTime" column="create_time"/>
+        <result property="updateTime" column="update_time"/>
     </resultMap>
 
     <sql id="Base_Column_List">
