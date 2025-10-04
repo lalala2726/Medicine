@@ -63,6 +63,7 @@ public class WebMvcConfig implements WebMvcConfigurer {
         SimpleModule simpleModule = new SimpleModule();
         simpleModule.addSerializer(Long.class, ToStringSerializer.instance);
         simpleModule.addSerializer(BigInteger.class, ToStringSerializer.instance);
+        simpleModule.addSerializer(java.math.BigDecimal.class, ToStringSerializer.instance);
         objectMapper.registerModule(simpleModule);
 
         jackson2HttpMessageConverter.setObjectMapper(objectMapper);
