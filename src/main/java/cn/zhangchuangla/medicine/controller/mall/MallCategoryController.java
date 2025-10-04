@@ -3,19 +3,16 @@ package cn.zhangchuangla.medicine.controller.mall;
 import cn.zhangchuangla.medicine.common.base.AjaxResult;
 import cn.zhangchuangla.medicine.common.base.BaseController;
 import cn.zhangchuangla.medicine.common.base.Option;
-import cn.zhangchuangla.medicine.common.base.TableDataResult;
 import cn.zhangchuangla.medicine.model.entity.MallCategory;
 import cn.zhangchuangla.medicine.model.request.mall.category.MallCategoryAddRequest;
-import cn.zhangchuangla.medicine.model.request.mall.category.MallCategoryListQueryRequest;
 import cn.zhangchuangla.medicine.model.request.mall.category.MallCategoryUpdateRequest;
-import cn.zhangchuangla.medicine.model.vo.mall.category.MallCategoryListVo;
 import cn.zhangchuangla.medicine.model.vo.mall.category.MallCategoryTree;
 import cn.zhangchuangla.medicine.model.vo.mall.category.MallCategoryVo;
 import cn.zhangchuangla.medicine.service.MallCategoryService;
-import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -36,20 +33,6 @@ import java.util.List;
 public class MallCategoryController extends BaseController {
 
     private final MallCategoryService mallCategoryService;
-
-    /**
-     * 获取商城商品分类列表
-     *
-     * @param request 查询参数
-     * @return 商城商品分类列表
-     */
-    @GetMapping("/list")
-    @Operation(summary = "获取商城商品分类列表")
-    public AjaxResult<TableDataResult> listMallCategory(MallCategoryListQueryRequest request) {
-        Page<MallCategory> page = mallCategoryService.listMallCategory(request);
-        List<MallCategoryListVo> categoryListVos = copyListProperties(page, MallCategoryListVo.class);
-        return getTableData(page, categoryListVos);
-    }
 
     /**
      * 获取商品分类树
@@ -97,7 +80,7 @@ public class MallCategoryController extends BaseController {
      */
     @PostMapping
     @Operation(summary = "添加商城商品分类")
-    public AjaxResult<Void> addCategory(@RequestBody MallCategoryAddRequest request) {
+    public AjaxResult<Void> addCategory(@Validated @RequestBody MallCategoryAddRequest request) {
         boolean result = mallCategoryService.addCategory(request);
         return toAjax(result);
     }
@@ -110,7 +93,7 @@ public class MallCategoryController extends BaseController {
      */
     @PutMapping
     @Operation(summary = "修改商城商品分类")
-    public AjaxResult<Void> updateCategory(@RequestBody MallCategoryUpdateRequest request) {
+    public AjaxResult<Void> updateCategory(@Validated @RequestBody MallCategoryUpdateRequest request) {
         boolean result = mallCategoryService.updateCategory(request);
         return toAjax(result);
     }

@@ -5,13 +5,11 @@ import cn.zhangchuangla.medicine.common.exception.ServiceException;
 import cn.zhangchuangla.medicine.mapper.MallCategoryMapper;
 import cn.zhangchuangla.medicine.model.entity.MallCategory;
 import cn.zhangchuangla.medicine.model.request.mall.category.MallCategoryAddRequest;
-import cn.zhangchuangla.medicine.model.request.mall.category.MallCategoryListQueryRequest;
 import cn.zhangchuangla.medicine.model.request.mall.category.MallCategoryUpdateRequest;
 import cn.zhangchuangla.medicine.model.vo.mall.category.MallCategoryTree;
 import cn.zhangchuangla.medicine.service.MallCategoryService;
 import cn.zhangchuangla.medicine.utils.SecurityUtils;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
-import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import org.springframework.beans.BeanUtils;
 import org.springframework.stereotype.Service;
@@ -32,37 +30,6 @@ import java.util.Objects;
 @Service
 public class MallCategoryServiceImpl extends ServiceImpl<MallCategoryMapper, MallCategory>
         implements MallCategoryService {
-
-    @Override
-    public Page<MallCategory> listMallCategory(MallCategoryListQueryRequest request) {
-        LambdaQueryWrapper<MallCategory> queryWrapper = new LambdaQueryWrapper<>();
-
-        // 按分类ID查询
-        if (request.getId() != null) {
-            queryWrapper.eq(MallCategory::getId, request.getId());
-        }
-
-        // 按分类名称模糊查询
-        if (request.getName() != null && !request.getName().trim().isEmpty()) {
-            queryWrapper.like(MallCategory::getName, request.getName().trim());
-        }
-
-        // 按父分类ID查询
-        if (request.getParentId() != null) {
-            queryWrapper.eq(MallCategory::getParentId, request.getParentId());
-        }
-
-        // 按分类描述模糊查询
-        if (request.getDescription() != null && !request.getDescription().trim().isEmpty()) {
-            queryWrapper.like(MallCategory::getDescription, request.getDescription().trim());
-        }
-
-        // 按排序值升序排序
-        queryWrapper.orderByAsc(MallCategory::getSort)
-                .orderByDesc(MallCategory::getCreateTime);
-
-        return page(new Page<>(request.getPageNum(), request.getPageSize()), queryWrapper);
-    }
 
     @Override
     public List<MallCategoryTree> categoryTree() {
@@ -188,6 +155,9 @@ public class MallCategoryServiceImpl extends ServiceImpl<MallCategoryMapper, Mal
                     tree.setParentId(category.getParentId());
                     tree.setSort(category.getSort());
                     tree.setStatus(category.getStatus());
+                    if (!category.getDescription().isBlank()) {
+                        tree.setDescription(category.getDescription());
+                    }
                     List<MallCategoryTree> mallCategoryTrees = buildTree(categories, category.getId());
                     if (!mallCategoryTrees.isEmpty()) {
                         tree.setChildren(mallCategoryTrees);

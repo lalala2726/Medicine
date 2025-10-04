@@ -3,10 +3,8 @@ package cn.zhangchuangla.medicine.service;
 import cn.zhangchuangla.medicine.common.base.Option;
 import cn.zhangchuangla.medicine.model.entity.MallCategory;
 import cn.zhangchuangla.medicine.model.request.mall.category.MallCategoryAddRequest;
-import cn.zhangchuangla.medicine.model.request.mall.category.MallCategoryListQueryRequest;
 import cn.zhangchuangla.medicine.model.request.mall.category.MallCategoryUpdateRequest;
 import cn.zhangchuangla.medicine.model.vo.mall.category.MallCategoryTree;
-import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.IService;
 
 import java.util.List;
@@ -22,13 +20,6 @@ import java.util.List;
  */
 public interface MallCategoryService extends IService<MallCategory> {
 
-    /**
-     * 获取商城商品分类列表
-     *
-     * @param request 查询参数
-     * @return 分页的商城商品分类列表
-     */
-    Page<MallCategory> listMallCategory(MallCategoryListQueryRequest request);
 
     /**
      * 商品分类树

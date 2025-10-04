@@ -34,6 +34,12 @@ public class MallCategoryTree {
     private String categoryName;
 
     /**
+     * 分类描述
+     */
+    @Schema(description = "分类描述", type = "string", example = "分类描述")
+    private String description;
+
+    /**
      * 排序
      */
     @Schema(description = "排序", type = "int", format = "int32", example = "1")
