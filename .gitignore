@@ -15,7 +15,8 @@ AGENTS.md
 .springBeans
 .sts4-cache
 .claude
-
+GEMINI.md
+sql
 ### IntelliJ IDEA ###
 .idea
 *.iws
