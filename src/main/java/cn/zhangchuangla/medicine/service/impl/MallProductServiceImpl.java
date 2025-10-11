@@ -4,11 +4,13 @@ import cn.zhangchuangla.medicine.common.exception.ServiceException;
 import cn.zhangchuangla.medicine.mapper.MallProductMapper;
 import cn.zhangchuangla.medicine.model.dto.MallProductDto;
 import cn.zhangchuangla.medicine.model.entity.MallProduct;
+import cn.zhangchuangla.medicine.model.entity.MedicineStock;
 import cn.zhangchuangla.medicine.model.request.mall.MallProductAddRequest;
 import cn.zhangchuangla.medicine.model.request.mall.MallProductListQueryRequest;
 import cn.zhangchuangla.medicine.model.request.mall.MallProductUpdateRequest;
 import cn.zhangchuangla.medicine.service.MallCategoryService;
 import cn.zhangchuangla.medicine.service.MallProductService;
+import cn.zhangchuangla.medicine.service.MedicineStockService;
 import cn.zhangchuangla.medicine.utils.SecurityUtils;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
@@ -20,6 +22,8 @@ import org.springframework.stereotype.Service;
 import java.math.BigDecimal;
 import java.util.Date;
 import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 /**
  * 商城商品服务实现类
@@ -37,6 +41,7 @@ public class MallProductServiceImpl extends ServiceImpl<MallProductMapper, MallP
 
     private final MallProductMapper mallProductMapper;
     private final MallCategoryService mallCategoryService;
+    private final MedicineStockService medicineStockService;
 
     @Override
     public Page<MallProduct> listMallProduct(MallProductListQueryRequest request) {
@@ -47,7 +52,36 @@ public class MallProductServiceImpl extends ServiceImpl<MallProductMapper, MallP
     @Override
     public Page<MallProductDto> listMallProductWithCategory(MallProductListQueryRequest request) {
         Page<MallProductDto> page = new Page<>(request.getPageNum(), request.getPageSize());
-        return mallProductMapper.listMallProductWithCategory(page, request);
+        Page<MallProductDto> mallProductDtoPage = mallProductMapper.listMallProductWithCategory(page, request);
+
+        // 筛选出需要查询库存的商品ID（绑定库存的商品）
+        List<Long> medicineStockIds = mallProductDtoPage.getRecords().stream()
+                .filter(productDto -> productDto.getBindType() == 1 && productDto.getMedicineStockId() != null)
+                .map(MallProductDto::getMedicineStockId)
+                .toList();
+
+        if (!medicineStockIds.isEmpty()) {
+            // 统一查询库存信息
+            LambdaQueryWrapper<MedicineStock> queryWrapper = new LambdaQueryWrapper<MedicineStock>()
+                    .in(MedicineStock::getId, medicineStockIds);
+            List<MedicineStock> medicineStocks = medicineStockService.list(queryWrapper);
+
+            // 创建库存ID到库存数量的映射，避免嵌套循环
+            Map<Long, Integer> stockMap = medicineStocks.stream()
+                    .collect(Collectors.toMap(MedicineStock::getId, MedicineStock::getQuantity));
+
+            // 为商品设置库存信息
+            mallProductDtoPage.getRecords().stream()
+                    .filter(productDto -> productDto.getBindType() == 1 && productDto.getMedicineStockId() != null)
+                    .forEach(productDto -> {
+                        Integer stock = stockMap.get(productDto.getMedicineStockId());
+                        if (stock != null) {
+                            productDto.setStock(stock);
+                        }
+                    });
+        }
+
+        return mallProductDtoPage;
     }
 
     @Override
