@@ -1,5 +1,6 @@
 package cn.zhangchuangla.medicine.service;
 
+import cn.zhangchuangla.medicine.model.dto.MallProductDto;
 import cn.zhangchuangla.medicine.model.entity.MallProduct;
 import cn.zhangchuangla.medicine.model.request.mall.MallProductAddRequest;
 import cn.zhangchuangla.medicine.model.request.mall.MallProductListQueryRequest;
@@ -27,6 +28,14 @@ public interface MallProductService extends IService<MallProduct> {
      * @return 分页的商城商品列表
      */
     Page<MallProduct> listMallProduct(MallProductListQueryRequest request);
+
+    /**
+     * 获取商城商品列表（包含分类名称）
+     *
+     * @param request 查询参数
+     * @return 分页的商城商品列表（包含分类名称）
+     */
+    Page<MallProductDto> listMallProductWithCategory(MallProductListQueryRequest request);
 
     /**
      * 根据ID获取商城商品

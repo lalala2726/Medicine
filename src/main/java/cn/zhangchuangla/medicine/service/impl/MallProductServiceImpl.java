@@ -2,6 +2,7 @@ package cn.zhangchuangla.medicine.service.impl;
 
 import cn.zhangchuangla.medicine.common.exception.ServiceException;
 import cn.zhangchuangla.medicine.mapper.MallProductMapper;
+import cn.zhangchuangla.medicine.model.dto.MallProductDto;
 import cn.zhangchuangla.medicine.model.entity.MallProduct;
 import cn.zhangchuangla.medicine.model.request.mall.MallProductAddRequest;
 import cn.zhangchuangla.medicine.model.request.mall.MallProductListQueryRequest;
@@ -41,6 +42,12 @@ public class MallProductServiceImpl extends ServiceImpl<MallProductMapper, MallP
     public Page<MallProduct> listMallProduct(MallProductListQueryRequest request) {
         Page<MallProduct> page = page(new Page<>(request.getPageNum(), request.getPageSize()));
         return mallProductMapper.listMallProduct(page, request);
+    }
+
+    @Override
+    public Page<MallProductDto> listMallProductWithCategory(MallProductListQueryRequest request) {
+        Page<MallProductDto> page = new Page<>(request.getPageNum(), request.getPageSize());
+        return mallProductMapper.listMallProductWithCategory(page, request);
     }
 
     @Override

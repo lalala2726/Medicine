@@ -3,6 +3,7 @@ package cn.zhangchuangla.medicine.controller.mall;
 import cn.zhangchuangla.medicine.common.base.AjaxResult;
 import cn.zhangchuangla.medicine.common.base.BaseController;
 import cn.zhangchuangla.medicine.common.base.TableDataResult;
+import cn.zhangchuangla.medicine.model.dto.MallProductDto;
 import cn.zhangchuangla.medicine.model.entity.MallProduct;
 import cn.zhangchuangla.medicine.model.request.mall.MallProductAddRequest;
 import cn.zhangchuangla.medicine.model.request.mall.MallProductListQueryRequest;
@@ -45,7 +46,7 @@ public class MallProductController extends BaseController {
     @GetMapping("/list")
     @Operation(summary = "获取商城商品列表")
     public AjaxResult<TableDataResult> listMallProduct(MallProductListQueryRequest request) {
-        Page<MallProduct> page = mallProductService.listMallProduct(request);
+        Page<MallProductDto> page = mallProductService.listMallProductWithCategory(request);
         List<MallProductListVo> productListVos = copyListProperties(page, MallProductListVo.class);
         return getTableData(page, productListVos);
     }
@@ -85,7 +86,7 @@ public class MallProductController extends BaseController {
      */
     @PutMapping
     @Operation(summary = "修改商城商品")
-    public AjaxResult<Void> updateProduct(@RequestBody MallProductUpdateRequest request) {
+    public AjaxResult<Void> updateProduct(@Validated @RequestBody MallProductUpdateRequest request) {
         boolean result = mallProductService.updateMallProduct(request);
         return toAjax(result);
     }
