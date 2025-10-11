@@ -88,6 +88,13 @@ public class MallProductServiceImpl extends ServiceImpl<MallProductMapper, MallP
         if (!isExist) {
             throw new ServiceException("商品分类不存在");
         }
+
+        // 如果是绑定库存，验证药品相关信息
+        if (request.getBindType() == 1) {
+            validateMedicineBinding(request);
+        }
+
+
         MallProduct product = new MallProduct();
         BeanUtils.copyProperties(request, product);
         product.setSalesVolume(0L); // 初始销量为0
@@ -123,6 +130,11 @@ public class MallProductServiceImpl extends ServiceImpl<MallProductMapper, MallP
             throw new ServiceException("商品库存不能为负数");
         }
 
+        // 如果是绑定库存，验证药品相关信息
+        if (request.getBindType() != null && request.getBindType() == 1) {
+            validateMedicineBindingForUpdate(request);
+        }
+
         BeanUtils.copyProperties(request, existingProduct);
         existingProduct.setUpdateTime(new Date());
         existingProduct.setUpdateBy(SecurityUtils.getUsername());
@@ -145,6 +157,94 @@ public class MallProductServiceImpl extends ServiceImpl<MallProductMapper, MallP
         }
 
         return removeByIds(ids);
+    }
+
+    /**
+     * 验证药品绑定信息
+     *
+     * @param request 商品添加请求
+     */
+    private void validateMedicineBinding(MallProductAddRequest request) {
+        Long medicineId = request.getMedicineId();
+        Long medicineStockId = request.getMedicineStockId();
+
+        // 验证药品ID和药品库存ID不能为空
+        if (medicineId == null && medicineStockId == null) {
+            throw new ServiceException("药品ID和药品库存ID至少需要提供一个");
+        }
+
+        // 如果提供了药品ID，验证其有效性
+        if (medicineId != null) {
+            if (medicineId <= 0) {
+                throw new ServiceException("药品ID必须大于0");
+            }
+            boolean medicineExists = mallCategoryService.isMedicineExist(medicineId);
+            if (!medicineExists) {
+                throw new ServiceException("药品不存在，ID: " + medicineId);
+            }
+        }
+
+        // 如果提供了药品库存ID，验证其有效性
+        if (medicineStockId != null) {
+            if (medicineStockId <= 0) {
+                throw new ServiceException("药品库存ID必须大于0");
+            }
+            boolean stockExists = mallCategoryService.isMedicineStockExist(medicineStockId);
+            if (!stockExists) {
+                throw new ServiceException("药品库存不存在，ID: " + medicineStockId);
+            }
+        }
+
+        // 如果同时提供了药品ID和药品库存ID，验证它们是否匹配
+        if (medicineId != null && medicineStockId != null) {
+            if (!medicineId.equals(medicineStockId)) {
+                throw new ServiceException(String.format("药品ID(%d)与药品库存ID(%d)不匹配", medicineId, medicineStockId));
+            }
+        }
+    }
+
+    /**
+     * 验证药品绑定信息（更新版本）
+     *
+     * @param request 商品更新请求
+     */
+    private void validateMedicineBindingForUpdate(MallProductUpdateRequest request) {
+        Long medicineId = request.getMedicineId();
+        Long medicineStockId = request.getMedicineStockId();
+
+        // 验证药品ID和药品库存ID不能为空（如果设置了绑定类型为1）
+        if (medicineId == null && medicineStockId == null) {
+            throw new ServiceException("绑定库存模式下，药品ID和药品库存ID至少需要提供一个");
+        }
+
+        // 如果提供了药品ID，验证其有效性
+        if (medicineId != null) {
+            if (medicineId <= 0) {
+                throw new ServiceException("药品ID必须大于0");
+            }
+            boolean medicineExists = mallCategoryService.isMedicineExist(medicineId);
+            if (!medicineExists) {
+                throw new ServiceException("药品不存在，ID: " + medicineId);
+            }
+        }
+
+        // 如果提供了药品库存ID，验证其有效性
+        if (medicineStockId != null) {
+            if (medicineStockId <= 0) {
+                throw new ServiceException("药品库存ID必须大于0");
+            }
+            boolean stockExists = mallCategoryService.isMedicineStockExist(medicineStockId);
+            if (!stockExists) {
+                throw new ServiceException("药品库存不存在，ID: " + medicineStockId);
+            }
+        }
+
+        // 如果同时提供了药品ID和药品库存ID，验证它们是否匹配
+        if (medicineId != null && medicineStockId != null) {
+            if (!medicineId.equals(medicineStockId)) {
+                throw new ServiceException(String.format("药品ID(%d)与药品库存ID(%d)不匹配", medicineId, medicineStockId));
+            }
+        }
     }
 }
 
