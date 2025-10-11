@@ -23,6 +23,8 @@ import java.math.BigDecimal;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
+import java.util.function.BiConsumer;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
 /**
@@ -46,7 +48,17 @@ public class MallProductServiceImpl extends ServiceImpl<MallProductMapper, MallP
     @Override
     public Page<MallProduct> listMallProduct(MallProductListQueryRequest request) {
         Page<MallProduct> page = page(new Page<>(request.getPageNum(), request.getPageSize()));
-        return mallProductMapper.listMallProduct(page, request);
+        Page<MallProduct> mallProductPage = mallProductMapper.listMallProduct(page, request);
+
+        // 使用通用方法绑定库存信息
+        bindStockMapping(
+                mallProductPage.getRecords(),
+                MallProduct::getBindType,
+                MallProduct::getMedicineStockId,
+                MallProduct::setStock
+        );
+
+        return mallProductPage;
     }
 
     @Override
@@ -54,32 +66,13 @@ public class MallProductServiceImpl extends ServiceImpl<MallProductMapper, MallP
         Page<MallProductDto> page = new Page<>(request.getPageNum(), request.getPageSize());
         Page<MallProductDto> mallProductDtoPage = mallProductMapper.listMallProductWithCategory(page, request);
 
-        // 筛选出需要查询库存的商品ID（绑定库存的商品）
-        List<Long> medicineStockIds = mallProductDtoPage.getRecords().stream()
-                .filter(productDto -> productDto.getBindType() == 1 && productDto.getMedicineStockId() != null)
-                .map(MallProductDto::getMedicineStockId)
-                .toList();
-
-        if (!medicineStockIds.isEmpty()) {
-            // 统一查询库存信息
-            LambdaQueryWrapper<MedicineStock> queryWrapper = new LambdaQueryWrapper<MedicineStock>()
-                    .in(MedicineStock::getId, medicineStockIds);
-            List<MedicineStock> medicineStocks = medicineStockService.list(queryWrapper);
-
-            // 创建库存ID到库存数量的映射，避免嵌套循环
-            Map<Long, Integer> stockMap = medicineStocks.stream()
-                    .collect(Collectors.toMap(MedicineStock::getId, MedicineStock::getQuantity));
-
-            // 为商品设置库存信息
-            mallProductDtoPage.getRecords().stream()
-                    .filter(productDto -> productDto.getBindType() == 1 && productDto.getMedicineStockId() != null)
-                    .forEach(productDto -> {
-                        Integer stock = stockMap.get(productDto.getMedicineStockId());
-                        if (stock != null) {
-                            productDto.setStock(stock);
-                        }
-                    });
-        }
+        // 使用通用方法绑定库存信息
+        bindStockMapping(
+                mallProductDtoPage.getRecords(),
+                MallProductDto::getBindType,
+                MallProductDto::getMedicineStockId,
+                MallProductDto::setStock
+        );
 
         return mallProductDtoPage;
     }
@@ -196,6 +189,48 @@ public class MallProductServiceImpl extends ServiceImpl<MallProductMapper, MallP
         }
 
         return removeByIds(ids);
+    }
+
+    /**
+     * 绑定库存映射的通用方法
+     *
+     * @param products              商品列表（支持MallProduct或MallProductDto）
+     * @param bindTypeGetter        用于获取绑定类型的函数
+     * @param medicineStockIdGetter 用于获取库存ID的函数
+     * @param stockSetter           用于设置库存数量的函数
+     * @param <T>                   商品类型
+     */
+    private <T> void bindStockMapping(List<T> products,
+                                      Function<T, Integer> bindTypeGetter,
+                                      Function<T, Long> medicineStockIdGetter,
+                                      BiConsumer<T, Integer> stockSetter) {
+        // 筛选出需要查询库存的商品ID（绑定库存的商品）
+        List<Long> medicineStockIds = products.stream()
+                .filter(product -> bindTypeGetter.apply(product) == 1 && medicineStockIdGetter.apply(product) != null)
+                .map(medicineStockIdGetter)
+                .toList();
+
+        if (!medicineStockIds.isEmpty()) {
+            // 统一查询库存信息
+            LambdaQueryWrapper<MedicineStock> queryWrapper = new LambdaQueryWrapper<MedicineStock>()
+                    .in(MedicineStock::getId, medicineStockIds);
+            List<MedicineStock> medicineStocks = medicineStockService.list(queryWrapper);
+
+            // 创建库存ID到库存数量的映射，避免嵌套循环
+            Map<Long, Integer> stockMap = medicineStocks.stream()
+                    .collect(Collectors.toMap(MedicineStock::getId, MedicineStock::getQuantity));
+
+            // 为商品设置库存信息
+            products.stream()
+                    .filter(product -> bindTypeGetter.apply(product) == 1 && medicineStockIdGetter.apply(product) != null)
+                    .forEach(product -> {
+                        Long stockId = medicineStockIdGetter.apply(product);
+                        Integer stock = stockMap.get(stockId);
+                        if (stock != null) {
+                            stockSetter.accept(product, stock);
+                        }
+                    });
+        }
     }
 
     /**

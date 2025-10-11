@@ -1,5 +1,6 @@
 package cn.zhangchuangla.medicine.model.request.medicine;
 
+import com.fasterxml.jackson.annotation.JsonFormat;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Positive;
 import lombok.Data;
@@ -42,6 +43,7 @@ public class MedicineStockUpdateRequest {
      * 有效期
      */
     @NotNull(message = "有效期不能为空")
+    @JsonFormat(pattern = "yyyy-MM-dd", timezone = "GMT+8")
     private Date expiryDate;
 
     /**
