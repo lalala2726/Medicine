@@ -138,6 +138,19 @@ public class MallCategoryServiceImpl extends ServiceImpl<MallCategoryMapper, Mal
     }
 
     /**
+     * 检查商品分类是否存在
+     *
+     * @param categoryId 商品分类ID
+     * @return 是否存在
+     */
+    @Override
+    public boolean isProductCategoryExist(Long categoryId) {
+        LambdaQueryWrapper<MallCategory> eq = new LambdaQueryWrapper<MallCategory>()
+                .eq(MallCategory::getId, categoryId);
+        return count(eq) > 0;
+    }
+
+    /**
      * 递归构建树形结构
      *
      * @param categories 所有分类列表

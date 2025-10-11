@@ -31,4 +31,36 @@
         bind_type,medicine_id,medicine_stock_id,create_time,update_time,
         create_by,update_by
     </sql>
+    <select id="listMallProduct" resultMap="BaseResultMap">
+        SELECT
+        <include refid="Base_Column_List"/>
+        FROM mall_product
+        <where>
+            <if test="request.id != null">
+                AND id = #{request.id}
+            </if>
+            <if test="request.name != null and request.name != ''">
+                AND name LIKE CONCAT('%', #{request.name}, '%')
+            </if>
+            <if test="request.categoryId != null">
+                AND category_id = #{request.categoryId}
+            </if>
+            <if test="request.status != null">
+                AND status = #{request.status}
+            </if>
+            <if test="request.bindType != null">
+                AND bind_type = #{request.bindType}
+            </if>
+            <if test="request.medicineId != null">
+                AND medicine_id = #{request.medicineId}
+            </if>
+            <if test="request.minPrice != null">
+                AND price >= #{request.minPrice}
+            </if>
+            <if test="request.maxPrice != null">
+                AND price &lt;= #{request.maxPrice}
+            </if>
+        </where>
+        ORDER BY sort ASC, create_time DESC
+    </select>
 </mapper>

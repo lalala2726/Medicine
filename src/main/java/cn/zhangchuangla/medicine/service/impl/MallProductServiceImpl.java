@@ -6,11 +6,13 @@ import cn.zhangchuangla.medicine.model.entity.MallProduct;
 import cn.zhangchuangla.medicine.model.request.mall.MallProductAddRequest;
 import cn.zhangchuangla.medicine.model.request.mall.MallProductListQueryRequest;
 import cn.zhangchuangla.medicine.model.request.mall.MallProductUpdateRequest;
+import cn.zhangchuangla.medicine.service.MallCategoryService;
 import cn.zhangchuangla.medicine.service.MallProductService;
 import cn.zhangchuangla.medicine.utils.SecurityUtils;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
+import lombok.RequiredArgsConstructor;
 import org.springframework.beans.BeanUtils;
 import org.springframework.stereotype.Service;
 
@@ -28,57 +30,17 @@ import java.util.List;
  * created on 2025/10/4 02:34
  */
 @Service
+@RequiredArgsConstructor
 public class MallProductServiceImpl extends ServiceImpl<MallProductMapper, MallProduct>
         implements MallProductService {
 
+    private final MallProductMapper mallProductMapper;
+    private final MallCategoryService mallCategoryService;
+
     @Override
     public Page<MallProduct> listMallProduct(MallProductListQueryRequest request) {
-        LambdaQueryWrapper<MallProduct> queryWrapper = new LambdaQueryWrapper<>();
-
-        // 按商品ID查询
-        if (request.getId() != null) {
-            queryWrapper.eq(MallProduct::getId, request.getId());
-        }
-
-        // 按商品名称模糊查询
-        if (request.getName() != null && !request.getName().trim().isEmpty()) {
-            queryWrapper.like(MallProduct::getName, request.getName().trim());
-        }
-
-        // 按商品分类ID查询
-        if (request.getCategoryId() != null) {
-            queryWrapper.eq(MallProduct::getCategoryId, request.getCategoryId());
-        }
-
-        // 按状态查询
-        if (request.getStatus() != null) {
-            queryWrapper.eq(MallProduct::getStatus, request.getStatus());
-        }
-
-        // 按库存绑定类型查询
-        if (request.getBindType() != null) {
-            queryWrapper.eq(MallProduct::getBindType, request.getBindType());
-        }
-
-        // 按关联药品ID查询
-        if (request.getMedicineId() != null) {
-            queryWrapper.eq(MallProduct::getMedicineId, request.getMedicineId());
-        }
-
-        // 按价格区间查询
-        if (request.getMinPrice() != null) {
-            queryWrapper.ge(MallProduct::getPrice, request.getMinPrice());
-        }
-        if (request.getMaxPrice() != null) {
-            queryWrapper.le(MallProduct::getPrice, request.getMaxPrice());
-        }
-
-        // 按排序值升序排序，销量降序排序
-        queryWrapper.orderByAsc(MallProduct::getSort)
-                .orderByDesc(MallProduct::getSalesVolume)
-                .orderByDesc(MallProduct::getCreateTime);
-
-        return page(new Page<>(request.getPageNum(), request.getPageSize()), queryWrapper);
+        Page<MallProduct> page = page(new Page<>(request.getPageNum(), request.getPageSize()));
+        return mallProductMapper.listMallProduct(page, request);
     }
 
     @Override
@@ -114,6 +76,11 @@ public class MallProductServiceImpl extends ServiceImpl<MallProductMapper, MallP
             throw new ServiceException("商品库存不能为负数");
         }
 
+        //检查商品分类是否存在
+        boolean isExist = mallCategoryService.isProductCategoryExist(request.getCategoryId());
+        if (!isExist) {
+            throw new ServiceException("商品分类不存在");
+        }
         MallProduct product = new MallProduct();
         BeanUtils.copyProperties(request, product);
         product.setSalesVolume(0L); // 初始销量为0

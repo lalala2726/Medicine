@@ -67,4 +67,11 @@ public interface MallCategoryService extends IService<MallCategory> {
      */
     boolean deleteCategory(List<Long> ids);
 
+    /**
+     * 判断商品分类是否存在
+     *
+     * @param categoryId 商品分类ID
+     * @return 是否存在
+     */
+    boolean isProductCategoryExist(Long categoryId);
 }
