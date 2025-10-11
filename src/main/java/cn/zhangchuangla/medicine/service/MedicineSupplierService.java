@@ -1,7 +1,7 @@
 package cn.zhangchuangla.medicine.service;
 
 import cn.zhangchuangla.medicine.common.base.Option;
-import cn.zhangchuangla.medicine.model.entity.Supplier;
+import cn.zhangchuangla.medicine.model.entity.MedicineSupplier;
 import cn.zhangchuangla.medicine.model.request.medicine.SupplierAddRequest;
 import cn.zhangchuangla.medicine.model.request.medicine.SupplierListQueryRequest;
 import cn.zhangchuangla.medicine.model.request.medicine.SupplierUpdateRequest;
@@ -13,17 +13,17 @@ import java.util.List;
 /**
  * @author Chuang
  */
-public interface SupplierService extends IService<Supplier> {
+public interface MedicineSupplierService extends IService<MedicineSupplier> {
 
     /**
      * 分页查询供应商列表
      */
-    Page<Supplier> listSupplier(SupplierListQueryRequest request);
+    Page<MedicineSupplier> listSupplier(SupplierListQueryRequest request);
 
     /**
      * 根据ID获取供应商详情
      */
-    Supplier getSupplierById(Long id);
+    MedicineSupplier getSupplierById(Long id);
 
     /**
      * 添加供应商

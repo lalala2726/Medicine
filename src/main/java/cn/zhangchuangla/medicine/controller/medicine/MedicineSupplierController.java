@@ -4,13 +4,13 @@ import cn.zhangchuangla.medicine.common.base.AjaxResult;
 import cn.zhangchuangla.medicine.common.base.BaseController;
 import cn.zhangchuangla.medicine.common.base.Option;
 import cn.zhangchuangla.medicine.common.base.TableDataResult;
-import cn.zhangchuangla.medicine.model.entity.Supplier;
+import cn.zhangchuangla.medicine.model.entity.MedicineSupplier;
 import cn.zhangchuangla.medicine.model.request.medicine.SupplierAddRequest;
 import cn.zhangchuangla.medicine.model.request.medicine.SupplierListQueryRequest;
 import cn.zhangchuangla.medicine.model.request.medicine.SupplierUpdateRequest;
 import cn.zhangchuangla.medicine.model.vo.medicine.SupplierListVo;
 import cn.zhangchuangla.medicine.model.vo.medicine.SupplierVo;
-import cn.zhangchuangla.medicine.service.SupplierService;
+import cn.zhangchuangla.medicine.service.MedicineSupplierService;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -26,9 +26,9 @@ import java.util.List;
 @RequestMapping("/medicine/supplier")
 @RequiredArgsConstructor
 @Tag(name = "供应商接口", description = "提供供应商的增删改查")
-public class SupplierController extends BaseController {
+public class MedicineSupplierController extends BaseController {
 
-    private final SupplierService supplierService;
+    private final MedicineSupplierService medicineSupplierService;
 
     /**
      * 分页查询供应商列表
@@ -36,7 +36,7 @@ public class SupplierController extends BaseController {
     @GetMapping("/list")
     @Operation(summary = "获取供应商列表")
     public AjaxResult<TableDataResult> listSupplier(SupplierListQueryRequest request) {
-        Page<Supplier> page = supplierService.listSupplier(request);
+        Page<MedicineSupplier> page = medicineSupplierService.listSupplier(request);
         List<SupplierListVo> supplierListVos = copyListProperties(page, SupplierListVo.class);
         return getTableData(page, supplierListVos);
     }
@@ -47,7 +47,7 @@ public class SupplierController extends BaseController {
     @GetMapping("/option")
     @Operation(summary = "获取供应商选项")
     public AjaxResult<List<Option<Long>>> option() {
-        List<Option<Long>> options = supplierService.option();
+        List<Option<Long>> options = medicineSupplierService.option();
         return success(options);
     }
 
@@ -57,8 +57,8 @@ public class SupplierController extends BaseController {
     @GetMapping("/{id:\\d+}")
     @Operation(summary = "获取供应商详情")
     public AjaxResult<SupplierVo> getSupplierById(@PathVariable("id") Long id) {
-        Supplier supplier = supplierService.getSupplierById(id);
-        SupplierVo supplierVo = copyProperties(supplier, SupplierVo.class);
+        MedicineSupplier medicineSupplier = medicineSupplierService.getSupplierById(id);
+        SupplierVo supplierVo = copyProperties(medicineSupplier, SupplierVo.class);
         return success(supplierVo);
     }
 
@@ -68,7 +68,7 @@ public class SupplierController extends BaseController {
     @PostMapping
     @Operation(summary = "添加供应商")
     public AjaxResult<Void> addSupplier(@RequestBody SupplierAddRequest request) {
-        boolean result = supplierService.addSupplier(request);
+        boolean result = medicineSupplierService.addSupplier(request);
         return toAjax(result);
     }
 
@@ -78,7 +78,7 @@ public class SupplierController extends BaseController {
     @PutMapping
     @Operation(summary = "更新供应商")
     public AjaxResult<Void> updateSupplier(@RequestBody SupplierUpdateRequest request) {
-        boolean result = supplierService.updateSupplier(request);
+        boolean result = medicineSupplierService.updateSupplier(request);
         return toAjax(result);
     }
 
@@ -88,7 +88,7 @@ public class SupplierController extends BaseController {
     @DeleteMapping("/{ids}")
     @Operation(summary = "删除供应商")
     public AjaxResult<Void> deleteSupplier(@PathVariable("ids") List<Long> ids) {
-        boolean result = supplierService.deleteSupplier(ids);
+        boolean result = medicineSupplierService.deleteSupplier(ids);
         return toAjax(result);
     }
 }

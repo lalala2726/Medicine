@@ -8,11 +8,11 @@ import cn.zhangchuangla.medicine.enums.ResponseResultCode;
 import cn.zhangchuangla.medicine.mapper.MedicineMapper;
 import cn.zhangchuangla.medicine.mapper.SupplierMapper;
 import cn.zhangchuangla.medicine.model.entity.Medicine;
-import cn.zhangchuangla.medicine.model.entity.Supplier;
+import cn.zhangchuangla.medicine.model.entity.MedicineSupplier;
 import cn.zhangchuangla.medicine.model.request.medicine.SupplierAddRequest;
 import cn.zhangchuangla.medicine.model.request.medicine.SupplierListQueryRequest;
 import cn.zhangchuangla.medicine.model.request.medicine.SupplierUpdateRequest;
-import cn.zhangchuangla.medicine.service.SupplierService;
+import cn.zhangchuangla.medicine.service.MedicineSupplierService;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
@@ -28,39 +28,39 @@ import java.util.stream.Stream;
  */
 @Service
 @RequiredArgsConstructor
-public class SupplierServiceImpl extends ServiceImpl<SupplierMapper, Supplier>
-        implements SupplierService, BaseService {
+public class MedicineSupplierServiceImpl extends ServiceImpl<SupplierMapper, MedicineSupplier>
+        implements MedicineSupplierService, BaseService {
 
     private final MedicineMapper medicineMapper;
 
     @Override
-    public Page<Supplier> listSupplier(SupplierListQueryRequest request) {
-        Page<Supplier> page = new Page<>(request.getPageNum(), request.getPageSize());
+    public Page<MedicineSupplier> listSupplier(SupplierListQueryRequest request) {
+        Page<MedicineSupplier> page = new Page<>(request.getPageNum(), request.getPageSize());
         return baseMapper.listSupplier(page, request);
     }
 
     @Override
-    public Supplier getSupplierById(Long id) {
+    public MedicineSupplier getSupplierById(Long id) {
         Assert.notNull(id, "供应商ID不能为空");
-        Supplier supplier = getById(id);
-        Assert.notNull(supplier, "供应商不存在");
-        return supplier;
+        MedicineSupplier medicineSupplier = getById(id);
+        Assert.notNull(medicineSupplier, "供应商不存在");
+        return medicineSupplier;
     }
 
     @Override
     public boolean addSupplier(SupplierAddRequest request) {
         Assert.notNull(request, "供应商添加请求对象不能为空");
 
-        Supplier existing = lambdaQuery()
-                .eq(Supplier::getName, request.getName())
+        MedicineSupplier existing = lambdaQuery()
+                .eq(MedicineSupplier::getName, request.getName())
                 .one();
         Assert.isNull(existing, "供应商名称已存在");
 
-        Supplier supplier = copyProperties(request, Supplier.class);
-        supplier.setCreateTime(new Date());
-        supplier.setUpdateTime(new Date());
+        MedicineSupplier medicineSupplier = copyProperties(request, MedicineSupplier.class);
+        medicineSupplier.setCreateTime(new Date());
+        medicineSupplier.setUpdateTime(new Date());
 
-        return save(supplier);
+        return save(medicineSupplier);
     }
 
     @Override
@@ -68,33 +68,33 @@ public class SupplierServiceImpl extends ServiceImpl<SupplierMapper, Supplier>
         Assert.notNull(request, "供应商更新请求对象不能为空");
         Assert.notNull(request.getId(), "供应商ID不能为空");
 
-        Supplier existingSupplier = getById(request.getId());
-        Assert.notNull(existingSupplier, "供应商不存在");
+        MedicineSupplier existingMedicineSupplier = getById(request.getId());
+        Assert.notNull(existingMedicineSupplier, "供应商不存在");
 
-        if (!existingSupplier.getName().equals(request.getName())) {
-            Supplier duplicate = lambdaQuery()
-                    .eq(Supplier::getName, request.getName())
-                    .ne(Supplier::getId, request.getId())
+        if (!existingMedicineSupplier.getName().equals(request.getName())) {
+            MedicineSupplier duplicate = lambdaQuery()
+                    .eq(MedicineSupplier::getName, request.getName())
+                    .ne(MedicineSupplier::getId, request.getId())
                     .one();
             Assert.isNull(duplicate, "供应商名称已存在");
         }
 
-        Supplier supplier = copyProperties(request, Supplier.class);
-        supplier.setUpdateTime(new Date());
+        MedicineSupplier medicineSupplier = copyProperties(request, MedicineSupplier.class);
+        medicineSupplier.setUpdateTime(new Date());
 
-        return updateById(supplier);
+        return updateById(medicineSupplier);
     }
 
     @Override
     public boolean deleteSupplier(List<Long> ids) {
         Assert.notEmpty(ids, "供应商ID列表不能为空");
         // 检查供应商是否已被药品关联
-        LambdaQueryWrapper<Supplier> supplierLambdaQueryWrapper = new LambdaQueryWrapper<Supplier>()
-                .in(Supplier::getId, ids);
+        LambdaQueryWrapper<MedicineSupplier> supplierLambdaQueryWrapper = new LambdaQueryWrapper<MedicineSupplier>()
+                .in(MedicineSupplier::getId, ids);
 
         Stream<Long> supplierIds = list(supplierLambdaQueryWrapper)
                 .stream()
-                .map(Supplier::getId);
+                .map(MedicineSupplier::getId);
 
         LambdaQueryWrapper<Medicine> medicineLambdaQueryWrapper = new LambdaQueryWrapper<Medicine>()
                 .in(Medicine::getSupplierId, supplierIds);
@@ -107,7 +107,7 @@ public class SupplierServiceImpl extends ServiceImpl<SupplierMapper, Supplier>
 
     @Override
     public List<Option<Long>> option() {
-        List<Supplier> list = list();
-        return list.stream().map(supplier -> new Option<>(supplier.getId(), supplier.getName())).toList();
+        List<MedicineSupplier> list = list();
+        return list.stream().map(medicineSupplier -> new Option<>(medicineSupplier.getId(), medicineSupplier.getName())).toList();
     }
 }

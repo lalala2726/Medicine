@@ -12,7 +12,7 @@ import java.util.Date;
  */
 @TableName(value = "supplier")
 @Data
-public class Supplier {
+public class MedicineSupplier {
 
     /**
      * 供应商ID
