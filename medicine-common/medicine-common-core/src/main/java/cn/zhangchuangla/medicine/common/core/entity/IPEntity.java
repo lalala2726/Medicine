@@ -1,4 +1,4 @@
-package cn.zhangchuangla.medicine.common.core.common.entity;
+package cn.zhangchuangla.medicine.common.core.entity;
 
 import lombok.Data;
 

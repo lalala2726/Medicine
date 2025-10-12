@@ -1,6 +1,6 @@
 package cn.zhangchuangla.medicine.common.storage.service.impl;
 
-import cn.zhangchuangla.medicine.common.core.common.exception.ServiceException;
+import cn.zhangchuangla.medicine.common.core.exception.ServiceException;
 import cn.zhangchuangla.medicine.common.core.model.vo.FileUploadVo;
 import cn.zhangchuangla.medicine.common.storage.config.FileUploadProperties;
 import cn.zhangchuangla.medicine.common.storage.config.MinioConfig;

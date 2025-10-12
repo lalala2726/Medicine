@@ -1,6 +1,6 @@
-package cn.zhangchuangla.medicine.common.core.common.utils;
+package cn.zhangchuangla.medicine.common.core.utils;
 
-import cn.zhangchuangla.medicine.common.core.common.entity.IPEntity;
+import cn.zhangchuangla.medicine.common.core.entity.IPEntity;
 import jakarta.annotation.PostConstruct;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.extern.slf4j.Slf4j;

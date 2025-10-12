@@ -1,6 +1,6 @@
 package cn.zhangchuangla.medicine.common.core.model.request.medicine;
 
-import cn.zhangchuangla.medicine.common.core.common.base.BasePageRequest;
+import cn.zhangchuangla.medicine.common.core.base.BasePageRequest;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 

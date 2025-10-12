@@ -1,4 +1,4 @@
-package cn.zhangchuangla.medicine.common.core.common.base;
+package cn.zhangchuangla.medicine.common.core.base;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import io.swagger.v3.oas.annotations.media.Schema;

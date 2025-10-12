@@ -1,6 +1,6 @@
 package cn.zhangchuangla.medicine.service.impl;
 
-import cn.zhangchuangla.medicine.common.core.common.exception.ServiceException;
+import cn.zhangchuangla.medicine.common.core.exception.ServiceException;
 import cn.zhangchuangla.medicine.common.core.model.dto.MallProductDto;
 import cn.zhangchuangla.medicine.common.core.model.entity.MallProduct;
 import cn.zhangchuangla.medicine.common.core.model.entity.MedicineStock;

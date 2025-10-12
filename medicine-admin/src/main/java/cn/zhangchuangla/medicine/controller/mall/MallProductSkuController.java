@@ -1,7 +1,7 @@
 package cn.zhangchuangla.medicine.controller.mall;
 
-import cn.zhangchuangla.medicine.common.core.common.base.AjaxResult;
-import cn.zhangchuangla.medicine.common.core.common.base.TableDataResult;
+import cn.zhangchuangla.medicine.common.core.base.AjaxResult;
+import cn.zhangchuangla.medicine.common.core.base.TableDataResult;
 import cn.zhangchuangla.medicine.common.core.model.entity.MallProductSku;
 import cn.zhangchuangla.medicine.common.core.model.request.mall.MallProductSkuAddRequest;
 import cn.zhangchuangla.medicine.common.core.model.request.mall.MallProductSkuListQueryRequest;

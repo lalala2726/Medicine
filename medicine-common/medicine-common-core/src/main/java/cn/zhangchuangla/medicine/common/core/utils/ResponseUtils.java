@@ -1,6 +1,6 @@
-package cn.zhangchuangla.medicine.common.core.common.utils;
+package cn.zhangchuangla.medicine.common.core.utils;
 
-import cn.zhangchuangla.medicine.common.core.common.base.AjaxResult;
+import cn.zhangchuangla.medicine.common.core.base.AjaxResult;
 import cn.zhangchuangla.medicine.common.core.enums.ResponseResultCode;
 import com.alibaba.fastjson.JSON;
 import jakarta.servlet.http.HttpServletResponse;

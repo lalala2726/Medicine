@@ -1,6 +1,6 @@
 package cn.zhangchuangla.medicine.controller;
 
-import cn.zhangchuangla.medicine.common.core.common.base.AjaxResult;
+import cn.zhangchuangla.medicine.common.core.base.AjaxResult;
 import cn.zhangchuangla.medicine.common.core.model.vo.FileUploadVo;
 import cn.zhangchuangla.medicine.common.security.base.BaseController;
 import cn.zhangchuangla.medicine.common.storage.service.FileUploadService;

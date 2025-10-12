@@ -1,6 +1,6 @@
 package cn.zhangchuangla.medicine.service;
 
-import cn.zhangchuangla.medicine.common.core.common.base.Option;
+import cn.zhangchuangla.medicine.common.core.base.Option;
 import cn.zhangchuangla.medicine.common.core.model.entity.MedicineSupplier;
 import cn.zhangchuangla.medicine.common.core.model.request.medicine.SupplierAddRequest;
 import cn.zhangchuangla.medicine.common.core.model.request.medicine.SupplierListQueryRequest;

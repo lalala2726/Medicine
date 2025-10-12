@@ -1,4 +1,4 @@
-package cn.zhangchuangla.medicine.common.core.common.utils;
+package cn.zhangchuangla.medicine.common.core.utils;
 
 import java.util.UUID;
 

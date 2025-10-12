@@ -1,7 +1,7 @@
 package cn.zhangchuangla.medicine.controller.medicine;
 
-import cn.zhangchuangla.medicine.common.core.common.base.AjaxResult;
-import cn.zhangchuangla.medicine.common.core.common.base.TableDataResult;
+import cn.zhangchuangla.medicine.common.core.base.AjaxResult;
+import cn.zhangchuangla.medicine.common.core.base.TableDataResult;
 import cn.zhangchuangla.medicine.common.core.model.entity.Medicine;
 import cn.zhangchuangla.medicine.common.core.model.entity.MedicineImage;
 import cn.zhangchuangla.medicine.common.core.model.request.medicine.MedicineAddRequest;

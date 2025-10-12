@@ -1,6 +1,6 @@
-package cn.zhangchuangla.medicine.common.core.common.exception;
+package cn.zhangchuangla.medicine.common.core.exception;
 
-import cn.zhangchuangla.medicine.common.core.common.base.AjaxResult;
+import cn.zhangchuangla.medicine.common.core.base.AjaxResult;
 import cn.zhangchuangla.medicine.common.core.enums.ResponseResultCode;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;

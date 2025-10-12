@@ -1,4 +1,4 @@
-package cn.zhangchuangla.medicine.common.core.annotation;
+package cn.zhangchuangla.medicine.common.security.annotation;
 
 import org.springframework.security.access.prepost.PreAuthorize;
 

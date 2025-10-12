@@ -1,4 +1,4 @@
-package cn.zhangchuangla.medicine.common.core.common.exception;
+package cn.zhangchuangla.medicine.common.core.exception;
 
 import cn.zhangchuangla.medicine.common.core.enums.ResponseResultCode;
 import lombok.Getter;

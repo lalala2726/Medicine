@@ -1,8 +1,8 @@
 package cn.zhangchuangla.medicine.service.impl;
 
-import cn.zhangchuangla.medicine.common.core.common.utils.UUIDUtils;
 import cn.zhangchuangla.medicine.common.core.model.entity.Message;
 import cn.zhangchuangla.medicine.common.core.model.enums.MessageRoleEnum;
+import cn.zhangchuangla.medicine.common.core.utils.UUIDUtils;
 import cn.zhangchuangla.medicine.mapper.MessageMapper;
 import cn.zhangchuangla.medicine.service.MessageService;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;

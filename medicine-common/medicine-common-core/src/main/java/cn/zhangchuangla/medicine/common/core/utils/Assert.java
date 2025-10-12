@@ -1,9 +1,9 @@
-package cn.zhangchuangla.medicine.common.core.common.utils;
+package cn.zhangchuangla.medicine.common.core.utils;
 
 
-import cn.zhangchuangla.medicine.common.core.common.exception.ParamException;
-import cn.zhangchuangla.medicine.common.core.common.exception.ServiceException;
 import cn.zhangchuangla.medicine.common.core.enums.ResponseResultCode;
+import cn.zhangchuangla.medicine.common.core.exception.ParamException;
+import cn.zhangchuangla.medicine.common.core.exception.ServiceException;
 import jakarta.validation.constraints.NotNull;
 
 /**

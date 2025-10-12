@@ -1,6 +1,6 @@
 package cn.zhangchuangla.medicine.common.core.model.request.mall;
 
-import cn.zhangchuangla.medicine.common.core.common.base.BasePageRequest;
+import cn.zhangchuangla.medicine.common.core.base.BasePageRequest;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 import lombok.EqualsAndHashCode;

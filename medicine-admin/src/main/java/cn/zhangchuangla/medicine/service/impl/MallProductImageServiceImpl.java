@@ -1,6 +1,6 @@
 package cn.zhangchuangla.medicine.service.impl;
 
-import cn.zhangchuangla.medicine.common.core.common.exception.ServiceException;
+import cn.zhangchuangla.medicine.common.core.exception.ServiceException;
 import cn.zhangchuangla.medicine.common.core.model.entity.MallProductImage;
 import cn.zhangchuangla.medicine.common.core.model.request.mall.MallProductImageAddRequest;
 import cn.zhangchuangla.medicine.common.core.model.request.mall.MallProductImageListQueryRequest;

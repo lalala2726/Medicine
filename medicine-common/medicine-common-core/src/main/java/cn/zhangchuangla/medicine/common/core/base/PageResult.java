@@ -1,4 +1,4 @@
-package cn.zhangchuangla.medicine.common.core.common.base;
+package cn.zhangchuangla.medicine.common.core.base;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;

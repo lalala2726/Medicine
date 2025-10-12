@@ -1,7 +1,7 @@
 package cn.zhangchuangla.medicine.config;
 
-import cn.zhangchuangla.medicine.common.core.annotation.Anonymous;
 import cn.zhangchuangla.medicine.common.core.constants.SecurityConstants;
+import cn.zhangchuangla.medicine.common.security.annotation.Anonymous;
 import cn.zhangchuangla.medicine.common.security.filter.TokenAuthenticationFilter;
 import cn.zhangchuangla.medicine.common.security.handel.AuthenticationEntryPointImpl;
 import jakarta.servlet.DispatcherType;

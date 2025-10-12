@@ -1,8 +1,8 @@
 package cn.zhangchuangla.medicine.controller.medicine;
 
-import cn.zhangchuangla.medicine.common.core.common.base.AjaxResult;
-import cn.zhangchuangla.medicine.common.core.common.base.Option;
-import cn.zhangchuangla.medicine.common.core.common.base.TableDataResult;
+import cn.zhangchuangla.medicine.common.core.base.AjaxResult;
+import cn.zhangchuangla.medicine.common.core.base.Option;
+import cn.zhangchuangla.medicine.common.core.base.TableDataResult;
 import cn.zhangchuangla.medicine.common.core.model.entity.MedicineCategory;
 import cn.zhangchuangla.medicine.common.core.model.request.medicine.MedicineCategoryAddRequest;
 import cn.zhangchuangla.medicine.common.core.model.request.medicine.MedicineCategoryListQueryRequest;

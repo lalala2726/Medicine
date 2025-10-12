@@ -1,4 +1,4 @@
-package cn.zhangchuangla.medicine.common.core.common.base;
+package cn.zhangchuangla.medicine.common.core.base;
 
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.fasterxml.jackson.annotation.JsonInclude;

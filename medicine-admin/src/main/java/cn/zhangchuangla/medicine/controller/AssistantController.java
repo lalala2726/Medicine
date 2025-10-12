@@ -1,6 +1,6 @@
 package cn.zhangchuangla.medicine.controller;
 
-import cn.zhangchuangla.medicine.common.core.common.base.AjaxResult;
+import cn.zhangchuangla.medicine.common.core.base.AjaxResult;
 import cn.zhangchuangla.medicine.common.core.model.request.assistant.HistoryRequest;
 import cn.zhangchuangla.medicine.common.core.model.vo.chat.StreamChatResponse;
 import cn.zhangchuangla.medicine.common.core.model.vo.llm.chat.ChatHistoryResponse;

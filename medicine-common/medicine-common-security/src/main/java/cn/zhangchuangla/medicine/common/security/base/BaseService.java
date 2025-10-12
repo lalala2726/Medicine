@@ -1,6 +1,6 @@
 package cn.zhangchuangla.medicine.common.security.base;
 
-import cn.zhangchuangla.medicine.common.core.common.utils.BeanCotyUtils;
+import cn.zhangchuangla.medicine.common.core.utils.BeanCotyUtils;
 import cn.zhangchuangla.medicine.common.security.entity.SysUserDetails;
 import cn.zhangchuangla.medicine.common.security.utils.SecurityUtils;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;

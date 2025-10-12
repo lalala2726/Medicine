@@ -1,6 +1,6 @@
 package cn.zhangchuangla.medicine.service;
 
-import cn.zhangchuangla.medicine.common.core.common.base.Option;
+import cn.zhangchuangla.medicine.common.core.base.Option;
 import cn.zhangchuangla.medicine.common.core.model.entity.LlmConfig;
 import cn.zhangchuangla.medicine.common.core.model.request.llm.LlmConfigAddRequest;
 import cn.zhangchuangla.medicine.common.core.model.request.llm.LlmConfigListQueryRequest;

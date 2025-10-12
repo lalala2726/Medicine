@@ -1,7 +1,7 @@
 package cn.zhangchuangla.medicine.controller.mall;
 
-import cn.zhangchuangla.medicine.common.core.common.base.AjaxResult;
-import cn.zhangchuangla.medicine.common.core.common.base.Option;
+import cn.zhangchuangla.medicine.common.core.base.AjaxResult;
+import cn.zhangchuangla.medicine.common.core.base.Option;
 import cn.zhangchuangla.medicine.common.core.model.entity.MallCategory;
 import cn.zhangchuangla.medicine.common.core.model.request.mall.category.MallCategoryAddRequest;
 import cn.zhangchuangla.medicine.common.core.model.request.mall.category.MallCategoryUpdateRequest;
