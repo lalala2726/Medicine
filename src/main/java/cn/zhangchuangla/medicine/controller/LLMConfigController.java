@@ -1,12 +1,12 @@
 package cn.zhangchuangla.medicine.controller;
 
+import cn.zhangchuangla.medicine.ai.service.ModelConfigService;
 import cn.zhangchuangla.medicine.common.base.AjaxResult;
 import cn.zhangchuangla.medicine.common.base.BaseController;
 import cn.zhangchuangla.medicine.common.base.Option;
 import cn.zhangchuangla.medicine.common.base.TableDataResult;
 import cn.zhangchuangla.medicine.common.utils.Assert;
 import cn.zhangchuangla.medicine.common.utils.BeanCotyUtils;
-import cn.zhangchuangla.medicine.llm.service.ModelConfigService;
 import cn.zhangchuangla.medicine.model.dto.ModelConfigDto;
 import cn.zhangchuangla.medicine.model.entity.LlmConfig;
 import cn.zhangchuangla.medicine.model.entity.ModelConfig;

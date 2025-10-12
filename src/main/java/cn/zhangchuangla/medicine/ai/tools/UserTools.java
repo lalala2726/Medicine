@@ -1,9 +1,9 @@
-package cn.zhangchuangla.medicine.llm.tools;
+package cn.zhangchuangla.medicine.ai.tools;
 
+import cn.zhangchuangla.medicine.ai.workflow.context.UserContextHolder;
+import cn.zhangchuangla.medicine.ai.workflow.progress.WorkflowProgressContextHolder;
 import cn.zhangchuangla.medicine.common.exception.ServiceException;
 import cn.zhangchuangla.medicine.common.utils.BeanCotyUtils;
-import cn.zhangchuangla.medicine.llm.workflow.context.UserContextHolder;
-import cn.zhangchuangla.medicine.llm.workflow.progress.WorkflowProgressContextHolder;
 import cn.zhangchuangla.medicine.model.entity.User;
 import cn.zhangchuangla.medicine.model.vo.user.UserVo;
 import cn.zhangchuangla.medicine.security.entity.SysUserDetails;

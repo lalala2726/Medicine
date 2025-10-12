@@ -1,12 +1,12 @@
-package cn.zhangchuangla.medicine.llm.workflow.node;
+package cn.zhangchuangla.medicine.ai.workflow.node;
 
+import cn.zhangchuangla.medicine.ai.service.OpenAiClientFactory;
+import cn.zhangchuangla.medicine.ai.tools.DateTimeTools;
+import cn.zhangchuangla.medicine.ai.tools.UserTools;
+import cn.zhangchuangla.medicine.ai.workflow.progress.WorkflowProgressContextHolder;
 import cn.zhangchuangla.medicine.constants.PromptConstant;
 import cn.zhangchuangla.medicine.enums.ChatStageEnum;
 import cn.zhangchuangla.medicine.enums.MedicineStateKeyEnum;
-import cn.zhangchuangla.medicine.llm.service.OpenAiClientFactory;
-import cn.zhangchuangla.medicine.llm.tools.DateTimeTools;
-import cn.zhangchuangla.medicine.llm.tools.UserTools;
-import cn.zhangchuangla.medicine.llm.workflow.progress.WorkflowProgressContextHolder;
 import com.alibaba.cloud.ai.graph.OverAllState;
 import com.alibaba.cloud.ai.graph.action.NodeAction;
 import lombok.RequiredArgsConstructor;
@@ -19,8 +19,8 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * 药品咨询节点
- * 处理药品相关的用户咨询
+ * 其他问题节点
+ * 处理无法识别或其他类型的用户问题
  *
  * @author Chuang
  * @since 2025/9/10
@@ -28,7 +28,7 @@ import java.util.Map;
 @Slf4j
 @RequiredArgsConstructor
 @Component
-public class MedicineNode implements NodeAction {
+public class OtherNode implements NodeAction {
 
     private final OpenAiClientFactory openAiClientFactory;
     private final DateTimeTools dateTimeTools;
@@ -37,11 +37,8 @@ public class MedicineNode implements NodeAction {
     @Override
     public Map<String, Object> apply(OverAllState state) {
         String userMessage = String.valueOf(state.value(MedicineStateKeyEnum.USER_MESSAGE.getKey()));
-        log.debug("药品咨询节点处理用户消息: {}", userMessage);
-        WorkflowProgressContextHolder.publishStage(ChatStageEnum.ROUTE_MEDICINE, ChatStageEnum.ROUTE_MEDICINE.getDescription());
-
-        String prompt = PromptConstant.MEDICINE_PROMPT.formatted(userMessage);
-
+        WorkflowProgressContextHolder.publishStage(ChatStageEnum.ROUTE_OTHER, ChatStageEnum.ROUTE_OTHER.getDescription());
+        String prompt = PromptConstant.OTHER_PROMPT.formatted(userMessage);
         ChatClient chatClient = openAiClientFactory.chatClient();
         List<String> parts = chatClient
                 .prompt(prompt)
@@ -50,14 +47,15 @@ public class MedicineNode implements NodeAction {
                 .content()
                 .collectList()
                 .block();
+
         String reply = (parts == null || parts.isEmpty()) ? null : String.join("", parts);
 
         if (reply == null || reply.trim().isEmpty()) {
-            log.warn("药品咨询节点返回空回复");
-            reply = PromptConstant.MEDICINE_ERROR_REPLY;
+            log.warn("其他问题节点返回空回复");
+            reply = PromptConstant.DEFAULT_ERROR_REPLY;
         }
 
-        log.debug("药品咨询节点生成回复: {}", reply);
+        log.debug("其他问题节点生成回复: {}", reply);
         return Map.of(MedicineStateKeyEnum.SYSTEM_RESPONSE.getKey(), reply);
     }
 }

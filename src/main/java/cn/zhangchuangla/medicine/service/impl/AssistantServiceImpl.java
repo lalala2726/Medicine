@@ -1,13 +1,13 @@
 package cn.zhangchuangla.medicine.service.impl;
 
+import cn.zhangchuangla.medicine.ai.workflow.context.UserContextHolder;
+import cn.zhangchuangla.medicine.ai.workflow.progress.DefaultWorkflowProgressReporter;
+import cn.zhangchuangla.medicine.ai.workflow.progress.WorkflowProgressContextHolder;
 import cn.zhangchuangla.medicine.common.base.BaseService;
 import cn.zhangchuangla.medicine.common.exception.ServiceException;
 import cn.zhangchuangla.medicine.common.utils.UUIDUtils;
 import cn.zhangchuangla.medicine.enums.ChatStageEnum;
 import cn.zhangchuangla.medicine.enums.MedicineStateKeyEnum;
-import cn.zhangchuangla.medicine.llm.workflow.context.UserContextHolder;
-import cn.zhangchuangla.medicine.llm.workflow.progress.DefaultWorkflowProgressReporter;
-import cn.zhangchuangla.medicine.llm.workflow.progress.WorkflowProgressContextHolder;
 import cn.zhangchuangla.medicine.model.entity.Conversation;
 import cn.zhangchuangla.medicine.model.entity.Message;
 import cn.zhangchuangla.medicine.model.request.assistant.HistoryRequest;

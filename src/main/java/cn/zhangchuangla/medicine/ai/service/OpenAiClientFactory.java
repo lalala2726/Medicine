@@ -1,4 +1,4 @@
-package cn.zhangchuangla.medicine.llm.service;
+package cn.zhangchuangla.medicine.ai.service;
 
 import cn.zhangchuangla.medicine.model.entity.ModelConfig;
 import lombok.extern.slf4j.Slf4j;

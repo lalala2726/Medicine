@@ -1,11 +1,11 @@
-package cn.zhangchuangla.medicine.llm.workflow.node;
+package cn.zhangchuangla.medicine.ai.workflow.node;
 
+import cn.zhangchuangla.medicine.ai.service.OpenAiClientFactory;
+import cn.zhangchuangla.medicine.ai.workflow.progress.WorkflowProgressContextHolder;
 import cn.zhangchuangla.medicine.constants.PromptConstant;
 import cn.zhangchuangla.medicine.enums.ChatStageEnum;
 import cn.zhangchuangla.medicine.enums.MedicineStateKeyEnum;
 import cn.zhangchuangla.medicine.enums.UserIntentEnum;
-import cn.zhangchuangla.medicine.llm.service.OpenAiClientFactory;
-import cn.zhangchuangla.medicine.llm.workflow.progress.WorkflowProgressContextHolder;
 import com.alibaba.cloud.ai.graph.OverAllState;
 import com.alibaba.cloud.ai.graph.action.NodeAction;
 import lombok.RequiredArgsConstructor;

@@ -1,4 +1,4 @@
-package cn.zhangchuangla.medicine.llm.workflow.progress;
+package cn.zhangchuangla.medicine.ai.workflow.progress;
 
 import cn.zhangchuangla.medicine.enums.ChatStageEnum;
 

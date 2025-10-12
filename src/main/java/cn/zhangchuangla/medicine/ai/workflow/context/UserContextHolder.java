@@ -1,4 +1,4 @@
-package cn.zhangchuangla.medicine.llm.workflow.context;
+package cn.zhangchuangla.medicine.ai.workflow.context;
 
 import cn.zhangchuangla.medicine.security.entity.SysUserDetails;
 

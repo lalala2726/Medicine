@@ -1,6 +1,6 @@
-package cn.zhangchuangla.medicine.llm.tools;
+package cn.zhangchuangla.medicine.ai.tools;
 
-import cn.zhangchuangla.medicine.llm.workflow.progress.WorkflowProgressContextHolder;
+import cn.zhangchuangla.medicine.ai.workflow.progress.WorkflowProgressContextHolder;
 import org.springframework.ai.tool.annotation.Tool;
 import org.springframework.stereotype.Component;
 

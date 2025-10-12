@@ -1,4 +1,4 @@
-package cn.zhangchuangla.medicine.llm.service;
+package cn.zhangchuangla.medicine.ai.service;
 
 import cn.zhangchuangla.medicine.common.exception.ServiceException;
 import cn.zhangchuangla.medicine.common.redis.RedisCache;
