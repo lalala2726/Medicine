@@ -1,4 +1,4 @@
-package cn.zhangchuangla.medicine.security.entity;
+package cn.zhangchuangla.medicine.common.security.entity;
 
 import cn.zhangchuangla.medicine.common.core.constants.SecurityConstants;
 import lombok.Data;

@@ -1,6 +1,6 @@
-package cn.zhangchuangla.medicine.utils;
+package cn.zhangchuangla.medicine.common.security.utils;
 
-import cn.zhangchuangla.medicine.security.SessionManager;
+import cn.zhangchuangla.medicine.common.security.SessionManager;
 import org.springframework.stereotype.Component;
 
 /**

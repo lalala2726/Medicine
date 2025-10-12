@@ -7,7 +7,7 @@ import cn.zhangchuangla.medicine.common.core.common.exception.ServiceException;
 import cn.zhangchuangla.medicine.common.core.common.utils.BeanCotyUtils;
 import cn.zhangchuangla.medicine.common.core.model.entity.User;
 import cn.zhangchuangla.medicine.common.core.model.vo.user.UserVo;
-import cn.zhangchuangla.medicine.security.entity.SysUserDetails;
+import cn.zhangchuangla.medicine.common.security.entity.SysUserDetails;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.ai.tool.annotation.Tool;
 import org.springframework.stereotype.Component;

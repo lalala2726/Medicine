@@ -1,7 +1,6 @@
 package cn.zhangchuangla.medicine.controller;
 
 import cn.zhangchuangla.medicine.ai.service.ModelConfigService;
-import cn.zhangchuangla.medicine.common.base.BaseController;
 import cn.zhangchuangla.medicine.common.core.common.base.AjaxResult;
 import cn.zhangchuangla.medicine.common.core.common.base.Option;
 import cn.zhangchuangla.medicine.common.core.common.base.TableDataResult;
@@ -16,6 +15,7 @@ import cn.zhangchuangla.medicine.common.core.model.request.llm.LlmConfigUpdateRe
 import cn.zhangchuangla.medicine.common.core.model.vo.llm.LLMOptions;
 import cn.zhangchuangla.medicine.common.core.model.vo.llm.LlmConfigListVo;
 import cn.zhangchuangla.medicine.common.core.model.vo.llm.LlmConfigVo;
+import cn.zhangchuangla.medicine.common.security.base.BaseController;
 import cn.zhangchuangla.medicine.service.LlmConfigService;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import io.swagger.v3.oas.annotations.Operation;

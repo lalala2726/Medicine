@@ -1,6 +1,6 @@
-package cn.zhangchuangla.medicine.security.spi;
+package cn.zhangchuangla.medicine.common.security.spi;
 
-import cn.zhangchuangla.medicine.security.entity.AuthUser;
+import cn.zhangchuangla.medicine.common.security.entity.AuthUser;
 
 import java.util.Optional;
 

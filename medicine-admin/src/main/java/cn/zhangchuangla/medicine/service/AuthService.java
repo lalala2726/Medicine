@@ -1,6 +1,6 @@
 package cn.zhangchuangla.medicine.service;
 
-import cn.zhangchuangla.medicine.security.entity.AuthTokenVo;
+import cn.zhangchuangla.medicine.common.security.entity.AuthTokenVo;
 
 /**
  * @author Chuang

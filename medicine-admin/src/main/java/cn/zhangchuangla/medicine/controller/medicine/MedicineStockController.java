@@ -1,6 +1,5 @@
 package cn.zhangchuangla.medicine.controller.medicine;
 
-import cn.zhangchuangla.medicine.common.base.BaseController;
 import cn.zhangchuangla.medicine.common.core.common.base.AjaxResult;
 import cn.zhangchuangla.medicine.common.core.common.base.TableDataResult;
 import cn.zhangchuangla.medicine.common.core.model.dto.MedicineStockDto;
@@ -8,6 +7,7 @@ import cn.zhangchuangla.medicine.common.core.model.request.medicine.MedicineStoc
 import cn.zhangchuangla.medicine.common.core.model.request.medicine.MedicineStockQueryRequest;
 import cn.zhangchuangla.medicine.common.core.model.request.medicine.MedicineStockUpdateRequest;
 import cn.zhangchuangla.medicine.common.core.model.vo.medicine.MedicineStockVo;
+import cn.zhangchuangla.medicine.common.security.base.BaseController;
 import cn.zhangchuangla.medicine.service.MedicineStockService;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import io.swagger.v3.oas.annotations.Operation;

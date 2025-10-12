@@ -1,13 +1,13 @@
-package cn.zhangchuangla.medicine.security.token;
+package cn.zhangchuangla.medicine.common.security.token;
 
-import cn.zhangchuangla.medicine.SecurityProperties;
 import cn.zhangchuangla.medicine.common.core.common.exception.AuthorizationException;
 import cn.zhangchuangla.medicine.common.core.common.exception.ServiceException;
 import cn.zhangchuangla.medicine.common.core.common.utils.Assert;
 import cn.zhangchuangla.medicine.common.core.constants.RedisConstants;
 import cn.zhangchuangla.medicine.common.core.enums.ResponseResultCode;
 import cn.zhangchuangla.medicine.common.redis.RedisCache;
-import cn.zhangchuangla.medicine.security.entity.OnlineLoginUser;
+import cn.zhangchuangla.medicine.common.security.SecurityProperties;
+import cn.zhangchuangla.medicine.common.security.entity.OnlineLoginUser;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;

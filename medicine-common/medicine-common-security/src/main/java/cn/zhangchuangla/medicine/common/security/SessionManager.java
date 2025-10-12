@@ -1,11 +1,11 @@
-package cn.zhangchuangla.medicine.security;
+package cn.zhangchuangla.medicine.common.security;
 
 import cn.zhangchuangla.medicine.common.core.constants.SecurityConstants;
 import cn.zhangchuangla.medicine.common.redis.RedisCache;
-import cn.zhangchuangla.medicine.security.entity.OnlineLoginUser;
-import cn.zhangchuangla.medicine.security.token.JwtTokenProvider;
-import cn.zhangchuangla.medicine.security.token.RedisTokenStore;
-import cn.zhangchuangla.medicine.utils.SecurityUtils;
+import cn.zhangchuangla.medicine.common.security.entity.OnlineLoginUser;
+import cn.zhangchuangla.medicine.common.security.token.JwtTokenProvider;
+import cn.zhangchuangla.medicine.common.security.token.RedisTokenStore;
+import cn.zhangchuangla.medicine.common.security.utils.SecurityUtils;
 import io.jsonwebtoken.Claims;
 import org.springframework.stereotype.Component;
 

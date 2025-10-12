@@ -1,7 +1,7 @@
 package cn.zhangchuangla.medicine.client.security;
 
-import cn.zhangchuangla.medicine.security.entity.AuthUser;
-import cn.zhangchuangla.medicine.security.spi.SecurityUserService;
+import cn.zhangchuangla.medicine.common.security.entity.AuthUser;
+import cn.zhangchuangla.medicine.common.security.spi.SecurityUserService;
 import org.springframework.stereotype.Service;
 
 import java.util.Optional;

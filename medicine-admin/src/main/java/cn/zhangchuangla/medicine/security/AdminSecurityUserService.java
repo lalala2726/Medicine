@@ -2,8 +2,8 @@ package cn.zhangchuangla.medicine.security;
 
 import cn.zhangchuangla.medicine.common.core.constants.Constants;
 import cn.zhangchuangla.medicine.common.core.model.entity.User;
-import cn.zhangchuangla.medicine.security.entity.AuthUser;
-import cn.zhangchuangla.medicine.security.spi.SecurityUserService;
+import cn.zhangchuangla.medicine.common.security.entity.AuthUser;
+import cn.zhangchuangla.medicine.common.security.spi.SecurityUserService;
 import cn.zhangchuangla.medicine.service.UserService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;

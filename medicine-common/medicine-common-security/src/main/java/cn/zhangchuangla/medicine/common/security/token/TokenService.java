@@ -1,4 +1,4 @@
-package cn.zhangchuangla.medicine.security.token;
+package cn.zhangchuangla.medicine.common.security.token;
 
 import cn.zhangchuangla.medicine.common.core.common.exception.AuthorizationException;
 import cn.zhangchuangla.medicine.common.core.common.utils.IPUtils;
@@ -6,12 +6,12 @@ import cn.zhangchuangla.medicine.common.core.common.utils.UUIDUtils;
 import cn.zhangchuangla.medicine.common.core.constants.SecurityConstants;
 import cn.zhangchuangla.medicine.common.core.enums.ResponseResultCode;
 import cn.zhangchuangla.medicine.common.core.model.dto.LoginSessionDTO;
-import cn.zhangchuangla.medicine.security.entity.AuthTokenVo;
-import cn.zhangchuangla.medicine.security.entity.AuthUser;
-import cn.zhangchuangla.medicine.security.entity.OnlineLoginUser;
-import cn.zhangchuangla.medicine.security.entity.SysUserDetails;
-import cn.zhangchuangla.medicine.security.spi.SecurityUserService;
-import cn.zhangchuangla.medicine.utils.SecurityUtils;
+import cn.zhangchuangla.medicine.common.security.entity.AuthTokenVo;
+import cn.zhangchuangla.medicine.common.security.entity.AuthUser;
+import cn.zhangchuangla.medicine.common.security.entity.OnlineLoginUser;
+import cn.zhangchuangla.medicine.common.security.entity.SysUserDetails;
+import cn.zhangchuangla.medicine.common.security.spi.SecurityUserService;
+import cn.zhangchuangla.medicine.common.security.utils.SecurityUtils;
 import io.jsonwebtoken.Claims;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;

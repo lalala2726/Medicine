@@ -1,10 +1,10 @@
-package cn.zhangchuangla.medicine.security.filter;
+package cn.zhangchuangla.medicine.common.security.filter;
 
-import cn.zhangchuangla.medicine.SecurityProperties;
 import cn.zhangchuangla.medicine.common.core.common.utils.ResponseUtils;
 import cn.zhangchuangla.medicine.common.core.constants.SecurityConstants;
 import cn.zhangchuangla.medicine.common.core.enums.ResponseResultCode;
-import cn.zhangchuangla.medicine.security.token.TokenService;
+import cn.zhangchuangla.medicine.common.security.SecurityProperties;
+import cn.zhangchuangla.medicine.common.security.token.TokenService;
 import jakarta.annotation.Nonnull;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;

@@ -1,10 +1,10 @@
-package cn.zhangchuangla.medicine.utils;
+package cn.zhangchuangla.medicine.common.security.utils;
 
 import cn.zhangchuangla.medicine.common.core.common.exception.LoginException;
 import cn.zhangchuangla.medicine.common.core.constants.RolesConstant;
 import cn.zhangchuangla.medicine.common.core.constants.SecurityConstants;
 import cn.zhangchuangla.medicine.common.core.enums.ResponseResultCode;
-import cn.zhangchuangla.medicine.security.entity.SysUserDetails;
+import cn.zhangchuangla.medicine.common.security.entity.SysUserDetails;
 import com.baomidou.mybatisplus.core.toolkit.CollectionUtils;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.extern.slf4j.Slf4j;

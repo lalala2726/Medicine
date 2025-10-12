@@ -1,8 +1,8 @@
-package cn.zhangchuangla.medicine.security.token;
+package cn.zhangchuangla.medicine.common.security.token;
 
-import cn.zhangchuangla.medicine.SecurityProperties;
 import cn.zhangchuangla.medicine.common.core.common.exception.AuthorizationException;
 import cn.zhangchuangla.medicine.common.core.constants.SecurityConstants;
+import cn.zhangchuangla.medicine.common.security.SecurityProperties;
 import io.jsonwebtoken.*;
 import io.jsonwebtoken.io.Decoders;
 import io.jsonwebtoken.security.Keys;

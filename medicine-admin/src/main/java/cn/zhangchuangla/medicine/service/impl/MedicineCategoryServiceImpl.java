@@ -1,6 +1,5 @@
 package cn.zhangchuangla.medicine.service.impl;
 
-import cn.zhangchuangla.medicine.common.base.BaseService;
 import cn.zhangchuangla.medicine.common.core.common.base.Option;
 import cn.zhangchuangla.medicine.common.core.common.exception.ServiceException;
 import cn.zhangchuangla.medicine.common.core.common.utils.Assert;
@@ -12,6 +11,7 @@ import cn.zhangchuangla.medicine.common.core.model.request.medicine.MedicineCate
 import cn.zhangchuangla.medicine.common.core.model.request.medicine.MedicineCategoryListQueryRequest;
 import cn.zhangchuangla.medicine.common.core.model.request.medicine.MedicineCategoryUpdateRequest;
 import cn.zhangchuangla.medicine.common.core.model.vo.medicine.MedicineCategoryTree;
+import cn.zhangchuangla.medicine.common.security.base.BaseService;
 import cn.zhangchuangla.medicine.mapper.MedicineCategoryMapper;
 import cn.zhangchuangla.medicine.mapper.MedicineMapper;
 import cn.zhangchuangla.medicine.service.MedicineCategoryService;

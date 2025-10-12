@@ -1,4 +1,4 @@
-package cn.zhangchuangla.medicine.security.handel;
+package cn.zhangchuangla.medicine.common.security.handel;
 
 import cn.zhangchuangla.medicine.common.core.common.utils.ResponseUtils;
 import jakarta.servlet.http.HttpServletRequest;

@@ -5,9 +5,11 @@ import cn.zhangchuangla.medicine.common.core.common.exception.ServiceException;
 import cn.zhangchuangla.medicine.common.core.common.utils.Assert;
 import cn.zhangchuangla.medicine.common.core.constants.RolesConstant;
 import cn.zhangchuangla.medicine.common.core.model.entity.User;
-import cn.zhangchuangla.medicine.security.entity.AuthTokenVo;
-import cn.zhangchuangla.medicine.security.entity.OnlineLoginUser;
-import cn.zhangchuangla.medicine.security.token.TokenService;
+import cn.zhangchuangla.medicine.common.security.entity.AuthTokenVo;
+import cn.zhangchuangla.medicine.common.security.entity.OnlineLoginUser;
+import cn.zhangchuangla.medicine.common.security.token.JwtTokenProvider;
+import cn.zhangchuangla.medicine.common.security.token.RedisTokenStore;
+import cn.zhangchuangla.medicine.common.security.token.TokenService;
 import cn.zhangchuangla.medicine.service.AuthService;
 import cn.zhangchuangla.medicine.service.UserService;
 import io.jsonwebtoken.Claims;
@@ -34,8 +36,8 @@ public class AuthServiceImpl implements AuthService {
     private final TokenService tokenService;
     private final UserService userService;
     private final BCryptPasswordEncoder passwordEncoder;
-    private final cn.zhangchuangla.medicine.security.token.RedisTokenStore redisTokenStore;
-    private final cn.zhangchuangla.medicine.security.token.JwtTokenProvider jwtTokenProvider;
+    private final RedisTokenStore redisTokenStore;
+    private final JwtTokenProvider jwtTokenProvider;
 
     @Override
     public Long register(String username, String password) {

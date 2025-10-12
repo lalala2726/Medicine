@@ -1,6 +1,5 @@
 package cn.zhangchuangla.medicine.controller.mall;
 
-import cn.zhangchuangla.medicine.common.base.BaseController;
 import cn.zhangchuangla.medicine.common.core.common.base.AjaxResult;
 import cn.zhangchuangla.medicine.common.core.common.base.TableDataResult;
 import cn.zhangchuangla.medicine.common.core.model.entity.MallProductImage;
@@ -8,6 +7,7 @@ import cn.zhangchuangla.medicine.common.core.model.request.mall.MallProductImage
 import cn.zhangchuangla.medicine.common.core.model.request.mall.MallProductImageListQueryRequest;
 import cn.zhangchuangla.medicine.common.core.model.request.mall.MallProductImageUpdateRequest;
 import cn.zhangchuangla.medicine.common.core.model.vo.mall.MallProductImageVo;
+import cn.zhangchuangla.medicine.common.security.base.BaseController;
 import cn.zhangchuangla.medicine.service.MallProductImageService;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import io.swagger.v3.oas.annotations.Operation;

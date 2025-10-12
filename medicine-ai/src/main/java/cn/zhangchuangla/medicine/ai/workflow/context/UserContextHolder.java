@@ -1,6 +1,6 @@
 package cn.zhangchuangla.medicine.ai.workflow.context;
 
-import cn.zhangchuangla.medicine.security.entity.SysUserDetails;
+import cn.zhangchuangla.medicine.common.security.entity.SysUserDetails;
 
 /**
  * Stores the current authenticated {@link SysUserDetails} in a ThreadLocal so that

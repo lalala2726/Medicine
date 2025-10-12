@@ -1,8 +1,8 @@
-package cn.zhangchuangla.medicine.security;
+package cn.zhangchuangla.medicine.common.security;
 
-import cn.zhangchuangla.medicine.security.entity.AuthUser;
-import cn.zhangchuangla.medicine.security.entity.SysUserDetails;
-import cn.zhangchuangla.medicine.security.spi.SecurityUserService;
+import cn.zhangchuangla.medicine.common.security.entity.AuthUser;
+import cn.zhangchuangla.medicine.common.security.entity.SysUserDetails;
+import cn.zhangchuangla.medicine.common.security.spi.SecurityUserService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.core.userdetails.UserDetails;

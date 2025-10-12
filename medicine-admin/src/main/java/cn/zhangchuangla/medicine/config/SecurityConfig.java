@@ -2,8 +2,8 @@ package cn.zhangchuangla.medicine.config;
 
 import cn.zhangchuangla.medicine.common.core.annotation.Anonymous;
 import cn.zhangchuangla.medicine.common.core.constants.SecurityConstants;
-import cn.zhangchuangla.medicine.security.filter.TokenAuthenticationFilter;
-import cn.zhangchuangla.medicine.security.handel.AuthenticationEntryPointImpl;
+import cn.zhangchuangla.medicine.common.security.filter.TokenAuthenticationFilter;
+import cn.zhangchuangla.medicine.common.security.handel.AuthenticationEntryPointImpl;
 import jakarta.servlet.DispatcherType;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.context.annotation.Bean;

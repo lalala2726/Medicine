@@ -1,6 +1,5 @@
 package cn.zhangchuangla.medicine.service.impl;
 
-import cn.zhangchuangla.medicine.common.base.BaseService;
 import cn.zhangchuangla.medicine.common.core.common.utils.Assert;
 import cn.zhangchuangla.medicine.common.core.common.utils.BeanCotyUtils;
 import cn.zhangchuangla.medicine.common.core.model.dto.MedicineStockDto;
@@ -9,6 +8,7 @@ import cn.zhangchuangla.medicine.common.core.model.entity.MedicineStock;
 import cn.zhangchuangla.medicine.common.core.model.request.medicine.MedicineStockAddRequest;
 import cn.zhangchuangla.medicine.common.core.model.request.medicine.MedicineStockQueryRequest;
 import cn.zhangchuangla.medicine.common.core.model.request.medicine.MedicineStockUpdateRequest;
+import cn.zhangchuangla.medicine.common.security.base.BaseService;
 import cn.zhangchuangla.medicine.mapper.MedicineStockMapper;
 import cn.zhangchuangla.medicine.service.MedicineService;
 import cn.zhangchuangla.medicine.service.MedicineStockService;

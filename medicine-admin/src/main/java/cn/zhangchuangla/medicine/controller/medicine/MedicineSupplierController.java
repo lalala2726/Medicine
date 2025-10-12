@@ -1,6 +1,5 @@
 package cn.zhangchuangla.medicine.controller.medicine;
 
-import cn.zhangchuangla.medicine.common.base.BaseController;
 import cn.zhangchuangla.medicine.common.core.common.base.AjaxResult;
 import cn.zhangchuangla.medicine.common.core.common.base.Option;
 import cn.zhangchuangla.medicine.common.core.common.base.TableDataResult;
@@ -10,6 +9,7 @@ import cn.zhangchuangla.medicine.common.core.model.request.medicine.SupplierList
 import cn.zhangchuangla.medicine.common.core.model.request.medicine.SupplierUpdateRequest;
 import cn.zhangchuangla.medicine.common.core.model.vo.medicine.SupplierListVo;
 import cn.zhangchuangla.medicine.common.core.model.vo.medicine.SupplierVo;
+import cn.zhangchuangla.medicine.common.security.base.BaseController;
 import cn.zhangchuangla.medicine.service.MedicineSupplierService;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import io.swagger.v3.oas.annotations.Operation;
