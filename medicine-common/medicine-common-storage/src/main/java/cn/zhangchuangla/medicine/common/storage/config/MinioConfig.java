@@ -1,4 +1,4 @@
-package cn.zhangchuangla.medicine.config;
+package cn.zhangchuangla.medicine.common.storage.config;
 
 import io.minio.MinioClient;
 import lombok.Data;

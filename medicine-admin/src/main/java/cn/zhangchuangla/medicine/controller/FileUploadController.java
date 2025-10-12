@@ -2,8 +2,8 @@ package cn.zhangchuangla.medicine.controller;
 
 import cn.zhangchuangla.medicine.common.base.AjaxResult;
 import cn.zhangchuangla.medicine.common.base.BaseController;
+import cn.zhangchuangla.medicine.common.storage.service.FileUploadService;
 import cn.zhangchuangla.medicine.model.vo.FileUploadVo;
-import cn.zhangchuangla.medicine.service.FileUploadService;
 import io.swagger.v3.oas.annotations.Operation;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;

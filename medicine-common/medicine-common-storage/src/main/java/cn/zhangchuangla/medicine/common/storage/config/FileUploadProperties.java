@@ -1,4 +1,4 @@
-package cn.zhangchuangla.medicine.config.property;
+package cn.zhangchuangla.medicine.common.storage.config;
 
 import lombok.Getter;
 import lombok.Setter;

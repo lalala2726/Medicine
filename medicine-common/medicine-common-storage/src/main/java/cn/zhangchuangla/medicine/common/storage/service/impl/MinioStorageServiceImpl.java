@@ -1,7 +1,7 @@
-package cn.zhangchuangla.medicine.service.impl;
+package cn.zhangchuangla.medicine.common.storage.service.impl;
 
-import cn.zhangchuangla.medicine.config.MinioConfig;
-import cn.zhangchuangla.medicine.service.MinioStorageService;
+import cn.zhangchuangla.medicine.common.storage.config.MinioConfig;
+import cn.zhangchuangla.medicine.common.storage.service.MinioStorageService;
 import io.minio.*;
 import io.minio.messages.Bucket;
 import lombok.RequiredArgsConstructor;

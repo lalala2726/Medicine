@@ -1,4 +1,4 @@
-package cn.zhangchuangla.medicine.service;
+package cn.zhangchuangla.medicine.common.storage.service;
 
 import cn.zhangchuangla.medicine.model.vo.FileUploadVo;
 import org.springframework.web.multipart.MultipartFile;

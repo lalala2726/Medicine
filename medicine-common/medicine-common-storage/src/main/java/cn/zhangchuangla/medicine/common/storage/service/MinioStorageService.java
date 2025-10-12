@@ -1,4 +1,4 @@
-package cn.zhangchuangla.medicine.service;
+package cn.zhangchuangla.medicine.common.storage.service;
 
 import io.minio.messages.Bucket;
 import org.springframework.web.multipart.MultipartFile;
