@@ -1,6 +1,6 @@
 package cn.zhangchuangla.medicine.ai.workflow.progress;
 
-import cn.zhangchuangla.medicine.enums.ChatStageEnum;
+import cn.zhangchuangla.medicine.ai.enums.ChatStageEnum;
 
 import java.util.Optional;
 

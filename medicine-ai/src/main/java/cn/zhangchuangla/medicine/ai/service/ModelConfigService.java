@@ -6,7 +6,6 @@ import cn.zhangchuangla.medicine.common.redis.RedisCache;
 import cn.zhangchuangla.medicine.model.dto.ModelConfigDto;
 import cn.zhangchuangla.medicine.model.entity.LlmConfig;
 import cn.zhangchuangla.medicine.model.entity.ModelConfig;
-import cn.zhangchuangla.medicine.service.LlmConfigService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.BeanUtils;

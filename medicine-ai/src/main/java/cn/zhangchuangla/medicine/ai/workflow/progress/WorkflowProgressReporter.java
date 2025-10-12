@@ -1,6 +1,6 @@
 package cn.zhangchuangla.medicine.ai.workflow.progress;
 
-import cn.zhangchuangla.medicine.enums.ChatStageEnum;
+import cn.zhangchuangla.medicine.ai.enums.ChatStageEnum;
 
 /**
  * 工作流使用的报告器，用于将实时进度更新推送回调用者。

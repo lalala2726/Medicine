@@ -1,4 +1,4 @@
-package cn.zhangchuangla.medicine.enums;
+package cn.zhangchuangla.medicine.ai.enums;
 
 import com.alibaba.cloud.ai.graph.StateGraph;
 import org.springframework.util.StringUtils;

@@ -1,4 +1,4 @@
-package cn.zhangchuangla.medicine.enums;
+package cn.zhangchuangla.medicine.ai.enums;
 
 /**
  * 用户意图枚举

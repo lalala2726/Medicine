@@ -1,12 +1,12 @@
 package cn.zhangchuangla.medicine.ai.workflow;
 
+import cn.zhangchuangla.medicine.ai.enums.MedicineNodeEnum;
+import cn.zhangchuangla.medicine.ai.enums.UserIntentEnum;
 import cn.zhangchuangla.medicine.ai.workflow.node.ConsultNode;
 import cn.zhangchuangla.medicine.ai.workflow.node.IntentNode;
 import cn.zhangchuangla.medicine.ai.workflow.node.MedicineNode;
 import cn.zhangchuangla.medicine.ai.workflow.node.OtherNode;
 import cn.zhangchuangla.medicine.common.core.enums.MedicineStateKeyEnum;
-import cn.zhangchuangla.medicine.enums.MedicineNodeEnum;
-import cn.zhangchuangla.medicine.enums.UserIntentEnum;
 import com.alibaba.cloud.ai.graph.*;
 import com.alibaba.cloud.ai.graph.action.EdgeAction;
 import com.alibaba.cloud.ai.graph.exception.GraphStateException;

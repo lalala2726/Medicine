@@ -1,6 +1,6 @@
 package cn.zhangchuangla.medicine.ai.workflow.progress;
 
-import cn.zhangchuangla.medicine.enums.ChatStageEnum;
+import cn.zhangchuangla.medicine.ai.enums.ChatStageEnum;
 import cn.zhangchuangla.medicine.model.vo.chat.StreamChatResponse;
 import org.springframework.util.StringUtils;
 import reactor.core.publisher.FluxSink;

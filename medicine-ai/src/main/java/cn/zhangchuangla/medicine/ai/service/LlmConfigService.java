@@ -1,4 +1,4 @@
-package cn.zhangchuangla.medicine.service;
+package cn.zhangchuangla.medicine.ai.service;
 
 import cn.zhangchuangla.medicine.common.core.base.Option;
 import cn.zhangchuangla.medicine.model.entity.LlmConfig;

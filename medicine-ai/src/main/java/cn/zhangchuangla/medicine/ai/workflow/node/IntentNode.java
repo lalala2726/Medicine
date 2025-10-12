@@ -1,11 +1,11 @@
 package cn.zhangchuangla.medicine.ai.workflow.node;
 
+import cn.zhangchuangla.medicine.ai.enums.ChatStageEnum;
+import cn.zhangchuangla.medicine.ai.enums.UserIntentEnum;
 import cn.zhangchuangla.medicine.ai.service.OpenAiClientFactory;
 import cn.zhangchuangla.medicine.ai.workflow.progress.WorkflowProgressContextHolder;
 import cn.zhangchuangla.medicine.common.core.constants.PromptConstant;
 import cn.zhangchuangla.medicine.common.core.enums.MedicineStateKeyEnum;
-import cn.zhangchuangla.medicine.enums.ChatStageEnum;
-import cn.zhangchuangla.medicine.enums.UserIntentEnum;
 import com.alibaba.cloud.ai.graph.OverAllState;
 import com.alibaba.cloud.ai.graph.action.NodeAction;
 import lombok.RequiredArgsConstructor;

@@ -1,4 +1,4 @@
-package cn.zhangchuangla.medicine.enums;
+package cn.zhangchuangla.medicine.ai.enums;
 
 /**
  * 医疗工作流节点枚举
