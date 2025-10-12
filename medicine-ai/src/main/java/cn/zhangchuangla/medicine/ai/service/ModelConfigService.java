@@ -1,11 +1,11 @@
 package cn.zhangchuangla.medicine.ai.service;
 
-import cn.zhangchuangla.medicine.common.exception.ServiceException;
+import cn.zhangchuangla.medicine.common.core.common.exception.ServiceException;
+import cn.zhangchuangla.medicine.common.core.common.utils.Assert;
+import cn.zhangchuangla.medicine.common.core.model.dto.ModelConfigDto;
+import cn.zhangchuangla.medicine.common.core.model.entity.LlmConfig;
+import cn.zhangchuangla.medicine.common.core.model.entity.ModelConfig;
 import cn.zhangchuangla.medicine.common.redis.RedisCache;
-import cn.zhangchuangla.medicine.common.utils.Assert;
-import cn.zhangchuangla.medicine.model.dto.ModelConfigDto;
-import cn.zhangchuangla.medicine.model.entity.LlmConfig;
-import cn.zhangchuangla.medicine.model.entity.ModelConfig;
 import cn.zhangchuangla.medicine.service.LlmConfigService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;

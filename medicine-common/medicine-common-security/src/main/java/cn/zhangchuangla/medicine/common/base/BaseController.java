@@ -1,7 +1,10 @@
 package cn.zhangchuangla.medicine.common.base;
 
-import cn.zhangchuangla.medicine.common.utils.BeanCotyUtils;
-import cn.zhangchuangla.medicine.enums.ResponseResultCode;
+import cn.zhangchuangla.medicine.common.core.common.base.AjaxResult;
+import cn.zhangchuangla.medicine.common.core.common.base.PageResult;
+import cn.zhangchuangla.medicine.common.core.common.base.TableDataResult;
+import cn.zhangchuangla.medicine.common.core.common.utils.BeanCotyUtils;
+import cn.zhangchuangla.medicine.common.core.enums.ResponseResultCode;
 import cn.zhangchuangla.medicine.security.entity.SysUserDetails;
 import cn.zhangchuangla.medicine.utils.SecurityUtils;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;

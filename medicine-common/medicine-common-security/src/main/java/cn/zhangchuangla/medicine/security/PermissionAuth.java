@@ -1,6 +1,6 @@
 package cn.zhangchuangla.medicine.security;
 
-import cn.zhangchuangla.medicine.constants.RolesConstant;
+import cn.zhangchuangla.medicine.common.core.constants.RolesConstant;
 import cn.zhangchuangla.medicine.utils.SecurityUtils;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;

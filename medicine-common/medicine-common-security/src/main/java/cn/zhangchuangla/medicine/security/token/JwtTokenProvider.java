@@ -1,8 +1,8 @@
 package cn.zhangchuangla.medicine.security.token;
 
-import cn.zhangchuangla.medicine.common.exception.AuthorizationException;
-import cn.zhangchuangla.medicine.config.property.SecurityProperties;
-import cn.zhangchuangla.medicine.constants.SecurityConstants;
+import cn.zhangchuangla.medicine.SecurityProperties;
+import cn.zhangchuangla.medicine.common.core.common.exception.AuthorizationException;
+import cn.zhangchuangla.medicine.common.core.constants.SecurityConstants;
 import io.jsonwebtoken.*;
 import io.jsonwebtoken.io.Decoders;
 import io.jsonwebtoken.security.Keys;
@@ -18,7 +18,7 @@ import java.security.NoSuchAlgorithmException;
 import java.util.HashMap;
 import java.util.Map;
 
-import static cn.zhangchuangla.medicine.enums.ResponseResultCode.ACCESS_TOKEN_INVALID;
+import static cn.zhangchuangla.medicine.common.core.enums.ResponseResultCode.ACCESS_TOKEN_INVALID;
 
 /**
  * @author Chuang

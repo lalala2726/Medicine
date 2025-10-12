@@ -1,11 +1,11 @@
 package cn.zhangchuangla.medicine.security.token;
 
-import cn.zhangchuangla.medicine.common.exception.AuthorizationException;
-import cn.zhangchuangla.medicine.common.utils.IPUtils;
-import cn.zhangchuangla.medicine.common.utils.UUIDUtils;
-import cn.zhangchuangla.medicine.constants.SecurityConstants;
-import cn.zhangchuangla.medicine.enums.ResponseResultCode;
-import cn.zhangchuangla.medicine.model.dto.LoginSessionDTO;
+import cn.zhangchuangla.medicine.common.core.common.exception.AuthorizationException;
+import cn.zhangchuangla.medicine.common.core.common.utils.IPUtils;
+import cn.zhangchuangla.medicine.common.core.common.utils.UUIDUtils;
+import cn.zhangchuangla.medicine.common.core.constants.SecurityConstants;
+import cn.zhangchuangla.medicine.common.core.enums.ResponseResultCode;
+import cn.zhangchuangla.medicine.common.core.model.dto.LoginSessionDTO;
 import cn.zhangchuangla.medicine.security.entity.AuthTokenVo;
 import cn.zhangchuangla.medicine.security.entity.AuthUser;
 import cn.zhangchuangla.medicine.security.entity.OnlineLoginUser;
@@ -27,7 +27,7 @@ import java.util.Collections;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-import static cn.zhangchuangla.medicine.constants.SecurityConstants.CLAIM_KEY_SESSION_ID;
+import static cn.zhangchuangla.medicine.common.core.constants.SecurityConstants.CLAIM_KEY_SESSION_ID;
 
 /**
  * Token 颁发与解析服务。

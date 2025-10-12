@@ -1,9 +1,9 @@
 package cn.zhangchuangla.medicine.service;
 
-import cn.zhangchuangla.medicine.model.request.assistant.HistoryRequest;
-import cn.zhangchuangla.medicine.model.vo.chat.StreamChatResponse;
-import cn.zhangchuangla.medicine.model.vo.llm.chat.ChatHistoryResponse;
-import cn.zhangchuangla.medicine.model.vo.llm.chat.UserMessageRequest;
+import cn.zhangchuangla.medicine.common.core.model.request.assistant.HistoryRequest;
+import cn.zhangchuangla.medicine.common.core.model.vo.chat.StreamChatResponse;
+import cn.zhangchuangla.medicine.common.core.model.vo.llm.chat.ChatHistoryResponse;
+import cn.zhangchuangla.medicine.common.core.model.vo.llm.chat.UserMessageRequest;
 import reactor.core.publisher.Flux;
 
 /**

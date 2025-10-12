@@ -1,6 +1,6 @@
 package cn.zhangchuangla.medicine.security.entity;
 
-import cn.zhangchuangla.medicine.constants.SecurityConstants;
+import cn.zhangchuangla.medicine.common.core.constants.SecurityConstants;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import org.springframework.security.core.GrantedAuthority;

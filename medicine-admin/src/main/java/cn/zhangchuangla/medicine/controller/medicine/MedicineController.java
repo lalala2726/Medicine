@@ -1,15 +1,15 @@
 package cn.zhangchuangla.medicine.controller.medicine;
 
-import cn.zhangchuangla.medicine.common.base.AjaxResult;
 import cn.zhangchuangla.medicine.common.base.BaseController;
-import cn.zhangchuangla.medicine.common.base.TableDataResult;
-import cn.zhangchuangla.medicine.model.entity.Medicine;
-import cn.zhangchuangla.medicine.model.entity.MedicineImage;
-import cn.zhangchuangla.medicine.model.request.medicine.MedicineAddRequest;
-import cn.zhangchuangla.medicine.model.request.medicine.MedicineListQueryRequest;
-import cn.zhangchuangla.medicine.model.request.medicine.MedicineUpdateRequest;
-import cn.zhangchuangla.medicine.model.vo.medicine.MedicineListVo;
-import cn.zhangchuangla.medicine.model.vo.medicine.MedicineVo;
+import cn.zhangchuangla.medicine.common.core.common.base.AjaxResult;
+import cn.zhangchuangla.medicine.common.core.common.base.TableDataResult;
+import cn.zhangchuangla.medicine.common.core.model.entity.Medicine;
+import cn.zhangchuangla.medicine.common.core.model.entity.MedicineImage;
+import cn.zhangchuangla.medicine.common.core.model.request.medicine.MedicineAddRequest;
+import cn.zhangchuangla.medicine.common.core.model.request.medicine.MedicineListQueryRequest;
+import cn.zhangchuangla.medicine.common.core.model.request.medicine.MedicineUpdateRequest;
+import cn.zhangchuangla.medicine.common.core.model.vo.medicine.MedicineListVo;
+import cn.zhangchuangla.medicine.common.core.model.vo.medicine.MedicineVo;
 import cn.zhangchuangla.medicine.service.MedicineService;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import io.swagger.v3.oas.annotations.Operation;

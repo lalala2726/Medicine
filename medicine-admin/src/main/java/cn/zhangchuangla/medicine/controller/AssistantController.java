@@ -1,11 +1,11 @@
 package cn.zhangchuangla.medicine.controller;
 
-import cn.zhangchuangla.medicine.common.base.AjaxResult;
 import cn.zhangchuangla.medicine.common.base.BaseController;
-import cn.zhangchuangla.medicine.model.request.assistant.HistoryRequest;
-import cn.zhangchuangla.medicine.model.vo.chat.StreamChatResponse;
-import cn.zhangchuangla.medicine.model.vo.llm.chat.ChatHistoryResponse;
-import cn.zhangchuangla.medicine.model.vo.llm.chat.UserMessageRequest;
+import cn.zhangchuangla.medicine.common.core.common.base.AjaxResult;
+import cn.zhangchuangla.medicine.common.core.model.request.assistant.HistoryRequest;
+import cn.zhangchuangla.medicine.common.core.model.vo.chat.StreamChatResponse;
+import cn.zhangchuangla.medicine.common.core.model.vo.llm.chat.ChatHistoryResponse;
+import cn.zhangchuangla.medicine.common.core.model.vo.llm.chat.UserMessageRequest;
 import cn.zhangchuangla.medicine.service.AssistantService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;

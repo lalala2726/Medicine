@@ -1,14 +1,14 @@
 package cn.zhangchuangla.medicine.controller;
 
-import cn.zhangchuangla.medicine.annotation.Anonymous;
-import cn.zhangchuangla.medicine.common.base.AjaxResult;
 import cn.zhangchuangla.medicine.common.base.BaseController;
-import cn.zhangchuangla.medicine.common.utils.BeanCotyUtils;
-import cn.zhangchuangla.medicine.model.entity.User;
-import cn.zhangchuangla.medicine.model.request.LoginRequest;
-import cn.zhangchuangla.medicine.model.request.RefreshRequest;
-import cn.zhangchuangla.medicine.model.request.RegisterRequest;
-import cn.zhangchuangla.medicine.model.vo.user.CurrentUserInfoVo;
+import cn.zhangchuangla.medicine.common.core.annotation.Anonymous;
+import cn.zhangchuangla.medicine.common.core.common.base.AjaxResult;
+import cn.zhangchuangla.medicine.common.core.common.utils.BeanCotyUtils;
+import cn.zhangchuangla.medicine.common.core.model.entity.User;
+import cn.zhangchuangla.medicine.common.core.model.request.LoginRequest;
+import cn.zhangchuangla.medicine.common.core.model.request.RefreshRequest;
+import cn.zhangchuangla.medicine.common.core.model.request.RegisterRequest;
+import cn.zhangchuangla.medicine.common.core.model.vo.user.CurrentUserInfoVo;
 import cn.zhangchuangla.medicine.security.entity.AuthTokenVo;
 import cn.zhangchuangla.medicine.service.AuthService;
 import cn.zhangchuangla.medicine.service.UserService;

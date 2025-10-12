@@ -4,7 +4,7 @@
         "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="cn.zhangchuangla.medicine.mapper.MallProductSkuMapper">
 
-    <resultMap id="BaseResultMap" type="cn.zhangchuangla.medicine.model.entity.MallProductSku">
+    <resultMap id="BaseResultMap" type="cn.zhangchuangla.medicine.common.core.model.entity.MallProductSku">
         <id property="id" column="id"/>
         <result property="productId" column="product_id"/>
         <result property="skuName" column="sku_name"/>

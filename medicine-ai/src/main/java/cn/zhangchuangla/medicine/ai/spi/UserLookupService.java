@@ -1,6 +1,6 @@
 package cn.zhangchuangla.medicine.ai.spi;
 
-import cn.zhangchuangla.medicine.model.entity.User;
+import cn.zhangchuangla.medicine.common.core.model.entity.User;
 
 import java.util.Optional;
 

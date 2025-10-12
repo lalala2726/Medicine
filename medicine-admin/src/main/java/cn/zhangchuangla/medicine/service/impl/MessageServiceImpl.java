@@ -1,8 +1,9 @@
 package cn.zhangchuangla.medicine.service.impl;
 
+import cn.zhangchuangla.medicine.common.core.common.utils.UUIDUtils;
+import cn.zhangchuangla.medicine.common.core.model.entity.Message;
+import cn.zhangchuangla.medicine.common.core.model.enums.MessageRoleEnum;
 import cn.zhangchuangla.medicine.mapper.MessageMapper;
-import cn.zhangchuangla.medicine.model.entity.Message;
-import cn.zhangchuangla.medicine.model.enums.MessageRoleEnum;
 import cn.zhangchuangla.medicine.service.MessageService;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
@@ -23,7 +24,7 @@ public class MessageServiceImpl extends ServiceImpl<MessageMapper, Message>
     @Transactional(rollbackFor = Exception.class)
     public Message saveUserMessage(Long conversationId, String content) {
         Message message = new Message();
-        message.setUuid(cn.zhangchuangla.medicine.common.utils.UUIDUtils.simple());
+        message.setUuid(UUIDUtils.simple());
         message.setConversationId(conversationId);
         message.setRole(MessageRoleEnum.USER.getCode());
         message.setContent(content);
@@ -37,7 +38,7 @@ public class MessageServiceImpl extends ServiceImpl<MessageMapper, Message>
     @Transactional(rollbackFor = Exception.class)
     public Message saveAssistantMessage(Long conversationId, String content) {
         Message message = new Message();
-        message.setUuid(cn.zhangchuangla.medicine.common.utils.UUIDUtils.simple());
+        message.setUuid(UUIDUtils.simple());
         message.setConversationId(conversationId);
         message.setRole(MessageRoleEnum.ASSISTANT.getCode());
         message.setContent(content);

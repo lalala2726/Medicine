@@ -1,6 +1,6 @@
 package cn.zhangchuangla.medicine.security.handel;
 
-import cn.zhangchuangla.medicine.common.utils.ResponseUtils;
+import cn.zhangchuangla.medicine.common.core.common.utils.ResponseUtils;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.extern.slf4j.Slf4j;
