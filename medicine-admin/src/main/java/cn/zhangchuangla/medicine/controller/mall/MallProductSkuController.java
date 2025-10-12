@@ -2,12 +2,12 @@ package cn.zhangchuangla.medicine.controller.mall;
 
 import cn.zhangchuangla.medicine.common.core.base.AjaxResult;
 import cn.zhangchuangla.medicine.common.core.base.TableDataResult;
-import cn.zhangchuangla.medicine.common.core.model.entity.MallProductSku;
-import cn.zhangchuangla.medicine.common.core.model.request.mall.MallProductSkuAddRequest;
-import cn.zhangchuangla.medicine.common.core.model.request.mall.MallProductSkuListQueryRequest;
-import cn.zhangchuangla.medicine.common.core.model.request.mall.MallProductSkuUpdateRequest;
-import cn.zhangchuangla.medicine.common.core.model.vo.mall.MallProductSkuVo;
 import cn.zhangchuangla.medicine.common.security.base.BaseController;
+import cn.zhangchuangla.medicine.model.entity.MallProductSku;
+import cn.zhangchuangla.medicine.model.request.mall.MallProductSkuAddRequest;
+import cn.zhangchuangla.medicine.model.request.mall.MallProductSkuListQueryRequest;
+import cn.zhangchuangla.medicine.model.request.mall.MallProductSkuUpdateRequest;
+import cn.zhangchuangla.medicine.model.vo.mall.MallProductSkuVo;
 import cn.zhangchuangla.medicine.service.MallProductSkuService;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import io.swagger.v3.oas.annotations.Operation;

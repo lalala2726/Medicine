@@ -1,6 +1,6 @@
 package cn.zhangchuangla.medicine.ai.service;
 
-import cn.zhangchuangla.medicine.common.core.model.entity.ModelConfig;
+import cn.zhangchuangla.medicine.model.entity.ModelConfig;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.ai.chat.client.ChatClient;
 import org.springframework.ai.openai.OpenAiChatModel;

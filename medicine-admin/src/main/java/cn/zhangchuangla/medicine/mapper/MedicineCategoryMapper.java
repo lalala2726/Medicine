@@ -1,7 +1,7 @@
 package cn.zhangchuangla.medicine.mapper;
 
-import cn.zhangchuangla.medicine.common.core.model.entity.MedicineCategory;
-import cn.zhangchuangla.medicine.common.core.model.request.medicine.MedicineCategoryListQueryRequest;
+import cn.zhangchuangla.medicine.model.entity.MedicineCategory;
+import cn.zhangchuangla.medicine.model.request.medicine.MedicineCategoryListQueryRequest;
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import org.apache.ibatis.annotations.Mapper;

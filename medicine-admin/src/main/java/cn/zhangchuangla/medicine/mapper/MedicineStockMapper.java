@@ -1,8 +1,8 @@
 package cn.zhangchuangla.medicine.mapper;
 
-import cn.zhangchuangla.medicine.common.core.model.dto.MedicineStockDto;
-import cn.zhangchuangla.medicine.common.core.model.entity.MedicineStock;
-import cn.zhangchuangla.medicine.common.core.model.request.medicine.MedicineStockQueryRequest;
+import cn.zhangchuangla.medicine.model.dto.MedicineStockDto;
+import cn.zhangchuangla.medicine.model.entity.MedicineStock;
+import cn.zhangchuangla.medicine.model.request.medicine.MedicineStockQueryRequest;
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import org.apache.ibatis.annotations.Mapper;

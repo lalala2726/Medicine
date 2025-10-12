@@ -1,10 +1,10 @@
 package cn.zhangchuangla.medicine.service;
 
 import cn.zhangchuangla.medicine.common.core.base.Option;
-import cn.zhangchuangla.medicine.common.core.model.entity.MedicineSupplier;
-import cn.zhangchuangla.medicine.common.core.model.request.medicine.SupplierAddRequest;
-import cn.zhangchuangla.medicine.common.core.model.request.medicine.SupplierListQueryRequest;
-import cn.zhangchuangla.medicine.common.core.model.request.medicine.SupplierUpdateRequest;
+import cn.zhangchuangla.medicine.model.entity.MedicineSupplier;
+import cn.zhangchuangla.medicine.model.request.medicine.SupplierAddRequest;
+import cn.zhangchuangla.medicine.model.request.medicine.SupplierListQueryRequest;
+import cn.zhangchuangla.medicine.model.request.medicine.SupplierUpdateRequest;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.IService;
 

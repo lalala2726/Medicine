@@ -1,6 +1,6 @@
 package cn.zhangchuangla.medicine.service;
 
-import cn.zhangchuangla.medicine.common.core.model.entity.UserAddress;
+import cn.zhangchuangla.medicine.model.entity.UserAddress;
 import com.baomidou.mybatisplus.extension.service.IService;
 
 /**

@@ -1,7 +1,7 @@
 package cn.zhangchuangla.medicine.mapper;
 
-import cn.zhangchuangla.medicine.common.core.model.entity.User;
-import cn.zhangchuangla.medicine.common.core.model.request.user.UserListQueryRequest;
+import cn.zhangchuangla.medicine.model.entity.User;
+import cn.zhangchuangla.medicine.model.request.user.UserListQueryRequest;
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import org.apache.ibatis.annotations.Mapper;

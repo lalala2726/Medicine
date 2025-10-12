@@ -1,14 +1,14 @@
 package cn.zhangchuangla.medicine.service.impl;
 
 import cn.zhangchuangla.medicine.common.core.exception.ServiceException;
-import cn.zhangchuangla.medicine.common.core.model.dto.MallProductDto;
-import cn.zhangchuangla.medicine.common.core.model.entity.MallProduct;
-import cn.zhangchuangla.medicine.common.core.model.entity.MedicineStock;
-import cn.zhangchuangla.medicine.common.core.model.request.mall.MallProductAddRequest;
-import cn.zhangchuangla.medicine.common.core.model.request.mall.MallProductListQueryRequest;
-import cn.zhangchuangla.medicine.common.core.model.request.mall.MallProductUpdateRequest;
 import cn.zhangchuangla.medicine.common.security.utils.SecurityUtils;
 import cn.zhangchuangla.medicine.mapper.MallProductMapper;
+import cn.zhangchuangla.medicine.model.dto.MallProductDto;
+import cn.zhangchuangla.medicine.model.entity.MallProduct;
+import cn.zhangchuangla.medicine.model.entity.MedicineStock;
+import cn.zhangchuangla.medicine.model.request.mall.MallProductAddRequest;
+import cn.zhangchuangla.medicine.model.request.mall.MallProductListQueryRequest;
+import cn.zhangchuangla.medicine.model.request.mall.MallProductUpdateRequest;
 import cn.zhangchuangla.medicine.service.MallCategoryService;
 import cn.zhangchuangla.medicine.service.MallProductService;
 import cn.zhangchuangla.medicine.service.MedicineStockService;

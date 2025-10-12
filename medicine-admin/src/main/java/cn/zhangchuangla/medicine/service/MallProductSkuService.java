@@ -1,9 +1,9 @@
 package cn.zhangchuangla.medicine.service;
 
-import cn.zhangchuangla.medicine.common.core.model.entity.MallProductSku;
-import cn.zhangchuangla.medicine.common.core.model.request.mall.MallProductSkuAddRequest;
-import cn.zhangchuangla.medicine.common.core.model.request.mall.MallProductSkuListQueryRequest;
-import cn.zhangchuangla.medicine.common.core.model.request.mall.MallProductSkuUpdateRequest;
+import cn.zhangchuangla.medicine.model.entity.MallProductSku;
+import cn.zhangchuangla.medicine.model.request.mall.MallProductSkuAddRequest;
+import cn.zhangchuangla.medicine.model.request.mall.MallProductSkuListQueryRequest;
+import cn.zhangchuangla.medicine.model.request.mall.MallProductSkuUpdateRequest;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.IService;
 

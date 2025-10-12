@@ -5,7 +5,7 @@
 <mapper namespace="cn.zhangchuangla.medicine.mapper.MedicineCategoryMapper">
 
     <!-- 通用查询映射结果 -->
-    <resultMap id="BaseResultMap" type="cn.zhangchuangla.medicine.common.core.model.entity.MedicineCategory">
+    <resultMap id="BaseResultMap" type="cn.zhangchuangla.medicine.model.entity.MedicineCategory">
         <id property="id" column="id"/>
         <result property="name" column="name"/>
         <result property="parentId" column="parent_id"/>

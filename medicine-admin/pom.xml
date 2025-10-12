@@ -29,6 +29,10 @@
         </dependency>
         <dependency>
             <groupId>cn.zhangchuangla.medicine</groupId>
+            <artifactId>medicine-model</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>cn.zhangchuangla.medicine</groupId>
             <artifactId>medicine-ai</artifactId>
         </dependency>
         <dependency>

@@ -1,16 +1,16 @@
 package cn.zhangchuangla.medicine.controller;
 
 import cn.zhangchuangla.medicine.common.core.base.AjaxResult;
-import cn.zhangchuangla.medicine.common.core.model.entity.User;
-import cn.zhangchuangla.medicine.common.core.model.request.LoginRequest;
-import cn.zhangchuangla.medicine.common.core.model.request.RefreshRequest;
-import cn.zhangchuangla.medicine.common.core.model.request.RegisterRequest;
-import cn.zhangchuangla.medicine.common.core.model.vo.user.CurrentUserInfoVo;
 import cn.zhangchuangla.medicine.common.core.utils.BeanCotyUtils;
 import cn.zhangchuangla.medicine.common.security.annotation.Anonymous;
 import cn.zhangchuangla.medicine.common.security.base.BaseController;
 import cn.zhangchuangla.medicine.common.security.entity.AuthTokenVo;
 import cn.zhangchuangla.medicine.common.security.utils.SecurityUtils;
+import cn.zhangchuangla.medicine.model.entity.User;
+import cn.zhangchuangla.medicine.model.request.LoginRequest;
+import cn.zhangchuangla.medicine.model.request.RefreshRequest;
+import cn.zhangchuangla.medicine.model.request.RegisterRequest;
+import cn.zhangchuangla.medicine.model.vo.user.CurrentUserInfoVo;
 import cn.zhangchuangla.medicine.service.AuthService;
 import cn.zhangchuangla.medicine.service.UserService;
 import io.swagger.v3.oas.annotations.Operation;

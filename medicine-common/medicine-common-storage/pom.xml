@@ -16,6 +16,10 @@
             <artifactId>medicine-common-core</artifactId>
         </dependency>
         <dependency>
+            <groupId>cn.zhangchuangla.medicine</groupId>
+            <artifactId>medicine-model</artifactId>
+        </dependency>
+        <dependency>
             <groupId>io.minio</groupId>
             <artifactId>minio</artifactId>
         </dependency>

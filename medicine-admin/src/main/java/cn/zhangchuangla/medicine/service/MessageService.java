@@ -1,6 +1,6 @@
 package cn.zhangchuangla.medicine.service;
 
-import cn.zhangchuangla.medicine.common.core.model.entity.Message;
+import cn.zhangchuangla.medicine.model.entity.Message;
 import com.baomidou.mybatisplus.extension.service.IService;
 
 import java.util.List;

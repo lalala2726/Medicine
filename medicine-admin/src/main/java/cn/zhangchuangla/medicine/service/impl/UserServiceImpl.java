@@ -1,12 +1,12 @@
 package cn.zhangchuangla.medicine.service.impl;
 
-import cn.zhangchuangla.medicine.common.core.model.entity.User;
-import cn.zhangchuangla.medicine.common.core.model.request.user.UserAddRequest;
-import cn.zhangchuangla.medicine.common.core.model.request.user.UserListQueryRequest;
-import cn.zhangchuangla.medicine.common.core.model.request.user.UserUpdateRequest;
 import cn.zhangchuangla.medicine.common.core.utils.Assert;
 import cn.zhangchuangla.medicine.common.core.utils.BeanCotyUtils;
 import cn.zhangchuangla.medicine.mapper.UserMapper;
+import cn.zhangchuangla.medicine.model.entity.User;
+import cn.zhangchuangla.medicine.model.request.user.UserAddRequest;
+import cn.zhangchuangla.medicine.model.request.user.UserListQueryRequest;
+import cn.zhangchuangla.medicine.model.request.user.UserUpdateRequest;
 import cn.zhangchuangla.medicine.service.UserService;
 import com.baomidou.mybatisplus.extension.conditions.query.LambdaQueryChainWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
