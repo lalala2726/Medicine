@@ -1,15 +1,9 @@
 package cn.zhangchuangla.medicine.config;
 
-import cn.zhangchuangla.medicine.config.property.FileUploadProperties;
-import cn.zhangchuangla.medicine.enums.FileStorageMode;
-import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
 import org.jetbrains.annotations.NotNull;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.web.servlet.config.annotation.ResourceHandlerRegistry;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
-
-import static cn.zhangchuangla.medicine.constants.Constants.STATIC_FILE;
 
 /**
  * 资源路径配置类
@@ -20,35 +14,15 @@ import static cn.zhangchuangla.medicine.constants.Constants.STATIC_FILE;
  * created 2025/2/19 02:15
  */
 @Configuration
-@Slf4j
-@RequiredArgsConstructor
 public class ResourcesConfig implements WebMvcConfigurer {
-
-    private final FileUploadProperties fileUploadProperties;
 
     /**
      * 配置静态资源访问路径
      */
     @Override
     public void addResourceHandlers(@NotNull ResourceHandlerRegistry registry) {
-        configureLocalFileAccess(registry);
         configureStaticResources(registry);
         configureApiDocsResources(registry);
-    }
-
-    /**
-     * 配置本地文件存储的访问路径
-     */
-    private void configureLocalFileAccess(ResourceHandlerRegistry registry) {
-        if (fileUploadProperties == null) {
-            return;
-        }
-        if (fileUploadProperties.getMode() != FileStorageMode.LOCAL) {
-            // 当前模式非本地存储时无需映射
-            return;
-        }
-        registry.addResourceHandler(STATIC_FILE + "/**")
-                .addResourceLocations("file:" + fileUploadProperties.getLocalPath() + "/");
     }
 
     /**

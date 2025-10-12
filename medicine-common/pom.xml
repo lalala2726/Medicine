@@ -15,5 +15,6 @@
         <module>medicine-common-core</module>
         <module>medicine-common-redis</module>
         <module>medicine-common-security</module>
+        <module>medicine-common-storage</module>
     </modules>
 </project>

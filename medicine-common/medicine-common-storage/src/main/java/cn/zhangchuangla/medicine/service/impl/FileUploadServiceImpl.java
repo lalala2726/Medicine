@@ -1,13 +1,11 @@
 package cn.zhangchuangla.medicine.service.impl;
 
 import cn.zhangchuangla.medicine.common.exception.ServiceException;
+import cn.zhangchuangla.medicine.config.MinioConfig;
 import cn.zhangchuangla.medicine.config.property.FileUploadProperties;
-import cn.zhangchuangla.medicine.enums.FileStorageMode;
-import cn.zhangchuangla.medicine.factory.FileStorageStrategyFactory;
 import cn.zhangchuangla.medicine.model.vo.FileUploadVo;
 import cn.zhangchuangla.medicine.service.FileUploadService;
-import cn.zhangchuangla.medicine.strategy.FileStorageStrategy;
-import jakarta.annotation.PostConstruct;
+import cn.zhangchuangla.medicine.service.MinioStorageService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -15,7 +13,6 @@ import org.springframework.web.multipart.MultipartFile;
 
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
-import java.util.Collections;
 import java.util.Set;
 import java.util.UUID;
 
@@ -30,18 +27,9 @@ import java.util.UUID;
 @RequiredArgsConstructor
 public class FileUploadServiceImpl implements FileUploadService {
 
-    private final FileStorageStrategyFactory strategyFactory;
+    private final MinioStorageService minioStorageService;
     private final FileUploadProperties fileUploadProperties;
-
-    private Set<String> allowedTypeSet;
-
-    @PostConstruct
-    public void init() {
-        allowedTypeSet = fileUploadProperties.getAllowedTypeSet();
-        if (allowedTypeSet == null) {
-            allowedTypeSet = Collections.emptySet();
-        }
-    }
+    private final MinioConfig minioConfig;
 
     @Override
     public FileUploadVo upload(MultipartFile file) {
@@ -71,12 +59,9 @@ public class FileUploadServiceImpl implements FileUploadService {
             // 构建完整的对象路径
             String objectName = folderPath + "/" + uniqueFileName;
 
-            // 根据配置选择存储策略
-            FileStorageMode mode = fileUploadProperties.getMode();
-            FileStorageStrategy strategy = strategyFactory.getStrategy(mode);
-
             // 上传文件并返回访问地址
-            String fileUrl = strategy.upload(objectName, file);
+            String bucketName = resolveBucketName();
+            String fileUrl = minioStorageService.uploadFile(bucketName, objectName, file);
 
             // 构建返回结果
             FileUploadVo uploadVo = new FileUploadVo();
@@ -127,6 +112,15 @@ public class FileUploadServiceImpl implements FileUploadService {
      * @return 是否允许
      */
     private boolean isAllowedFileType(String contentType) {
+        Set<String> allowedTypeSet = fileUploadProperties.getAllowedTypeSet();
         return allowedTypeSet.contains(contentType);
+    }
+
+    private String resolveBucketName() {
+        String bucketName = minioConfig.getBucketName();
+        if (bucketName == null || bucketName.isBlank()) {
+            throw new IllegalStateException("minio.bucket-name 未配置");
+        }
+        return bucketName;
     }
 }

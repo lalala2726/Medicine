@@ -1,11 +1,11 @@
 package cn.zhangchuangla.medicine.service.impl;
 
+import cn.zhangchuangla.medicine.config.MinioConfig;
 import cn.zhangchuangla.medicine.service.MinioStorageService;
 import io.minio.*;
 import io.minio.messages.Bucket;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -24,10 +24,7 @@ import java.util.List;
 public class MinioStorageServiceImpl implements MinioStorageService {
 
     private final MinioClient minioClient;
-    @Value("${minio.bucket-name}")
-    private String bucketName;
-    @Value("${minio.endpoint}")
-    private String endpoint;
+    private final MinioConfig minioConfig;
 
     @Override
     public void checkBucketExists(String bucketName) {
@@ -105,7 +102,7 @@ public class MinioStorageServiceImpl implements MinioStorageService {
     public String getFileUrl(String bucketName, String objectName) {
         try {
             // 构建直接的文件访问URL，不使用预签名URL
-            return String.format("%s/%s/%s", endpoint, bucketName, objectName);
+            return String.format("%s/%s/%s", normalizeEndpoint(minioConfig.getEndpoint()), bucketName, objectName);
         } catch (Exception e) {
             log.error("Failed to get file URL: {}", objectName, e);
             throw new RuntimeException("Failed to get file URL: " + objectName, e);
@@ -135,6 +132,13 @@ public class MinioStorageServiceImpl implements MinioStorageService {
         } catch (Exception e) {
             return false;
         }
+    }
+
+    private String normalizeEndpoint(String endpoint) {
+        if (endpoint == null || endpoint.isBlank()) {
+            throw new IllegalStateException("minio.endpoint 未配置");
+        }
+        return endpoint.endsWith("/") ? endpoint.substring(0, endpoint.length() - 1) : endpoint;
     }
 
 }
