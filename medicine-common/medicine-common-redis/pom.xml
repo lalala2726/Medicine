@@ -14,7 +14,6 @@
         <dependency>
             <groupId>cn.zhangchuangla.medicine</groupId>
             <artifactId>medicine-common-core</artifactId>
-            <version>${project.version}</version>
         </dependency>
         <dependency>
             <groupId>org.springframework.boot</groupId>
