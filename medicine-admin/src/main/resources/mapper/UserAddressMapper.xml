@@ -4,7 +4,7 @@
         "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="cn.zhangchuangla.medicine.admin.mapper.UserAddressMapper">
 
-    <resultMap id="BaseResultMap" type="cn.zhangchuangla.medicine.model.entity.UserAddress">
+    <resultMap id="BaseResultMap" type="cn.zhangchuangla.medicine.admin.model.entity.UserAddress">
         <id property="id" column="id"/>
         <result property="userId" column="user_id"/>
         <result property="consignee" column="consignee"/>

@@ -1,6 +1,6 @@
 package cn.zhangchuangla.medicine.admin.mapper;
 
-import cn.zhangchuangla.medicine.model.entity.MallProductSku;
+import cn.zhangchuangla.medicine.admin.model.entity.MallProductSku;
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
 
 /**

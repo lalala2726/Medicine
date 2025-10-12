@@ -1,7 +1,7 @@
 package cn.zhangchuangla.medicine.admin.config;
 
-import cn.zhangchuangla.medicine.ai.workflow.context.UserContextHolder;
-import cn.zhangchuangla.medicine.ai.workflow.progress.WorkflowProgressContextHolder;
+import cn.zhangchuangla.medicine.admin.ai.workflow.context.UserContextHolder;
+import cn.zhangchuangla.medicine.admin.ai.workflow.progress.WorkflowProgressContextHolder;
 import io.micrometer.context.ContextRegistry;
 import jakarta.annotation.PostConstruct;
 import lombok.extern.slf4j.Slf4j;

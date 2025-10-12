@@ -1,8 +1,8 @@
 package cn.zhangchuangla.medicine.admin.mapper;
 
-import cn.zhangchuangla.medicine.model.dto.MallProductDto;
-import cn.zhangchuangla.medicine.model.entity.MallProduct;
-import cn.zhangchuangla.medicine.model.request.mall.MallProductListQueryRequest;
+import cn.zhangchuangla.medicine.admin.model.dto.MallProductDto;
+import cn.zhangchuangla.medicine.admin.model.entity.MallProduct;
+import cn.zhangchuangla.medicine.admin.model.request.mall.MallProductListQueryRequest;
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import org.apache.ibatis.annotations.Param;

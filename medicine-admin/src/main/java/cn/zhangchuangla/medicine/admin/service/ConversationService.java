@@ -1,6 +1,6 @@
 package cn.zhangchuangla.medicine.admin.service;
 
-import cn.zhangchuangla.medicine.model.entity.Conversation;
+import cn.zhangchuangla.medicine.admin.model.entity.Conversation;
 import com.baomidou.mybatisplus.extension.service.IService;
 
 /**
