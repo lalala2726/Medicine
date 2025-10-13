@@ -1,4 +1,4 @@
-package cn.zhangchuangla.medicine.admin.config;
+package cn.zhangchuangla.medicine.common.redis.config;
 
 import cn.zhangchuangla.medicine.common.core.constants.Constants;
 import com.alibaba.fastjson2.JSON;

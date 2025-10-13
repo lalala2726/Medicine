@@ -2,7 +2,7 @@ package cn.zhangchuangla.medicine.ai.service;
 
 import cn.zhangchuangla.medicine.common.core.exception.ServiceException;
 import cn.zhangchuangla.medicine.common.core.utils.Assert;
-import cn.zhangchuangla.medicine.common.redis.RedisCache;
+import cn.zhangchuangla.medicine.common.redis.core.RedisCache;
 import cn.zhangchuangla.medicine.model.dto.ModelConfigDto;
 import cn.zhangchuangla.medicine.model.entity.LlmConfig;
 import cn.zhangchuangla.medicine.model.entity.ModelConfig;

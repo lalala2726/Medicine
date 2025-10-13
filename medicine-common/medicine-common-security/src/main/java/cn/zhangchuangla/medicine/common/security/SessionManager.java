@@ -1,7 +1,7 @@
 package cn.zhangchuangla.medicine.common.security;
 
 import cn.zhangchuangla.medicine.common.core.constants.SecurityConstants;
-import cn.zhangchuangla.medicine.common.redis.RedisCache;
+import cn.zhangchuangla.medicine.common.redis.core.RedisCache;
 import cn.zhangchuangla.medicine.common.security.entity.OnlineLoginUser;
 import cn.zhangchuangla.medicine.common.security.token.JwtTokenProvider;
 import cn.zhangchuangla.medicine.common.security.token.RedisTokenStore;
