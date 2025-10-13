@@ -167,8 +167,64 @@
                 <groupId>com.alipay.sdk</groupId>
                 <artifactId>alipay-sdk-java</artifactId>
                 <version>${alipay-sdk.version}</version>
+                <exclusions>
+                    <!-- CVE-2020-10683, CVE-2018-1000632: Exclude vulnerable dom4j -->
+                    <exclusion>
+                        <groupId>dom4j</groupId>
+                        <artifactId>dom4j</artifactId>
+                    </exclusion>
+                    <!-- Multiple CVEs: Exclude vulnerable Bouncy Castle -->
+                    <exclusion>
+                        <groupId>org.bouncycastle</groupId>
+                        <artifactId>bcprov-jdk15on</artifactId>
+                    </exclusion>
+                </exclusions>
             </dependency>
-        </dependencies>
+
+            <!-- CVE-2020-10683, CVE-2018-1000632: Safe replacement for dom4j -->
+            <dependency>
+                <groupId>org.dom4j</groupId>
+                <artifactId>dom4j</artifactId>
+                <version>2.1.4</version>
+            </dependency>
+
+            <!-- Security patches for vulnerable dependencies -->
+            <!-- CVE-2024-7254: Stack overflow vulnerability in protobuf-java -->
+            <dependency>
+                <groupId>com.google.protobuf</groupId>
+                <artifactId>protobuf-java</artifactId>
+                <version>4.29.5</version>
+            </dependency>
+
+            <!-- CVE-2025-11226: ACE vulnerability in logback-core -->
+            <dependency>
+                <groupId>ch.qos.logback</groupId>
+                <artifactId>logback-core</artifactId>
+                <version>1.5.19</version>
+            </dependency>
+
+            <!-- CVE-2024-25710, CVE-2024-26308: Infinite loop and resource allocation vulnerabilities -->
+            <dependency>
+                <groupId>org.apache.commons</groupId>
+                <artifactId>commons-compress</artifactId>
+                <version>1.27.1</version>
+            </dependency>
+
+            <!-- CVE-2021-29425, CVE-2024-47554: Path traversal and resource consumption vulnerabilities -->
+            <dependency>
+                <groupId>commons-io</groupId>
+                <artifactId>commons-io</artifactId>
+                <version>2.16.1</version>
+            </dependency>
+
+            <!-- Multiple CVEs (CVE-2019-17359, CVE-2024-29857, CVE-2024-30172, CVE-2024-30171, CVE-2023-33202, CVE-2023-33201): Various cryptographic vulnerabilities -->
+            <dependency>
+                <groupId>org.bouncycastle</groupId>
+                <artifactId>bcprov-jdk18on</artifactId>
+                <version>1.80</version>
+            </dependency>
+
+              </dependencies>
     </dependencyManagement>
     <modules>
         <module>medicine-common</module>
