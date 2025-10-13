@@ -5,6 +5,7 @@ target/
 !**/src/test/**/target/
 CLAUDE.md
 AGENTS.md
+.java-version
 
 ### STS ###
 .apt_generated

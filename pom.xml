@@ -28,7 +28,7 @@
         <url/>
     </scm>
     <properties>
-        <java.version>17</java.version>
+        <java.version>21</java.version>
         <spring-ai.version>1.0.1</spring-ai.version>
         <spring-ai-alibaba.version>1.0.0.3</spring-ai-alibaba.version>
         <mybatis-plus.version>3.5.12</mybatis-plus.version>
@@ -42,6 +42,7 @@
         <fastjson.version>2.0.53</fastjson.version>
         <ip2region.version>2.7.0</ip2region.version>
         <swagger-annotations.version>2.2.22</swagger-annotations.version>
+        <alipay-sdk.version>4.34.0.ALL</alipay-sdk.version>
     </properties>
     <dependencyManagement>
         <dependencies>
@@ -157,6 +158,16 @@
                 <artifactId>spring-ai-alibaba-graph-core</artifactId>
                 <version>${spring-ai-alibaba.version}</version>
             </dependency>
+            <dependency>
+                <groupId>cn.zhangchuangla.medicine</groupId>
+                <artifactId>medicine-payment</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.alipay.sdk</groupId>
+                <artifactId>alipay-sdk-java</artifactId>
+                <version>${alipay-sdk.version}</version>
+            </dependency>
         </dependencies>
     </dependencyManagement>
     <modules>
@@ -165,5 +176,6 @@
         <module>medicine-admin</module>
         <module>medicine-client</module>
         <module>medicine-ai</module>
+        <module>medicine-payment</module>
     </modules>
 </project>
