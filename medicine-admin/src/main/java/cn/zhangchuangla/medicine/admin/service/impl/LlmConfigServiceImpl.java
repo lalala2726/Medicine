@@ -1,15 +1,15 @@
 package cn.zhangchuangla.medicine.admin.service.impl;
 
+import cn.zhangchuangla.medicine.admin.ai.service.LlmConfigService;
+import cn.zhangchuangla.medicine.admin.common.core.base.Option;
+import cn.zhangchuangla.medicine.admin.common.core.utils.Assert;
+import cn.zhangchuangla.medicine.admin.common.security.base.BaseService;
 import cn.zhangchuangla.medicine.admin.mapper.LLMConfigMapper;
-import cn.zhangchuangla.medicine.ai.service.LlmConfigService;
-import cn.zhangchuangla.medicine.common.core.base.Option;
-import cn.zhangchuangla.medicine.common.core.utils.Assert;
-import cn.zhangchuangla.medicine.common.security.base.BaseService;
-import cn.zhangchuangla.medicine.model.entity.LlmConfig;
-import cn.zhangchuangla.medicine.model.request.llm.LlmConfigAddRequest;
-import cn.zhangchuangla.medicine.model.request.llm.LlmConfigListQueryRequest;
-import cn.zhangchuangla.medicine.model.request.llm.LlmConfigUpdateRequest;
-import cn.zhangchuangla.medicine.model.vo.llm.LLMOptions;
+import cn.zhangchuangla.medicine.admin.model.entity.LlmConfig;
+import cn.zhangchuangla.medicine.admin.model.request.llm.LlmConfigAddRequest;
+import cn.zhangchuangla.medicine.admin.model.request.llm.LlmConfigListQueryRequest;
+import cn.zhangchuangla.medicine.admin.model.request.llm.LlmConfigUpdateRequest;
+import cn.zhangchuangla.medicine.admin.model.vo.llm.LLMOptions;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.extension.conditions.query.LambdaQueryChainWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
