@@ -47,6 +47,30 @@
         <result property="categoryName" column="category_name"/>
     </resultMap>
 
+    <resultMap id="MallProductDetailDtoMap" type="cn.zhangchuangla.medicine.model.dto.MallProductDetailDto">
+        <id property="id" column="id"/>
+        <result property="name" column="name"/>
+        <result property="categoryId" column="category_id"/>
+        <result property="unit" column="unit"/>
+        <result property="price" column="price"/>
+        <result property="salesVolume" column="sales_volume"/>
+        <result property="stock" column="stock"/>
+        <result property="sort" column="sort"/>
+        <result property="status" column="status"/>
+        <result property="deliveryType" column="delivery_type"/>
+        <result property="shippingId" column="shipping_id"/>
+        <result property="bindType" column="bind_type"/>
+        <result property="medicineId" column="medicine_id"/>
+        <result property="medicineStockId" column="medicine_stock_id"/>
+        <result property="createTime" column="create_time"/>
+        <result property="updateTime" column="update_time"/>
+        <result property="createBy" column="create_by"/>
+        <result property="updateBy" column="update_by"/>
+        <result property="medicineName" column="medicine_name"/>
+        <result property="batchNo" column="medicine_stock_batch_no"/>
+        <result property="medicineWarehouse" column="medicine_warehouse"/>
+    </resultMap>
+
     <sql id="Base_Column_List">
         id,name,category_id,unit,price,sales_volume,
         stock,sort,status,delivery_type,shipping_id,
@@ -137,5 +161,40 @@
             </if>
         </where>
         ORDER BY product.sort ASC, product.create_time DESC
+    </select>
+
+    <select id="getMallProductDetailById" resultMap="MallProductDetailDtoMap">
+        SELECT
+            product.id,
+            product.name,
+            product.category_id,
+            product.unit,
+            product.price,
+            product.sales_volume,
+            CASE
+                WHEN product.bind_type = 1 AND stock.quantity IS NOT NULL THEN stock.quantity
+                ELSE product.stock
+            END AS stock,
+            product.sort,
+            product.status,
+            product.delivery_type,
+            product.shipping_id,
+            product.bind_type,
+            CASE
+                WHEN product.bind_type = 1 AND stock.medicine_id IS NOT NULL THEN stock.medicine_id
+                ELSE product.medicine_id
+            END AS medicine_id,
+            product.medicine_stock_id,
+            product.create_time,
+            product.update_time,
+            product.create_by,
+            product.update_by,
+            medicine.name AS medicine_name,
+            stock.batch_no AS medicine_stock_batch_no,
+            stock.warehouse AS medicine_warehouse
+        FROM mall_product product
+                 LEFT JOIN medicine_stock stock ON product.medicine_stock_id = stock.id
+                 LEFT JOIN medicine medicine ON stock.medicine_id = medicine.id
+        WHERE product.id = #{id}
     </select>
 </mapper>

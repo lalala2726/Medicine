@@ -6,7 +6,9 @@ import cn.zhangchuangla.medicine.admin.service.MallProductService;
 import cn.zhangchuangla.medicine.admin.service.MedicineStockService;
 import cn.zhangchuangla.medicine.common.core.exception.ServiceException;
 import cn.zhangchuangla.medicine.common.security.utils.SecurityUtils;
+import cn.zhangchuangla.medicine.model.dto.MallProductDetailDto;
 import cn.zhangchuangla.medicine.model.dto.MallProductDto;
+import cn.zhangchuangla.medicine.model.entity.MallCategory;
 import cn.zhangchuangla.medicine.model.entity.MallProduct;
 import cn.zhangchuangla.medicine.model.entity.MedicineStock;
 import cn.zhangchuangla.medicine.model.request.mall.MallProductAddRequest;
@@ -78,14 +80,21 @@ public class MallProductServiceImpl extends ServiceImpl<MallProductMapper, MallP
     }
 
     @Override
-    public MallProduct getMallProductById(Long id) {
+    public MallProductDetailDto getMallProductById(Long id) {
         if (id == null) {
             throw new ServiceException("商品ID不能为空");
         }
 
-        MallProduct product = getById(id);
+        MallProductDetailDto product = mallProductMapper.getMallProductDetailById(id);
         if (product == null) {
             throw new ServiceException("商品不存在");
+        }
+
+        if (product.getCategoryId() != null) {
+            MallCategory category = mallCategoryService.getCategoryById(product.getCategoryId());
+            if (category != null) {
+                product.setCategoryName(category.getName());
+            }
         }
 
         return product;
@@ -281,7 +290,3 @@ public class MallProductServiceImpl extends ServiceImpl<MallProductMapper, MallP
         validateMedicineInfo(request.getMedicineId(), request.getMedicineStockId(), true);
     }
 }
-
-
-
-

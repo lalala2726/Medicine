@@ -1,5 +1,6 @@
 package cn.zhangchuangla.medicine.admin.service;
 
+import cn.zhangchuangla.medicine.model.dto.MallProductDetailDto;
 import cn.zhangchuangla.medicine.model.dto.MallProductDto;
 import cn.zhangchuangla.medicine.model.entity.MallProduct;
 import cn.zhangchuangla.medicine.model.request.mall.MallProductAddRequest;
@@ -43,7 +44,7 @@ public interface MallProductService extends IService<MallProduct> {
      * @param id 商品ID
      * @return 商城商品信息
      */
-    MallProduct getMallProductById(Long id);
+    MallProductDetailDto getMallProductById(Long id);
 
     /**
      * 添加商城商品

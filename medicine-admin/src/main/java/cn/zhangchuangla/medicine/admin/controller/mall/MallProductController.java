@@ -4,8 +4,8 @@ import cn.zhangchuangla.medicine.admin.service.MallProductService;
 import cn.zhangchuangla.medicine.common.core.base.AjaxResult;
 import cn.zhangchuangla.medicine.common.core.base.TableDataResult;
 import cn.zhangchuangla.medicine.common.security.base.BaseController;
+import cn.zhangchuangla.medicine.model.dto.MallProductDetailDto;
 import cn.zhangchuangla.medicine.model.dto.MallProductDto;
-import cn.zhangchuangla.medicine.model.entity.MallProduct;
 import cn.zhangchuangla.medicine.model.request.mall.MallProductAddRequest;
 import cn.zhangchuangla.medicine.model.request.mall.MallProductListQueryRequest;
 import cn.zhangchuangla.medicine.model.request.mall.MallProductUpdateRequest;
@@ -60,7 +60,7 @@ public class MallProductController extends BaseController {
     @GetMapping("/{id:\\d+}")
     @Operation(summary = "获取商城商品详情")
     public AjaxResult<MallProductVo> getProductById(@PathVariable("id") Long id) {
-        MallProduct product = mallProductService.getMallProductById(id);
+        MallProductDetailDto product = mallProductService.getMallProductById(id);
         MallProductVo productVo = copyProperties(product, MallProductVo.class);
         return success(productVo);
     }

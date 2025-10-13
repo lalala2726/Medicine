@@ -113,6 +113,18 @@ public class MallProductVo {
     private String medicineName;
 
     /**
+     * 关联药品库存批次号
+     */
+    @Schema(description = "关联药品库存批次号", type = "string", example = "BATCH-20241001")
+    private String batchNo;
+
+    /**
+     * 关联药品库存所在仓库
+     */
+    @Schema(description = "关联药品库存所在仓库", type = "string", example = "华东一号仓")
+    private String medicineWarehouse;
+
+    /**
      * 关联药品库存批次ID（可选）
      */
     @Schema(description = "关联药品库存批次ID", type = "int64", example = "1")
