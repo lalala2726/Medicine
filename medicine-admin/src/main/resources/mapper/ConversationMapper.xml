@@ -4,7 +4,7 @@
         "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="cn.zhangchuangla.medicine.admin.mapper.ConversationMapper">
 
-    <resultMap id="BaseResultMap" type="cn.zhangchuangla.medicine.admin.model.entity.Conversation">
+    <resultMap id="BaseResultMap" type="cn.zhangchuangla.medicine.model.entity.Conversation">
         <id property="id" column="id"/>
         <result property="uuid" column="uuid"/>
         <result property="userId" column="user_id"/>

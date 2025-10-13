@@ -1,6 +1,6 @@
 package cn.zhangchuangla.medicine.admin.mapper;
 
-import cn.zhangchuangla.medicine.admin.model.entity.InventoryLog;
+import cn.zhangchuangla.medicine.model.entity.InventoryLog;
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
 
 /**

@@ -1,11 +1,11 @@
 package cn.zhangchuangla.medicine.admin.common.storage.service.impl;
 
-import cn.zhangchuangla.medicine.admin.common.core.exception.ServiceException;
 import cn.zhangchuangla.medicine.admin.common.storage.config.FileUploadProperties;
 import cn.zhangchuangla.medicine.admin.common.storage.config.MinioConfig;
 import cn.zhangchuangla.medicine.admin.common.storage.service.FileUploadService;
 import cn.zhangchuangla.medicine.admin.common.storage.service.MinioStorageService;
-import cn.zhangchuangla.medicine.admin.model.vo.FileUploadVo;
+import cn.zhangchuangla.medicine.common.core.exception.ServiceException;
+import cn.zhangchuangla.medicine.model.vo.FileUploadVo;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;

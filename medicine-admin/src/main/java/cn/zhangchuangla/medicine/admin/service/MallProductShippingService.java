@@ -1,9 +1,9 @@
 package cn.zhangchuangla.medicine.admin.service;
 
-import cn.zhangchuangla.medicine.admin.model.entity.MallProductShipping;
-import cn.zhangchuangla.medicine.admin.model.request.mall.MallProductShippingAddRequest;
-import cn.zhangchuangla.medicine.admin.model.request.mall.MallProductShippingListQueryRequest;
-import cn.zhangchuangla.medicine.admin.model.request.mall.MallProductShippingUpdateRequest;
+import cn.zhangchuangla.medicine.model.entity.MallProductShipping;
+import cn.zhangchuangla.medicine.model.request.mall.MallProductShippingAddRequest;
+import cn.zhangchuangla.medicine.model.request.mall.MallProductShippingListQueryRequest;
+import cn.zhangchuangla.medicine.model.request.mall.MallProductShippingUpdateRequest;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.IService;
 

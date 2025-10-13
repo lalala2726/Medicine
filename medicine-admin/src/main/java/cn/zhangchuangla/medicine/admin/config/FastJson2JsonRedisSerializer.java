@@ -1,6 +1,6 @@
 package cn.zhangchuangla.medicine.admin.config;
 
-import cn.zhangchuangla.medicine.admin.common.core.constants.Constants;
+import cn.zhangchuangla.medicine.common.core.constants.Constants;
 import com.alibaba.fastjson2.JSON;
 import com.alibaba.fastjson2.JSONReader;
 import com.alibaba.fastjson2.JSONWriter;
