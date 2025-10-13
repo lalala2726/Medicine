@@ -136,4 +136,10 @@ public class MallProductListVo {
     @Schema(description = "更新者", type = "string", example = "admin")
     private String updateBy;
 
+    /**
+     * 商品展示图
+     */
+    @Schema(description = "商品展示图", type = "string", example = "https://example.com/image1.jpg")
+    private String image;
+
 }

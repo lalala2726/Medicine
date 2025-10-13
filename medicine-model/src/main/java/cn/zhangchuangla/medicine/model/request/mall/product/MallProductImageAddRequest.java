@@ -1,4 +1,4 @@
-package cn.zhangchuangla.medicine.model.request.mall;
+package cn.zhangchuangla.medicine.model.request.mall.product;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.NotNull;
@@ -13,13 +13,6 @@ import lombok.Data;
 @Data
 @Schema(description = "商城商品图片添加请求对象")
 public class MallProductImageAddRequest {
-
-    /**
-     * 商品ID，关联 mall_product
-     */
-    @NotNull(message = "商品ID不能为空")
-    @Schema(description = "商品ID", type = "int64", example = "1", requiredMode = Schema.RequiredMode.REQUIRED)
-    private Long productId;
 
     /**
      * 图片URL

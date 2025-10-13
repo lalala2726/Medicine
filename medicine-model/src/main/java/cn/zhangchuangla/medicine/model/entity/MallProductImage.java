@@ -3,7 +3,10 @@ package cn.zhangchuangla.medicine.model.entity;
 import com.baomidou.mybatisplus.annotation.IdType;
 import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableName;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Data;
+import lombok.NoArgsConstructor;
 
 import java.util.Date;
 
@@ -18,7 +21,11 @@ import java.util.Date;
  */
 @TableName(value = "mall_product_image")
 @Data
+@AllArgsConstructor
+@NoArgsConstructor
+@Builder
 public class MallProductImage {
+
     /**
      * 图片ID
      */

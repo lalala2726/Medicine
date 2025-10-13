@@ -45,6 +45,7 @@
         <result property="createBy" column="create_by"/>
         <result property="updateBy" column="update_by"/>
         <result property="categoryName" column="category_name"/>
+        <result property="image" column="image_url"/>
     </resultMap>
 
     <resultMap id="MallProductDetailDtoMap" type="cn.zhangchuangla.medicine.model.dto.MallProductDetailDto">
@@ -69,6 +70,10 @@
         <result property="medicineName" column="medicine_name"/>
         <result property="batchNo" column="medicine_stock_batch_no"/>
         <result property="medicineWarehouse" column="medicine_warehouse"/>
+        <result property="image" column="main_image_url"/>
+        <collection property="images" ofType="java.lang.String" notNullColumn="image_url">
+            <result column="image_url"/>
+        </collection>
     </resultMap>
 
     <sql id="Base_Column_List">
@@ -113,88 +118,102 @@
     <!-- 查询商品列表（包含分类名称） -->
     <select id="listMallProductWithCategory" resultMap="MallProductDtoMap">
         SELECT
-        product.id,
-        product.name,
-        product.category_id,
-        product.unit,
-        product.price,
-        product.sales_volume,
-        product.stock,
-        product.sort,
-        product.status,
-        product.delivery_type,
-        product.shipping_id,
-        product.bind_type,
-        product.medicine_id,
-        product.medicine_stock_id,
-        product.create_time,
-        product.update_time,
-        product.create_by,
-        product.update_by,
-        category.name as category_name
-        FROM mall_product product
-        LEFT JOIN mall_category category ON product.category_id = category.id
+        p.id,
+        p.name,
+        p.category_id,
+        p.unit,
+        p.price,
+        p.sales_volume,
+        p.stock,
+        p.sort,
+        p.status,
+        p.delivery_type,
+        p.shipping_id,
+        p.bind_type,
+        p.medicine_id,
+        p.medicine_stock_id,
+        p.create_time,
+        p.update_time,
+        p.create_by,
+        p.update_by,
+        c.name AS category_name,
+        (
+        SELECT i.image_url
+        FROM mall_product_image i
+        WHERE i.product_id = p.id
+        ORDER BY i.sort , i.id
+        LIMIT 1
+        ) AS image_url
+        FROM mall_product p
+        LEFT JOIN mall_category c ON p.category_id = c.id
         <where>
             <if test="request.id != null">
-                AND product.id = #{request.id}
+                AND p.id = #{request.id}
             </if>
             <if test="request.name != null and request.name != ''">
-                AND product.name LIKE CONCAT('%', #{request.name}, '%')
+                AND p.name LIKE CONCAT('%', #{request.name}, '%')
             </if>
             <if test="request.categoryId != null">
-                AND product.category_id = #{request.categoryId}
+                AND p.category_id = #{request.categoryId}
             </if>
             <if test="request.status != null">
-                AND product.status = #{request.status}
+                AND p.status = #{request.status}
             </if>
             <if test="request.bindType != null">
-                AND product.bind_type = #{request.bindType}
+                AND p.bind_type = #{request.bindType}
             </if>
             <if test="request.medicineId != null">
-                AND product.medicine_id = #{request.medicineId}
+                AND p.medicine_id = #{request.medicineId}
             </if>
             <if test="request.minPrice != null">
-                AND product.price >= #{request.minPrice}
+                AND p.price >= #{request.minPrice}
             </if>
             <if test="request.maxPrice != null">
-                AND product.price &lt;= #{request.maxPrice}
+                AND p.price &lt;= #{request.maxPrice}
             </if>
         </where>
-        ORDER BY product.sort ASC, product.create_time DESC
+        ORDER BY p.sort ASC, p.create_time DESC
     </select>
 
     <select id="getMallProductDetailById" resultMap="MallProductDetailDtoMap">
-        SELECT
-            product.id,
-            product.name,
-            product.category_id,
-            product.unit,
-            product.price,
-            product.sales_volume,
-            CASE
-                WHEN product.bind_type = 1 AND stock.quantity IS NOT NULL THEN stock.quantity
-                ELSE product.stock
-            END AS stock,
-            product.sort,
-            product.status,
-            product.delivery_type,
-            product.shipping_id,
-            product.bind_type,
-            CASE
-                WHEN product.bind_type = 1 AND stock.medicine_id IS NOT NULL THEN stock.medicine_id
-                ELSE product.medicine_id
-            END AS medicine_id,
-            product.medicine_stock_id,
-            product.create_time,
-            product.update_time,
-            product.create_by,
-            product.update_by,
-            medicine.name AS medicine_name,
-            stock.batch_no AS medicine_stock_batch_no,
-            stock.warehouse AS medicine_warehouse
+        SELECT product.id,
+               product.name,
+               product.category_id,
+               product.unit,
+               product.price,
+               product.sales_volume,
+               CASE
+                   WHEN product.bind_type = 1 AND stock.quantity IS NOT NULL THEN stock.quantity
+                   ELSE product.stock
+                   END                AS stock,
+               product.sort,
+               product.status,
+               product.delivery_type,
+               product.shipping_id,
+               product.bind_type,
+               CASE
+                   WHEN product.bind_type = 1 AND stock.medicine_id IS NOT NULL THEN stock.medicine_id
+                   ELSE product.medicine_id
+                   END                AS medicine_id,
+               product.medicine_stock_id,
+               product.create_time,
+               product.update_time,
+               product.create_by,
+               product.update_by,
+               medicine.name          AS medicine_name,
+               stock.batch_no         AS medicine_stock_batch_no,
+               stock.warehouse        AS medicine_warehouse,
+               main_image.image_url   AS main_image_url,
+               detail_image.image_url AS image_url
         FROM mall_product product
+                 LEFT JOIN mall_product_image main_image
+                           ON main_image.product_id = product.id
+                               AND main_image.sort = 0
+                 LEFT JOIN mall_product_image detail_image
+                           ON detail_image.product_id = product.id
                  LEFT JOIN medicine_stock stock ON product.medicine_stock_id = stock.id
                  LEFT JOIN medicine medicine ON stock.medicine_id = medicine.id
         WHERE product.id = #{id}
+        ORDER BY detail_image.sort ASC, detail_image.id ASC
     </select>
 </mapper>

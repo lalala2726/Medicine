@@ -2,20 +2,15 @@ package cn.zhangchuangla.medicine.admin.service.impl;
 
 import cn.zhangchuangla.medicine.admin.mapper.MallProductImageMapper;
 import cn.zhangchuangla.medicine.admin.service.MallProductImageService;
-import cn.zhangchuangla.medicine.common.core.exception.ServiceException;
 import cn.zhangchuangla.medicine.model.entity.MallProductImage;
-import cn.zhangchuangla.medicine.model.request.mall.MallProductImageAddRequest;
-import cn.zhangchuangla.medicine.model.request.mall.MallProductImageListQueryRequest;
-import cn.zhangchuangla.medicine.model.request.mall.MallProductImageUpdateRequest;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
-import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
-import org.springframework.beans.BeanUtils;
 import org.springframework.stereotype.Service;
-import org.springframework.util.StringUtils;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Date;
 import java.util.List;
+import java.util.stream.IntStream;
 
 /**
  * 商城商品图片服务实现类
@@ -31,81 +26,44 @@ public class MallProductImageServiceImpl extends ServiceImpl<MallProductImageMap
         implements MallProductImageService {
 
     @Override
-    public List<MallProductImage> listImagesByProductId(Long productId) {
-        if (productId == null) {
-            throw new ServiceException("商品ID不能为空");
+    @Transactional(rollbackFor = Exception.class)
+    public void addProductImages(List<String> images, Long id) {
+        if (images == null || images.isEmpty()) {
+            return;
         }
 
-        LambdaQueryWrapper<MallProductImage> queryWrapper = new LambdaQueryWrapper<>();
-        queryWrapper.eq(MallProductImage::getProductId, productId)
-                .orderByAsc(MallProductImage::getSort)
-                .orderByDesc(MallProductImage::getCreateTime);
-
-        return list(queryWrapper);
+        List<MallProductImage> list = IntStream.range(0, images.size())
+                .mapToObj(index -> MallProductImage.builder()
+                        .imageUrl(images.get(index))
+                        .productId(id)
+                        .sort(index)
+                        .createTime(new Date())
+                        .build())
+                .toList();
+        saveBatch(list);
     }
 
     @Override
-    public Page<MallProductImage> listImagesByProductId(MallProductImageListQueryRequest request) {
-        LambdaQueryWrapper<MallProductImage> queryWrapper = new LambdaQueryWrapper<>();
-
-        if (request.getProductId() != null) {
-            queryWrapper.eq(MallProductImage::getProductId, request.getProductId());
-        }
-
-        if (StringUtils.hasText(request.getImageUrl())) {
-            queryWrapper.like(MallProductImage::getImageUrl, request.getImageUrl());
-        }
-
-        if (request.getSort() != null) {
-            queryWrapper.eq(MallProductImage::getSort, request.getSort());
-        }
-
-        queryWrapper.orderByAsc(MallProductImage::getSort)
-                .orderByDesc(MallProductImage::getCreateTime);
-
-        return page(new Page<>(request.getPageNum(), request.getPageSize()), queryWrapper);
+    @Transactional(rollbackFor = Exception.class)
+    public void updateProductImageById(List<String> images, Long id) {
+        LambdaQueryWrapper<MallProductImage> removeWrapper = new LambdaQueryWrapper<>();
+        removeWrapper.eq(MallProductImage::getProductId, id);
+        remove(removeWrapper);
+        addProductImages(images, id);
     }
 
     @Override
-    public boolean addImage(MallProductImageAddRequest request) {
-        MallProductImage image = new MallProductImage();
-        BeanUtils.copyProperties(request, image);
-        image.setCreateTime(new Date());
-
-        return save(image);
-    }
-
-    @Override
-    public boolean updateImage(MallProductImageUpdateRequest request) {
-        // 检查图片是否存在
-        MallProductImage existingImage = getById(request.getId());
-        if (existingImage == null) {
-            throw new ServiceException("商品图片不存在");
-        }
-
-        BeanUtils.copyProperties(request, existingImage);
-
-        return updateById(existingImage);
-    }
-
-    @Override
-    public boolean deleteImage(List<Long> ids) {
+    @Transactional(rollbackFor = Exception.class)
+    public void removeImagesById(List<Long> ids) {
         if (ids == null || ids.isEmpty()) {
-            throw new ServiceException("请选择要删除的图片");
+            return;
         }
-
-        for (Long id : ids) {
-            // 检查图片是否存在
-            MallProductImage image = getById(id);
-            if (image == null) {
-                throw new ServiceException("商品图片不存在: " + id);
-            }
-        }
-
-        return removeByIds(ids);
+        LambdaQueryWrapper<MallProductImage> wrapper = new LambdaQueryWrapper<>();
+        wrapper.in(MallProductImage::getProductId, ids);
+        remove(wrapper);
     }
-}
 
+}
 
 
 

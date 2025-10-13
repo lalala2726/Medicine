@@ -1,11 +1,10 @@
 package cn.zhangchuangla.medicine.admin.service;
 
 import cn.zhangchuangla.medicine.model.entity.MallProductImage;
-import cn.zhangchuangla.medicine.model.request.mall.MallProductImageAddRequest;
-import cn.zhangchuangla.medicine.model.request.mall.MallProductImageListQueryRequest;
-import cn.zhangchuangla.medicine.model.request.mall.MallProductImageUpdateRequest;
-import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.IService;
+import jakarta.validation.constraints.NotEmpty;
+import jakarta.validation.constraints.NotNull;
+import org.springframework.validation.annotation.Validated;
 
 import java.util.List;
 
@@ -18,46 +17,32 @@ import java.util.List;
  * @author Chuang
  * created on 2025/10/4 02:38
  */
+@Validated
 public interface MallProductImageService extends IService<MallProductImage> {
 
-    /**
-     * 根据商品ID获取图片列表
-     *
-     * @param productId 商品ID
-     * @return 图片列表
-     */
-    List<MallProductImage> listImagesByProductId(Long productId);
-
-    /**
-     * 分页查询商品图片列表
-     *
-     * @param request 查询参数
-     * @return 分页图片列表
-     */
-    Page<MallProductImage> listImagesByProductId(MallProductImageListQueryRequest request);
 
     /**
      * 添加商品图片
      *
-     * @param request 添加参数
-     * @return 添加结果
+     * @param images 图片列表
+     * @param id     商品ID
      */
-    boolean addImage(MallProductImageAddRequest request);
+    void addProductImages(@NotEmpty(message = "图片列表不能为空") List<String> images,
+                          @NotNull(message = "商品ID不能为空") Long id);
 
     /**
-     * 修改商品图片
+     * 更新商品图片
      *
-     * @param request 修改参数
-     * @return 修改结果
+     * @param images 图片列表
+     * @param id     商品ID
      */
-    boolean updateImage(MallProductImageUpdateRequest request);
+    void updateProductImageById(@NotEmpty(message = "商品图片列表不能为空") List<String> images,
+                                @NotNull(message = "商品ID不能为空") Long id);
 
     /**
      * 删除商品图片
      *
-     * @param ids 图片ID列表
-     * @return 删除结果
+     * @param ids 商品ID列表
      */
-    boolean deleteImage(List<Long> ids);
-
+    void removeImagesById(@NotEmpty(message = "商品ID列表不能为空") List<Long> ids);
 }

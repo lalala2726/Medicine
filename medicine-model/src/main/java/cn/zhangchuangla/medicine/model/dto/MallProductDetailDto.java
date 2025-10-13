@@ -3,6 +3,8 @@ package cn.zhangchuangla.medicine.model.dto;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 
+import java.util.List;
+
 /**
  * 商城商品详情数据传输对象
  *
@@ -26,5 +28,10 @@ public class MallProductDetailDto extends MallProductDto {
      * 关联药品库存所在仓库
      */
     private String medicineWarehouse;
+
+    /**
+     * 商品图片列表
+     */
+    private List<String> images;
 
 }

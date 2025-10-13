@@ -5,6 +5,7 @@ import lombok.Data;
 
 import java.math.BigDecimal;
 import java.util.Date;
+import java.util.List;
 
 /**
  * 商城商品详情视图对象
@@ -153,5 +154,17 @@ public class MallProductVo {
      */
     @Schema(description = "更新者", type = "string", example = "admin")
     private String updateBy;
+
+    /**
+     * 商品展示图
+     */
+    @Schema(description = "商品展示图", type = "string", example = "https://example.com/image1.jpg")
+    private String image;
+
+    /**
+     * 商品图片列表
+     */
+    @Schema(description = "商品图片列表", type = "array", example = "[\"https://example.com/image1.jpg\", \"https://example.com/image2.jpg\"]")
+    private List<String> images;
 
 }

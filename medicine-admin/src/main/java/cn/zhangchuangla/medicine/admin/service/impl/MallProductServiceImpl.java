@@ -2,24 +2,27 @@ package cn.zhangchuangla.medicine.admin.service.impl;
 
 import cn.zhangchuangla.medicine.admin.mapper.MallProductMapper;
 import cn.zhangchuangla.medicine.admin.service.MallCategoryService;
+import cn.zhangchuangla.medicine.admin.service.MallProductImageService;
 import cn.zhangchuangla.medicine.admin.service.MallProductService;
 import cn.zhangchuangla.medicine.admin.service.MedicineStockService;
 import cn.zhangchuangla.medicine.common.core.exception.ServiceException;
+import cn.zhangchuangla.medicine.common.core.utils.Assert;
 import cn.zhangchuangla.medicine.common.security.utils.SecurityUtils;
 import cn.zhangchuangla.medicine.model.dto.MallProductDetailDto;
 import cn.zhangchuangla.medicine.model.dto.MallProductDto;
 import cn.zhangchuangla.medicine.model.entity.MallCategory;
 import cn.zhangchuangla.medicine.model.entity.MallProduct;
 import cn.zhangchuangla.medicine.model.entity.MedicineStock;
-import cn.zhangchuangla.medicine.model.request.mall.MallProductAddRequest;
-import cn.zhangchuangla.medicine.model.request.mall.MallProductListQueryRequest;
-import cn.zhangchuangla.medicine.model.request.mall.MallProductUpdateRequest;
+import cn.zhangchuangla.medicine.model.request.mall.product.MallProductAddRequest;
+import cn.zhangchuangla.medicine.model.request.mall.product.MallProductListQueryRequest;
+import cn.zhangchuangla.medicine.model.request.mall.product.MallProductUpdateRequest;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.BeanUtils;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.util.Date;
@@ -46,6 +49,7 @@ public class MallProductServiceImpl extends ServiceImpl<MallProductMapper, MallP
     private final MallProductMapper mallProductMapper;
     private final MallCategoryService mallCategoryService;
     private final MedicineStockService medicineStockService;
+    private final MallProductImageService mallProductImageService;
 
     @Override
     public Page<MallProduct> listMallProduct(MallProductListQueryRequest request) {
@@ -97,10 +101,15 @@ public class MallProductServiceImpl extends ServiceImpl<MallProductMapper, MallP
             }
         }
 
+        if (product.getImages() != null && !product.getImages().isEmpty()) {
+            product.setImage(product.getImages().get(0));
+        }
+
         return product;
     }
 
     @Override
+    @Transactional(rollbackFor = Exception.class)
     public boolean addMallProduct(MallProductAddRequest request) {
         // 检查商品名称是否已存在
         LambdaQueryWrapper<MallProduct> queryWrapper = new LambdaQueryWrapper<>();
@@ -130,17 +139,22 @@ public class MallProductServiceImpl extends ServiceImpl<MallProductMapper, MallP
             validateMedicineBinding(request);
         }
 
-
         MallProduct product = new MallProduct();
         BeanUtils.copyProperties(request, product);
         product.setSalesVolume(0L); // 初始销量为0
         product.setCreateTime(new Date());
         product.setCreateBy(SecurityUtils.getUsername());
 
-        return save(product);
+        boolean save = save(product);
+
+        //处理商品图片逻辑
+        Assert.isTrue(request.getImages() != null && !request.getImages().isEmpty(), "商品图片至少需要上传一张图片");
+        mallProductImageService.addProductImages(request.getImages(), product.getId());
+        return save;
     }
 
     @Override
+    @Transactional(rollbackFor = Exception.class)
     public boolean updateMallProduct(MallProductUpdateRequest request) {
         // 检查商品是否存在
         MallProduct existingProduct = getById(request.getId());
@@ -174,11 +188,14 @@ public class MallProductServiceImpl extends ServiceImpl<MallProductMapper, MallP
         BeanUtils.copyProperties(request, existingProduct);
         existingProduct.setUpdateTime(new Date());
         existingProduct.setUpdateBy(SecurityUtils.getUsername());
+        Assert.isTrue(request.getImages() != null && !request.getImages().isEmpty(), "商品图片至少需要上传一张图片");
+        mallProductImageService.updateProductImageById(request.getImages(), existingProduct.getId());
 
         return updateById(existingProduct);
     }
 
     @Override
+    @Transactional(rollbackFor = Exception.class)
     public boolean deleteMallProduct(List<Long> ids) {
         if (ids == null || ids.isEmpty()) {
             throw new ServiceException("请选择要删除的商品");
@@ -197,13 +214,15 @@ public class MallProductServiceImpl extends ServiceImpl<MallProductMapper, MallP
             throw new ServiceException("商品不存在: " + notExistIds);
         }
 
+        // 删除关联的图片
+        mallProductImageService.removeImagesById(ids);
         return removeByIds(ids);
     }
 
     /**
      * 绑定库存映射的通用方法
      *
-     * @param products              商品列表（支持MallProduct或MallProductDto）
+     * @param products              商品列表（支持MallProduct或MallProductDto及其子类）
      * @param bindTypeGetter        用于获取绑定类型的函数
      * @param medicineStockIdGetter 用于获取库存ID的函数
      * @param stockSetter           用于设置库存数量的函数
