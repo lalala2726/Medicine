@@ -1,4 +1,4 @@
-package cn.zhangchuangla.medicine.ai;
+package cn.zhangchuangla.medicine.admin.ai;
 
 import cn.zhangchuangla.medicine.admin.service.UserService;
 import cn.zhangchuangla.medicine.ai.spi.UserLookupService;
