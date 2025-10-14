@@ -4,7 +4,7 @@ import cn.zhangchuangla.medicine.model.entity.MallProductSku;
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
 
 /**
- * @author Chuang
+ * @author zhangchuang
  */
 public interface MallProductSkuMapper extends BaseMapper<MallProductSku> {
 

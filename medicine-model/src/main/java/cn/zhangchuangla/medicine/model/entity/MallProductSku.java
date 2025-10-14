@@ -9,15 +9,9 @@ import java.math.BigDecimal;
 import java.util.Date;
 
 /**
- * 商城商品SKU规格实体类
- * <p>
- * 用于存储商城商品SKU规格信息的数据库实体，支持商品的
- * 多规格管理，如不同容量、包装、颜色等规格的价格和库存管理。
- *
- * @author Chuang
- * created on 2025/10/4 02:14
+ * 商城商品SKU规格主表（支持药品库存绑定与同步策略）
  */
-@TableName(value = "mall_product_sku")
+@TableName(value ="mall_product_sku")
 @Data
 public class MallProductSku {
     /**
@@ -42,7 +36,7 @@ public class MallProductSku {
     private BigDecimal price;
 
     /**
-     * 规格库存
+     * 规格库存（仅当未绑定药品时生效）
      */
     private Integer stock;
 
@@ -57,7 +51,7 @@ public class MallProductSku {
     private String imageUrl;
 
     /**
-     * 排序
+     * 排序值（越小越靠前）
      */
     private Integer sort;
 
@@ -65,6 +59,26 @@ public class MallProductSku {
      * 状态（1-启用，0-禁用）
      */
     private Integer status;
+
+    /**
+     * 库存绑定类型（0-独立库存，1-绑定药品库存）
+     */
+    private Integer bindType;
+
+    /**
+     * 绑定药品ID（当 bind_type=1 时生效）
+     */
+    private Long medicineId;
+
+    /**
+     * 绑定药品库存批次ID（可选）
+     */
+    private Long medicineStockId;
+
+    /**
+     * 库存同步策略（1下单扣减，2支付后扣减，3发货后扣减）
+     */
+    private Integer syncStrategy;
 
     /**
      * 创建时间
@@ -75,4 +89,19 @@ public class MallProductSku {
      * 更新时间
      */
     private Date updateTime;
+
+    /**
+     * 创建人
+     */
+    private String createBy;
+
+    /**
+     * 更新人
+     */
+    private String updateBy;
+
+    /**
+     * 是否删除（0-否，1-是）
+     */
+    private Integer isDelete;
 }
