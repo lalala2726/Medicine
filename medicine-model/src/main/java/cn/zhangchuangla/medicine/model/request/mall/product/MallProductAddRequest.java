@@ -67,8 +67,9 @@ public class MallProductAddRequest {
     /**
      * 配送方式（快递、自提、同城配送等）
      */
-    @Schema(description = "配送方式", type = "string", example = "快递")
-    private String deliveryType;
+    @Schema(description = "配送方式（快递、自提、同城配送等）", type = "int", example = "快递")
+    @NotNull(message = "配送方式不能为空")
+    private Integer deliveryType;
 
     /**
      * 运费模板ID，关联 mall_product_shipping

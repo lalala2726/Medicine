@@ -13,6 +13,7 @@ import cn.zhangchuangla.medicine.model.dto.MallProductDto;
 import cn.zhangchuangla.medicine.model.entity.MallCategory;
 import cn.zhangchuangla.medicine.model.entity.MallProduct;
 import cn.zhangchuangla.medicine.model.entity.MedicineStock;
+import cn.zhangchuangla.medicine.model.enums.DeliveryTypeEnum;
 import cn.zhangchuangla.medicine.model.request.mall.product.MallProductAddRequest;
 import cn.zhangchuangla.medicine.model.request.mall.product.MallProductListQueryRequest;
 import cn.zhangchuangla.medicine.model.request.mall.product.MallProductUpdateRequest;
@@ -128,11 +129,15 @@ public class MallProductServiceImpl extends ServiceImpl<MallProductMapper, MallP
             throw new ServiceException("商品库存不能为负数");
         }
 
-        //检查商品分类是否存在
+        // 检查商品分类是否存在
         boolean isExist = mallCategoryService.isProductCategoryExist(request.getCategoryId());
         if (!isExist) {
             throw new ServiceException("商品分类不存在");
         }
+
+        // 检查配送方式是否存在
+        DeliveryTypeEnum deliveryTypeEnum = DeliveryTypeEnum.fromCode(request.getDeliveryType());
+        Assert.isTrue(deliveryTypeEnum != null, "配送方式不存在");
 
         // 如果是绑定库存，验证药品相关信息
         if (request.getBindType() == 1) {
@@ -184,6 +189,10 @@ public class MallProductServiceImpl extends ServiceImpl<MallProductMapper, MallP
         if (request.getBindType() != null && request.getBindType() == 1) {
             validateMedicineBindingForUpdate(request);
         }
+
+        // 检查配送方式是否存在
+        DeliveryTypeEnum deliveryTypeEnum = DeliveryTypeEnum.fromCode(request.getDeliveryType());
+        Assert.isTrue(deliveryTypeEnum != null, "配送方式不存在");
 
         BeanUtils.copyProperties(request, existingProduct);
         existingProduct.setUpdateTime(new Date());

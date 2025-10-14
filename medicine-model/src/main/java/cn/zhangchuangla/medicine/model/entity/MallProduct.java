@@ -70,7 +70,7 @@ public class MallProduct {
     /**
      * 配送方式（快递、自提、同城配送等）
      */
-    private String deliveryType;
+    private Integer deliveryType;
 
     /**
      * 运费模板ID，关联 mall_product_shipping
