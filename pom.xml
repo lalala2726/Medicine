@@ -203,6 +203,13 @@
                 <version>1.5.19</version>
             </dependency>
 
+            <!-- 统一 logback-classic 版本与 logback-core 保持一致 -->
+            <dependency>
+                <groupId>ch.qos.logback</groupId>
+                <artifactId>logback-classic</artifactId>
+                <version>1.5.19</version>
+            </dependency>
+
             <!-- CVE-2024-25710, CVE-2024-26308: Infinite loop and resource allocation vulnerabilities -->
             <dependency>
                 <groupId>org.apache.commons</groupId>
