@@ -43,7 +43,7 @@ public class MallProduct {
     private String unit;
 
     /**
-     * 基础售价
+     * 展示价/兜底价：单规格=唯一SKU价，多规格=最小SKU价；结算以SKU价为准
      */
     private BigDecimal price;
 
