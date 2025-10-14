@@ -1,4 +1,4 @@
-package cn.zhangchuangla.medicine.model.request;
+package cn.zhangchuangla.medicine.model.request.auth;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
@@ -6,11 +6,11 @@ import lombok.Data;
 /**
  * @author Chuang
  * <p>
- * created on 2025/8/28 16:27
+ * created on 2025/8/28 16:26
  */
-@Schema(description = "登录请求参数")
+@Schema
 @Data
-public class LoginRequest {
+public class RegisterRequest {
 
     @Schema(description = "用户名", type = "string", requiredMode = Schema.RequiredMode.REQUIRED, example = "admin")
     private String username;

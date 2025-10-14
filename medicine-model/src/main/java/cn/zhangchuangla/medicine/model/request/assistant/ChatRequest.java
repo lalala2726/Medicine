@@ -1,4 +1,4 @@
-package cn.zhangchuangla.medicine.model.request.chat;
+package cn.zhangchuangla.medicine.model.request.assistant;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.NotBlank;
