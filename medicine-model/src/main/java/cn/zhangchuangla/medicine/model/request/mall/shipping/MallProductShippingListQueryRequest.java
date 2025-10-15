@@ -1,4 +1,4 @@
-package cn.zhangchuangla.medicine.model.request.mall.Shipping;
+package cn.zhangchuangla.medicine.model.request.mall.shipping;
 
 import cn.zhangchuangla.medicine.common.core.base.BasePageRequest;
 import io.swagger.v3.oas.annotations.media.Schema;
