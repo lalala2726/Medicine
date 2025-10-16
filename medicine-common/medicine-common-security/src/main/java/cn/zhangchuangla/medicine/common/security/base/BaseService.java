@@ -63,6 +63,15 @@ public interface BaseService {
     }
 
     /**
+     * 判断是否登录
+     *
+     * @return boolean 如登录返回true, 否则返回false
+     */
+    default boolean isLogin() {
+        return getUser() != null;
+    }
+
+    /**
      * 加密密码
      */
     default String encryptPassword(String password) {

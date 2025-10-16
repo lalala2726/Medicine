@@ -186,6 +186,16 @@ public class BaseController {
         return result > 0 ? success() : error();
     }
 
+
+    /**
+     * 判断用户是否登录
+     *
+     * @return true:已登录, false:未登录
+     */
+    protected boolean isLogin() {
+        return SecurityUtils.getUserId() != null;
+    }
+
     /**
      * 成功返回
      */
