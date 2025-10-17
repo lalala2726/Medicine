@@ -1,7 +1,7 @@
 package cn.zhangchuangla.medicine.admin.service.impl;
 
 import cn.zhangchuangla.medicine.admin.mapper.LLMConfigMapper;
-import cn.zhangchuangla.medicine.ai.service.LlmConfigService;
+import cn.zhangchuangla.medicine.admin.service.LlmConfigService;
 import cn.zhangchuangla.medicine.common.core.base.Option;
 import cn.zhangchuangla.medicine.common.core.utils.Assert;
 import cn.zhangchuangla.medicine.common.security.base.BaseService;
@@ -364,7 +364,6 @@ public class LlmConfigServiceImpl extends ServiceImpl<LLMConfigMapper, LlmConfig
     }
 
 }
-
 
 
 

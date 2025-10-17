@@ -1,6 +1,6 @@
 package cn.zhangchuangla.medicine.admin.controller;
 
-import cn.zhangchuangla.medicine.ai.service.LlmConfigService;
+import cn.zhangchuangla.medicine.admin.service.LlmConfigService;
 import cn.zhangchuangla.medicine.ai.service.ModelConfigService;
 import cn.zhangchuangla.medicine.common.core.base.AjaxResult;
 import cn.zhangchuangla.medicine.common.core.base.Option;
