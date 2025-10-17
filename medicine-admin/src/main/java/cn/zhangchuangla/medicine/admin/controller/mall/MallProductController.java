@@ -1,16 +1,16 @@
 package cn.zhangchuangla.medicine.admin.controller.mall;
 
+import cn.zhangchuangla.medicine.admin.model.request.mall.product.MallProductAddRequest;
+import cn.zhangchuangla.medicine.admin.model.request.mall.product.MallProductListQueryRequest;
+import cn.zhangchuangla.medicine.admin.model.request.mall.product.MallProductUpdateRequest;
+import cn.zhangchuangla.medicine.admin.model.vo.mall.MallProductListVo;
+import cn.zhangchuangla.medicine.admin.model.vo.mall.MallProductVo;
 import cn.zhangchuangla.medicine.admin.service.MallProductService;
 import cn.zhangchuangla.medicine.common.core.base.AjaxResult;
 import cn.zhangchuangla.medicine.common.core.base.TableDataResult;
 import cn.zhangchuangla.medicine.common.security.base.BaseController;
 import cn.zhangchuangla.medicine.model.dto.MallProductDetailDto;
 import cn.zhangchuangla.medicine.model.dto.MallProductDto;
-import cn.zhangchuangla.medicine.model.request.mall.product.MallProductAddRequest;
-import cn.zhangchuangla.medicine.model.request.mall.product.MallProductListQueryRequest;
-import cn.zhangchuangla.medicine.model.request.mall.product.MallProductUpdateRequest;
-import cn.zhangchuangla.medicine.model.vo.mall.MallProductListVo;
-import cn.zhangchuangla.medicine.model.vo.mall.MallProductVo;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;

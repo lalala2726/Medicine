@@ -1,6 +1,6 @@
 package cn.zhangchuangla.medicine.admin.service;
 
-import cn.zhangchuangla.medicine.model.request.assistant.HistoryRequest;
+import cn.zhangchuangla.medicine.admin.model.request.assistant.HistoryRequest;
 import cn.zhangchuangla.medicine.model.vo.chat.StreamChatResponse;
 import cn.zhangchuangla.medicine.model.vo.llm.chat.ChatHistoryResponse;
 import cn.zhangchuangla.medicine.model.vo.llm.chat.UserMessageRequest;
