@@ -11,7 +11,7 @@ import java.util.Comparator;
 import java.util.List;
 
 /**
- * @author zhangchuang
+ * @author Chuang
  */
 @Service
 public class MallProductImageServiceImpl extends ServiceImpl<MallProductImageMapper, MallProductImage>

@@ -6,7 +6,7 @@ import jakarta.validation.constraints.NotNull;
 import org.springframework.validation.annotation.Validated;
 
 /**
- * @author zhangchuang
+ * @author Chuang
  */
 @Validated
 public interface MallProductImageService extends IService<MallProductImage> {
