@@ -2,7 +2,7 @@ package cn.zhangchuangla.medicine.ai.workflow.node;
 
 import cn.zhangchuangla.medicine.ai.enums.ChatStageEnum;
 import cn.zhangchuangla.medicine.ai.enums.UserIntentEnum;
-import cn.zhangchuangla.medicine.ai.service.OpenAiClientFactory;
+import cn.zhangchuangla.medicine.ai.factory.OpenAiClientFactory;
 import cn.zhangchuangla.medicine.ai.workflow.progress.WorkflowProgressContextHolder;
 import cn.zhangchuangla.medicine.common.core.constants.PromptConstant;
 import cn.zhangchuangla.medicine.common.core.enums.MedicineStateKeyEnum;

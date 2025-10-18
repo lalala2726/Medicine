@@ -1,5 +1,7 @@
-package cn.zhangchuangla.medicine.ai.service;
+package cn.zhangchuangla.medicine.ai.factory;
 
+import cn.zhangchuangla.medicine.ai.service.ModelConfigService;
+import cn.zhangchuangla.medicine.ai.service.ModelConfigUpdatedEvent;
 import cn.zhangchuangla.medicine.model.entity.ModelConfig;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.ai.chat.client.ChatClient;

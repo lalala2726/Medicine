@@ -1,7 +1,7 @@
 package cn.zhangchuangla.medicine.ai.workflow.node;
 
 import cn.zhangchuangla.medicine.ai.enums.ChatStageEnum;
-import cn.zhangchuangla.medicine.ai.service.OpenAiClientFactory;
+import cn.zhangchuangla.medicine.ai.factory.OpenAiClientFactory;
 import cn.zhangchuangla.medicine.ai.tools.DateTimeTools;
 import cn.zhangchuangla.medicine.ai.tools.UserTools;
 import cn.zhangchuangla.medicine.ai.workflow.progress.WorkflowProgressContextHolder;

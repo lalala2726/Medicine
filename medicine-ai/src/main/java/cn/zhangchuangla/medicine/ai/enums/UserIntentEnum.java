@@ -1,11 +1,14 @@
 package cn.zhangchuangla.medicine.ai.enums;
 
+import lombok.Getter;
+
 /**
  * 用户意图枚举
  *
  * @author Chuang
  * @since 2025/9/10
  */
+@Getter
 public enum UserIntentEnum {
 
     MEDICINE("medicine", "药品相关"),
@@ -32,14 +35,6 @@ public enum UserIntentEnum {
             }
         }
         return OTHER;
-    }
-
-    public String getIntent() {
-        return intent;
-    }
-
-    public String getDescription() {
-        return description;
     }
 
     /**

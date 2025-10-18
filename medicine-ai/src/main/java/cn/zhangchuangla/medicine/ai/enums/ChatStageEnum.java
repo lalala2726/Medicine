@@ -1,6 +1,7 @@
 package cn.zhangchuangla.medicine.ai.enums;
 
 import com.alibaba.cloud.ai.graph.StateGraph;
+import lombok.Getter;
 import org.springframework.util.StringUtils;
 
 import java.util.Optional;
@@ -8,6 +9,7 @@ import java.util.Optional;
 /**
  * 流式聊天阶段枚举
  */
+@Getter
 public enum ChatStageEnum {
 
     RECEIVED("received", "消息已接收"),
@@ -54,14 +56,6 @@ public enum ChatStageEnum {
             return Optional.of(ROUTE_OTHER);
         }
         return Optional.empty();
-    }
-
-    public String getCode() {
-        return code;
-    }
-
-    public String getDescription() {
-        return description;
     }
 
     public boolean isResponseStage() {
