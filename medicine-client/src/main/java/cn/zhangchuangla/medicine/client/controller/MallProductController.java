@@ -2,6 +2,7 @@ package cn.zhangchuangla.medicine.client.controller;
 
 import cn.zhangchuangla.medicine.client.model.request.MallProductVo;
 import cn.zhangchuangla.medicine.client.service.MallProductService;
+import cn.zhangchuangla.medicine.client.service.MallUserBrowseHistoryService;
 import cn.zhangchuangla.medicine.common.core.base.AjaxResult;
 import cn.zhangchuangla.medicine.common.core.utils.BeanCotyUtils;
 import cn.zhangchuangla.medicine.common.security.base.BaseController;
@@ -27,6 +28,7 @@ import org.springframework.web.bind.annotation.RestController;
 public class MallProductController extends BaseController {
 
     private final MallProductService mallProductService;
+    private final MallUserBrowseHistoryService mallUserBrowseHistoryService;
 
 
     /**
@@ -41,6 +43,7 @@ public class MallProductController extends BaseController {
                                                         @PathVariable("id") Long id) {
         MallProduct mallProduct = mallProductService.getMallProductById(id);
         MallProductVo mallProductVo = BeanCotyUtils.copyProperties(mallProduct, MallProductVo.class);
+        mallUserBrowseHistoryService.recordProductBrowse(getUserId(), id);
         return success(mallProductVo);
     }
 

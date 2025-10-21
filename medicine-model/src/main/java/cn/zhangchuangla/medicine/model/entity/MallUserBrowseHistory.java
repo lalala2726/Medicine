@@ -3,7 +3,10 @@ package cn.zhangchuangla.medicine.model.entity;
 import com.baomidou.mybatisplus.annotation.IdType;
 import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableName;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Data;
+import lombok.NoArgsConstructor;
 
 import java.util.Date;
 
@@ -12,6 +15,9 @@ import java.util.Date;
  */
 @TableName(value = "mall_user_browse_history")
 @Data
+@AllArgsConstructor
+@NoArgsConstructor
+@Builder
 public class MallUserBrowseHistory {
     /**
      * 主键ID
@@ -28,27 +34,6 @@ public class MallUserBrowseHistory {
      * 商品ID
      */
     private Long productId;
-
-
-    /**
-     * 访问IP
-     */
-    private String ipAddress;
-
-    /**
-     * 访问设备类型，如mobile、pc
-     */
-    private String device;
-
-    /**
-     * 停留时长(秒)
-     */
-    private Integer stayDuration;
-
-    /**
-     * 来源页面，如首页、分类页、搜索页
-     */
-    private String sourcePage;
 
     /**
      * 创建时间

@@ -5,19 +5,14 @@
 <mapper namespace="cn.zhangchuangla.medicine.client.mapper.MallUserBrowseHistoryMapper">
 
     <resultMap id="BaseResultMap" type="cn.zhangchuangla.medicine.model.entity.MallUserBrowseHistory">
-            <id property="id" column="id" />
-            <result property="userId" column="user_id" />
-            <result property="productId" column="product_id" />
-            <result property="ipAddress" column="ip_address" />
-            <result property="device" column="device" />
-            <result property="stayDuration" column="stay_duration" />
-            <result property="sourcePage" column="source_page" />
-            <result property="createTime" column="create_time" />
-            <result property="updateTime" column="update_time" />
+        <id property="id" column="id"/>
+        <result property="userId" column="user_id"/>
+        <result property="productId" column="product_id"/>
+        <result property="createTime" column="create_time"/>
+        <result property="updateTime" column="update_time"/>
     </resultMap>
 
     <sql id="Base_Column_List">
-        id,user_id,product_id,ip_address,device,
-        stay_duration,source_page,create_time,update_time
+        id,user_id,product_id,,create_time,update_time
     </sql>
 </mapper>
