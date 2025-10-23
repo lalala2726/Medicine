@@ -9,7 +9,6 @@ import cn.zhangchuangla.medicine.common.security.entity.AuthTokenVo;
 import cn.zhangchuangla.medicine.common.security.entity.AuthUser;
 import cn.zhangchuangla.medicine.common.security.entity.OnlineLoginUser;
 import cn.zhangchuangla.medicine.common.security.entity.SysUserDetails;
-import cn.zhangchuangla.medicine.common.security.spi.SecurityUserService;
 import cn.zhangchuangla.medicine.common.security.utils.SecurityUtils;
 import cn.zhangchuangla.medicine.model.dto.LoginSessionDTO;
 import io.jsonwebtoken.Claims;
@@ -17,10 +16,13 @@ import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
+import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
+import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.stereotype.Service;
 
 import java.util.Collections;
@@ -39,7 +41,7 @@ public class TokenService {
 
     private final JwtTokenProvider jwtTokenProvider;
     private final RedisTokenStore redisTokenStore;
-    private final SecurityUserService securityUserService;
+    private final ObjectProvider<UserDetailsService> userDetailsServices;
 
     public LoginSessionDTO createToken(Authentication authentication) {
         SysUserDetails userDetails = (SysUserDetails) authentication.getPrincipal();
@@ -100,8 +102,7 @@ public class TokenService {
         }
 
         String username = refreshClaims.get(SecurityConstants.CLAIM_KEY_USERNAME, String.class);
-        AuthUser authUser = securityUserService.loadUserByUsername(username)
-                .orElseThrow(() -> new AuthorizationException(ResponseResultCode.REFRESH_TOKEN_INVALID));
+        AuthUser authUser = loadAuthUser(username);
 
         String accessTokenSessionId = UUIDUtils.simple();
         String accessToken = jwtTokenProvider.createJwt(accessTokenSessionId, username);
@@ -128,6 +129,30 @@ public class TokenService {
                 .accessToken(accessToken)
                 .refreshToken(jwtRefreshToken)
                 .build();
+    }
+
+    private AuthUser loadAuthUser(String username) {
+        UserDetailsService userDetailsService = resolveUserDetailsService();
+        UserDetails userDetails = userDetailsService.loadUserByUsername(username);
+        if (userDetails instanceof SysUserDetails sysUserDetails) {
+            AuthUser authUser = sysUserDetails.getUser();
+            if (authUser != null) {
+                return authUser;
+            }
+        }
+        throw new AuthorizationException(ResponseResultCode.REFRESH_TOKEN_INVALID, "无法加载用户信息");
+    }
+
+    private UserDetailsService resolveUserDetailsService() {
+        var iterator = userDetailsServices.iterator();
+        if (!iterator.hasNext()) {
+            throw new AuthorizationException(ResponseResultCode.REFRESH_TOKEN_INVALID, "未配置用户详情服务");
+        }
+        UserDetailsService service = iterator.next();
+        if (iterator.hasNext()) {
+            throw new AuthorizationException(ResponseResultCode.REFRESH_TOKEN_INVALID, "存在多个用户详情服务，无法确定刷新令牌使用的实现");
+        }
+        return service;
     }
 
     public Authentication parseAccessToken(String accessToken) {

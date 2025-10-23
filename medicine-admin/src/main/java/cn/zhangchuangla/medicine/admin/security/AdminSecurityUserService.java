@@ -3,9 +3,12 @@ package cn.zhangchuangla.medicine.admin.security;
 import cn.zhangchuangla.medicine.admin.service.UserService;
 import cn.zhangchuangla.medicine.common.core.constants.Constants;
 import cn.zhangchuangla.medicine.common.security.entity.AuthUser;
-import cn.zhangchuangla.medicine.common.security.spi.SecurityUserService;
+import cn.zhangchuangla.medicine.common.security.entity.SysUserDetails;
 import cn.zhangchuangla.medicine.model.entity.User;
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.security.core.userdetails.UserDetailsService;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
 
 import java.util.Objects;
@@ -17,15 +20,15 @@ import java.util.Set;
  */
 @Service
 @RequiredArgsConstructor
-public class AdminSecurityUserService implements SecurityUserService {
+public class AdminSecurityUserService implements UserDetailsService {
 
     private final UserService userService;
 
     @Override
-    public Optional<AuthUser> loadUserByUsername(String username) {
+    public UserDetails loadUserByUsername(String username) {
         User user = userService.getUserByUsername(username);
         if (user == null) {
-            return Optional.empty();
+            throw new UsernameNotFoundException("用户不存在");
         }
         Set<String> roles = Optional.ofNullable(userService.getUserRolesByUserId(user.getId()))
                 .filter(set -> !set.isEmpty())
@@ -42,6 +45,6 @@ public class AdminSecurityUserService implements SecurityUserService {
                 .accountNonExpired(true)
                 .credentialsNonExpired(true)
                 .build();
-        return Optional.of(authUser);
+        return new SysUserDetails(authUser);
     }
 }
