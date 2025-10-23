@@ -1,4 +1,4 @@
-package cn.zhangchuangla.medicine.admin.config;
+package cn.zhangchuangla.medicine.common.security.config;
 
 import cn.zhangchuangla.medicine.common.core.constants.SecurityConstants;
 import cn.zhangchuangla.medicine.common.security.annotation.Anonymous;
