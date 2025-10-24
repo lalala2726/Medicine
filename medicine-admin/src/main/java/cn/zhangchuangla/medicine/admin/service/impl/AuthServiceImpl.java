@@ -3,6 +3,7 @@ package cn.zhangchuangla.medicine.admin.service.impl;
 import cn.zhangchuangla.medicine.admin.service.AuthService;
 import cn.zhangchuangla.medicine.admin.service.UserService;
 import cn.zhangchuangla.medicine.common.core.constants.RolesConstant;
+import cn.zhangchuangla.medicine.common.core.exception.LoginException;
 import cn.zhangchuangla.medicine.common.core.exception.ParamException;
 import cn.zhangchuangla.medicine.common.core.exception.ServiceException;
 import cn.zhangchuangla.medicine.common.core.utils.Assert;
@@ -17,6 +18,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -62,7 +64,14 @@ public class AuthServiceImpl implements AuthService {
         Assert.hasText(password, "密码不能为空");
         UsernamePasswordAuthenticationToken token = new UsernamePasswordAuthenticationToken(username.trim(),
                 password.trim());
-        Authentication authentication = authenticationManager.authenticate(token);
+        Authentication authentication;
+        try {
+            authentication = authenticationManager.authenticate(token);
+        } catch (BadCredentialsException e) {
+            throw new LoginException("账号或密码错误");
+        } finally {
+            SecurityContextHolder.clearContext();
+        }
         // 生成会话令牌
         var session = tokenService.createToken(authentication);
         return AuthTokenVo.builder()

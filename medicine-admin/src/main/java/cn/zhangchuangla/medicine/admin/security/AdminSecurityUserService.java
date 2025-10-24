@@ -33,7 +33,9 @@ public class AdminSecurityUserService implements UserDetailsService {
         Set<String> roles = Optional.ofNullable(userService.getUserRolesByUserId(user.getId()))
                 .filter(set -> !set.isEmpty())
                 .orElseGet(java.util.Collections::emptySet);
+
         boolean unlocked = Objects.equals(user.getStatus(), Constants.ACCOUNT_UNLOCK_KEY);
+
         AuthUser authUser = AuthUser.builder()
                 .id(user.getId())
                 .username(user.getUsername())
