@@ -1,6 +1,5 @@
 package cn.zhangchuangla.medicine.admin.service.impl;
 
-import cn.zhangchuangla.medicine.admin.model.request.assistant.HistoryRequest;
 import cn.zhangchuangla.medicine.admin.service.AssistantService;
 import cn.zhangchuangla.medicine.admin.service.ConversationService;
 import cn.zhangchuangla.medicine.admin.service.MessageService;
@@ -15,6 +14,7 @@ import cn.zhangchuangla.medicine.common.security.base.BaseService;
 import cn.zhangchuangla.medicine.common.security.utils.SecurityUtils;
 import cn.zhangchuangla.medicine.model.entity.Conversation;
 import cn.zhangchuangla.medicine.model.entity.Message;
+import cn.zhangchuangla.medicine.model.request.assistant.HistoryRequest;
 import cn.zhangchuangla.medicine.model.vo.chat.StreamChatResponse;
 import cn.zhangchuangla.medicine.model.vo.llm.chat.ChatHistoryResponse;
 import cn.zhangchuangla.medicine.model.vo.llm.chat.UserMessageRequest;

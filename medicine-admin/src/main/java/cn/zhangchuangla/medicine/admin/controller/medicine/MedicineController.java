@@ -1,16 +1,16 @@
 package cn.zhangchuangla.medicine.admin.controller.medicine;
 
-import cn.zhangchuangla.medicine.admin.model.request.medicine.MedicineAddRequest;
-import cn.zhangchuangla.medicine.admin.model.request.medicine.MedicineListQueryRequest;
-import cn.zhangchuangla.medicine.admin.model.request.medicine.MedicineUpdateRequest;
-import cn.zhangchuangla.medicine.admin.model.vo.medicine.MedicineListVo;
-import cn.zhangchuangla.medicine.admin.model.vo.medicine.MedicineVo;
 import cn.zhangchuangla.medicine.admin.service.MedicineService;
 import cn.zhangchuangla.medicine.common.core.base.AjaxResult;
 import cn.zhangchuangla.medicine.common.core.base.TableDataResult;
 import cn.zhangchuangla.medicine.common.security.base.BaseController;
 import cn.zhangchuangla.medicine.model.entity.Medicine;
 import cn.zhangchuangla.medicine.model.entity.MedicineImage;
+import cn.zhangchuangla.medicine.model.request.medicine.MedicineAddRequest;
+import cn.zhangchuangla.medicine.model.request.medicine.MedicineListQueryRequest;
+import cn.zhangchuangla.medicine.model.request.medicine.MedicineUpdateRequest;
+import cn.zhangchuangla.medicine.model.vo.medicine.MedicineListVo;
+import cn.zhangchuangla.medicine.model.vo.medicine.MedicineVo;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;

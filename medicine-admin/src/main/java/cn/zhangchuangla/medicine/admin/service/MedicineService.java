@@ -1,10 +1,10 @@
 package cn.zhangchuangla.medicine.admin.service;
 
-import cn.zhangchuangla.medicine.admin.model.request.medicine.MedicineAddRequest;
-import cn.zhangchuangla.medicine.admin.model.request.medicine.MedicineListQueryRequest;
-import cn.zhangchuangla.medicine.admin.model.request.medicine.MedicineUpdateRequest;
 import cn.zhangchuangla.medicine.model.entity.Medicine;
 import cn.zhangchuangla.medicine.model.entity.MedicineImage;
+import cn.zhangchuangla.medicine.model.request.medicine.MedicineAddRequest;
+import cn.zhangchuangla.medicine.model.request.medicine.MedicineListQueryRequest;
+import cn.zhangchuangla.medicine.model.request.medicine.MedicineUpdateRequest;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.IService;
 

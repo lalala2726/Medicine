@@ -1,12 +1,12 @@
 package cn.zhangchuangla.medicine.admin.service.impl;
 
 import cn.zhangchuangla.medicine.admin.mapper.MallProductShippingMapper;
-import cn.zhangchuangla.medicine.admin.model.request.mall.shipping.MallProductShippingAddRequest;
-import cn.zhangchuangla.medicine.admin.model.request.mall.shipping.MallProductShippingListQueryRequest;
-import cn.zhangchuangla.medicine.admin.model.request.mall.shipping.MallProductShippingUpdateRequest;
 import cn.zhangchuangla.medicine.admin.service.MallProductShippingService;
 import cn.zhangchuangla.medicine.common.core.exception.ServiceException;
 import cn.zhangchuangla.medicine.model.entity.MallProductShipping;
+import cn.zhangchuangla.medicine.model.request.mall.shipping.MallProductShippingAddRequest;
+import cn.zhangchuangla.medicine.model.request.mall.shipping.MallProductShippingListQueryRequest;
+import cn.zhangchuangla.medicine.model.request.mall.shipping.MallProductShippingUpdateRequest;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;

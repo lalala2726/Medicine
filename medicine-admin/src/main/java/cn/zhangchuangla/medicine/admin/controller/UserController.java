@@ -1,15 +1,15 @@
 package cn.zhangchuangla.medicine.admin.controller;
 
-import cn.zhangchuangla.medicine.admin.model.request.user.UserAddRequest;
-import cn.zhangchuangla.medicine.admin.model.request.user.UserListQueryRequest;
-import cn.zhangchuangla.medicine.admin.model.request.user.UserUpdateRequest;
-import cn.zhangchuangla.medicine.admin.model.vo.user.UserListVo;
 import cn.zhangchuangla.medicine.admin.service.UserService;
 import cn.zhangchuangla.medicine.common.core.base.AjaxResult;
 import cn.zhangchuangla.medicine.common.core.base.TableDataResult;
 import cn.zhangchuangla.medicine.common.security.base.BaseController;
 import cn.zhangchuangla.medicine.model.entity.User;
+import cn.zhangchuangla.medicine.model.request.user.UserAddRequest;
+import cn.zhangchuangla.medicine.model.request.user.UserListQueryRequest;
+import cn.zhangchuangla.medicine.model.request.user.UserUpdateRequest;
 import cn.zhangchuangla.medicine.model.vo.UserVo;
+import cn.zhangchuangla.medicine.model.vo.user.UserListVo;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;

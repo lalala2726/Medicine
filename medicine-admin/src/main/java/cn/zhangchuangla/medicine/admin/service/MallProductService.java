@@ -1,11 +1,11 @@
 package cn.zhangchuangla.medicine.admin.service;
 
-import cn.zhangchuangla.medicine.admin.model.request.mall.product.MallProductAddRequest;
-import cn.zhangchuangla.medicine.admin.model.request.mall.product.MallProductListQueryRequest;
-import cn.zhangchuangla.medicine.admin.model.request.mall.product.MallProductUpdateRequest;
 import cn.zhangchuangla.medicine.model.dto.MallProductDetailDto;
 import cn.zhangchuangla.medicine.model.dto.MallProductDto;
 import cn.zhangchuangla.medicine.model.entity.MallProduct;
+import cn.zhangchuangla.medicine.model.request.mall.product.MallProductAddRequest;
+import cn.zhangchuangla.medicine.model.request.mall.product.MallProductListQueryRequest;
+import cn.zhangchuangla.medicine.model.request.mall.product.MallProductUpdateRequest;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.IService;
 

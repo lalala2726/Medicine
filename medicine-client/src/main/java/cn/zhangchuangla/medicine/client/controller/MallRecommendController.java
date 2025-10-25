@@ -5,7 +5,7 @@ import cn.zhangchuangla.medicine.common.core.base.AjaxResult;
 import cn.zhangchuangla.medicine.common.security.base.BaseController;
 import cn.zhangchuangla.medicine.model.entity.MallProduct;
 import cn.zhangchuangla.medicine.model.request.mall.product.RecommendRequest;
-import cn.zhangchuangla.medicine.model.vo.mall.RecommendListVo;
+import cn.zhangchuangla.medicine.model.vo.RecommendListVo;
 import io.swagger.v3.oas.annotations.Operation;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.GetMapping;

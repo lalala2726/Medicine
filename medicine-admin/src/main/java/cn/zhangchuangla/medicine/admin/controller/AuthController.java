@@ -1,9 +1,5 @@
 package cn.zhangchuangla.medicine.admin.controller;
 
-import cn.zhangchuangla.medicine.admin.model.request.auth.LoginRequest;
-import cn.zhangchuangla.medicine.admin.model.request.auth.RefreshRequest;
-import cn.zhangchuangla.medicine.admin.model.request.auth.RegisterRequest;
-import cn.zhangchuangla.medicine.admin.model.vo.user.CurrentUserInfoVo;
 import cn.zhangchuangla.medicine.admin.service.AuthService;
 import cn.zhangchuangla.medicine.admin.service.UserService;
 import cn.zhangchuangla.medicine.common.core.base.AjaxResult;
@@ -13,6 +9,10 @@ import cn.zhangchuangla.medicine.common.security.base.BaseController;
 import cn.zhangchuangla.medicine.common.security.entity.AuthTokenVo;
 import cn.zhangchuangla.medicine.common.security.utils.SecurityUtils;
 import cn.zhangchuangla.medicine.model.entity.User;
+import cn.zhangchuangla.medicine.model.request.auth.LoginRequest;
+import cn.zhangchuangla.medicine.model.request.auth.RefreshRequest;
+import cn.zhangchuangla.medicine.model.request.auth.RegisterRequest;
+import cn.zhangchuangla.medicine.model.vo.user.CurrentUserInfoVo;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.extern.slf4j.Slf4j;

@@ -1,9 +1,9 @@
 package cn.zhangchuangla.medicine.admin.controller;
 
-import cn.zhangchuangla.medicine.admin.model.request.assistant.HistoryRequest;
 import cn.zhangchuangla.medicine.admin.service.AssistantService;
 import cn.zhangchuangla.medicine.common.core.base.AjaxResult;
 import cn.zhangchuangla.medicine.common.security.base.BaseController;
+import cn.zhangchuangla.medicine.model.request.assistant.HistoryRequest;
 import cn.zhangchuangla.medicine.model.vo.chat.StreamChatResponse;
 import cn.zhangchuangla.medicine.model.vo.llm.chat.ChatHistoryResponse;
 import cn.zhangchuangla.medicine.model.vo.llm.chat.UserMessageRequest;

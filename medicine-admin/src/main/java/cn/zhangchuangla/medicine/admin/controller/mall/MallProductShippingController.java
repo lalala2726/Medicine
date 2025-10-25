@@ -1,14 +1,14 @@
 package cn.zhangchuangla.medicine.admin.controller.mall;
 
-import cn.zhangchuangla.medicine.admin.model.request.mall.shipping.MallProductShippingAddRequest;
-import cn.zhangchuangla.medicine.admin.model.request.mall.shipping.MallProductShippingListQueryRequest;
-import cn.zhangchuangla.medicine.admin.model.request.mall.shipping.MallProductShippingUpdateRequest;
-import cn.zhangchuangla.medicine.admin.model.vo.mall.MallProductShippingVo;
 import cn.zhangchuangla.medicine.admin.service.MallProductShippingService;
 import cn.zhangchuangla.medicine.common.core.base.AjaxResult;
 import cn.zhangchuangla.medicine.common.core.base.TableDataResult;
 import cn.zhangchuangla.medicine.common.security.base.BaseController;
 import cn.zhangchuangla.medicine.model.entity.MallProductShipping;
+import cn.zhangchuangla.medicine.model.request.mall.shipping.MallProductShippingAddRequest;
+import cn.zhangchuangla.medicine.model.request.mall.shipping.MallProductShippingListQueryRequest;
+import cn.zhangchuangla.medicine.model.request.mall.shipping.MallProductShippingUpdateRequest;
+import cn.zhangchuangla.medicine.model.vo.mall.MallProductShippingVo;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;

@@ -1,9 +1,6 @@
 package cn.zhangchuangla.medicine.admin.service.impl;
 
 import cn.zhangchuangla.medicine.admin.mapper.MallProductMapper;
-import cn.zhangchuangla.medicine.admin.model.request.mall.product.MallProductAddRequest;
-import cn.zhangchuangla.medicine.admin.model.request.mall.product.MallProductListQueryRequest;
-import cn.zhangchuangla.medicine.admin.model.request.mall.product.MallProductUpdateRequest;
 import cn.zhangchuangla.medicine.admin.service.MallCategoryService;
 import cn.zhangchuangla.medicine.admin.service.MallProductImageService;
 import cn.zhangchuangla.medicine.admin.service.MallProductService;
@@ -17,6 +14,9 @@ import cn.zhangchuangla.medicine.model.entity.MallCategory;
 import cn.zhangchuangla.medicine.model.entity.MallProduct;
 import cn.zhangchuangla.medicine.model.entity.MedicineStock;
 import cn.zhangchuangla.medicine.model.enums.DeliveryTypeEnum;
+import cn.zhangchuangla.medicine.model.request.mall.product.MallProductAddRequest;
+import cn.zhangchuangla.medicine.model.request.mall.product.MallProductListQueryRequest;
+import cn.zhangchuangla.medicine.model.request.mall.product.MallProductUpdateRequest;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
