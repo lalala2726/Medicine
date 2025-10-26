@@ -124,4 +124,12 @@ public enum ResponseResultCode {
         this.message = msg;
     }
 
+    public Integer getCode() {
+        return code;
+    }
+
+    public String getMessage() {
+        return message;
+    }
+
 }

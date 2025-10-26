@@ -5,19 +5,19 @@
 <mapper namespace="cn.zhangchuangla.medicine.admin.mapper.MallProductSkuPromoMapper">
 
     <resultMap id="BaseResultMap" type="cn.zhangchuangla.medicine.model.entity.MallProductSkuPromo">
-            <id property="id" column="id" />
-            <result property="skuId" column="sku_id" />
-            <result property="promoType" column="promo_type" />
-            <result property="threshold" column="threshold" />
-            <result property="discountValue" column="discount_value" />
-            <result property="startTime" column="start_time" />
-            <result property="endTime" column="end_time" />
-            <result property="status" column="status" />
-            <result property="description" column="description" />
-            <result property="createTime" column="create_time" />
-            <result property="updateTime" column="update_time" />
-            <result property="createBy" column="create_by" />
-            <result property="updateBy" column="update_by" />
+        <id property="id" column="id"/>
+        <result property="skuId" column="sku_id"/>
+        <result property="promoType" column="promo_type"/>
+        <result property="threshold" column="threshold"/>
+        <result property="discountValue" column="discount_value"/>
+        <result property="startTime" column="start_time"/>
+        <result property="endTime" column="end_time"/>
+        <result property="status" column="status"/>
+        <result property="description" column="description"/>
+        <result property="createTime" column="create_time"/>
+        <result property="updateTime" column="update_time"/>
+        <result property="createBy" column="create_by"/>
+        <result property="updateBy" column="update_by"/>
     </resultMap>
 
     <sql id="Base_Column_List">

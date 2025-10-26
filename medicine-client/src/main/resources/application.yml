@@ -1,0 +1,57 @@
+spring:
+  profiles:
+    active: druid,llm
+  application:
+    name: MedicineClient
+  servlet:
+    multipart:
+      max-file-size: 50MB
+      max-request-size: 50MB
+  data:
+    redis:
+      host: localhost
+      port: 6379
+      database: 0
+      password: zhangchuang2726
+  autoconfigure:
+    exclude:
+      - org.springframework.ai.vectorstore.milvus.autoconfigure.MilvusVectorStoreAutoConfiguration
+server:
+  port: 8081
+mybatis-plus:
+  configuration:
+    log-impl: org.apache.ibatis.logging.stdout.StdOutImpl
+  type-aliases-package: cn.zhangchuangla.medicine.**.entity
+  mapper-locations:
+    - classpath*:mapper/**/**.xml
+  global-config:
+    db-config:
+      logic-delete-field: isDeleted  # 全局逻辑删除字段名
+      logic-delete-value: 1         # 逻辑已删除值
+      logic-not-delete-value: 0     # 逻辑未删除值
+
+# 安全配置
+security:
+  header: Authorization
+  # 默认密钥（Base64编码的32字节）。生产环境请通过环境变量 SECURITY_SECRET 覆盖。
+  secret: zhangchuang2726zhangchuang2726zhangchuang2726
+  access-token-expire-time: 18000000
+  refresh-token-expire-time: 25920000
+
+# MinIO文件存储配置
+minio:
+  endpoint: http://localhost:9000
+  access-key: hwtIas6TEtyRqAswXAlc
+  secret-key: RJ8SMU8qDtxwjmxyaY4JlVc3XPSSBMbllrGoyOxZ
+  bucket-name: medicine
+
+# 文件上传配置
+file:
+  upload:
+    allowed-types: image/jpeg,image/png,image/gif,image/webp,application/pdf
+
+# IP地理位置配置
+ip2region:
+  enabled: true
+  db-path: classpath:data/ip2region.xdb
+  cache-enabled: true

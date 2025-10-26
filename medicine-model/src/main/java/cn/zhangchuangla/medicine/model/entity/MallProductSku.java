@@ -11,7 +11,7 @@ import java.util.Date;
 /**
  * 商城商品SKU规格主表（支持药品库存绑定与同步策略）
  */
-@TableName(value ="mall_product_sku")
+@TableName(value = "mall_product_sku")
 @Data
 public class MallProductSku {
     /**

@@ -11,7 +11,7 @@ import java.util.Date;
 /**
  * 商城商品SKU优惠规则表（支持满件、折扣、满额、限时活动等）
  */
-@TableName(value ="mall_product_sku_promo")
+@TableName(value = "mall_product_sku_promo")
 @Data
 public class MallProductSkuPromo {
     /**

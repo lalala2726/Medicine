@@ -3,9 +3,10 @@ package cn.zhangchuangla.medicine.common.core.utils;
 import cn.zhangchuangla.medicine.common.core.entity.IPEntity;
 import jakarta.annotation.PostConstruct;
 import jakarta.servlet.http.HttpServletRequest;
-import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.lionsoul.ip2region.xdb.Searcher;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
 
 import java.io.InputStream;
@@ -26,9 +27,10 @@ import java.nio.file.StandardCopyOption;
  *
  * @author Ray (Original), Chuang (Refined)
  */
-@Slf4j
 @Component
 public class IPUtils {
+
+    private static final Logger log = LoggerFactory.getLogger(IPUtils.class);
 
     // 注意：确保 ip2region.xdb 文件在指定的 classpath 路径下，或者调整加载方式
     private static final String DB_CLASSPATH_PATH = "/data/ip2region.xdb";

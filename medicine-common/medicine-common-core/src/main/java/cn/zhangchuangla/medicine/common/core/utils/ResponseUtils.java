@@ -4,7 +4,8 @@ import cn.zhangchuangla.medicine.common.core.base.AjaxResult;
 import cn.zhangchuangla.medicine.common.core.enums.ResponseResultCode;
 import com.alibaba.fastjson.JSON;
 import jakarta.servlet.http.HttpServletResponse;
-import lombok.extern.slf4j.Slf4j;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 
@@ -17,8 +18,9 @@ import java.nio.charset.StandardCharsets;
  *
  * @author Ray.Hao
  */
-@Slf4j
 public class ResponseUtils {
+
+    private static final Logger log = LoggerFactory.getLogger(ResponseUtils.class);
 
 
     /**

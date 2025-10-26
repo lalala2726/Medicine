@@ -1,9 +1,11 @@
 package cn.zhangchuangla.medicine.client;
 
+import org.mybatis.spring.annotation.MapperScan;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 
 @SpringBootApplication(scanBasePackages = "cn.zhangchuangla.medicine")
+@MapperScan("cn.zhangchuangla.medicine.client.mapper")
 public class MedicineClientApplication {
 
     public static void main(String[] args) {

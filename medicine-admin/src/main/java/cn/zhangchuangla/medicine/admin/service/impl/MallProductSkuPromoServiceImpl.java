@@ -7,11 +7,11 @@ import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import org.springframework.stereotype.Service;
 
 /**
-* @author Chuang
-*/
+ * @author Chuang
+ */
 @Service
 public class MallProductSkuPromoServiceImpl extends ServiceImpl<MallProductSkuPromoMapper, MallProductSkuPromo>
-    implements MallProductSkuPromoService{
+        implements MallProductSkuPromoService {
 
 }
 

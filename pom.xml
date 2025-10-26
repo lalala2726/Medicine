@@ -43,6 +43,7 @@
         <ip2region.version>2.7.0</ip2region.version>
         <swagger-annotations.version>2.2.22</swagger-annotations.version>
         <alipay-sdk.version>4.34.0.ALL</alipay-sdk.version>
+        <lombok.version>1.18.34</lombok.version>
     </properties>
     <dependencyManagement>
         <dependencies>
@@ -181,13 +182,6 @@
                 </exclusions>
             </dependency>
 
-            <!-- CVE-2020-10683, CVE-2018-1000632: Safe replacement for dom4j -->
-            <dependency>
-                <groupId>org.dom4j</groupId>
-                <artifactId>dom4j</artifactId>
-                <version>2.1.4</version>
-            </dependency>
-
             <!-- Security patches for vulnerable dependencies -->
             <!-- CVE-2024-7254: Stack overflow vulnerability in protobuf-java -->
             <dependency>
@@ -230,9 +224,14 @@
                 <artifactId>bcprov-jdk18on</artifactId>
                 <version>1.80</version>
             </dependency>
-
-              </dependencies>
+            <dependency>
+                <groupId>org.projectlombok</groupId>
+                <artifactId>lombok</artifactId>
+                <version>${lombok.version}</version>
+            </dependency>
+        </dependencies>
     </dependencyManagement>
+
     <modules>
         <module>medicine-common</module>
         <module>medicine-model</module>

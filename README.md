@@ -1,11 +1,12 @@
 # 医药售卖系统 (Medicine Sales System)
 
-基于 **Spring Boot 3.x + MyBatis-Plus + React 18 + Ant Design Pro** 构建的智能医药电商系统，提供药品管理、库存追踪、订单交易、购物车、支付与 AI 智能客服等功能。
+基于 **Spring Boot 3.x + MyBatis-Plus + React 18 + Ant Design Pro** 构建的智能医药电商系统，提供药品管理、库存追踪、订单交易、购物车、支付与
+AI 智能客服等功能。
 系统包含 **Admin 后台管理端** 与 **Client 用户端** 两个模块，实现完整的医药电商闭环。
 
 ---
 
-##  核心功能
+## 核心功能
 
 * **药品管理**：支持药品分类、规格、图片、价格策略
 * **库存批次**：按批次号、有效期、仓库位置进行库存追踪
@@ -20,7 +21,7 @@
 ## ⚙️ 技术架构
 
 | 层级 | 技术栈                                                  |
-| -- | ---------------------------------------------------- |
+|----|------------------------------------------------------|
 | 后端 | Spring Boot 3.x · MyBatis-Plus · Redis · JWT · MySQL |
 | 前端 | React 18 · Ant Design Pro · TailwindCSS              |
 | 通讯 | RESTful API · JSON                                   |
