@@ -26,7 +26,8 @@
     </resultMap>
 
     <sql id="Base_Column_List">
-        id,product_id,sku_name,price,stock,sales_volume,
+        id
+        ,product_id,sku_name,price,stock,sales_volume,
         image_url,sort,status,bind_type,medicine_id,
         medicine_stock_id,sync_strategy,create_time,update_time,create_by,
         update_by,is_delete

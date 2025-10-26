@@ -13,7 +13,8 @@
     </resultMap>
 
     <sql id="Base_Column_List">
-        id,product_id,image_url,sort,create_time
+        id
+        ,product_id,image_url,sort,create_time
     </sql>
 
 </mapper>

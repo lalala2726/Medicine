@@ -77,7 +77,8 @@
     </resultMap>
 
     <sql id="Base_Column_List">
-        id,name,category_id,unit,price,sales_volume,
+        id
+        ,name,category_id,unit,price,sales_volume,
         stock,sort,status,delivery_type,shipping_id,
         bind_type,medicine_id,medicine_stock_id,create_time,update_time,
         create_by,update_by

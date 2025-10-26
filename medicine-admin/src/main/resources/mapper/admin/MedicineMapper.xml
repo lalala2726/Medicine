@@ -22,7 +22,8 @@
 
     <!-- 通用查询结果列 -->
     <sql id="Base_Column_List">
-        id, category_id, name, generic_name, approval_number, specification, supplier_id, prescription, status, description, create_time, update_time
+        id
+        , category_id, name, generic_name, approval_number, specification, supplier_id, prescription, status, description, create_time, update_time
     </sql>
 
     <!-- 分页查询药品列表 -->

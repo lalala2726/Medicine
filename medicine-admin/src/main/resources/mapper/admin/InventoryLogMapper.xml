@@ -19,7 +19,8 @@
     </resultMap>
 
     <sql id="Base_Column_List">
-        id,medicine_id,batch_no,change_type,change_qty,operator,
+        id
+        ,medicine_id,batch_no,change_type,change_qty,operator,
         remark,create_time
     </sql>
 </mapper>

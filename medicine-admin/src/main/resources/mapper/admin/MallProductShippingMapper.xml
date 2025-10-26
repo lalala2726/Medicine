@@ -15,7 +15,8 @@
     </resultMap>
 
     <sql id="Base_Column_List">
-        id,name,type,price,description,create_time,
+        id
+        ,name,type,price,description,create_time,
         update_time
     </sql>
 </mapper>

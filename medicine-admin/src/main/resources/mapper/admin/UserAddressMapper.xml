@@ -22,7 +22,8 @@
     </resultMap>
 
     <sql id="Base_Column_List">
-        id,user_id,consignee,phone,province,city,
+        id
+        ,user_id,consignee,phone,province,city,
         district,detail,postal_code,is_default,create_time,
         update_time,delete_time,is_delete
     </sql>

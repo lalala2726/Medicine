@@ -17,7 +17,8 @@
     </resultMap>
 
     <sql id="Base_Column_List">
-        id,medicine_id,retail_price,member_price,promotion_price,start_time,
+        id
+        ,medicine_id,retail_price,member_price,promotion_price,start_time,
         end_time,create_time,update_time
     </sql>
 </mapper>

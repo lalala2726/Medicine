@@ -45,7 +45,8 @@
 
     <!-- 通用查询结果列 -->
     <sql id="Base_Column_List">
-        id, medicine_id, batch_no, quantity, expiry_date, warehouse, create_time, update_time
+        id
+        , medicine_id, batch_no, quantity, expiry_date, warehouse, create_time, update_time
     </sql>
 
     <!-- 分页查询药品库存列表 -->
