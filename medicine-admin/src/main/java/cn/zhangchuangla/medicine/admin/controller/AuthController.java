@@ -5,13 +5,13 @@ import cn.zhangchuangla.medicine.admin.service.UserService;
 import cn.zhangchuangla.medicine.common.core.base.AjaxResult;
 import cn.zhangchuangla.medicine.common.core.utils.BeanCotyUtils;
 import cn.zhangchuangla.medicine.common.security.annotation.Anonymous;
+import cn.zhangchuangla.medicine.common.security.annotation.IsAdmin;
 import cn.zhangchuangla.medicine.common.security.base.BaseController;
 import cn.zhangchuangla.medicine.common.security.entity.AuthTokenVo;
 import cn.zhangchuangla.medicine.common.security.utils.SecurityUtils;
 import cn.zhangchuangla.medicine.model.entity.User;
 import cn.zhangchuangla.medicine.model.request.auth.LoginRequest;
 import cn.zhangchuangla.medicine.model.request.auth.RefreshRequest;
-import cn.zhangchuangla.medicine.model.request.auth.RegisterRequest;
 import cn.zhangchuangla.medicine.model.vo.user.CurrentUserInfoVo;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -28,6 +28,7 @@ import org.springframework.web.bind.annotation.*;
 @Tag(name = "认证接口", description = "注册、登录、刷新、当前用户")
 @RequestMapping("/auth")
 @Tag(name = "认证接口", description = "用户注册、登录、刷新令牌,获取个人信息")
+@IsAdmin
 public class AuthController extends BaseController {
 
     private final AuthService authService;
@@ -50,20 +51,6 @@ public class AuthController extends BaseController {
     public AjaxResult<AuthTokenVo> login(@RequestBody LoginRequest request) {
         AuthTokenVo token = authService.login(request.getUsername(), request.getPassword());
         return success(token);
-    }
-
-    /**
-     * 注册
-     *
-     * @param request 登录参数
-     * @return 注册结果
-     */
-    @Anonymous
-    @Operation(summary = "注册", description = "注册新用户，返回用户ID")
-    @PostMapping("/register")
-    public AjaxResult<Long> register(@RequestBody RegisterRequest request) {
-        Long userId = authService.register(request.getUsername(), request.getPassword());
-        return success(userId);
     }
 
     /**

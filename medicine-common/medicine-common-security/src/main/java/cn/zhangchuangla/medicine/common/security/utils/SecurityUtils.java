@@ -1,15 +1,14 @@
 package cn.zhangchuangla.medicine.common.security.utils;
 
 import cn.zhangchuangla.medicine.common.core.constants.RolesConstant;
-import cn.zhangchuangla.medicine.common.core.constants.SecurityConstants;
 import cn.zhangchuangla.medicine.common.core.enums.ResponseResultCode;
 import cn.zhangchuangla.medicine.common.core.exception.LoginException;
 import cn.zhangchuangla.medicine.common.security.entity.SysUserDetails;
 import com.baomidou.mybatisplus.core.toolkit.CollectionUtils;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.security.authentication.AnonymousAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -126,6 +125,28 @@ public class SecurityUtils {
     }
 
     /**
+     * 判断当前用户是否具备管理员或超级管理员权限
+     */
+    public static boolean isAdmin() {
+        // 读取权限集合，兼容 ROLE_ 前缀通过 getRoles 已经去除
+        Set<String> roles = getRoles();
+        return roles.stream()
+                .anyMatch(role -> role.equalsIgnoreCase(RolesConstant.ADMIN)
+                        || role.equalsIgnoreCase(RolesConstant.SUPER_ADMIN));
+    }
+
+    /**
+     * 判断当前请求是否已认证
+     */
+    public static boolean isAuthenticated() {
+        // 匿名请求在 Spring Security 中会以 AnonymousAuthenticationToken 表示，需要单独排除
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        return authentication != null
+                && authentication.isAuthenticated()
+                && !(authentication instanceof AnonymousAuthenticationToken);
+    }
+
+    /**
      * 获取用户角色集合
      *
      * @return 角色集合
@@ -137,9 +158,6 @@ public class SecurityUtils {
                 .stream()
                 .flatMap(Collection::stream)
                 .map(GrantedAuthority::getAuthority)
-                // 筛选角色,authorities 中的角色都是以 ROLE_ 开头
-                .filter(authority -> authority.startsWith(SecurityConstants.ROLE_PREFIX))
-                .map(authority -> StringUtils.removeStart(authority, SecurityConstants.ROLE_PREFIX))
                 .collect(Collectors.toSet());
     }
 

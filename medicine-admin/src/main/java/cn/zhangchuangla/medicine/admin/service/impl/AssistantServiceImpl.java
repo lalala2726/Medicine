@@ -4,43 +4,25 @@ import cn.zhangchuangla.medicine.admin.service.AssistantService;
 import cn.zhangchuangla.medicine.admin.service.ConversationService;
 import cn.zhangchuangla.medicine.admin.service.MessageService;
 import cn.zhangchuangla.medicine.ai.enums.ChatStageEnum;
-import cn.zhangchuangla.medicine.ai.workflow.context.UserContextHolder;
 import cn.zhangchuangla.medicine.ai.workflow.progress.DefaultWorkflowProgressReporter;
-import cn.zhangchuangla.medicine.ai.workflow.progress.WorkflowProgressContextHolder;
-import cn.zhangchuangla.medicine.common.core.enums.MedicineStateKeyEnum;
 import cn.zhangchuangla.medicine.common.core.exception.ServiceException;
 import cn.zhangchuangla.medicine.common.core.utils.UUIDUtils;
 import cn.zhangchuangla.medicine.common.security.base.BaseService;
-import cn.zhangchuangla.medicine.common.security.utils.SecurityUtils;
 import cn.zhangchuangla.medicine.model.entity.Conversation;
 import cn.zhangchuangla.medicine.model.entity.Message;
 import cn.zhangchuangla.medicine.model.request.assistant.HistoryRequest;
 import cn.zhangchuangla.medicine.model.vo.chat.StreamChatResponse;
 import cn.zhangchuangla.medicine.model.vo.llm.chat.ChatHistoryResponse;
 import cn.zhangchuangla.medicine.model.vo.llm.chat.UserMessageRequest;
-import com.alibaba.cloud.ai.graph.CompiledGraph;
-import com.alibaba.cloud.ai.graph.NodeOutput;
-import com.alibaba.cloud.ai.graph.OverAllState;
-import com.alibaba.cloud.ai.graph.StateGraph;
-import com.alibaba.cloud.ai.graph.async.AsyncGenerator;
-import com.alibaba.cloud.ai.graph.exception.GraphStateException;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Qualifier;
-import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
-import reactor.core.Disposable;
 import reactor.core.publisher.Flux;
-import reactor.core.publisher.FluxSink;
-import reactor.core.scheduler.Schedulers;
 
 import java.util.Date;
 import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 /**
@@ -57,15 +39,11 @@ public class AssistantServiceImpl implements AssistantService, BaseService {
      */
     private static final long HEARTBEAT_INTERVAL_MILLIS = 10_000L;
 
-    private final CompiledGraph compiledGraph;
     private final ConversationService conversationService;
     private final MessageService messageService;
 
-    public AssistantServiceImpl(@Qualifier("medicineWorkflowService") StateGraph writingAssistantGraph,
-                                ConversationService conversationService,
-                                MessageService messageService)
-            throws GraphStateException {
-        this.compiledGraph = writingAssistantGraph.compile();
+    public AssistantServiceImpl(ConversationService conversationService,
+                                MessageService messageService) {
         this.conversationService = conversationService;
         this.messageService = messageService;
     }
@@ -138,7 +116,7 @@ public class AssistantServiceImpl implements AssistantService, BaseService {
 
         // 设置分页相关信息，判断是否还有更多数据
         if (!vos.isEmpty()) {
-            Long lastMessageId = vos.get(vos.size() - 1).getId();
+            Long lastMessageId = vos.getLast().getId();
             boolean hasMore = messageService.hasMoreMessages(conversation.getId(), lastMessageId);
             response.setHasMore(hasMore);
             response.setNextCursor(hasMore ? lastMessageId : null);
@@ -215,94 +193,7 @@ public class AssistantServiceImpl implements AssistantService, BaseService {
      * @return 返回一个Flux流，其中包含逐步生成的聊天响应片段（StreamChatResponse）
      */
     private Flux<StreamChatResponse> streamWorkflowAndPersist(String uuid, Long conversationId, String userMessage) {
-        UserContextHolder.set(SecurityUtils.getLoginUser());
-        return Flux.create((FluxSink<StreamChatResponse> sink) -> {
-            // 创建进度报告器，负责将执行阶段信息推送给客户端
-            DefaultWorkflowProgressReporter reporter = new DefaultWorkflowProgressReporter(uuid, sink);
-
-            // 启动心跳任务，定期发送心跳包保持SSE连接活跃
-            Disposable heartbeat = Schedulers.parallel().schedulePeriodically(() -> {
-                if (!reporter.isCancelled()) {
-                    reporter.publishHeartbeat();
-                }
-            }, HEARTBEAT_INTERVAL_MILLIS, HEARTBEAT_INTERVAL_MILLIS, TimeUnit.MILLISECONDS);
-
-            // 注册取消/释放时的心跳资源清理逻辑
-            sink.onCancel(heartbeat);
-            sink.onDispose(heartbeat);
-
-            // 在弹性调度线程中异步执行工作流处理逻辑
-            Schedulers.boundedElastic().schedule(() -> {
-                WorkflowProgressContextHolder.setReporter(reporter);
-                try {
-                    // 发送初始接收与开始阶段状态
-                    reporter.publishStage(ChatStageEnum.RECEIVED, ChatStageEnum.RECEIVED.getDescription());
-                    reporter.publishStage(ChatStageEnum.WORKFLOW_START, ChatStageEnum.WORKFLOW_START.getDescription());
-
-                    // 构造工作流输入参数
-                    Map<String, Object> inputs = Map.of(
-                            MedicineStateKeyEnum.USER_MESSAGE.getKey(), userMessage);
-
-                    // 执行编译后的工作流图并获取输出流
-                    AsyncGenerator<NodeOutput> generator = compiledGraph.stream(inputs);
-                    OverAllState lastState = null;
-
-                    // 遍历节点输出，推送各阶段状态到前端
-                    for (NodeOutput nodeOutput : generator) {
-                        if (reporter.isCancelled()) {
-                            return;
-                        }
-                        lastState = nodeOutput.state();
-                        ChatStageEnum.fromNodeId(nodeOutput.node())
-                                .ifPresent(stage -> reporter.publishStage(stage, stage.getDescription()));
-                    }
-
-                    // 若被中断则提前退出
-                    if (reporter.isCancelled()) {
-                        return;
-                    }
-
-                    // 尝试从最终结果中提取整体状态对象
-                    if (lastState == null) {
-                        lastState = AsyncGenerator.resultValue(generator)
-                                .filter(OverAllState.class::isInstance)
-                                .map(OverAllState.class::cast)
-                                .orElse(null);
-                    }
-
-                    // 提取系统回复文本内容，若为空则使用默认提示语
-                    String systemReply = Optional.ofNullable(lastState)
-                            .map(OverAllState::data)
-                            .map(data -> data.get(MedicineStateKeyEnum.SYSTEM_RESPONSE.getKey()))
-                            .map(Object::toString)
-                            .filter(StringUtils::hasText)
-                            .orElse("抱歉，暂时无法生成有效回复。");
-
-                    // 推送响应流开始阶段
-                    reporter.publishStage(ChatStageEnum.RESPONSE_STREAM, ChatStageEnum.RESPONSE_STREAM.getDescription());
-
-                    // 流式传输助手响应内容至客户端
-                    streamAssistantResponse(reporter, conversationId, systemReply, ChatStageEnum.COMPLETED);
-                } catch (Exception ex) {
-                    // 异常处理：记录日志、推送失败状态及兜底消息
-                    String fallback = "抱歉，服务暂时不可用，请稍后再试。";
-                    log.error("workflow execution failed", ex);
-                    reporter.publishStage(ChatStageEnum.FAILED, fallback, false);
-                    reporter.publishStage(ChatStageEnum.RESPONSE_STREAM, ChatStageEnum.RESPONSE_STREAM.getDescription());
-                    streamAssistantResponse(reporter, conversationId, fallback, ChatStageEnum.FAILED);
-                } finally {
-                    // 清理资源：停止心跳、清除上下文、关闭sink
-                    if (!heartbeat.isDisposed()) {
-                        heartbeat.dispose();
-                    }
-                    SecurityContextHolder.clearContext();
-                    WorkflowProgressContextHolder.clear();
-                    if (!sink.isCancelled()) {
-                        sink.complete();
-                    }
-                }
-            });
-        }, FluxSink.OverflowStrategy.BUFFER);
+        return null;
     }
 
 

@@ -1,18 +1,16 @@
 package cn.zhangchuangla.medicine.admin.service.impl;
 
 import cn.zhangchuangla.medicine.admin.service.AuthService;
-import cn.zhangchuangla.medicine.admin.service.UserService;
 import cn.zhangchuangla.medicine.common.core.constants.RolesConstant;
+import cn.zhangchuangla.medicine.common.core.exception.AccessDeniedException;
 import cn.zhangchuangla.medicine.common.core.exception.LoginException;
-import cn.zhangchuangla.medicine.common.core.exception.ParamException;
-import cn.zhangchuangla.medicine.common.core.exception.ServiceException;
 import cn.zhangchuangla.medicine.common.core.utils.Assert;
+import cn.zhangchuangla.medicine.common.security.base.BaseService;
 import cn.zhangchuangla.medicine.common.security.entity.AuthTokenVo;
 import cn.zhangchuangla.medicine.common.security.entity.OnlineLoginUser;
 import cn.zhangchuangla.medicine.common.security.token.JwtTokenProvider;
 import cn.zhangchuangla.medicine.common.security.token.RedisTokenStore;
 import cn.zhangchuangla.medicine.common.security.token.TokenService;
-import cn.zhangchuangla.medicine.model.entity.User;
 import io.jsonwebtoken.Claims;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -22,7 +20,6 @@ import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import java.util.Set;
@@ -32,31 +29,13 @@ import static cn.zhangchuangla.medicine.common.core.constants.SecurityConstants.
 @Service
 @RequiredArgsConstructor
 @Slf4j
-public class AuthServiceImpl implements AuthService {
+public class AuthServiceImpl implements AuthService, BaseService {
 
     private final AuthenticationManager authenticationManager;
     private final TokenService tokenService;
-    private final UserService userService;
-    private final BCryptPasswordEncoder passwordEncoder;
     private final RedisTokenStore redisTokenStore;
     private final JwtTokenProvider jwtTokenProvider;
 
-    @Override
-    public Long register(String username, String password) {
-        if (StringUtils.isBlank(username) || StringUtils.isBlank(password)) {
-            throw new ParamException("用户名或密码不能为空");
-        }
-        User exists = userService.lambdaQuery().eq(User::getUsername, username).one();
-        if (exists != null) {
-            throw new ServiceException("用户名已存在");
-        }
-        User user = new User();
-        user.setUsername(username.trim());
-        user.setRoles(Set.of(RolesConstant.USER).toString());
-        user.setPassword(passwordEncoder.encode(password.trim()));
-        userService.save(user);
-        return user.getId();
-    }
 
     @Override
     public AuthTokenVo login(String username, String password) {
@@ -71,6 +50,11 @@ public class AuthServiceImpl implements AuthService {
             throw new LoginException("账号或密码错误");
         } finally {
             SecurityContextHolder.clearContext();
+        }
+
+        Set<String> roles = getRoles();
+        if (!roles.contains(RolesConstant.ADMIN)) {
+            throw new AccessDeniedException("无权限访问");
         }
         // 生成会话令牌
         var session = tokenService.createToken(authentication);

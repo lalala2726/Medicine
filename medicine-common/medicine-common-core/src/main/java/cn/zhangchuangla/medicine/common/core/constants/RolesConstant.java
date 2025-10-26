@@ -13,6 +13,11 @@ public class RolesConstant {
      */
     public static final String SUPER_ADMIN = "super_admin";
 
+    /**
+     * 管理员
+     */
+    public static final String ADMIN = "admin";
+
 
     /**
      * 用户

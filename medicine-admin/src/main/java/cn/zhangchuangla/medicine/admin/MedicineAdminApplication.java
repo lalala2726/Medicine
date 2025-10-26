@@ -5,7 +5,7 @@ import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.transaction.annotation.EnableTransactionManagement;
 
-@SpringBootApplication
+@SpringBootApplication(scanBasePackages = "cn.zhangchuangla.medicine")
 @MapperScan("cn.zhangchuangla.medicine.admin.mapper")
 @EnableTransactionManagement
 public class MedicineAdminApplication {

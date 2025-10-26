@@ -10,15 +10,6 @@ import cn.zhangchuangla.medicine.common.security.entity.AuthTokenVo;
 public interface AuthService {
 
     /**
-     * 用户注册
-     *
-     * @param username 用户名
-     * @param password 明文密码
-     * @return 新用户ID
-     */
-    Long register(String username, String password);
-
-    /**
      * 用户登录
      *
      * @param username 用户名
