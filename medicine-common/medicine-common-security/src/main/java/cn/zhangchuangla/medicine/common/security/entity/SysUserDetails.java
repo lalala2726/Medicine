@@ -1,6 +1,5 @@
 package cn.zhangchuangla.medicine.common.security.entity;
 
-import cn.zhangchuangla.medicine.common.core.constants.SecurityConstants;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import org.springframework.security.core.GrantedAuthority;
@@ -52,7 +51,6 @@ public class SysUserDetails implements UserDetails, Serializable {
         Set<String> roles = user.getRoles();
         this.authorities = roles == null ? Collections.emptySet()
                 : roles.stream()
-                .map(role -> SecurityConstants.ROLE_PREFIX + role)
                 .map(SimpleGrantedAuthority::new)
                 .collect(Collectors.toSet());
     }

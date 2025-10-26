@@ -76,14 +76,6 @@ public class IsAdminAspect {
         boolean hasRequiredRole = roles.stream()
                 .filter(Objects::nonNull)
                 .anyMatch(role -> role.equalsIgnoreCase(requiredRole));
-
-        if (!hasRequiredRole && RolesConstant.ADMIN.equalsIgnoreCase(requiredRole)) {
-            // 默认 admin 角色不满足时允许 super_admin 兜底
-            hasRequiredRole = roles.stream()
-                    .filter(Objects::nonNull)
-                    .anyMatch(role -> role.equalsIgnoreCase(RolesConstant.SUPER_ADMIN));
-        }
-
         if (!hasRequiredRole) {
             log.warn("Admin permission denied. requiredRole={}, userRoles={}", requiredRole, roles);
             throw new AccessDeniedException(message);

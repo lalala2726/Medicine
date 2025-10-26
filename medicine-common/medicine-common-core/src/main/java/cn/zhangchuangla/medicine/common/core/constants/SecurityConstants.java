@@ -7,7 +7,6 @@ package cn.zhangchuangla.medicine.common.core.constants;
  */
 public class SecurityConstants {
 
-    public static final String ROLE_PREFIX = "ROLE_";
     public static final String CLAIM_KEY_SESSION_ID = "session";
     public static final String CLAIM_KEY_USERNAME = "username";
 

@@ -5,7 +5,6 @@ import cn.zhangchuangla.medicine.admin.service.UserService;
 import cn.zhangchuangla.medicine.common.core.base.AjaxResult;
 import cn.zhangchuangla.medicine.common.core.utils.BeanCotyUtils;
 import cn.zhangchuangla.medicine.common.security.annotation.Anonymous;
-import cn.zhangchuangla.medicine.common.security.annotation.IsAdmin;
 import cn.zhangchuangla.medicine.common.security.base.BaseController;
 import cn.zhangchuangla.medicine.common.security.entity.AuthTokenVo;
 import cn.zhangchuangla.medicine.common.security.utils.SecurityUtils;
@@ -28,7 +27,6 @@ import org.springframework.web.bind.annotation.*;
 @Tag(name = "认证接口", description = "注册、登录、刷新、当前用户")
 @RequestMapping("/auth")
 @Tag(name = "认证接口", description = "用户注册、登录、刷新令牌,获取个人信息")
-@IsAdmin
 public class AuthController extends BaseController {
 
     private final AuthService authService;

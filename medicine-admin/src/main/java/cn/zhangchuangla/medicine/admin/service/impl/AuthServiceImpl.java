@@ -2,7 +2,6 @@ package cn.zhangchuangla.medicine.admin.service.impl;
 
 import cn.zhangchuangla.medicine.admin.service.AuthService;
 import cn.zhangchuangla.medicine.common.core.constants.RolesConstant;
-import cn.zhangchuangla.medicine.common.core.exception.AccessDeniedException;
 import cn.zhangchuangla.medicine.common.core.exception.LoginException;
 import cn.zhangchuangla.medicine.common.core.utils.Assert;
 import cn.zhangchuangla.medicine.common.security.base.BaseService;
@@ -19,10 +18,9 @@ import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
+import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
-
-import java.util.Set;
 
 import static cn.zhangchuangla.medicine.common.core.constants.SecurityConstants.CLAIM_KEY_SESSION_ID;
 
@@ -46,16 +44,20 @@ public class AuthServiceImpl implements AuthService, BaseService {
         Authentication authentication;
         try {
             authentication = authenticationManager.authenticate(token);
+            boolean hasAdminRole = authentication.getAuthorities().stream()
+                    .map(GrantedAuthority::getAuthority)
+                    .anyMatch(RolesConstant.ADMIN::equalsIgnoreCase);
+            if (!hasAdminRole) {
+                throw new LoginException("仅管理员账户可以登录");
+            }
         } catch (BadCredentialsException e) {
             throw new LoginException("账号或密码错误");
         } finally {
             SecurityContextHolder.clearContext();
         }
 
-        Set<String> roles = getRoles();
-        if (!roles.contains(RolesConstant.ADMIN)) {
-            throw new AccessDeniedException("无权限访问");
-        }
+        // 只有管理员登录成功后才能生成令牌
+
         // 生成会话令牌
         var session = tokenService.createToken(authentication);
         return AuthTokenVo.builder()

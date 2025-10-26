@@ -46,6 +46,4 @@ public class MallProductController extends BaseController {
         mallUserBrowseHistoryService.recordProductBrowse(getUserId(), id);
         return success(mallProductVo);
     }
-
-
 }

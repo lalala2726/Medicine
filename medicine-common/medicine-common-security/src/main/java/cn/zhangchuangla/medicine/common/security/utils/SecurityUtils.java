@@ -121,7 +121,7 @@ public class SecurityUtils {
      */
     public static boolean isSuperAdmin() {
         Set<String> roles = getRoles();
-        return roles.contains(RolesConstant.SUPER_ADMIN);
+        return roles.contains(RolesConstant.ADMIN);
     }
 
     /**
@@ -131,8 +131,7 @@ public class SecurityUtils {
         // 读取权限集合，兼容 ROLE_ 前缀通过 getRoles 已经去除
         Set<String> roles = getRoles();
         return roles.stream()
-                .anyMatch(role -> role.equalsIgnoreCase(RolesConstant.ADMIN)
-                        || role.equalsIgnoreCase(RolesConstant.SUPER_ADMIN));
+                .anyMatch(role -> role.equalsIgnoreCase(RolesConstant.ADMIN));
     }
 
     /**

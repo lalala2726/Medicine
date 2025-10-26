@@ -5,6 +5,7 @@ import cn.zhangchuangla.medicine.admin.service.MallCategoryService;
 import cn.zhangchuangla.medicine.admin.service.MallProductImageService;
 import cn.zhangchuangla.medicine.admin.service.MallProductService;
 import cn.zhangchuangla.medicine.admin.service.MedicineStockService;
+import cn.zhangchuangla.medicine.common.core.constants.RedisConstants;
 import cn.zhangchuangla.medicine.common.core.exception.ServiceException;
 import cn.zhangchuangla.medicine.common.core.utils.Assert;
 import cn.zhangchuangla.medicine.common.security.utils.SecurityUtils;
@@ -22,6 +23,7 @@ import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.BeanUtils;
+import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -111,6 +113,7 @@ public class MallProductServiceImpl extends ServiceImpl<MallProductMapper, MallP
 
     @Override
     @Transactional(rollbackFor = Exception.class)
+    @CacheEvict(cacheNames = RedisConstants.MallProduct.CACHE_NAME, allEntries = true)
     public boolean addMallProduct(MallProductAddRequest request) {
         // 检查商品名称是否已存在
         LambdaQueryWrapper<MallProduct> queryWrapper = new LambdaQueryWrapper<>();
@@ -160,6 +163,7 @@ public class MallProductServiceImpl extends ServiceImpl<MallProductMapper, MallP
 
     @Override
     @Transactional(rollbackFor = Exception.class)
+    @CacheEvict(cacheNames = RedisConstants.MallProduct.CACHE_NAME, key = "#request.id", condition = "#request.id != null")
     public boolean updateMallProduct(MallProductUpdateRequest request) {
         // 检查商品是否存在
         MallProduct existingProduct = getById(request.getId());
@@ -205,6 +209,7 @@ public class MallProductServiceImpl extends ServiceImpl<MallProductMapper, MallP
 
     @Override
     @Transactional(rollbackFor = Exception.class)
+    @CacheEvict(cacheNames = RedisConstants.MallProduct.CACHE_NAME, allEntries = true)
     public boolean deleteMallProduct(List<Long> ids) {
         if (ids == null || ids.isEmpty()) {
             throw new ServiceException("请选择要删除的商品");

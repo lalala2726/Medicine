@@ -60,7 +60,6 @@ public class TokenService {
 
         Set<String> roles = authentication.getAuthorities().stream()
                 .map(GrantedAuthority::getAuthority)
-                .map(authority -> StringUtils.removeStart(authority, SecurityConstants.ROLE_PREFIX))
                 .collect(Collectors.toSet());
 
         OnlineLoginUser onlineLoginUser = OnlineLoginUser.builder()
@@ -182,7 +181,7 @@ public class TokenService {
 
         Set<String> userRoles = onlineUser.getRoles() != null ? onlineUser.getRoles() : Collections.emptySet();
         Set<SimpleGrantedAuthority> authorities = userRoles.stream()
-                .map(role -> new SimpleGrantedAuthority(SecurityConstants.ROLE_PREFIX + role))
+                .map(SimpleGrantedAuthority::new)
                 .collect(Collectors.toSet());
 
         SysUserDetails userDetails = buildUserDetails(onlineUser, authorities);

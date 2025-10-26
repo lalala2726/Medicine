@@ -21,7 +21,7 @@ public class PermissionAuth {
      * 是否为管理员
      */
     public boolean isAdmin() {
-        return SecurityUtils.getRoles().contains(RolesConstant.SUPER_ADMIN);
+        return SecurityUtils.getRoles().contains(RolesConstant.ADMIN);
     }
 
 }

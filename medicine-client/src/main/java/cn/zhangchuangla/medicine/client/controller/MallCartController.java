@@ -18,7 +18,7 @@ import org.springframework.web.bind.annotation.RestController;
  * created on 2025/10/15 16:31
  */
 @RestController
-@RequestMapping("mall/cart")
+@RequestMapping("/mall/cart")
 @Tag(name = "购物车接口", description = "购物车接口")
 @RequiredArgsConstructor
 public class MallCartController extends BaseController {

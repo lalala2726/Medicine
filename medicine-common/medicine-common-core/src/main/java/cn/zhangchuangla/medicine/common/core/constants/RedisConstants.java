@@ -65,7 +65,6 @@ public interface RedisConstants {
      */
     interface Auth {
 
-
         String USER_ACCESS_TOKEN = "auth:token:access:";
 
         String USER_REFRESH_TOKEN = "auth:token:refresh:";
@@ -116,6 +115,32 @@ public interface RedisConstants {
          */
         String LOGIN_SUCCESS_HOUR_KEY = LOGIN_FREQUENCY_PREFIX + "success:hour:%s";
 
+    }
+
+
+    /**
+     * 商城商品缓存相关常量
+     */
+    interface MallProduct {
+        /**
+         * 缓存名称
+         */
+        String CACHE_NAME = "mall:product:detail";
+
+        /**
+         * 缓存 Key 前缀
+         */
+        String KEY_PREFIX = "mall:product:detail:";
+
+        /**
+         * Key 模板 mall:product:detail:{productId}
+         */
+        String DETAIL_KEY = KEY_PREFIX + "%s";
+
+        /**
+         * 缓存有效期（秒）- 30分钟
+         */
+        long CACHE_TTL_SECONDS = 30 * 60;
     }
 
 

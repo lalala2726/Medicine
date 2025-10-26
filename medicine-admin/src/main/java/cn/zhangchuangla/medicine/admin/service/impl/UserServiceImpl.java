@@ -11,10 +11,14 @@ import cn.zhangchuangla.medicine.model.request.user.UserUpdateRequest;
 import com.baomidou.mybatisplus.extension.conditions.query.LambdaQueryChainWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.stereotype.Service;
 
+import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 /**
  * @author Chuang
@@ -56,7 +60,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User>
     public Set<String> getUserRolesByUserId(Long userId) {
         LambdaQueryChainWrapper<User> eq = lambdaQuery().eq(User::getId, userId);
         User user = eq.one();
-        return Set.of(user.getRoles());
+        return extractRoles(user);
     }
 
     /**
@@ -69,7 +73,25 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User>
     public Set<String> getUserRolesByUserName(String username) {
         LambdaQueryChainWrapper<User> eq = lambdaQuery().eq(User::getUsername, username);
         User user = eq.one();
-        return Set.of(user.getRoles());
+        return extractRoles(user);
+    }
+
+    private Set<String> extractRoles(User user) {
+        if (user == null || StringUtils.isBlank(user.getRoles())) {
+            return Collections.emptySet();
+        }
+        String rawRoles = user.getRoles().trim();
+        if (rawRoles.startsWith("[") && rawRoles.endsWith("]")) {
+            rawRoles = rawRoles.substring(1, rawRoles.length() - 1);
+        }
+        if (StringUtils.isBlank(rawRoles)) {
+            return Collections.emptySet();
+        }
+        return Arrays.stream(rawRoles.split(","))
+                .map(String::trim)
+                .map(role -> StringUtils.remove(role, '"'))
+                .filter(StringUtils::isNotBlank)
+                .collect(Collectors.toSet());
     }
 
     /**
@@ -119,7 +141,4 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User>
         return removeByIds(userId);
     }
 }
-
-
-
 
