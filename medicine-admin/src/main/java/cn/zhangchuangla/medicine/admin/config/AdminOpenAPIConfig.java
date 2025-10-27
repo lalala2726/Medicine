@@ -49,6 +49,18 @@ public class AdminOpenAPIConfig {
                 .build();
     }
 
+
+    /**
+     * 认证接口
+     */
+    @Bean
+    public GroupedOpenApi authApi() {
+        return GroupedOpenApi.builder()
+                .group("认证接口")
+                .packagesToScan("cn.zhangchuangla.medicine.admin.controller.auth")
+                .build();
+    }
+
     /**
      * 药品管理
      */
@@ -59,7 +71,6 @@ public class AdminOpenAPIConfig {
                 .packagesToScan("cn.zhangchuangla.medicine.admin.controller.medicine")
                 .build();
     }
-
 
 
     /**

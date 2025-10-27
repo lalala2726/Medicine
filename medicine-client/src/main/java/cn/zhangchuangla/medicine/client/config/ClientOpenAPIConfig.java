@@ -82,6 +82,18 @@ public class ClientOpenAPIConfig {
     }
 
     /**
+     * 认证接口
+     */
+    @Bean
+    public GroupedOpenApi authApi() {
+        return GroupedOpenApi.builder()
+                .group("认证接口")
+                .packagesToScan("cn.zhangchuangla.medicine.client.controller.auth")
+                .build();
+    }
+
+
+    /**
      * 所有接口
      */
     @Bean
