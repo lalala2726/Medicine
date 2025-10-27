@@ -1,4 +1,4 @@
-package cn.zhangchuangla.medicine.admin.controller;
+package cn.zhangchuangla.medicine.admin.controller.common;
 
 import cn.zhangchuangla.medicine.admin.service.AuthService;
 import cn.zhangchuangla.medicine.admin.service.UserService;

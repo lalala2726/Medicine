@@ -1,4 +1,4 @@
-package cn.zhangchuangla.medicine.admin.controller;
+package cn.zhangchuangla.medicine.admin.controller.system;
 
 import cn.zhangchuangla.medicine.admin.service.UserService;
 import cn.zhangchuangla.medicine.common.core.base.AjaxResult;
