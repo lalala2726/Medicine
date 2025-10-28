@@ -102,7 +102,7 @@ public class AuthController extends BaseController {
      * @return 当前用户信息
      */
     @Operation(summary = "获取当前用户信息", description = "根据认证上下文返回当前登录用户信息")
-    @GetMapping("/currentUser")
+    @GetMapping("/current")
     public AjaxResult<CurrentUserInfoVo> currentUser() {
         Long userId = SecurityUtils.getUserId();
         User user = userService.getUserById(userId);
