@@ -25,6 +25,9 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 
+import java.util.HashSet;
+import java.util.Set;
+
 import static cn.zhangchuangla.medicine.common.core.constants.SecurityConstants.CLAIM_KEY_SESSION_ID;
 
 @Service
@@ -50,7 +53,9 @@ public class AuthServiceImpl implements AuthService {
         }
         User user = new User();
         user.setUsername(username.trim());
-        user.setRoles(RolesConstant.USER);
+        Set<String> roles = new HashSet<>();
+        roles.add(RolesConstant.USER);
+        user.setRoles(roles.toString());
         user.setPassword(passwordEncoder.encode(password.trim()));
         userService.save(user);
         return user.getId();
