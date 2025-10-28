@@ -31,22 +31,22 @@ public final class RedisSetCache {
     /**
      * 添加一个成员到集合
      */
-    public Long add(final String key, final Object value) {
-        return redisTemplate.opsForSet().add(key, value);
+    public Long add(final String key, final Object member) {
+        return redisTemplate.opsForSet().add(key, member);
     }
 
     /**
      * 批量添加成员
      */
-    public Long addAll(final String key, final Object... values) {
-        return redisTemplate.opsForSet().add(key, values);
+    public Long addAll(final String key, final Object... members) {
+        return redisTemplate.opsForSet().add(key, members);
     }
 
     /**
      * 判断成员是否存在
      */
-    public Boolean isMember(final String key, final Object value) {
-        return redisTemplate.opsForSet().isMember(key, value);
+    public Boolean isMember(final String key, final Object member) {
+        return redisTemplate.opsForSet().isMember(key, member);
     }
 
     /**
@@ -60,8 +60,8 @@ public final class RedisSetCache {
     /**
      * 从集合中移除成员
      */
-    public Long remove(final String key, final Object... values) {
-        return redisTemplate.opsForSet().remove(key, values);
+    public Long remove(final String key, final Object... members) {
+        return redisTemplate.opsForSet().remove(key, members);
     }
 
     /**
@@ -82,26 +82,26 @@ public final class RedisSetCache {
     /**
      * 设置过期时间
      */
-    public Boolean expire(final String key, final long timeout, final TimeUnit unit) {
-        return redisTemplate.expire(key, timeout, unit);
+    public Boolean expire(final String key, final long timeout, final TimeUnit timeUnit) {
+        return redisTemplate.expire(key, timeout, timeUnit);
     }
 
     /**
      * 批量键扫描方法 - 使用 Redis SCAN 操作高效获取匹配的 Set 键
      * 推荐在生产环境中使用此方法，避免阻塞 Redis 服务器
      *
-     * @param pattern Redis 键模式，支持通配符（如：auth:session:index:*）
+     * @param keyPattern Redis 键模式，支持通配符（如：auth:session:index:*）
      * @return 匹配的键列表，如果没有匹配的键则返回空列表
      */
-    public List<String> scanKeys(final String pattern) {
-        if (!StringUtils.hasText(pattern)) {
+    public List<String> scanKeys(final String keyPattern) {
+        if (!StringUtils.hasText(keyPattern)) {
             return new ArrayList<>();
         }
 
         List<String> keys = new ArrayList<>();
         try {
             ScanOptions options = ScanOptions.scanOptions()
-                    .match(pattern)
+                    .match(keyPattern)
                     .count(redisProperties.scanCount)
                     .build();
 
@@ -113,7 +113,7 @@ public final class RedisSetCache {
 
 
         } catch (Exception e) {
-            log.error("Redis Set scan keys failed, pattern: {}, error: {}", pattern, e.getMessage(), e);
+            log.error("Redis Set scan keys failed, pattern: {}, error: {}", keyPattern, e.getMessage(), e);
             // 发生异常时返回空列表，避免影响业务流程
             return new ArrayList<>();
         }
@@ -125,16 +125,16 @@ public final class RedisSetCache {
      * 批量值获取方法 - 获取匹配模式的 Set 键及其所有成员
      * 使用 Redis SCAN 操作高效扫描键，然后批量获取每个 Set 的所有成员
      *
-     * @param pattern Redis 键模式，支持通配符（如：auth:permissions:*）
+     * @param keyPattern Redis 键模式，支持通配符（如：auth:permissions:*）
      * @return Map，键为Set键，值为该Set的所有成员，如果没有匹配的键则返回空Map
      */
-    public Map<String, Set<Object>> scanKeysWithValues(final String pattern) {
-        if (!StringUtils.hasText(pattern)) {
+    public Map<String, Set<Object>> scanKeysWithValues(final String keyPattern) {
+        if (!StringUtils.hasText(keyPattern)) {
             return new HashMap<>();
         }
 
         // 首先扫描获取所有匹配的键
-        List<String> keys = scanKeys(pattern);
+        List<String> keys = scanKeys(keyPattern);
         if (keys.isEmpty()) {
             return new HashMap<>();
         }
@@ -147,7 +147,7 @@ public final class RedisSetCache {
                 result.put(key, setMembers);
             }
         } catch (Exception e) {
-            log.error("Redis Set scan keys with values failed, pattern: {}, error: {}", pattern, e.getMessage(), e);
+            log.error("Redis Set scan keys with values failed, pattern: {}, error: {}", keyPattern, e.getMessage(), e);
             return new HashMap<>();
         }
 

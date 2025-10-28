@@ -48,13 +48,13 @@ public final class RedisHashCache {
     /**
      * 向 Hash 批量添加字段
      *
-     * @param key  Redis 键
-     * @param map  字段–值 对
-     * @param <HK> 字段类型
-     * @param <HV> 值类型
+     * @param key      Redis 键
+     * @param fieldMap 字段–值 对
+     * @param <HK>     字段类型
+     * @param <HV>     值类型
      */
-    public <HK, HV> void hPutAll(final String key, final Map<HK, HV> map) {
-        redisTemplate.opsForHash().putAll(key, map);
+    public <HK, HV> void hPutAll(final String key, final Map<HK, HV> fieldMap) {
+        redisTemplate.opsForHash().putAll(key, fieldMap);
     }
 
     /**
@@ -134,13 +134,13 @@ public final class RedisHashCache {
     /**
      * 给任意 key 设置过期时间（Hash 也能用）
      *
-     * @param key     Redis 键
-     * @param timeout 时长
-     * @param unit    单位
+     * @param key      Redis 键
+     * @param timeout  时长
+     * @param timeUnit 时间单位
      * @return 设置是否成功
      */
-    public Boolean expire(final String key, final long timeout, final TimeUnit unit) {
-        return redisTemplate.expire(key, timeout, unit);
+    public Boolean expire(final String key, final long timeout, final TimeUnit timeUnit) {
+        return redisTemplate.expire(key, timeout, timeUnit);
     }
 
     /**
@@ -157,11 +157,11 @@ public final class RedisHashCache {
      * 批量键扫描方法 - 使用 Redis SCAN 操作高效获取匹配的 Hash 键
      * 推荐在生产环境中使用此方法，避免阻塞 Redis 服务器
      *
-     * @param pattern Redis 键模式，支持通配符（如：auth:session:index:*）
+     * @param keyPattern Redis 键模式，支持通配符（如：auth:session:index:*）
      * @return 匹配的键列表，如果没有匹配的键则返回空列表
      */
-    public List<String> scanKeys(final String pattern) {
-        if (!StringUtils.hasText(pattern)) {
+    public List<String> scanKeys(final String keyPattern) {
+        if (!StringUtils.hasText(keyPattern)) {
             log.warn("Redis哈希扫描模式为空，返回空列表");
             return new ArrayList<>();
         }
@@ -169,7 +169,7 @@ public final class RedisHashCache {
         List<String> keys = new ArrayList<>();
         try {
             ScanOptions options = ScanOptions.scanOptions()
-                    .match(pattern)
+                    .match(keyPattern)
                     .count(redisProperties.scanCount)
                     .build();
 
@@ -180,7 +180,7 @@ public final class RedisHashCache {
             }
 
         } catch (Exception e) {
-            log.error("Redis Hash scan keys failed, pattern: {}, error: {}", pattern, e.getMessage(), e);
+            log.error("Redis Hash scan keys failed, pattern: {}, error: {}", keyPattern, e.getMessage(), e);
             // 发生异常时返回空列表，避免影响业务流程
             return new ArrayList<>();
         }
@@ -192,16 +192,16 @@ public final class RedisHashCache {
      * 批量值获取方法 - 获取匹配模式的 Hash 键及其所有字段值
      * 使用 Redis SCAN 操作高效扫描键，然后批量获取每个 Hash 的所有字段值
      *
-     * @param pattern Redis 键模式，支持通配符（如：auth:session:index:*）
+     * @param keyPattern Redis 键模式，支持通配符（如：auth:session:index:*）
      * @return 嵌套Map，外层键为Hash键，内层Map为该Hash的所有字段值，如果没有匹配的键则返回空Map
      */
-    public Map<String, Map<Object, Object>> scanKeysWithValues(final String pattern) {
-        if (!StringUtils.hasText(pattern)) {
+    public Map<String, Map<Object, Object>> scanKeysWithValues(final String keyPattern) {
+        if (!StringUtils.hasText(keyPattern)) {
             return new HashMap<>();
         }
 
         // 首先扫描获取所有匹配的键
-        List<String> keys = scanKeys(pattern);
+        List<String> keys = scanKeys(keyPattern);
         if (keys.isEmpty()) {
             return new HashMap<>();
         }
@@ -214,7 +214,7 @@ public final class RedisHashCache {
                 result.put(key, hashData);
             }
         } catch (Exception e) {
-            log.error("Redis Hash scan keys with values failed, pattern: {}, error: {}", pattern, e.getMessage(), e);
+            log.error("Redis Hash scan keys with values failed, pattern: {}, error: {}", keyPattern, e.getMessage(), e);
             return new HashMap<>();
         }
 

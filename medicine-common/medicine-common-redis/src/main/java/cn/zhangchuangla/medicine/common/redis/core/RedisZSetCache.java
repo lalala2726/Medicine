@@ -120,10 +120,10 @@ public final class RedisZSetCache {
     /**
      * 按分值范围获取有序集合成员
      *
-     * @param key       Redis 键
-     * @param minScore  最小分值
-     * @param maxScore  最大分值
-     * @param <T>       成员类型
+     * @param key      Redis 键
+     * @param minScore 最小分值
+     * @param maxScore 最大分值
+     * @param <T>      成员类型
      * @return 成员集合（分值在 [minScore, maxScore] 区间内）
      */
     public <T> Set<T> zRangeByScore(final String key, final double minScore, final double maxScore) {
@@ -133,9 +133,9 @@ public final class RedisZSetCache {
     /**
      * 统计有序集合中分值在给定区间的成员数量
      *
-     * @param key       Redis 键
-     * @param minScore  最小分值
-     * @param maxScore  最大分值
+     * @param key      Redis 键
+     * @param minScore 最小分值
+     * @param maxScore 最大分值
      * @return 成员数量
      */
     public Long zCount(final String key, final double minScore, final double maxScore) {

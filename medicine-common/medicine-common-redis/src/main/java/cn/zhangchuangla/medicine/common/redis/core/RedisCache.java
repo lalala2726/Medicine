@@ -78,13 +78,13 @@ public final class RedisCache {
     /**
      * 设置有效时间
      *
-     * @param key     Redis键
-     * @param timeout 超时时间
-     * @param unit    时间单位
+     * @param key      Redis键
+     * @param timeout  超时时间
+     * @param timeUnit 时间单位
      * @return true=设置成功；false=设置失败
      */
-    public boolean expire(final String key, final long timeout, final TimeUnit unit) {
-        return redisTemplate.expire(key, timeout, unit);
+    public boolean expire(final String key, final long timeout, final TimeUnit timeUnit) {
+        return redisTemplate.expire(key, timeout, timeUnit);
     }
 
     /**
@@ -112,11 +112,11 @@ public final class RedisCache {
     /**
      * 删除集合对象
      *
-     * @param collection 多个对象的集合
+     * @param keyCollection 多个键的集合
      * @return 删除成功的个数
      */
-    public long deleteObject(final Collection collection) {
-        return redisTemplate.delete(collection);
+    public long deleteObject(final Collection keyCollection) {
+        return redisTemplate.delete(keyCollection);
     }
 
 
@@ -124,26 +124,29 @@ public final class RedisCache {
      * 获得缓存的基本对象列表
      * 注意：此方法使用 KEYS 命令，在生产环境中应谨慎使用，建议使用 scanKeys 方法
      *
-     * @param pattern 字符串前缀
+     * @param keyPattern 键模式，支持通配符
      * @return 对象列表
      */
-    public Collection<String> keys(final String pattern) {
-        return redisTemplate.keys(pattern);
+    public Collection<String> keys(final String keyPattern) {
+        return redisTemplate.keys(keyPattern);
     }
 
     /**
      * 批量键扫描方法 - 使用 Redis SCAN 操作高效获取匹配的键
      * 推荐在生产环境中使用此方法替代 keys() 方法，避免阻塞 Redis 服务器
+     *
+     * @param keyPattern Redis 键模式，支持通配符
+     * @return 匹配的键列表，如果没有匹配的键则返回空列表
      */
-    public List<String> scanKeys(final String pattern) {
-        if (!StringUtils.hasText(pattern)) {
+    public List<String> scanKeys(final String keyPattern) {
+        if (!StringUtils.hasText(keyPattern)) {
             return new ArrayList<>();
         }
 
         List<String> keys = new ArrayList<>();
         try {
             ScanOptions options = ScanOptions.scanOptions()
-                    .match(pattern)
+                    .match(keyPattern)
                     .count(redisProperties.scanCount)
                     .build();
 
@@ -153,7 +156,7 @@ public final class RedisCache {
                 }
             }
         } catch (Exception e) {
-            log.error("Redis scan keys failed, pattern: {}, error: {}", pattern, e.getMessage(), e);
+            log.error("Redis scan keys failed, pattern: {}, error: {}", keyPattern, e.getMessage(), e);
             return new ArrayList<>();
         }
 
@@ -164,15 +167,15 @@ public final class RedisCache {
      * 批量值获取方法 - 获取匹配模式的键及其对应的值
      * 使用 Redis SCAN 操作高效扫描键，然后批量获取对应的值
      *
-     * @param pattern Redis 键模式，支持通配符（如：auth:session:index:*）
+     * @param keyPattern Redis 键模式，支持通配符（如：auth:session:index:*）
      * @return 键值对Map，键为Redis键，值为对应的Redis值，如果没有匹配的键则返回空Map
      */
-    public Map<String, Object> scanKeysWithValues(final String pattern) {
-        if (!StringUtils.hasText(pattern)) {
+    public Map<String, Object> scanKeysWithValues(final String keyPattern) {
+        if (!StringUtils.hasText(keyPattern)) {
             return new HashMap<>();
         }
         // 首先扫描获取所有匹配的键
-        List<String> keys = scanKeys(pattern);
+        List<String> keys = scanKeys(keyPattern);
         if (keys.isEmpty()) {
             return new HashMap<>();
         }
@@ -185,7 +188,7 @@ public final class RedisCache {
                 result.put(key, value);
             }
         } catch (Exception e) {
-            log.error("Redis scan keys with values failed, pattern: {}, error: {}", pattern, e.getMessage(), e);
+            log.error("Redis scan keys with values failed, pattern: {}, error: {}", keyPattern, e.getMessage(), e);
             return new HashMap<>();
         }
 
