@@ -5,7 +5,7 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import java.lang.annotation.*;
 
 /**
- * 建议不要在生产环境使用此注解，因为它将绕过Spring Security的权限检查。
+ * 在生产环境中使用此注解时请务必谨慎，因为它将绕过Spring Security的部分权限检查机制。
  * <p>
  * 匿名访问注解，此注解表示该方法或类可以匿名访问。
  * 注意：在需要获取用户信息的上下文中使用此注解可能会导致异常，

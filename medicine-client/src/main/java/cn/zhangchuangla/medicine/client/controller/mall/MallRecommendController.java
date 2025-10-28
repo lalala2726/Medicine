@@ -2,6 +2,7 @@ package cn.zhangchuangla.medicine.client.controller.mall;
 
 import cn.zhangchuangla.medicine.client.service.MallRecommendService;
 import cn.zhangchuangla.medicine.common.core.base.AjaxResult;
+import cn.zhangchuangla.medicine.common.security.annotation.Anonymous;
 import cn.zhangchuangla.medicine.common.security.base.BaseController;
 import cn.zhangchuangla.medicine.model.entity.MallProduct;
 import cn.zhangchuangla.medicine.model.request.mall.product.RecommendRequest;
@@ -35,6 +36,7 @@ public class MallRecommendController extends BaseController {
      */
     @GetMapping
     @Operation(summary = "商品推荐")
+    @Anonymous
     public AjaxResult<List<RecommendListVo>> recommend(RecommendRequest request) {
         List<MallProduct> mallProducts = mallRecommendService.recommend(request);
         List<RecommendListVo> recommendListVos = copyListProperties(mallProducts, RecommendListVo.class);
