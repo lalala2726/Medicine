@@ -1,6 +1,6 @@
 package cn.zhangchuangla.medicine.client.controller.mall;
 
-import cn.zhangchuangla.medicine.client.model.request.MallProductVo;
+import cn.zhangchuangla.medicine.client.model.vo.MallProductVo;
 import cn.zhangchuangla.medicine.client.service.MallProductService;
 import cn.zhangchuangla.medicine.client.service.MallUserBrowseHistoryService;
 import cn.zhangchuangla.medicine.common.core.base.AjaxResult;
