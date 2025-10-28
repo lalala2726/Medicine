@@ -1,18 +1,13 @@
 package cn.zhangchuangla.medicine.client.controller.auth;
 
 import cn.zhangchuangla.medicine.client.service.AuthService;
-import cn.zhangchuangla.medicine.client.service.UserService;
 import cn.zhangchuangla.medicine.common.core.base.AjaxResult;
-import cn.zhangchuangla.medicine.common.core.utils.BeanCotyUtils;
 import cn.zhangchuangla.medicine.common.security.annotation.Anonymous;
 import cn.zhangchuangla.medicine.common.security.base.BaseController;
 import cn.zhangchuangla.medicine.common.security.entity.AuthTokenVo;
-import cn.zhangchuangla.medicine.common.security.utils.SecurityUtils;
-import cn.zhangchuangla.medicine.model.entity.User;
 import cn.zhangchuangla.medicine.model.request.auth.LoginRequest;
 import cn.zhangchuangla.medicine.model.request.auth.RefreshRequest;
 import cn.zhangchuangla.medicine.model.request.auth.RegisterRequest;
-import cn.zhangchuangla.medicine.model.vo.user.CurrentUserInfoVo;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.extern.slf4j.Slf4j;
@@ -30,11 +25,9 @@ import org.springframework.web.bind.annotation.*;
 public class AuthController extends BaseController {
 
     private final AuthService authService;
-    private final UserService userService;
 
-    public AuthController(AuthService authService, UserService userService) {
+    public AuthController(AuthService authService) {
         this.authService = authService;
-        this.userService = userService;
     }
 
     /**
@@ -88,7 +81,6 @@ public class AuthController extends BaseController {
     @Operation(summary = "退出登录", description = "清理用户会话信息")
     @PostMapping("/logout")
     public AjaxResult<Void> logout(@RequestHeader("Authorization") String accessToken) {
-        // 移除 "Bearer " 前缀
         if (accessToken.startsWith("Bearer ")) {
             accessToken = accessToken.substring(7);
         }
@@ -96,17 +88,4 @@ public class AuthController extends BaseController {
         return success();
     }
 
-    /**
-     * 获取当前用户信息
-     *
-     * @return 当前用户信息
-     */
-    @Operation(summary = "获取当前用户信息", description = "根据认证上下文返回当前登录用户信息")
-    @GetMapping("/current")
-    public AjaxResult<CurrentUserInfoVo> currentUser() {
-        Long userId = SecurityUtils.getUserId();
-        User user = userService.getUserById(userId);
-        CurrentUserInfoVo vo = BeanCotyUtils.copyProperties(user, CurrentUserInfoVo.class);
-        return success(vo);
-    }
 }
