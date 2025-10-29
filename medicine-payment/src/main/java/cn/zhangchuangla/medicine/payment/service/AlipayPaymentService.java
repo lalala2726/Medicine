@@ -1,0 +1,21 @@
+package cn.zhangchuangla.medicine.payment.service;
+
+import cn.zhangchuangla.medicine.payment.model.AlipayPagePayRequest;
+
+/**
+ * 支付宝支付能力的核心出口。
+ */
+public interface AlipayPaymentService {
+
+    /**
+     * 生成支付宝电脑网站支付的 HTML 表单。
+     * <p>
+     * 该表单可以直接写入 HTTP 响应中，浏览器会自动跳转到支付宝收银台。
+     * notifyUrl 和 returnUrl 可以由请求参数覆盖，以适配不同服务的回调地址。
+     * </p>
+     *
+     * @param request 支付请求参数
+     * @return 支付宝返回的 HTML 表单字符串
+     */
+    String generatePagePayForm(AlipayPagePayRequest request);
+}
