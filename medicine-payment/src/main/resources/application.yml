@@ -1,0 +1,9 @@
+alipay:
+  appId: ${alipay.appId}
+  private-key: ${alipay.private-key}
+  alipay-public-key: ${alipay.alipay-public-key}
+  gatewayUrl: ${alipay.gatewayUrl}
+  notifyUrl: http://medicine.zhangchuangla.cn/alipay/notify
+  returnUrl: http://localhost:8081/success.html
+  signType: RSA2
+  charset: utf-8
