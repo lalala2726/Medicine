@@ -58,13 +58,13 @@ public class PaymentTestController {
      * </p>
      */
     @GetMapping("/test/pay")
-    public void createSandboxOrder(@RequestParam(value = "amount", required = false, defaultValue = "0.1") String amount, HttpServletResponse response) throws IOException {
+    public void createSandboxOrder(HttpServletResponse response) throws IOException {
         String orderNo = "ADMIN-DEMO-" + ORDER_TIME_FORMATTER.format(LocalDateTime.now());
 
         AlipayPagePayRequest payRequest = AlipayPagePayRequest.builder()
                 .outTradeNo(orderNo)
                 .subject("管理端测试支付订单")
-                .totalAmount(amount)
+                .totalAmount("1000")
                 .body("这是一笔用于验证沙箱环境配置的测试订单")
                 // 根据当前服务的部署地址覆盖回调地址，避免多个系统之间互相干扰。
                 .notifyUrl("http://medicine.zhangchuangla.cn/alipay/notify")
