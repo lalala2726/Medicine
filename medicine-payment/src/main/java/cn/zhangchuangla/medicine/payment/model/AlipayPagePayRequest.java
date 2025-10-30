@@ -1,5 +1,6 @@
 package cn.zhangchuangla.medicine.payment.model;
 
+import lombok.Builder;
 import lombok.Data;
 
 /**
@@ -10,6 +11,7 @@ import lombok.Data;
  * </p>
  */
 @Data
+@Builder
 public class AlipayPagePayRequest {
 
     /**
@@ -51,62 +53,4 @@ public class AlipayPagePayRequest {
      * 针对当前业务的同步返回地址，不传时会回落到全局配置。
      */
     private String returnUrl;
-
-    public static Builder builder() {
-        return new Builder();
-    }
-
-    /**
-     * 手写一个简单的建造者用来组装请求参数，方便调用方使用链式写法。
-     */
-    public static final class Builder {
-        private final AlipayPagePayRequest target = new AlipayPagePayRequest();
-
-        private Builder() {
-        }
-
-        public Builder outTradeNo(String outTradeNo) {
-            target.setOutTradeNo(outTradeNo);
-            return this;
-        }
-
-        public Builder subject(String subject) {
-            target.setSubject(subject);
-            return this;
-        }
-
-        public Builder totalAmount(String totalAmount) {
-            target.setTotalAmount(totalAmount);
-            return this;
-        }
-
-        public Builder body(String body) {
-            target.setBody(body);
-            return this;
-        }
-
-        public Builder productCode(String productCode) {
-            target.setProductCode(productCode);
-            return this;
-        }
-
-        public Builder timeoutExpress(String timeoutExpress) {
-            target.setTimeoutExpress(timeoutExpress);
-            return this;
-        }
-
-        public Builder notifyUrl(String notifyUrl) {
-            target.setNotifyUrl(notifyUrl);
-            return this;
-        }
-
-        public Builder returnUrl(String returnUrl) {
-            target.setReturnUrl(returnUrl);
-            return this;
-        }
-
-        public AlipayPagePayRequest build() {
-            return target;
-        }
-    }
 }
