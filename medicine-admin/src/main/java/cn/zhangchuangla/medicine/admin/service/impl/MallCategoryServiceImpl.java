@@ -151,28 +151,6 @@ public class MallCategoryServiceImpl extends ServiceImpl<MallCategoryMapper, Mal
     }
 
     /**
-     * 检查药品是否存在
-     *
-     * @param medicineId 药品ID
-     * @return 存在返回true，否则返回false
-     */
-    @Override
-    public boolean isMedicineExist(Long medicineId) {
-        return getById(medicineId) != null;
-    }
-
-    /**
-     * 检查药品库存是否存在
-     *
-     * @param medicineStockId 药品库存ID
-     * @return 存在返回true，否则返回false
-     */
-    @Override
-    public boolean isMedicineStockExist(Long medicineStockId) {
-        return getById(medicineStockId) != null;
-    }
-
-    /**
      * 递归构建树形结构
      *
      * @param categories 所有分类列表
@@ -201,7 +179,6 @@ public class MallCategoryServiceImpl extends ServiceImpl<MallCategoryMapper, Mal
                 }).toList();
     }
 }
-
 
 
 

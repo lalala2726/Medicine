@@ -4,7 +4,6 @@ import cn.zhangchuangla.medicine.admin.mapper.MallProductMapper;
 import cn.zhangchuangla.medicine.admin.service.MallCategoryService;
 import cn.zhangchuangla.medicine.admin.service.MallProductImageService;
 import cn.zhangchuangla.medicine.admin.service.MallProductService;
-import cn.zhangchuangla.medicine.admin.service.MedicineStockService;
 import cn.zhangchuangla.medicine.common.core.constants.RedisConstants;
 import cn.zhangchuangla.medicine.common.core.exception.ServiceException;
 import cn.zhangchuangla.medicine.common.core.utils.Assert;
@@ -13,7 +12,6 @@ import cn.zhangchuangla.medicine.model.dto.MallProductDetailDto;
 import cn.zhangchuangla.medicine.model.dto.MallProductDto;
 import cn.zhangchuangla.medicine.model.entity.MallCategory;
 import cn.zhangchuangla.medicine.model.entity.MallProduct;
-import cn.zhangchuangla.medicine.model.entity.MedicineStock;
 import cn.zhangchuangla.medicine.model.enums.DeliveryTypeEnum;
 import cn.zhangchuangla.medicine.model.request.mall.product.MallProductAddRequest;
 import cn.zhangchuangla.medicine.model.request.mall.product.MallProductListQueryRequest;
@@ -30,10 +28,6 @@ import org.springframework.transaction.annotation.Transactional;
 import java.math.BigDecimal;
 import java.util.Date;
 import java.util.List;
-import java.util.Map;
-import java.util.function.BiConsumer;
-import java.util.function.Function;
-import java.util.stream.Collectors;
 
 /**
  * 商城商品服务实现类
@@ -51,39 +45,18 @@ public class MallProductServiceImpl extends ServiceImpl<MallProductMapper, MallP
 
     private final MallProductMapper mallProductMapper;
     private final MallCategoryService mallCategoryService;
-    private final MedicineStockService medicineStockService;
     private final MallProductImageService mallProductImageService;
 
     @Override
     public Page<MallProduct> listMallProduct(MallProductListQueryRequest request) {
         Page<MallProduct> page = page(new Page<>(request.getPageNum(), request.getPageSize()));
-        Page<MallProduct> mallProductPage = mallProductMapper.listMallProduct(page, request);
-
-        // 使用通用方法绑定库存信息
-        bindStockMapping(
-                mallProductPage.getRecords(),
-                MallProduct::getBindType,
-                MallProduct::getMedicineStockId,
-                MallProduct::setStock
-        );
-
-        return mallProductPage;
+        return mallProductMapper.listMallProduct(page, request);
     }
 
     @Override
     public Page<MallProductDto> listMallProductWithCategory(MallProductListQueryRequest request) {
         Page<MallProductDto> page = new Page<>(request.getPageNum(), request.getPageSize());
-        Page<MallProductDto> mallProductDtoPage = mallProductMapper.listMallProductWithCategory(page, request);
-
-        // 使用通用方法绑定库存信息
-        bindStockMapping(
-                mallProductDtoPage.getRecords(),
-                MallProductDto::getBindType,
-                MallProductDto::getMedicineStockId,
-                MallProductDto::setStock
-        );
-
-        return mallProductDtoPage;
+        return mallProductMapper.listMallProductWithCategory(page, request);
     }
 
     @Override
@@ -142,9 +115,9 @@ public class MallProductServiceImpl extends ServiceImpl<MallProductMapper, MallP
         DeliveryTypeEnum deliveryTypeEnum = DeliveryTypeEnum.fromCode(request.getDeliveryType());
         Assert.isTrue(deliveryTypeEnum != null, "配送方式不存在");
 
-        // 如果是绑定库存，验证药品相关信息
+        // 如果是绑定库存，仅校验必要参数是否存在
         if (request.getBindType() == 1) {
-            validateMedicineBinding(request);
+            Assert.notNull(request.getMedicineStockId(), "绑定库存模式下必须选择库存记录");
         }
 
         MallProduct product = new MallProduct();
@@ -189,9 +162,9 @@ public class MallProductServiceImpl extends ServiceImpl<MallProductMapper, MallP
             throw new ServiceException("商品库存不能为负数");
         }
 
-        // 如果是绑定库存，验证药品相关信息
+        // 如果是绑定库存，仅校验必要参数是否存在
         if (request.getBindType() != null && request.getBindType() == 1) {
-            validateMedicineBindingForUpdate(request);
+            Assert.notNull(request.getMedicineStockId(), "绑定库存模式下必须选择库存记录");
         }
 
         // 检查配送方式是否存在
@@ -233,93 +206,4 @@ public class MallProductServiceImpl extends ServiceImpl<MallProductMapper, MallP
         return removeByIds(ids);
     }
 
-    /**
-     * 绑定库存映射的通用方法
-     *
-     * @param products              商品列表（支持MallProduct或MallProductDto及其子类）
-     * @param bindTypeGetter        用于获取绑定类型的函数
-     * @param medicineStockIdGetter 用于获取库存ID的函数
-     * @param stockSetter           用于设置库存数量的函数
-     * @param <T>                   商品类型
-     */
-    private <T> void bindStockMapping(List<T> products,
-                                      Function<T, Integer> bindTypeGetter,
-                                      Function<T, Long> medicineStockIdGetter,
-                                      BiConsumer<T, Integer> stockSetter) {
-        // 筛选出需要查询库存的商品ID（绑定库存的商品）
-        List<Long> medicineStockIds = products.stream()
-                .filter(product -> bindTypeGetter.apply(product) == 1 && medicineStockIdGetter.apply(product) != null)
-                .map(medicineStockIdGetter)
-                .toList();
-
-        if (!medicineStockIds.isEmpty()) {
-            // 统一查询库存信息
-            LambdaQueryWrapper<MedicineStock> queryWrapper = new LambdaQueryWrapper<MedicineStock>()
-                    .in(MedicineStock::getId, medicineStockIds);
-            List<MedicineStock> medicineStocks = medicineStockService.list(queryWrapper);
-
-            // 创建库存ID到库存数量的映射，避免嵌套循环
-            Map<Long, Integer> stockMap = medicineStocks.stream()
-                    .collect(Collectors.toMap(MedicineStock::getId, MedicineStock::getQuantity));
-
-            // 为商品设置库存信息
-            products.stream()
-                    .filter(product -> bindTypeGetter.apply(product) == 1 && medicineStockIdGetter.apply(product) != null)
-                    .forEach(product -> {
-                        Long stockId = medicineStockIdGetter.apply(product);
-                        Integer stock = stockMap.get(stockId);
-                        if (stock != null) {
-                            stockSetter.accept(product, stock);
-                        }
-                    });
-        }
-    }
-
-    /**
-     * 验证药品绑定信息的通用方法
-     *
-     * @param medicineId      药品ID
-     * @param medicineStockId 药品库存ID
-     * @param isUpdate        是否为更新操作
-     */
-    private void validateMedicineInfo(Long medicineId, Long medicineStockId, boolean isUpdate) {
-        if (medicineId == null && medicineStockId == null) {
-            String message = isUpdate ? "绑定库存模式下，药品ID和药品库存ID至少需要提供一个"
-                    : "药品ID和药品库存ID至少需要提供一个";
-            throw new ServiceException(message);
-        }
-
-        if (medicineId != null) {
-            if (medicineId <= 0) {
-                throw new ServiceException("药品ID必须大于0");
-            }
-            boolean medicineExists = mallCategoryService.isMedicineExist(medicineId);
-            if (!medicineExists) {
-                throw new ServiceException("药品不存在，ID: " + medicineId);
-            }
-        }
-
-        if (medicineStockId != null) {
-            if (medicineStockId <= 0) {
-                throw new ServiceException("药品库存ID必须大于0");
-            }
-            boolean stockExists = mallCategoryService.isMedicineStockExist(medicineStockId);
-            if (!stockExists) {
-                throw new ServiceException("药品库存不存在，ID: " + medicineStockId);
-            }
-        }
-
-        if (medicineId != null && medicineStockId != null && !medicineId.equals(medicineStockId)) {
-            throw new ServiceException(String.format("药品ID(%d)与药品库存ID(%d)不匹配", medicineId, medicineStockId));
-        }
-    }
-
-    // 修改原方法调用
-    private void validateMedicineBinding(MallProductAddRequest request) {
-        validateMedicineInfo(request.getMedicineId(), request.getMedicineStockId(), false);
-    }
-
-    private void validateMedicineBindingForUpdate(MallProductUpdateRequest request) {
-        validateMedicineInfo(request.getMedicineId(), request.getMedicineStockId(), true);
-    }
 }

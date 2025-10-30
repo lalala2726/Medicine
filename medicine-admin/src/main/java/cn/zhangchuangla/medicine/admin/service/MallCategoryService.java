@@ -75,19 +75,4 @@ public interface MallCategoryService extends IService<MallCategory> {
      */
     boolean isProductCategoryExist(Long categoryId);
 
-    /**
-     * 判断药品是否存在
-     *
-     * @param medicineId 药品ID
-     * @return 是否存在
-     */
-    boolean isMedicineExist(Long medicineId);
-
-    /**
-     * 判断药品库存是否存在
-     *
-     * @param medicineStockId 药品库存ID
-     * @return 是否存在
-     */
-    boolean isMedicineStockExist(Long medicineStockId);
 }
