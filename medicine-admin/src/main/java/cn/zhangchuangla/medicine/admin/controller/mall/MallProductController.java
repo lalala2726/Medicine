@@ -61,6 +61,7 @@ public class MallProductController extends BaseController {
     @Operation(summary = "获取商城商品详情")
     public AjaxResult<MallProductVo> getProductById(@PathVariable("id") Long id) {
         MallProductDetailDto product = mallProductService.getMallProductById(id);
+        // 返回数据专注商品基本信息与图片，用于后台详情页渲染
         MallProductVo productVo = copyProperties(product, MallProductVo.class);
         return success(productVo);
     }

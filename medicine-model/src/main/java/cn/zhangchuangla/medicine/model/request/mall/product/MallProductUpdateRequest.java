@@ -55,9 +55,9 @@ public class MallProductUpdateRequest {
     private BigDecimal price;
 
     /**
-     * 独立库存数量（仅当未绑定药品时生效）
+     * 商品库存数量
      */
-    @Schema(description = "独立库存数量", type = "int32", example = "50")
+    @Schema(description = "商品库存数量", type = "int32", example = "50")
     private Integer stock;
 
     /**
@@ -84,24 +84,6 @@ public class MallProductUpdateRequest {
      */
     @Schema(description = "运费模板ID", type = "int64", example = "1")
     private Long shippingId;
-
-    /**
-     * 库存绑定类型（0-独立库存，1-绑定药品库存）
-     */
-    @Schema(description = "库存绑定类型（0-独立库存，1-绑定药品库存）", type = "int32", example = "0")
-    private Integer bindType;
-
-    /**
-     * 关联药品ID（当 bind_type=1 时生效）
-     */
-    @Schema(description = "关联药品ID", type = "int64", example = "1")
-    private Long medicineId;
-
-    /**
-     * 关联药品库存批次ID（可选）
-     */
-    @Schema(description = "关联药品库存批次ID", type = "int64", example = "1")
-    private Long medicineStockId;
 
     /**
      * 商品图片列表

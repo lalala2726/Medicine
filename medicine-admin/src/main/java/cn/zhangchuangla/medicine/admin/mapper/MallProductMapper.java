@@ -32,11 +32,10 @@ public interface MallProductMapper extends BaseMapper<MallProduct> {
     Page<MallProductDto> listMallProductWithCategory(Page<MallProductDto> page, @Param("request") MallProductListQueryRequest request);
 
     /**
-     * 根据ID获取商城商品详情（包含药品及库存信息）
+     * 根据ID获取商城商品详情（包含图片信息）
      *
      * @param id 商品ID
      * @return 商城商品详情
      */
     MallProductDetailDto getMallProductDetailById(@Param("id") Long id);
 }
-

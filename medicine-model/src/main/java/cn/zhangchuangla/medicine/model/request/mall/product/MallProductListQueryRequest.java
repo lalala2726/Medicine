@@ -43,18 +43,6 @@ public class MallProductListQueryRequest extends BasePageRequest {
     private Integer status;
 
     /**
-     * 库存绑定类型（0-独立库存，1-绑定药品库存）
-     */
-    @Schema(description = "库存绑定类型（0-独立库存，1-绑定药品库存）", type = "int32", example = "0")
-    private Integer bindType;
-
-    /**
-     * 关联药品ID（当 bind_type=1 时生效）
-     */
-    @Schema(description = "关联药品ID", type = "int64", example = "1")
-    private Long medicineId;
-
-    /**
      * 最低价格
      */
     @Schema(description = "最低价格", type = "number", example = "10.00")

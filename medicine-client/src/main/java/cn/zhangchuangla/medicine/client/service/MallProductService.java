@@ -33,4 +33,13 @@ public interface MallProductService extends IService<MallProduct> {
      * @return 浏览次数
      */
     long getViewCount(Long productId, ProductViewPeriod period);
+
+
+    /**
+     * 扣减库存
+     *
+     * @param productId 商品ID
+     * @param quantity  数量
+     */
+    void deductStock(Long productId, Integer quantity);
 }

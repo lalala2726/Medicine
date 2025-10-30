@@ -78,6 +78,7 @@ public class MallProductServiceImpl extends ServiceImpl<MallProductMapper, MallP
         }
 
         if (product.getImages() != null && !product.getImages().isEmpty()) {
+            // 后台表单中按约定首图为列表缩略图
             product.setImage(product.getImages().get(0));
         }
 
@@ -115,11 +116,6 @@ public class MallProductServiceImpl extends ServiceImpl<MallProductMapper, MallP
         DeliveryTypeEnum deliveryTypeEnum = DeliveryTypeEnum.fromCode(request.getDeliveryType());
         Assert.isTrue(deliveryTypeEnum != null, "配送方式不存在");
 
-        // 如果是绑定库存，仅校验必要参数是否存在
-        if (request.getBindType() == 1) {
-            Assert.notNull(request.getMedicineStockId(), "绑定库存模式下必须选择库存记录");
-        }
-
         MallProduct product = new MallProduct();
         BeanUtils.copyProperties(request, product);
         product.setSalesVolume(0L); // 初始销量为0
@@ -128,7 +124,7 @@ public class MallProductServiceImpl extends ServiceImpl<MallProductMapper, MallP
 
         boolean save = save(product);
 
-        //处理商品图片逻辑
+        // 仅聚焦商品与图片：确保至少一张图片后批量写入图片表
         Assert.isTrue(request.getImages() != null && !request.getImages().isEmpty(), "商品图片至少需要上传一张图片");
         mallProductImageService.addProductImages(request.getImages(), product.getId());
         return save;
@@ -162,11 +158,6 @@ public class MallProductServiceImpl extends ServiceImpl<MallProductMapper, MallP
             throw new ServiceException("商品库存不能为负数");
         }
 
-        // 如果是绑定库存，仅校验必要参数是否存在
-        if (request.getBindType() != null && request.getBindType() == 1) {
-            Assert.notNull(request.getMedicineStockId(), "绑定库存模式下必须选择库存记录");
-        }
-
         // 检查配送方式是否存在
         DeliveryTypeEnum deliveryTypeEnum = DeliveryTypeEnum.fromCode(request.getDeliveryType());
         Assert.isTrue(deliveryTypeEnum != null, "配送方式不存在");
@@ -174,6 +165,7 @@ public class MallProductServiceImpl extends ServiceImpl<MallProductMapper, MallP
         BeanUtils.copyProperties(request, existingProduct);
         existingProduct.setUpdateTime(new Date());
         existingProduct.setUpdateBy(SecurityUtils.getUsername());
+        // 更新商品主图集合，同样保障后台始终有可展示的图片
         Assert.isTrue(request.getImages() != null && !request.getImages().isEmpty(), "商品图片至少需要上传一张图片");
         mallProductImageService.updateProductImageById(request.getImages(), existingProduct.getId());
 

@@ -53,7 +53,7 @@ public class MallProduct {
     private Long salesVolume;
 
     /**
-     * 独立库存数量（仅当未绑定药品时生效）
+     * 库存数量
      */
     private Integer stock;
 
@@ -73,24 +73,9 @@ public class MallProduct {
     private Integer deliveryType;
 
     /**
-     * 运费模板ID，关联 mall_product_shipping
+     * 版本号，用于乐观锁控制
      */
-    private Long shippingId;
-
-    /**
-     * 库存绑定类型（0-独立库存，1-绑定药品库存）
-     */
-    private Integer bindType;
-
-    /**
-     * 关联药品ID（当 bind_type=1 时生效）
-     */
-    private Long medicineId;
-
-    /**
-     * 关联药品库存批次ID（可选）
-     */
-    private Long medicineStockId;
+    private Integer version;
 
     /**
      * 创建时间

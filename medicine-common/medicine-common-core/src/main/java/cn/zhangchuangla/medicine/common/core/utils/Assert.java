@@ -98,6 +98,11 @@ public class Assert extends org.springframework.util.Assert {
         isParamTrue(number != null && number > 0, errorMessage);
     }
 
+    public static void isPositive(Integer number, String errorMessage) {
+        isParamTrue(number != null && number > 0, errorMessage);
+    }
+
+
     /**
      * 断言给定数值大于等于0，如果不是则抛出带指定错误消息的 ParamException。
      *
