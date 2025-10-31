@@ -5,6 +5,7 @@ import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import lombok.Data;
 
+import java.io.Serial;
 import java.io.Serializable;
 import java.util.List;
 
@@ -18,6 +19,7 @@ import java.util.List;
 @Schema(description = "聊天请求参数")
 public class ChatRequest implements Serializable {
 
+    @Serial
     private static final long serialVersionUID = 1L;
 
     /**
