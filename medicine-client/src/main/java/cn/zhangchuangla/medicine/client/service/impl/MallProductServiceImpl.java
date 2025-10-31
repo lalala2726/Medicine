@@ -6,8 +6,8 @@ import cn.zhangchuangla.medicine.client.service.MallProductService;
 import cn.zhangchuangla.medicine.common.core.enums.ResponseResultCode;
 import cn.zhangchuangla.medicine.common.core.exception.ServiceException;
 import cn.zhangchuangla.medicine.common.core.utils.Assert;
-import cn.zhangchuangla.medicine.common.redis.core.RedisZSetCache;
 import cn.zhangchuangla.medicine.model.entity.MallProduct;
+import cn.zhangchuangla.medicine.model.entity.MallProductWithImageDto;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -23,11 +23,7 @@ import java.util.Objects;
 public class MallProductServiceImpl extends ServiceImpl<MallProductMapper, MallProduct>
         implements MallProductService {
 
-
-    private final RedisZSetCache redisZSetCache;
-
-    private final static String REDIS_KEY_PRODUCT_VIEW_COUNT = "product:view:count:";
-
+    private final MallProductMapper mallProductMapper;
 
     @Override
     public MallProduct getMallProductById(Long id) {
@@ -36,6 +32,11 @@ public class MallProductServiceImpl extends ServiceImpl<MallProductMapper, MallP
             throw new ServiceException(ResponseResultCode.RESULT_IS_NULL, "商品不存在");
         }
         return mallProduct;
+    }
+
+    @Override
+    public MallProductWithImageDto getProductWithImagesById(Long id) {
+        return mallProductMapper.getProductWithImagesById(id);
     }
 
 

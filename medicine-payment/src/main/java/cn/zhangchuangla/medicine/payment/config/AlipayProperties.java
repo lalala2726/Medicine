@@ -36,7 +36,7 @@ public class AlipayProperties {
     private String alipayPublicKey;
 
     /**
-     * 支付宝开放平台网关地址，沙箱环境默认为 https://openapi-sandbox.dl.alipaydev.com/gateway.do。
+     * 支付宝开放平台网关地址
      */
     @NotBlank(message = "请配置 alipay.gatewayUrl（支付宝网关地址）")
     private String gatewayUrl;

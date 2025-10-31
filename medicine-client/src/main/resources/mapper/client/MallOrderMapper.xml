@@ -5,29 +5,29 @@
 <mapper namespace="cn.zhangchuangla.medicine.client.mapper.MallOrderMapper">
 
     <resultMap id="BaseResultMap" type="cn.zhangchuangla.medicine.model.entity.MallOrder">
-            <id property="id" column="id" />
-            <result property="orderNo" column="order_no" />
-            <result property="userId" column="user_id" />
-            <result property="totalAmount" column="total_amount" />
-            <result property="payAmount" column="pay_amount" />
-            <result property="freightAmount" column="freight_amount" />
-            <result property="payType" column="pay_type" />
-            <result property="orderStatus" column="order_status" />
-            <result property="deliveryType" column="delivery_type" />
-            <result property="addressId" column="address_id" />
-            <result property="receiverName" column="receiver_name" />
-            <result property="receiverPhone" column="receiver_phone" />
-            <result property="receiverDetail" column="receiver_detail" />
-            <result property="note" column="note" />
-            <result property="refundFlag" column="refund_flag" />
-            <result property="afterSaleFlag" column="after_sale_flag" />
-            <result property="payTime" column="pay_time" />
-            <result property="deliverTime" column="deliver_time" />
-            <result property="receiveTime" column="receive_time" />
-            <result property="finishTime" column="finish_time" />
-            <result property="cancelTime" column="cancel_time" />
-            <result property="createTime" column="create_time" />
-            <result property="updateTime" column="update_time" />
+        <id property="id" column="id"/>
+        <result property="orderNo" column="order_no"/>
+        <result property="userId" column="user_id"/>
+        <result property="totalAmount" column="total_amount"/>
+        <result property="payAmount" column="pay_amount"/>
+        <result property="freightAmount" column="freight_amount"/>
+        <result property="payType" column="pay_type"/>
+        <result property="orderStatus" column="order_status"/>
+        <result property="deliveryType" column="delivery_type"/>
+        <result property="addressId" column="address_id"/>
+        <result property="receiverName" column="receiver_name"/>
+        <result property="receiverPhone" column="receiver_phone"/>
+        <result property="receiverDetail" column="receiver_detail"/>
+        <result property="note" column="note"/>
+        <result property="refundFlag" column="refund_flag"/>
+        <result property="afterSaleFlag" column="after_sale_flag"/>
+        <result property="payTime" column="pay_time"/>
+        <result property="deliverTime" column="deliver_time"/>
+        <result property="receiveTime" column="receive_time"/>
+        <result property="finishTime" column="finish_time"/>
+        <result property="cancelTime" column="cancel_time"/>
+        <result property="createTime" column="create_time"/>
+        <result property="updateTime" column="update_time"/>
     </resultMap>
 
     <sql id="Base_Column_List">

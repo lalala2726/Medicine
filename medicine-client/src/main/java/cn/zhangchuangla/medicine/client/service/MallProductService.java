@@ -2,6 +2,7 @@ package cn.zhangchuangla.medicine.client.service;
 
 import cn.zhangchuangla.medicine.client.enums.ProductViewPeriod;
 import cn.zhangchuangla.medicine.model.entity.MallProduct;
+import cn.zhangchuangla.medicine.model.entity.MallProductWithImageDto;
 import com.baomidou.mybatisplus.extension.service.IService;
 
 /**
@@ -16,6 +17,15 @@ public interface MallProductService extends IService<MallProduct> {
      * @return 商品信息
      */
     MallProduct getMallProductById(Long id);
+
+
+    /**
+     * 获取商品信息（包含图片）
+     *
+     * @param id 商品ID
+     * @return 商品信息
+     */
+    MallProductWithImageDto getProductWithImagesById(Long id);
 
 
     /**

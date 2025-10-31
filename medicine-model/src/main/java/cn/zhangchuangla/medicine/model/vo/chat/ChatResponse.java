@@ -83,42 +83,42 @@ public class ChatResponse implements Serializable {
         }
 
         public Builder responseId(String responseId) {
-            response.setResponseId(responseId);
+            response.responseId = responseId;
             return this;
         }
 
         public Builder provider(String provider) {
-            response.setProvider(provider);
+            response.provider = provider;
             return this;
         }
 
         public Builder model(String model) {
-            response.setModel(model);
+            response.model = model;
             return this;
         }
 
         public Builder content(String content) {
-            response.setContent(content);
+            response.content = content;
             return this;
         }
 
         public Builder totalTokens(Integer totalTokens) {
-            response.setTotalTokens(totalTokens);
+            response.totalTokens = totalTokens;
             return this;
         }
 
         public Builder responseTime(Long responseTime) {
-            response.setResponseTime(responseTime);
+            response.responseTime = responseTime;
             return this;
         }
 
         public Builder error(String error) {
-            response.setError(error);
+            response.error = error;
             return this;
         }
 
         public Builder success(Boolean success) {
-            response.setSuccess(success);
+            response.success = success;
             return this;
         }
 

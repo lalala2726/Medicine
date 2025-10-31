@@ -53,19 +53,19 @@ public class MallOrder {
     private BigDecimal freightAmount;
 
     /**
-     * 支付方式（0未支付,1支付宝,2微信,3银行卡）
+     * 支付方式
      */
-    private Integer payType;
+    private String payType;
 
     /**
-     * 订单状态（0待支付,1待发货,2待收货,3已完成,4已退款,5售后中）
+     * 订单状态
      */
-    private Integer orderStatus;
+    private String orderStatus;
 
     /**
-     * 配送方式（1自提,2快递,3同城配送,4药店自送,5冷链,6智能药柜）
+     * 配送方式
      */
-    private Integer deliveryType;
+    private String deliveryType;
 
     /**
      * 用户收货地址ID

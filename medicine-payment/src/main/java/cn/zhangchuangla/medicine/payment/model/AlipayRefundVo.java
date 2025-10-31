@@ -10,7 +10,7 @@ import java.util.Date;
  */
 @Data
 @Builder
-public class AlipayRefundResult {
+public class AlipayRefundVo {
 
     /**
      * 支付宝交易号。

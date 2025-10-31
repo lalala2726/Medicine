@@ -11,9 +11,9 @@ import lombok.Getter;
 @Getter
 public enum MedicineStateKeyEnum {
 
-    USER_MESSAGE("userMessage", "用户消息"),
-    USER_INTENT("userIntent", "用户意图"),
-    SYSTEM_RESPONSE("systemResponse", "系统响应");
+    USER_MESSAGE("USER_MESSAGE", "用户消息"),
+    USER_INTENT("USER_INTENT", "用户意图"),
+    SYSTEM_RESPONSE("SYSTEM_RESPONSE", "系统响应");
 
     private final String key;
     private final String description;

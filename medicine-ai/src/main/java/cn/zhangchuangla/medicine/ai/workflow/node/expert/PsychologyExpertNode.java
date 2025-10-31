@@ -1,7 +1,6 @@
 package cn.zhangchuangla.medicine.ai.workflow.node.expert;
 
 /**
- *
  * 心理专家节点
  *
  * @author Chuang

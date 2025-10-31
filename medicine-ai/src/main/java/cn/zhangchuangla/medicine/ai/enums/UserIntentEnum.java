@@ -11,9 +11,9 @@ import lombok.Getter;
 @Getter
 public enum UserIntentEnum {
 
-    MEDICINE("medicine", "药品相关"),
-    CONSULT("consult", "健康咨询"),
-    OTHER("other", "其他问题");
+    MEDICINE("MEDICINE", "药品相关"),
+    CONSULT("CONSULT", "健康咨询"),
+    OTHER("OTHER", "其他问题");
 
     private final String intent;
     private final String description;

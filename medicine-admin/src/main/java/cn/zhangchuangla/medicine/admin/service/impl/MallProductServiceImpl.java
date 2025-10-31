@@ -113,7 +113,7 @@ public class MallProductServiceImpl extends ServiceImpl<MallProductMapper, MallP
         }
 
         // 检查配送方式是否存在
-        DeliveryTypeEnum deliveryTypeEnum = DeliveryTypeEnum.fromCode(request.getDeliveryType());
+        DeliveryTypeEnum deliveryTypeEnum = DeliveryTypeEnum.fromLegacyCode(request.getDeliveryType());
         Assert.isTrue(deliveryTypeEnum != null, "配送方式不存在");
 
         MallProduct product = new MallProduct();
@@ -159,7 +159,7 @@ public class MallProductServiceImpl extends ServiceImpl<MallProductMapper, MallP
         }
 
         // 检查配送方式是否存在
-        DeliveryTypeEnum deliveryTypeEnum = DeliveryTypeEnum.fromCode(request.getDeliveryType());
+        DeliveryTypeEnum deliveryTypeEnum = DeliveryTypeEnum.fromLegacyCode(request.getDeliveryType());
         Assert.isTrue(deliveryTypeEnum != null, "配送方式不存在");
 
         BeanUtils.copyProperties(request, existingProduct);

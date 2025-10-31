@@ -1,10 +1,13 @@
 package cn.zhangchuangla.medicine.client.controller.order;
 
+import cn.zhangchuangla.medicine.client.model.request.OrderConfirmRequest;
 import cn.zhangchuangla.medicine.client.model.request.OrderCreateRequest;
 import cn.zhangchuangla.medicine.client.model.vo.OrderCreateVo;
 import cn.zhangchuangla.medicine.client.service.MallOrderService;
 import cn.zhangchuangla.medicine.common.core.base.AjaxResult;
+import cn.zhangchuangla.medicine.common.security.annotation.Anonymous;
 import cn.zhangchuangla.medicine.common.security.base.BaseController;
+import cn.zhangchuangla.medicine.model.dto.AlipayNotifyDTO;
 import cn.zhangchuangla.medicine.payment.config.AlipayProperties;
 import cn.zhangchuangla.medicine.payment.model.AlipayQrCodeRequest;
 import cn.zhangchuangla.medicine.payment.service.AlipayPaymentService;
@@ -20,7 +23,6 @@ import org.springframework.web.bind.annotation.*;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
-import java.util.HashMap;
 import java.util.Map;
 
 /**
@@ -30,7 +32,7 @@ import java.util.Map;
  * 本控制器聚合了客户端订单创建、支付信息查询以及支付宝回调处理，
  * 方便第一次接入支付宝时快速理解整条业务链路。
  * </p>
- *
+ * <p>
  * created on 2025/10/31 01:33
  */
 @Slf4j
@@ -65,6 +67,19 @@ public class OrderController extends BaseController {
     public AjaxResult<OrderCreateVo> createOrder(@Validated @RequestBody OrderCreateRequest request) {
         OrderCreateVo orderCreateVo = mallOrderService.createOrder(request);
         return success(orderCreateVo);
+    }
+
+    /**
+     * 确认订单时，需要传入订单编号，服务端会校验订单状态并返回确认信息。
+     *
+     * @param request 确认订单请求
+     * @return 如果是支付宝等第三方支付方式这边将返回对应的支付表单信息
+     */
+    @PostMapping("/confirm")
+    @Operation(summary = "确认订单")
+    public AjaxResult<?> confirmOrder(@Validated @RequestBody OrderConfirmRequest request) {
+        String data = mallOrderService.confirmOrder(request);
+        return success(data);
     }
 
     /**
@@ -106,13 +121,13 @@ public class OrderController extends BaseController {
         if (!StringUtils.hasText(subject)) {
             subject = "商城订单支付-" + orderNo;
         }
-
+        String notifyUrl = alipayProperties.getNotifyUrl();
         AlipayQrCodeRequest qrCodeRequest = AlipayQrCodeRequest.builder()
                 .outTradeNo(orderNo)
                 .subject(subject)
                 .totalAmount(totalAmount)
                 .body("商城订单支付")
-                .notifyUrl(alipayProperties.getNotifyUrl())
+                .notifyUrl(notifyUrl)
                 .build();
         String base64 = alipayPaymentService.generateQrCodeBase64(qrCodeRequest);
         String dataUri = "data:image/png;base64," + base64;
@@ -131,30 +146,9 @@ public class OrderController extends BaseController {
      */
     @PostMapping("/alipay/notify")
     @Operation(summary = "支付宝异步通知回调")
-    public String handleAlipayNotify(HttpServletRequest request) {
-        Map<String, String> params = extractParams(request);
-        try {
-            boolean signVerified = AlipaySignature.rsaCheckV1(
-                    params,
-                    alipayProperties.getAlipayPublicKey(),
-                    alipayProperties.getCharset(),
-                    alipayProperties.getSignType()
-            );
-            if (!signVerified) {
-                log.warn("支付宝异步通知验签失败，参数：{}", params);
-                return "failure";
-            }
-        } catch (AlipayApiException ex) {
-            log.error("支付宝异步通知验签异常", ex);
-            return "failure";
-        }
-
-        String outTradeNo = params.get("out_trade_no");
-        String tradeStatus = params.get("trade_status");
-        log.info("收到支付宝异步通知，订单号：{}，交易状态：{}", outTradeNo, tradeStatus);
-
-        // TODO: 根据 trade_status 更新订单状态（如支付成功、支付关闭等）
-        return "success";
+    @Anonymous
+    public String handleAlipayNotify(AlipayNotifyDTO alipayNotifyDTO, HttpServletRequest request) {
+        return mallOrderService.alipayNotify(alipayNotifyDTO, request);
     }
 
     /**
@@ -189,21 +183,5 @@ public class OrderController extends BaseController {
         String tradeNo = params.getOrDefault("trade_no", "未知交易号");
         log.info("用户支付完成回跳，订单号：{}，支付宝交易号：{}", outTradeNo, tradeNo);
         return "支付完成，订单号：" + outTradeNo + "，支付宝交易号：" + tradeNo;
-    }
-
-    /**
-     * 将 HttpServletRequest 中的参数转换为简单 Map，便于统一验签。
-     *
-     * @param request 原始请求
-     * @return 参数键值
-     */
-    private Map<String, String> extractParams(HttpServletRequest request) {
-        Map<String, String> params = new HashMap<>();
-        request.getParameterMap().forEach((key, values) -> {
-            if (values != null && values.length > 0) {
-                params.put(key, values[0]);
-            }
-        });
-        return params;
     }
 }

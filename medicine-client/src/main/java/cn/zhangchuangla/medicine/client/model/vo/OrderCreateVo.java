@@ -24,27 +24,16 @@ public class OrderCreateVo {
     private String orderNo;
 
     /**
-     * 商户订单号
-     */
-    @Schema(description = "商户订单号", type = "string", example = "O2025103011223344")
-    private String outTradeNo;
-
-    /**
      * 金额
      */
     @Schema(description = "金额", type = "number", example = "128.50")
     private BigDecimal totalAmount;
 
-    /**
-     * 支付方式
-     */
-    @Schema(description = "支付方式", type = "string", example = "alipay")
-    private String payType;
 
     /**
      * 订单状态
      */
-    @Schema(description = "订单状态", type = "string", example = "WAIT_PAY")
+    @Schema(description = "订单状态", type = "string", example = "WaitPay")
     private String status;
 
     /**
@@ -64,11 +53,5 @@ public class OrderCreateVo {
      */
     @Schema(description = "商品摘要", type = "string", example = "复方感冒灵颗粒  2盒")
     private String productSummary;
-
-    /**
-     * 跳转地址
-     */
-    @Schema(description = "跳转地址", type = "string", example = "/pay/confirm?orderNo=O2025103011223344")
-    private String redirectUrl;
 
 }

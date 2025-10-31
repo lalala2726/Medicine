@@ -1,28 +1,32 @@
 package cn.zhangchuangla.medicine.model.enums;
 
-import lombok.AllArgsConstructor;
 import lombok.Getter;
 
 /**
  * 消息角色枚举
  */
 @Getter
-@AllArgsConstructor
 public enum MessageRoleEnum {
 
-    USER("user", "用户"),
-    ASSISTANT("assistant", "助手"),
-    SYSTEM("system", "系统");
+    USER("USER", "用户"),
+    ASSISTANT("ASSISTANT", "助手"),
+    SYSTEM("SYSTEM", "系统");
 
-    private final String code;
+    private final String type;
     private final String description;
 
-    public static MessageRoleEnum fromCode(String code) {
+    MessageRoleEnum(String type, String description) {
+        this.type = type;
+        this.description = description;
+    }
+
+    public static MessageRoleEnum fromCode(String type) {
         for (MessageRoleEnum role : values()) {
-            if (role.getCode().equals(code)) {
+            if (role.type.equals(type)) {
                 return role;
             }
         }
-        throw new IllegalArgumentException("Unknown message role: " + code);
+        throw new IllegalArgumentException("Unknown message role: " + type);
     }
+
 }

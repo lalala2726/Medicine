@@ -5,7 +5,7 @@ import cn.zhangchuangla.medicine.payment.exception.AlipayPaymentException;
 import cn.zhangchuangla.medicine.payment.model.AlipayPagePayRequest;
 import cn.zhangchuangla.medicine.payment.model.AlipayQrCodeRequest;
 import cn.zhangchuangla.medicine.payment.model.AlipayRefundRequest;
-import cn.zhangchuangla.medicine.payment.model.AlipayRefundResult;
+import cn.zhangchuangla.medicine.payment.model.AlipayRefundVo;
 import cn.zhangchuangla.medicine.payment.service.AlipayPaymentService;
 import com.alipay.api.AlipayApiException;
 import com.alipay.api.AlipayClient;
@@ -63,6 +63,10 @@ public class AlipayPaymentServiceImpl implements AlipayPaymentService {
         String returnUrl = determineUrl(request.getReturnUrl(), properties.getReturnUrl(), false);
 
         AlipayTradePagePayRequest payRequest = new AlipayTradePagePayRequest();
+        if (LOGGER.isInfoEnabled()) {
+            LOGGER.info("支付宝页面支付设置回调地址，notifyUrl={}, returnUrl={}", notifyUrl, returnUrl);
+        }
+
         if (StringUtils.hasText(notifyUrl)) {
             payRequest.setNotifyUrl(notifyUrl);
         }
@@ -95,7 +99,7 @@ public class AlipayPaymentServiceImpl implements AlipayPaymentService {
      * 调用支付宝开放平台退款接口，封装参数校验、异常处理以及日志记录。
      */
     @Override
-    public AlipayRefundResult refund(AlipayRefundRequest request) {
+    public AlipayRefundVo refund(AlipayRefundRequest request) {
         Assert.notNull(request, "request 不能为空");
         validateRefundParams(request);
 
@@ -115,7 +119,7 @@ public class AlipayPaymentServiceImpl implements AlipayPaymentService {
             if (!response.isSuccess()) {
                 throw new AlipayPaymentException("调用支付宝退款失败：" + response.getSubMsg());
             }
-            return AlipayRefundResult.builder()
+            return AlipayRefundVo.builder()
                     .tradeNo(response.getTradeNo())
                     .outTradeNo(response.getOutTradeNo())
                     .buyerLogonId(response.getBuyerLogonId())
@@ -142,8 +146,13 @@ public class AlipayPaymentServiceImpl implements AlipayPaymentService {
 
         AlipayTradePrecreateRequest precreateRequest = new AlipayTradePrecreateRequest();
         precreateRequest.setBizModel(model);
-        if (StringUtils.hasText(request.getNotifyUrl())) {
-            precreateRequest.setNotifyUrl(request.getNotifyUrl());
+        String notifyUrl = request.getNotifyUrl();
+        if (LOGGER.isInfoEnabled()) {
+            LOGGER.info("支付宝当面付预下单使用 notifyUrl={}", notifyUrl);
+        }
+
+        if (StringUtils.hasText(notifyUrl)) {
+            precreateRequest.setNotifyUrl(notifyUrl);
         }
 
         try {
@@ -199,6 +208,10 @@ public class AlipayPaymentServiceImpl implements AlipayPaymentService {
 
     private String determineUrl(String requestUrl, String defaultUrl, boolean required) {
         String resolved = StringUtils.hasText(requestUrl) ? requestUrl : defaultUrl;
+        if (LOGGER.isInfoEnabled()) {
+            LOGGER.info("resolve alipay url -> requestUrl={}, defaultUrl={}, resolved={}, required={}",
+                    requestUrl, defaultUrl, resolved, required);
+        }
         if (required && !StringUtils.hasText(resolved)) {
             throw new AlipayPaymentException("请配置 notifyUrl，必须要有一个可访问的异步通知地址");
         }

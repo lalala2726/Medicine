@@ -14,23 +14,23 @@ public enum ProductViewPeriod {
     /**
      * 累计总浏览次数
      */
-    TOTAL("total"),
+    TOTAL("TOTAL"),
     /**
      * 当前小时
      */
-    HOUR("hour"),
+    HOUR("HOUR"),
     /**
      * 当天
      */
-    DAY("day"),
+    DAY("DAY"),
     /**
      * 当周（周一 00:00 起）
      */
-    WEEK("week"),
+    WEEK("WEEK"),
     /**
      * 当月（1 号 00:00 起）
      */
-    MONTH("month");
+    MONTH("MONTH");
 
     private final String code;
 

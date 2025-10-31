@@ -11,10 +11,10 @@ import lombok.Getter;
 @Getter
 public enum MedicineNodeEnum {
 
-    INTENT("intent", "意图识别节点"),
-    MEDICINE("medicine", "药品咨询节点"),
-    CONSULT("consult", "健康咨询节点"),
-    OTHER("other", "其他问题节点");
+    INTENT("INTENT", "意图识别节点"),
+    MEDICINE("MEDICINE", "药品咨询节点"),
+    CONSULT("CONSULT", "健康咨询节点"),
+    OTHER("OTHER", "其他问题节点");
 
     private final String nodeId;
     private final String description;

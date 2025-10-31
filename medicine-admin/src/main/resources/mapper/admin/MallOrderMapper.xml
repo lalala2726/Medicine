@@ -1,0 +1,65 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="cn.zhangchuangla.medicine.admin.mapper.MallOrderMapper">
+
+    <resultMap id="BaseResultMap" type="cn.zhangchuangla.medicine.model.entity.MallOrder">
+        <id property="id" column="id"/>
+        <result property="orderNo" column="order_no"/>
+        <result property="userId" column="user_id"/>
+        <result property="totalAmount" column="total_amount"/>
+        <result property="payAmount" column="pay_amount"/>
+        <result property="freightAmount" column="freight_amount"/>
+        <result property="payType" column="pay_type"/>
+        <result property="orderStatus" column="order_status"/>
+        <result property="deliveryType" column="delivery_type"/>
+        <result property="addressId" column="address_id"/>
+        <result property="receiverName" column="receiver_name"/>
+        <result property="receiverPhone" column="receiver_phone"/>
+        <result property="receiverDetail" column="receiver_detail"/>
+        <result property="note" column="note"/>
+        <result property="refundFlag" column="refund_flag"/>
+        <result property="afterSaleFlag" column="after_sale_flag"/>
+        <result property="payTime" column="pay_time"/>
+        <result property="deliverTime" column="deliver_time"/>
+        <result property="receiveTime" column="receive_time"/>
+        <result property="finishTime" column="finish_time"/>
+        <result property="cancelTime" column="cancel_time"/>
+        <result property="createTime" column="create_time"/>
+        <result property="updateTime" column="update_time"/>
+    </resultMap>
+
+    <sql id="Base_Column_List">
+        id,order_no,user_id,total_amount,pay_amount,freight_amount,
+        pay_type,order_status,delivery_type,address_id,receiver_name,
+        receiver_phone,receiver_detail,note,refund_flag,after_sale_flag,
+        pay_time,deliver_time,receive_time,finish_time,cancel_time,
+        create_time,update_time
+    </sql>
+    <select id="orderList" resultMap="BaseResultMap">
+        SELECT
+        <include refid="Base_Column_List"/>
+        FROM mall_order
+        WHERE 1 = 1
+        <if test="request.orderNo != null and request.orderNo != ''">
+            AND order_no = #{request.orderNo}
+        </if>
+        <if test="request.payType != null and request.payType != ''">
+            AND pay_type = #{request.payType}
+        </if>
+        <if test="request.orderStatus != null and request.orderStatus != ''">
+            AND order_status = #{request.orderStatus}
+        </if>
+        <if test="request.deliveryType != null and request.deliveryType != ''">
+            AND delivery_type = #{request.deliveryType}
+        </if>
+        <if test="request.receiverName != null and request.receiverName != ''">
+            AND receiver_name LIKE CONCAT('%', #{request.receiverName}, '%')
+        </if>
+        <if test="request.receiverPhone != null and request.receiverPhone != ''">
+            AND receiver_phone LIKE CONCAT('%', #{request.receiverPhone}, '%')
+        </if>
+        ORDER BY create_time DESC
+    </select>
+</mapper>

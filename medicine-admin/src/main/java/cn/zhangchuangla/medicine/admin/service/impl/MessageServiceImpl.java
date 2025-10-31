@@ -26,7 +26,7 @@ public class MessageServiceImpl extends ServiceImpl<MessageMapper, Message>
         Message message = new Message();
         message.setUuid(UUIDUtils.simple());
         message.setConversationId(conversationId);
-        message.setRole(MessageRoleEnum.USER.getCode());
+        message.setRole(MessageRoleEnum.USER.getType());
         message.setContent(content);
         message.setCreateTime(new Date());
         message.setIsDelete(0);
@@ -40,7 +40,7 @@ public class MessageServiceImpl extends ServiceImpl<MessageMapper, Message>
         Message message = new Message();
         message.setUuid(UUIDUtils.simple());
         message.setConversationId(conversationId);
-        message.setRole(MessageRoleEnum.ASSISTANT.getCode());
+        message.setRole(MessageRoleEnum.ASSISTANT.getType());
         message.setContent(content);
         message.setCreateTime(new Date());
         message.setIsDelete(0);

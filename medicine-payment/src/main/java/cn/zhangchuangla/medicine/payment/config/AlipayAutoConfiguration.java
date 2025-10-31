@@ -39,13 +39,13 @@ public class AlipayAutoConfiguration {
     public AlipayClient alipayClient(AlipayProperties properties) {
         LOGGER.info("初始化 AlipayClient，当前使用的网关地址为：{}", properties.getGatewayUrl());
         return new DefaultAlipayClient(
-            properties.getGatewayUrl(),
-            properties.getAppId(),
-            properties.getPrivateKey(),
-            properties.getFormat(),
-            properties.getCharset(),
-            properties.getAlipayPublicKey(),
-            properties.getSignType()
+                properties.getGatewayUrl(),
+                properties.getAppId(),
+                properties.getPrivateKey(),
+                properties.getFormat(),
+                properties.getCharset(),
+                properties.getAlipayPublicKey(),
+                properties.getSignType()
         );
     }
 

@@ -1,41 +1,69 @@
 package cn.zhangchuangla.medicine.client.service.impl;
 
 import cn.zhangchuangla.medicine.client.mapper.MallOrderMapper;
+import cn.zhangchuangla.medicine.client.model.request.OrderConfirmRequest;
 import cn.zhangchuangla.medicine.client.model.request.OrderCreateRequest;
 import cn.zhangchuangla.medicine.client.model.vo.OrderCreateVo;
+import cn.zhangchuangla.medicine.client.service.MallOrderItemService;
 import cn.zhangchuangla.medicine.client.service.MallOrderService;
 import cn.zhangchuangla.medicine.client.service.MallProductService;
 import cn.zhangchuangla.medicine.common.core.enums.ResponseResultCode;
 import cn.zhangchuangla.medicine.common.core.exception.ServiceException;
 import cn.zhangchuangla.medicine.common.security.utils.SecurityUtils;
-import cn.zhangchuangla.medicine.model.entity.MallOrder;
-import cn.zhangchuangla.medicine.model.entity.MallProduct;
+import cn.zhangchuangla.medicine.model.dto.AlipayNotifyDTO;
+import cn.zhangchuangla.medicine.model.entity.*;
+import cn.zhangchuangla.medicine.model.enums.DeliveryTypeEnum;
+import cn.zhangchuangla.medicine.model.enums.OrderStatusEnum;
+import cn.zhangchuangla.medicine.model.enums.PayTypeEnum;
+import cn.zhangchuangla.medicine.payment.config.AlipayProperties;
+import cn.zhangchuangla.medicine.payment.model.AlipayPagePayRequest;
+import cn.zhangchuangla.medicine.payment.service.AlipayPaymentService;
+import com.alipay.api.AlipayApiException;
+import com.alipay.api.internal.util.AlipaySignature;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
+import jakarta.servlet.http.HttpServletRequest;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.util.StringUtils;
 
+import java.lang.reflect.Field;
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.util.Date;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Objects;
 
 /**
  * @author Chuang
  */
 @Service
+@Slf4j
 public class MallOrderServiceImpl extends ServiceImpl<MallOrderMapper, MallOrder> implements MallOrderService {
 
-    private static final int ORDER_STATUS_WAIT_PAY = 0;
-    private static final int PAY_TYPE_ALIPAY = 1;
+    private static final String ORDER_STATUS_WAIT_PAY = OrderStatusEnum.PENDING_PAYMENT.getType();
+    private static final String ORDER_STATUS_WAIT_SHIPMENT = OrderStatusEnum.PENDING_SHIPMENT.getType();
+    private static final String PAY_TYPE_ALIPAY = PayTypeEnum.ALIPAY.getType();
     private static final int FLAG_FALSE = 0;
     private static final int ORDER_TIMEOUT_MINUTES = 30;
 
     private final MallProductService mallProductService;
+    private final MallOrderItemService mallOrderItemService;
+    private final AlipayPaymentService alipayPaymentService;
+    private final AlipayProperties alipayProperties;
 
-    public MallOrderServiceImpl(MallProductService mallProductService) {
+    public MallOrderServiceImpl(MallProductService mallProductService,
+                                MallOrderItemService mallOrderItemService,
+                                AlipayPaymentService alipayPaymentService,
+                                AlipayProperties alipayProperties) {
         this.mallProductService = mallProductService;
+        this.mallOrderItemService = mallOrderItemService;
+        this.alipayPaymentService = alipayPaymentService;
+        this.alipayProperties = alipayProperties;
     }
 
     /**
@@ -45,8 +73,8 @@ public class MallOrderServiceImpl extends ServiceImpl<MallOrderMapper, MallOrder
     @Transactional(rollbackFor = Exception.class)
     public OrderCreateVo createOrder(OrderCreateRequest request) {
         // 1. 查询商品详情并校验上架状态
-        MallProduct product = mallProductService.getMallProductById(request.getProductId());
-        BigDecimal totalAmount = validateProductAndCalculateAmount(request, product);
+        MallProductWithImageDto mallProductWithImageDto = mallProductService.getProductWithImagesById(request.getProductId());
+        BigDecimal totalAmount = validateProductAndCalculateAmount(request, mallProductWithImageDto);
 
         // 4. 扣减库存，内部包含乐观锁控制
         mallProductService.deductStock(request.getProductId(), request.getQuantity());
@@ -55,15 +83,21 @@ public class MallOrderServiceImpl extends ServiceImpl<MallOrderMapper, MallOrder
         String orderNo = generateOrderNo();
         Date now = new Date();
 
+        DeliveryTypeEnum deliveryTypeEnum = DeliveryTypeEnum.fromLegacyCode(mallProductWithImageDto.getDeliveryType());
+        if (deliveryTypeEnum == null) {
+            throw new ServiceException(ResponseResultCode.OPERATION_ERROR, "商品配送方式配置异常");
+        }
+        String deliveryTypeCode = deliveryTypeEnum.getType();
+
         MallOrder order = MallOrder.builder()
                 .orderNo(orderNo)
-                .userId(resolveCurrentUserId())
+                .userId(SecurityUtils.getUserId())
                 .totalAmount(totalAmount)
                 .payAmount(BigDecimal.ZERO)
                 .freightAmount(BigDecimal.ZERO)
                 .payType(PAY_TYPE_ALIPAY)
                 .orderStatus(ORDER_STATUS_WAIT_PAY)
-                .deliveryType(product.getDeliveryType())
+                .deliveryType(deliveryTypeCode)
                 .receiverDetail(request.getAddress())
                 .note(request.getRemark())
                 .refundFlag(FLAG_FALSE)
@@ -72,7 +106,29 @@ public class MallOrderServiceImpl extends ServiceImpl<MallOrderMapper, MallOrder
                 .updateTime(now)
                 .build();
 
+        // 6. 先保存订单，再落订单明细
         if (!save(order)) {
+            throw new ServiceException(ResponseResultCode.OPERATION_ERROR, "创建订单失败，请稍后再试");
+        }
+
+        MallProductImage mallProductImage = null;
+        if (mallProductWithImageDto.getProductImages() != null && !mallProductWithImageDto.getProductImages().isEmpty()) {
+            mallProductImage = mallProductWithImageDto.getProductImages().getFirst();
+        }
+
+        MallOrderItem mallOrderItem = MallOrderItem.builder()
+                .orderId(order.getId())
+                .productId(mallProductWithImageDto.getId())
+                .productName(mallProductWithImageDto.getName())
+                .quantity(request.getQuantity())
+                .price(mallProductWithImageDto.getPrice())
+                .imageUrl(mallProductImage == null ? "" : mallProductImage.getImageUrl())
+                .totalPrice(totalAmount)
+                .createTime(now)
+                .updateTime(now)
+                .build();
+
+        if (!mallOrderItemService.save(mallOrderItem)) {
             throw new ServiceException(ResponseResultCode.OPERATION_ERROR, "创建订单失败，请稍后再试");
         }
 
@@ -81,17 +137,14 @@ public class MallOrderServiceImpl extends ServiceImpl<MallOrderMapper, MallOrder
                 .atZone(ZoneId.systemDefault())
                 .toInstant());
 
-        // 6. 返回下单结果，供前端确认订单信息
+        // 6. 这边先确定订单
         return OrderCreateVo.builder()
                 .orderNo(orderNo)
-                .outTradeNo(orderNo)
                 .totalAmount(totalAmount)
-                .payType("ALIPAY")
-                .status("WAIT_PAY")
+                .status(order.getOrderStatus())
                 .createTime(now)
                 .expireTime(expireTime)
-                .productSummary(buildProductSummary(product, request.getQuantity()))
-                .redirectUrl("/pay/confirm?orderNo=" + orderNo)
+                .productSummary(buildProductSummary(mallProductWithImageDto, request.getQuantity()))
                 .build();
     }
 
@@ -136,14 +189,197 @@ public class MallOrderServiceImpl extends ServiceImpl<MallOrderMapper, MallOrder
         // 以 VO 格式返回支付关键信息，供前端拼装支付请求或确认页面
         return OrderCreateVo.builder()
                 .orderNo(order.getOrderNo())
-                .outTradeNo(order.getOrderNo())
                 .totalAmount(order.getTotalAmount())
-                .payType("ALIPAY")
-                .status("WAIT_PAY")
+                .status(order.getOrderStatus())
                 .createTime(order.getCreateTime())
                 .productSummary("商城订单-" + order.getOrderNo())
-                .redirectUrl("/pay/confirm?orderNo=" + order.getOrderNo())
                 .build();
+    }
+
+
+    /**
+     * 确认订单
+     *
+     * @param request 确认订单请求参数
+     * @return 订单支付表单信息
+     */
+    @Override
+    public String confirmOrder(OrderConfirmRequest request) {
+        // 使用订单号查询待支付订单，避免重复支付
+        MallOrder order = lambdaQuery()
+                .eq(MallOrder::getOrderNo, request.getOrderNo())
+                .one();
+        if (order == null) {
+            throw new ServiceException(ResponseResultCode.RESULT_IS_NULL, "订单不存在");
+        }
+        if (!Objects.equals(order.getOrderStatus(), ORDER_STATUS_WAIT_PAY)) {
+            throw new ServiceException(ResponseResultCode.OPERATION_ERROR, "订单状态异常，无法发起支付");
+        }
+
+        // 根据支付方式切换支付方式
+        return switch (request.getPayMethod()) {
+            case ALIPAY -> alipayPay(order);
+            case WALLET -> walletPay(order);
+            default -> throw new ServiceException(ResponseResultCode.OPERATION_ERROR, "不支持的支付方式");
+        };
+    }
+
+    /**
+     * 支付宝支付
+     */
+    private String alipayPay(MallOrder order) {
+        BigDecimal amount = order.getTotalAmount();
+        if (amount == null) {
+            throw new ServiceException(ResponseResultCode.OPERATION_ERROR, "订单金额缺失，无法发起支付");
+        }
+
+        MallOrderItem firstItem = mallOrderItemService.lambdaQuery()
+                .eq(MallOrderItem::getOrderId, order.getId())
+                .orderByAsc(MallOrderItem::getId)
+                .last("LIMIT 1")
+                .one();
+
+        String subject;
+        if (firstItem != null && StringUtils.hasText(firstItem.getProductName())) {
+            subject = firstItem.getProductName();
+            Integer quantity = firstItem.getQuantity();
+            if (quantity != null && quantity > 0) {
+                subject = subject + " x" + quantity;
+            }
+        } else {
+            subject = "商城订单-" + order.getOrderNo();
+        }
+
+        String totalAmount = amount.setScale(2, RoundingMode.HALF_UP).toPlainString();
+
+        String notifyUrl = alipayProperties.getNotifyUrl();
+        String returnUrl = alipayProperties.getReturnUrl();
+        log.info("构建支付宝页面支付表单，orderNo={}，notifyUrl={}，returnUrl={}", order.getOrderNo(), notifyUrl, returnUrl);
+
+        AlipayPagePayRequest payRequest = AlipayPagePayRequest.builder()
+                .outTradeNo(order.getOrderNo())
+                .subject(subject)
+                .totalAmount(totalAmount)
+                .body("商城订单支付（订单号：" + order.getOrderNo() + "）")
+                .timeoutExpress(ORDER_TIMEOUT_MINUTES + "m")
+                .notifyUrl(notifyUrl)
+                .returnUrl(returnUrl)
+                .build();
+
+        return alipayPaymentService.generatePagePayForm(payRequest);
+    }
+
+
+    /**
+     * 钱包支付
+     */
+    private String walletPay(MallOrder order) {
+        throw new ServiceException(ResponseResultCode.OPERATION_ERROR, "钱包支付功能暂未开放");
+    }
+
+
+    private boolean markOrderPaidByAlipay(String orderNo, BigDecimal payAmount) {
+        MallOrder order = lambdaQuery()
+                .eq(MallOrder::getOrderNo, orderNo)
+                .one();
+        if (order == null) {
+            return false;
+        }
+        if (!Objects.equals(order.getOrderStatus(), ORDER_STATUS_WAIT_PAY)) {
+            return true;
+        }
+        Date now = new Date();
+        BigDecimal finalPayAmount = payAmount != null ? payAmount : order.getTotalAmount();
+        log.info("订单支付成功，订单号：{}，支付金额：{}", orderNo, finalPayAmount);
+        return lambdaUpdate()
+                .eq(MallOrder::getId, order.getId())
+                .set(MallOrder::getOrderStatus, ORDER_STATUS_WAIT_SHIPMENT)
+                .set(MallOrder::getPayType, PAY_TYPE_ALIPAY)
+                .set(MallOrder::getPayAmount, finalPayAmount)
+                .set(MallOrder::getPayTime, now)
+                .set(MallOrder::getUpdateTime, now)
+                .update();
+    }
+
+    /**
+     * 支付宝异步通知回调处理逻辑
+     *
+     * @param alipayNotifyDTO 支付宝异步通知参数
+     * @return 处理结果
+     */
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public String alipayNotify(AlipayNotifyDTO alipayNotifyDTO, HttpServletRequest request) {
+
+        final String SUCCESS_RESPONSE = "success";
+        final String FAILURE_RESPONSE = "failure";
+
+        log.info("收到支付宝异步通知，requestURI={}，remoteAddr={}，paramCount={}",
+                request.getRequestURI(), request.getRemoteAddr(), request.getParameterMap().size());
+
+        if (alipayNotifyDTO == null) {
+            log.warn("收到空的支付宝异步通知");
+            return FAILURE_RESPONSE;
+        }
+
+        log.info("支付宝通知核心字段，outTradeNo={}，tradeStatus={}，notifyId={}",
+                alipayNotifyDTO.getOut_trade_no(), alipayNotifyDTO.getTrade_status(), alipayNotifyDTO.getNotify_id());
+
+        Map<String, String> params = buildNotifyParamMap(request, alipayNotifyDTO);
+        if (params.isEmpty()) {
+            log.warn("支付宝异步通知参数为空，订单号：{}", alipayNotifyDTO.getOut_trade_no());
+            return FAILURE_RESPONSE;
+        }
+
+        log.debug("支付宝异步通知完整参数，orderNo={}，params={}", alipayNotifyDTO.getOut_trade_no(), params);
+
+        try {
+            boolean signVerified = AlipaySignature.rsaCheckV1(
+                    params,
+                    alipayProperties.getAlipayPublicKey(),
+                    alipayProperties.getCharset(),
+                    alipayProperties.getSignType()
+            );
+            if (!signVerified) {
+                log.warn("支付宝异步通知验签失败，订单号：{}，参数：{}", alipayNotifyDTO.getOut_trade_no(), params);
+                return FAILURE_RESPONSE;
+            }
+        } catch (AlipayApiException ex) {
+            log.error("支付宝异步通知验签异常，订单号：{}", alipayNotifyDTO.getOut_trade_no(), ex);
+            return FAILURE_RESPONSE;
+        }
+
+        String tradeStatus = alipayNotifyDTO.getTrade_status();
+        String orderNo = alipayNotifyDTO.getOut_trade_no();
+        log.info("支付宝异步通知到达，订单号：{}，交易状态：{}", orderNo, tradeStatus);
+
+        if (!"TRADE_SUCCESS".equals(tradeStatus) && !"TRADE_FINISHED".equals(tradeStatus)) {
+            log.info("支付宝通知状态非支付成功，订单号：{}，状态：{}，忽略更新", orderNo, tradeStatus);
+            return SUCCESS_RESPONSE;
+        }
+
+        MallOrder order = lambdaQuery()
+                .eq(MallOrder::getOrderNo, orderNo)
+                .one();
+        if (order == null) {
+            log.warn("支付宝通知对应订单不存在，订单号：{}", orderNo);
+            return FAILURE_RESPONSE;
+        }
+
+        BigDecimal notifyAmount = parseAmount(alipayNotifyDTO.getTotal_amount());
+        if (!isPayAmountMatched(order, notifyAmount)) {
+            log.warn("支付宝通知金额与订单不符，订单号：{}，订单金额：{}，回调金额：{}", orderNo, order.getTotalAmount(), notifyAmount);
+            return FAILURE_RESPONSE;
+        }
+
+        boolean updated = markOrderPaidByAlipay(orderNo, notifyAmount);
+        if (!updated) {
+            log.warn("标记订单支付状态失败，订单号：{}", orderNo);
+            return FAILURE_RESPONSE;
+        }
+
+        log.info("订单支付宝支付完成，已更新状态，订单号：{}", orderNo);
+        return SUCCESS_RESPONSE;
     }
 
     /**
@@ -157,16 +393,6 @@ public class MallOrderServiceImpl extends ServiceImpl<MallOrderMapper, MallOrder
         return product.getName() + " x" + quantity;
     }
 
-    /**
-     * 获取当前登录用户 ID；若未登录则返回 null（允许匿名下单场景）。
-     */
-    private Long resolveCurrentUserId() {
-        try {
-            return SecurityUtils.getUserId();
-        } catch (Exception ex) {
-            return null;
-        }
-    }
 
     /**
      * 生成业务唯一的订单编号。
@@ -177,5 +403,61 @@ public class MallOrderServiceImpl extends ServiceImpl<MallOrderMapper, MallOrder
         String randomPart = String.format("%06d", (int) (Math.random() * 1000000));
         return prefix + datePart + randomPart;
     }
-}
 
+    /**
+     * 构建支付宝回调参数 Map，用于验签。
+     */
+    private Map<String, String> buildNotifyParamMap(HttpServletRequest request, AlipayNotifyDTO notifyDTO) {
+        Map<String, String> params = new HashMap<>();
+        if (request != null) {
+            request.getParameterMap().forEach((key, values) -> {
+                if (values != null && values.length > 0) {
+                    params.put(key, values[0]);
+                }
+            });
+        }
+        if (params.isEmpty() && notifyDTO != null) {
+            for (Field field : AlipayNotifyDTO.class.getDeclaredFields()) {
+                field.setAccessible(true);
+                try {
+                    Object value = field.get(notifyDTO);
+                    if (value != null) {
+                        params.put(field.getName(), value.toString());
+                    }
+                } catch (IllegalAccessException ex) {
+                    log.debug("读取支付宝通知字段失败：{}", field.getName(), ex);
+                }
+            }
+        }
+        return params;
+    }
+
+    /**
+     * 解析字符串金额为 BigDecimal。
+     */
+    private BigDecimal parseAmount(String amountStr) {
+        if (!StringUtils.hasText(amountStr)) {
+            return null;
+        }
+        try {
+            return new BigDecimal(amountStr);
+        } catch (NumberFormatException ex) {
+            log.warn("支付宝回调金额解析失败，原始金额：{}", amountStr);
+            return null;
+        }
+    }
+
+    /**
+     * 校验订单应付金额与支付宝回调金额是否一致。
+     */
+    private boolean isPayAmountMatched(MallOrder order, BigDecimal payAmount) {
+        if (order == null) {
+            return false;
+        }
+        BigDecimal orderAmount = order.getTotalAmount();
+        if (orderAmount == null || payAmount == null) {
+            return false;
+        }
+        return orderAmount.compareTo(payAmount) == 0;
+    }
+}
