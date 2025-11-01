@@ -3,6 +3,7 @@ package cn.zhangchuangla.medicine.model.entity;
 import com.baomidou.mybatisplus.annotation.IdType;
 import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableName;
+import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -123,17 +124,45 @@ public class MallOrder {
     private Date finishTime;
 
     /**
-     * 取消时间
+     * 订单关闭原因
      */
-    private Date cancelTime;
+    private String closeReason;
+
+    /**
+     * 订单关闭时间
+     */
+    private Date closeTime;
 
     /**
      * 创建时间
      */
+    @Schema(description = "创建时间")
     private Date createTime;
 
     /**
-     * 更新时间
+     * 修改时间
      */
+    @Schema(description = "修改时间")
     private Date updateTime;
+
+    /**
+     * 创建人
+     */
+    @Schema(description = "创建者")
+    private String createBy;
+
+    /**
+     * 修改人
+     */
+    @Schema(description = "修改者")
+    private String updateBy;
+
+    /**
+     * 备注
+     */
+    @Schema(description = "备注")
+    private String remark;
+
+
+
 }

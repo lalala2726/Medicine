@@ -39,7 +39,12 @@ public enum OrderStatusEnum {
     /**
      * 售后中
      */
-    AFTER_SALE("AFTER_SALE", "售后中", "订单正在进行售后处理");
+    AFTER_SALE("AFTER_SALE", "售后中", "订单正在进行售后处理"),
+
+    /**
+     * 已过期
+     */
+    EXPIRED("EXPIRED", "已过期", "订单已过期，请重新下单");
 
     /**
      * 枚举值

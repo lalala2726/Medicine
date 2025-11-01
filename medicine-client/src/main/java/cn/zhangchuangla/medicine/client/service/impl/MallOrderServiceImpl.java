@@ -7,6 +7,7 @@ import cn.zhangchuangla.medicine.client.model.vo.OrderCreateVo;
 import cn.zhangchuangla.medicine.client.service.MallOrderItemService;
 import cn.zhangchuangla.medicine.client.service.MallOrderService;
 import cn.zhangchuangla.medicine.client.service.MallProductService;
+import cn.zhangchuangla.medicine.client.task.OrderDelayProducer;
 import cn.zhangchuangla.medicine.common.core.enums.ResponseResultCode;
 import cn.zhangchuangla.medicine.common.core.exception.ServiceException;
 import cn.zhangchuangla.medicine.common.security.utils.SecurityUtils;
@@ -22,6 +23,7 @@ import com.alipay.api.AlipayApiException;
 import com.alipay.api.internal.util.AlipaySignature;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import jakarta.servlet.http.HttpServletRequest;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -43,6 +45,7 @@ import java.util.Objects;
  */
 @Service
 @Slf4j
+@RequiredArgsConstructor
 public class MallOrderServiceImpl extends ServiceImpl<MallOrderMapper, MallOrder> implements MallOrderService {
 
     private static final String ORDER_STATUS_WAIT_PAY = OrderStatusEnum.PENDING_PAYMENT.getType();
@@ -55,16 +58,7 @@ public class MallOrderServiceImpl extends ServiceImpl<MallOrderMapper, MallOrder
     private final MallOrderItemService mallOrderItemService;
     private final AlipayPaymentService alipayPaymentService;
     private final AlipayProperties alipayProperties;
-
-    public MallOrderServiceImpl(MallProductService mallProductService,
-                                MallOrderItemService mallOrderItemService,
-                                AlipayPaymentService alipayPaymentService,
-                                AlipayProperties alipayProperties) {
-        this.mallProductService = mallProductService;
-        this.mallOrderItemService = mallOrderItemService;
-        this.alipayPaymentService = alipayPaymentService;
-        this.alipayProperties = alipayProperties;
-    }
+    private final OrderDelayProducer orderDelayProducer;
 
     /**
      * 创建商城订单的核心流程：校验库存 → 扣减库存 → 构建订单 → 返回支付信息。
@@ -137,7 +131,9 @@ public class MallOrderServiceImpl extends ServiceImpl<MallOrderMapper, MallOrder
                 .atZone(ZoneId.systemDefault())
                 .toInstant());
 
-        // 6. 这边先确定订单
+        // 6. 设置订单定时关闭
+        orderDelayProducer.addOrderToDelayQueue(orderNo, ORDER_TIMEOUT_MINUTES);
+
         return OrderCreateVo.builder()
                 .orderNo(orderNo)
                 .totalAmount(totalAmount)
@@ -179,12 +175,7 @@ public class MallOrderServiceImpl extends ServiceImpl<MallOrderMapper, MallOrder
         MallOrder order = lambdaQuery()
                 .eq(MallOrder::getOrderNo, orderNo)
                 .one();
-        if (order == null) {
-            throw new ServiceException(ResponseResultCode.RESULT_IS_NULL, "订单不存在");
-        }
-        if (!Objects.equals(order.getOrderStatus(), ORDER_STATUS_WAIT_PAY)) {
-            throw new ServiceException(ResponseResultCode.OPERATION_ERROR, "订单状态异常，无法发起支付");
-        }
+        checkOrderStatus(order);
 
         // 以 VO 格式返回支付关键信息，供前端拼装支付请求或确认页面
         return OrderCreateVo.builder()
@@ -209,12 +200,7 @@ public class MallOrderServiceImpl extends ServiceImpl<MallOrderMapper, MallOrder
         MallOrder order = lambdaQuery()
                 .eq(MallOrder::getOrderNo, request.getOrderNo())
                 .one();
-        if (order == null) {
-            throw new ServiceException(ResponseResultCode.RESULT_IS_NULL, "订单不存在");
-        }
-        if (!Objects.equals(order.getOrderStatus(), ORDER_STATUS_WAIT_PAY)) {
-            throw new ServiceException(ResponseResultCode.OPERATION_ERROR, "订单状态异常，无法发起支付");
-        }
+        checkOrderStatus(order);
 
         // 根据支付方式切换支付方式
         return switch (request.getPayMethod()) {
@@ -222,6 +208,20 @@ public class MallOrderServiceImpl extends ServiceImpl<MallOrderMapper, MallOrder
             case WALLET -> walletPay(order);
             default -> throw new ServiceException(ResponseResultCode.OPERATION_ERROR, "不支持的支付方式");
         };
+    }
+
+    /**
+     * 校验订单状态
+     */
+    private void checkOrderStatus(MallOrder order) {
+        if (order == null) {
+            throw new ServiceException(ResponseResultCode.RESULT_IS_NULL, "订单不存在");
+        }
+        if (!Objects.equals(order.getOrderStatus(), ORDER_STATUS_WAIT_PAY)) {
+            String description = OrderStatusEnum.fromCode(order.getOrderStatus()).getName();
+            String hint = String.format("订单状态异常，请勿重复支付，当前状态：%s", description);
+            throw new ServiceException(ResponseResultCode.OPERATION_ERROR, hint);
+        }
     }
 
     /**
@@ -380,6 +380,25 @@ public class MallOrderServiceImpl extends ServiceImpl<MallOrderMapper, MallOrder
 
         log.info("订单支付宝支付完成，已更新状态，订单号：{}", orderNo);
         return SUCCESS_RESPONSE;
+    }
+
+    @Override
+    public void closeOrderIfUnpaid(String orderNo) {
+        log.info("订单 {} 未支付，准备关闭", orderNo);
+        boolean updated = lambdaUpdate()
+                .eq(MallOrder::getOrderNo, orderNo)
+                .eq(MallOrder::getOrderStatus, ORDER_STATUS_WAIT_PAY)
+                .set(MallOrder::getOrderStatus, OrderStatusEnum.EXPIRED.getType())
+                .set(MallOrder::getCloseReason, "订单支付超时，系统自动关闭")
+                .set(MallOrder::getCloseTime, new Date())
+                .set(MallOrder::getUpdateBy, "SYSTEM_AUTO_CLOSE")
+                .set(MallOrder::getUpdateTime, new Date())
+                .update();
+        if (updated) {
+            log.info("订单 {} 已自动关闭", orderNo);
+        } else {
+            log.info("订单 {} 未执行关闭，当前状态可能已变更", orderNo);
+        }
     }
 
     /**

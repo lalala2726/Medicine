@@ -25,17 +25,21 @@
         <result property="deliverTime" column="deliver_time"/>
         <result property="receiveTime" column="receive_time"/>
         <result property="finishTime" column="finish_time"/>
-        <result property="cancelTime" column="cancel_time"/>
+        <result property="closeReason" column="close_reason"/>
+        <result property="closeTime" column="close_time"/>
         <result property="createTime" column="create_time"/>
         <result property="updateTime" column="update_time"/>
+        <result property="createBy" column="create_by"/>
+        <result property="updateBy" column="update_by"/>
+        <result property="remark" column="remark"/>
     </resultMap>
 
     <sql id="Base_Column_List">
         id,order_no,user_id,total_amount,pay_amount,freight_amount,
         pay_type,order_status,delivery_type,address_id,receiver_name,
         receiver_phone,receiver_detail,note,refund_flag,after_sale_flag,
-        pay_time,deliver_time,receive_time,finish_time,cancel_time,
-        create_time,update_time
+        pay_time,deliver_time,receive_time,finish_time,close_reason,close_time,remark,
+        create_by,update_by,create_time,update_time
     </sql>
     <select id="orderList" resultMap="BaseResultMap">
         SELECT

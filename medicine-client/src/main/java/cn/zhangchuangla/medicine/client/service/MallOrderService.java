@@ -38,7 +38,6 @@ public interface MallOrderService extends IService<MallOrder> {
     String confirmOrder(OrderConfirmRequest request);
 
 
-
     /**
      * 支付宝异步通知回调
      *
@@ -46,4 +45,11 @@ public interface MallOrderService extends IService<MallOrder> {
      * @return 处理结果
      */
     String alipayNotify(AlipayNotifyDTO alipayNotifyDTO, HttpServletRequest request);
+
+    /**
+     * 关闭未支付订单
+     *
+     * @param orderNo 订单编号
+     */
+    void closeOrderIfUnpaid(String orderNo);
 }
