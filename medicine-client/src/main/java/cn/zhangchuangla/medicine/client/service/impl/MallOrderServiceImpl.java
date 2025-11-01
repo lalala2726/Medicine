@@ -36,10 +36,7 @@ import java.math.RoundingMode;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Objects;
+import java.util.*;
 
 /**
  * @author Chuang
@@ -69,6 +66,9 @@ public class MallOrderServiceImpl extends ServiceImpl<MallOrderMapper, MallOrder
     public OrderCreateVo createOrder(OrderCreateRequest request) {
         // 1. 查询商品详情并校验上架状态
         MallProductWithImageDto mallProductWithImageDto = mallProductService.getProductWithImagesById(request.getProductId());
+        if (mallProductWithImageDto == null) {
+            throw new ServiceException(ResponseResultCode.RESULT_IS_NULL, "商品不存在");
+        }
         BigDecimal totalAmount = validateProductAndCalculateAmount(request, mallProductWithImageDto);
 
         // 4. 扣减库存，内部包含乐观锁控制
@@ -151,6 +151,9 @@ public class MallOrderServiceImpl extends ServiceImpl<MallOrderMapper, MallOrder
      */
     private BigDecimal validateProductAndCalculateAmount(OrderCreateRequest request, MallProduct product) {
         final Integer PRODUCT_STATUS_ON_SALE = 1;
+        if (product == null) {
+            throw new ServiceException(ResponseResultCode.RESULT_IS_NULL, "商品不存在");
+        }
         if (!Objects.equals(product.getStatus(), PRODUCT_STATUS_ON_SALE)) {
             throw new ServiceException(ResponseResultCode.OPERATION_ERROR, "商品未上架或已下架");
         }
@@ -233,7 +236,8 @@ public class MallOrderServiceImpl extends ServiceImpl<MallOrderMapper, MallOrder
             throw new ServiceException(ResponseResultCode.RESULT_IS_NULL, "订单不存在");
         }
         if (!Objects.equals(order.getOrderStatus(), ORDER_STATUS_WAIT_PAY)) {
-            String description = OrderStatusEnum.fromCode(order.getOrderStatus()).getName();
+            OrderStatusEnum statusEnum = OrderStatusEnum.fromCode(order.getOrderStatus());
+            String description = statusEnum != null ? statusEnum.getName() : "未知状态";
             String hint = String.format("订单状态异常，请勿重复支付，当前状态：%s", description);
             throw new ServiceException(ResponseResultCode.OPERATION_ERROR, hint);
         }
@@ -414,9 +418,9 @@ public class MallOrderServiceImpl extends ServiceImpl<MallOrderMapper, MallOrder
         }
 
         // 查询订单项，用于恢复库存
-        MallOrderItem orderItem = mallOrderItemService.lambdaQuery()
+        List<MallOrderItem> orderItems = mallOrderItemService.lambdaQuery()
                 .eq(MallOrderItem::getOrderId, order.getId())
-                .one();
+                .list();
 
         // 使用版本号进行乐观锁更新
         boolean updated = lambdaUpdate()
@@ -432,8 +436,12 @@ public class MallOrderServiceImpl extends ServiceImpl<MallOrderMapper, MallOrder
         if (updated) {
             log.info("订单 {} 已自动关闭", orderNo);
             // 恢复库存
-            if (orderItem != null) {
-                mallProductService.restoreStock(orderItem.getProductId(), orderItem.getQuantity());
+            if (orderItems != null) {
+                for (MallOrderItem orderItem : orderItems) {
+                    if (orderItem != null && orderItem.getProductId() != null && orderItem.getQuantity() != null) {
+                        mallProductService.restoreStock(orderItem.getProductId(), orderItem.getQuantity());
+                    }
+                }
             }
         } else {
             log.info("订单 {} 未执行关闭，当前状态可能已变更", orderNo);

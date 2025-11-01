@@ -94,20 +94,24 @@ public class MallProductServiceImpl extends ServiceImpl<MallProductMapper, MallP
     @Override
     @Transactional(rollbackFor = Exception.class)
     public void restoreStock(Long productId, Integer quantity) {
-        //恢复库存,用于订单取消、退货等逻辑,使用乐观锁
+        Assert.isPositive(quantity, "商品数量不能小于0");
+        Assert.isPositive(productId, "商品ID不能小于0");
         MallProduct mallProduct = lambdaQuery()
                 .eq(MallProduct::getId, productId)
-                .select(MallProduct::getVersion)
+                .select(MallProduct::getStock, MallProduct::getVersion)
                 .one();
 
         if (mallProduct == null) {
             throw new ServiceException(ResponseResultCode.OPERATION_ERROR, "商品不存在");
         }
-
+        Integer currentStock = mallProduct.getStock();
+        int newStock = (currentStock == null ? 0 : currentStock) + quantity;
+        int currentVersion = mallProduct.getVersion() == null ? 0 : mallProduct.getVersion();
         boolean updated = lambdaUpdate()
                 .eq(MallProduct::getId, productId)
-                .eq(MallProduct::getVersion, mallProduct.getVersion())
-                .set(MallProduct::getStock, mallProduct.getStock() + quantity)
+                .eq(MallProduct::getVersion, currentVersion)
+                .set(MallProduct::getStock, newStock)
+                .set(MallProduct::getVersion, currentVersion + 1)
                 .update();
         if (!updated) {
             throw new ServiceException(ResponseResultCode.OPERATION_ERROR, "库存更新失败，请重试");
