@@ -1,6 +1,5 @@
 package cn.zhangchuangla.medicine.common.redis.core;
 
-import cn.zhangchuangla.medicine.common.redis.config.RedisProperties;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.redis.core.Cursor;
@@ -29,7 +28,7 @@ public final class RedisHashCache {
 
 
     private final RedisTemplate redisTemplate;
-    private final RedisProperties redisProperties;
+    private final static int scanCount = 1000;
 
 
     /**
@@ -170,7 +169,7 @@ public final class RedisHashCache {
         try {
             ScanOptions options = ScanOptions.scanOptions()
                     .match(keyPattern)
-                    .count(redisProperties.scanCount)
+                    .count(scanCount)
                     .build();
 
             try (Cursor<String> cursor = redisTemplate.scan(options)) {

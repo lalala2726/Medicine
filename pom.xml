@@ -43,6 +43,7 @@
         <ip2region.version>2.7.0</ip2region.version>
         <swagger-annotations.version>2.2.27</swagger-annotations.version>
         <alipay-sdk.version>4.34.0.ALL</alipay-sdk.version>
+        <redisson.version>3.52.0</redisson.version>
         <lombok.version>1.18.34</lombok.version>
     </properties>
     <dependencyManagement>
@@ -228,6 +229,11 @@
                 <groupId>org.projectlombok</groupId>
                 <artifactId>lombok</artifactId>
                 <version>${lombok.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.redisson</groupId>
+                <artifactId>redisson</artifactId>
+                <version>${redisson.version}</version>
             </dependency>
         </dependencies>
     </dependencyManagement>

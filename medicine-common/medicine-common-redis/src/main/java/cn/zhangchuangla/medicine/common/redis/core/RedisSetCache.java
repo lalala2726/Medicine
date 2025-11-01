@@ -1,6 +1,5 @@
 package cn.zhangchuangla.medicine.common.redis.core;
 
-import cn.zhangchuangla.medicine.common.redis.config.RedisProperties;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.redis.core.Cursor;
@@ -26,8 +25,7 @@ import java.util.concurrent.TimeUnit;
 public final class RedisSetCache {
 
     private final RedisTemplate redisTemplate;
-    private final RedisProperties redisProperties;
-
+    private final static int scanCount = 1000;
     /**
      * 添加一个成员到集合
      */
@@ -102,7 +100,7 @@ public final class RedisSetCache {
         try {
             ScanOptions options = ScanOptions.scanOptions()
                     .match(keyPattern)
-                    .count(redisProperties.scanCount)
+                    .count(scanCount)
                     .build();
 
             try (Cursor<String> cursor = redisTemplate.scan(options)) {
