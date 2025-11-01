@@ -246,7 +246,7 @@ public class MallOrderServiceImpl extends ServiceImpl<MallOrderMapper, MallOrder
      */
     private String getPayTypeDesc(String payType) {
         PayTypeEnum payTypeEnum = PayTypeEnum.fromCode(payType);
-        return payTypeEnum != null ? payTypeEnum.getName() : "未知";
+        return payTypeEnum != null ? payTypeEnum.getType() : "未知";
     }
 }
 

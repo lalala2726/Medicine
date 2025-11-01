@@ -385,15 +385,30 @@ public class MallOrderServiceImpl extends ServiceImpl<MallOrderMapper, MallOrder
     @Override
     public void closeOrderIfUnpaid(String orderNo) {
         log.info("订单 {} 未支付，准备关闭", orderNo);
-        boolean updated = lambdaUpdate()
+
+        // 先查询订单当前版本和状态
+        MallOrder order = lambdaQuery()
                 .eq(MallOrder::getOrderNo, orderNo)
                 .eq(MallOrder::getOrderStatus, ORDER_STATUS_WAIT_PAY)
+                .select(MallOrder::getId, MallOrder::getVersion)
+                .one();
+
+        if (order == null) {
+            log.info("订单 {} 未执行关闭，当前状态可能已变更", orderNo);
+            return;
+        }
+
+        // 使用版本号进行乐观锁更新
+        boolean updated = lambdaUpdate()
+                .eq(MallOrder::getId, order.getId())
+                .eq(MallOrder::getVersion, order.getVersion())
                 .set(MallOrder::getOrderStatus, OrderStatusEnum.EXPIRED.getType())
                 .set(MallOrder::getCloseReason, "订单支付超时，系统自动关闭")
                 .set(MallOrder::getCloseTime, new Date())
-                .set(MallOrder::getUpdateBy, "SYSTEM_AUTO_CLOSE")
+                .set(MallOrder::getUpdateBy, "系统自动关闭")
                 .set(MallOrder::getUpdateTime, new Date())
                 .update();
+
         if (updated) {
             log.info("订单 {} 已自动关闭", orderNo);
         } else {
