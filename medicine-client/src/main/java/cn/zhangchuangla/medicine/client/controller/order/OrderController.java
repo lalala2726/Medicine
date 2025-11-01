@@ -116,6 +116,7 @@ public class OrderController extends BaseController {
         if (amount == null) {
             return error("订单金额缺失，无法发起支付");
         }
+
         String totalAmount = amount.setScale(2, RoundingMode.HALF_UP).toPlainString();
         String subject = payInfo.getProductSummary();
         if (!StringUtils.hasText(subject)) {
