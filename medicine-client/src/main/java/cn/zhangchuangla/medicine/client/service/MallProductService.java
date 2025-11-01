@@ -52,4 +52,12 @@ public interface MallProductService extends IService<MallProduct> {
      * @param quantity  数量
      */
     void deductStock(Long productId, Integer quantity);
+
+    /**
+     * 恢复库存
+     *
+     * @param productId 商品ID
+     * @param quantity  数量
+     */
+    void restoreStock(Long productId, Integer quantity);
 }

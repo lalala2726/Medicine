@@ -90,4 +90,27 @@ public class MallProductServiceImpl extends ServiceImpl<MallProductMapper, MallP
             throw new ServiceException(ResponseResultCode.OPERATION_ERROR, "库存更新失败，请重试");
         }
     }
+
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public void restoreStock(Long productId, Integer quantity) {
+        //恢复库存,用于订单取消、退货等逻辑,使用乐观锁
+        MallProduct mallProduct = lambdaQuery()
+                .eq(MallProduct::getId, productId)
+                .select(MallProduct::getVersion)
+                .one();
+
+        if (mallProduct == null) {
+            throw new ServiceException(ResponseResultCode.OPERATION_ERROR, "商品不存在");
+        }
+
+        boolean updated = lambdaUpdate()
+                .eq(MallProduct::getId, productId)
+                .eq(MallProduct::getVersion, mallProduct.getVersion())
+                .set(MallProduct::getStock, mallProduct.getStock() + quantity)
+                .update();
+        if (!updated) {
+            throw new ServiceException(ResponseResultCode.OPERATION_ERROR, "库存更新失败，请重试");
+        }
+    }
 }
