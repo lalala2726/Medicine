@@ -5,12 +5,15 @@ import cn.zhangchuangla.medicine.admin.model.request.*;
 import cn.zhangchuangla.medicine.admin.model.vo.OrderDetailVo;
 import cn.zhangchuangla.medicine.admin.service.MallOrderItemService;
 import cn.zhangchuangla.medicine.admin.service.MallOrderService;
+import cn.zhangchuangla.medicine.admin.service.MallProductImageService;
 import cn.zhangchuangla.medicine.admin.service.UserService;
 import cn.zhangchuangla.medicine.common.core.enums.ResponseResultCode;
 import cn.zhangchuangla.medicine.common.core.exception.ServiceException;
 import cn.zhangchuangla.medicine.common.core.utils.Assert;
+import cn.zhangchuangla.medicine.model.dto.OrderWithProductDto;
 import cn.zhangchuangla.medicine.model.entity.MallOrder;
 import cn.zhangchuangla.medicine.model.entity.MallOrderItem;
+import cn.zhangchuangla.medicine.model.entity.MallProductImage;
 import cn.zhangchuangla.medicine.model.entity.User;
 import cn.zhangchuangla.medicine.model.enums.DeliveryTypeEnum;
 import cn.zhangchuangla.medicine.model.enums.OrderStatusEnum;
@@ -23,6 +26,9 @@ import org.springframework.stereotype.Service;
 import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.stream.Collectors;
 
 /**
  * @author Chuang
@@ -34,12 +40,14 @@ public class MallOrderServiceImpl extends ServiceImpl<MallOrderMapper, MallOrder
     private final MallOrderMapper mallOrderMapper;
     private final UserService userService;
     private final MallOrderItemService mallOrderItemService;
+    private final MallProductImageService mallProductImageService;
 
 
-    public MallOrderServiceImpl(MallOrderMapper mallOrderMapper, UserService userService, MallOrderItemService mallOrderItemService) {
+    public MallOrderServiceImpl(MallOrderMapper mallOrderMapper, UserService userService, MallOrderItemService mallOrderItemService, MallProductImageService mallProductImageService) {
         this.mallOrderMapper = mallOrderMapper;
         this.userService = userService;
         this.mallOrderItemService = mallOrderItemService;
+        this.mallProductImageService = mallProductImageService;
     }
 
 
@@ -223,6 +231,39 @@ public class MallOrderServiceImpl extends ServiceImpl<MallOrderMapper, MallOrder
     public boolean orderRefund(OrderRefundRequest request) {
         //todo 订单退款待实现
         return false;
+    }
+
+    @Override
+    public Page<OrderWithProductDto> orderWithProduct(MallOrderListRequest request) {
+        Page<OrderWithProductDto> orderWithProductDtoPage = new Page<>(request.getPageNum(), request.getPageSize());
+        Page<OrderWithProductDto> withProductDtoPage = mallOrderMapper.orderListWithProduct(orderWithProductDtoPage, request);
+        List<OrderWithProductDto> records = withProductDtoPage.getRecords();
+        if (records.isEmpty()) {
+            return withProductDtoPage;
+        }
+
+        List<Long> productIds = records.stream()
+                .map(OrderWithProductDto::getProductId)
+                .filter(Objects::nonNull)
+                .distinct()
+                .toList();
+        if (productIds.isEmpty()) {
+            return withProductDtoPage;
+        }
+
+        List<MallProductImage> images = mallProductImageService.getFirstImageByProductIds(productIds);
+        if (images == null || images.isEmpty()) {
+            return withProductDtoPage;
+        }
+
+        Map<Long, String> productImageMap = images.stream()
+                .collect(Collectors.toMap(MallProductImage::getProductId, MallProductImage::getImageUrl, (existing, ignore) -> existing));
+
+        records.forEach(orderWithProductDto -> {
+            Long productId = orderWithProductDto.getProductId();
+            orderWithProductDto.setProductImage(productImageMap.get(productId));
+        });
+        return withProductDtoPage;
     }
 
     /**

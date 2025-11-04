@@ -8,7 +8,7 @@ import cn.zhangchuangla.medicine.common.core.base.AjaxResult;
 import cn.zhangchuangla.medicine.common.core.utils.BeanCotyUtils;
 import cn.zhangchuangla.medicine.common.security.annotation.IsAdmin;
 import cn.zhangchuangla.medicine.common.security.base.BaseController;
-import cn.zhangchuangla.medicine.model.entity.MallOrder;
+import cn.zhangchuangla.medicine.model.dto.OrderWithProductDto;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -45,8 +45,10 @@ public class MallOrderController extends BaseController {
     @GetMapping("/list")
     @Operation(summary = "订单列表")
     public AjaxResult<List<MallOrderListVo>> orderList(MallOrderListRequest request) {
-        Page<MallOrder> mallOrderPage = mallOrderService.orderList(request);
-        List<MallOrderListVo> mallOrderListVos = BeanCotyUtils.copyListProperties(mallOrderPage, MallOrderListVo.class);
+        Page<OrderWithProductDto> mallOrderPage = mallOrderService.orderWithProduct(request);
+        List<MallOrderListVo> mallOrderListVos = mallOrderPage.getRecords().stream()
+                .map(this::buildOrderListVo)
+                .toList();
         return success(mallOrderListVos);
     }
 
@@ -116,5 +118,21 @@ public class MallOrderController extends BaseController {
         return toAjax(result);
     }
 
+    private MallOrderListVo buildOrderListVo(OrderWithProductDto source) {
+        MallOrderListVo target = BeanCotyUtils.copyProperties(source, MallOrderListVo.class);
+        if (target == null) {
+            return null;
+        }
+        if (source.getProductId() == null) {
+            return target;
+        }
+        MallOrderListVo.ProductInfo productInfo = MallOrderListVo.ProductInfo.builder()
+                .productName(source.getProductName())
+                .productImage(source.getProductImage())
+                .quantity(source.getProductQuantity())
+                .build();
+        target.setProductInfo(productInfo);
+        return target;
+    }
 
 }

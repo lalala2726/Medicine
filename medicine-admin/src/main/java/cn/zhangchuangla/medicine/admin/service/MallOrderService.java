@@ -2,6 +2,7 @@ package cn.zhangchuangla.medicine.admin.service;
 
 import cn.zhangchuangla.medicine.admin.model.request.*;
 import cn.zhangchuangla.medicine.admin.model.vo.OrderDetailVo;
+import cn.zhangchuangla.medicine.model.dto.OrderWithProductDto;
 import cn.zhangchuangla.medicine.model.entity.MallOrder;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.IService;
@@ -74,4 +75,12 @@ public interface MallOrderService extends IService<MallOrder> {
      * @return 是否成功
      */
     boolean orderRefund(OrderRefundRequest request);
+
+    /**
+     * 订单列表（带商品信息）
+     *
+     * @param request 订单列表参数
+     * @return 订单列表
+     */
+    Page<OrderWithProductDto> orderWithProduct(MallOrderListRequest request);
 }

@@ -34,6 +34,12 @@
         <result property="remark" column="remark"/>
     </resultMap>
 
+    <resultMap id="OrderWithProductResultMap" type="cn.zhangchuangla.medicine.model.dto.OrderWithProductDto" extends="BaseResultMap">
+        <result property="productId" column="product_id"/>
+        <result property="productName" column="product_name"/>
+        <result property="productQuantity" column="product_quantity"/>
+    </resultMap>
+
     <sql id="Base_Column_List">
         id,order_no,user_id,total_amount,pay_amount,freight_amount,
         pay_type,order_status,delivery_type,address_id,receiver_name,
@@ -45,7 +51,6 @@
         SELECT
         <include refid="Base_Column_List"/>
         FROM mall_order
-        WHERE 1 = 1
         <if test="request.orderNo != null and request.orderNo != ''">
             AND order_no = #{request.orderNo}
         </if>
@@ -65,5 +70,71 @@
             AND receiver_phone LIKE CONCAT('%', #{request.receiverPhone}, '%')
         </if>
         ORDER BY create_time DESC
+    </select>
+
+    <select id="orderListWithProduct" resultMap="OrderWithProductResultMap">
+        SELECT
+        o.id,
+        o.order_no,
+        o.user_id,
+        o.total_amount,
+        o.pay_amount,
+        o.freight_amount,
+        o.pay_type,
+        o.order_status,
+        o.delivery_type,
+        o.address_id,
+        o.receiver_name,
+        o.receiver_phone,
+        o.receiver_detail,
+        o.note,
+        o.refund_flag,
+        o.after_sale_flag,
+        o.pay_time,
+        o.deliver_time,
+        o.receive_time,
+        o.finish_time,
+        o.close_reason,
+        o.close_time,
+        o.remark,
+        o.create_by,
+        o.update_by,
+        o.create_time,
+        o.update_time,
+        p.id AS product_id,
+        COALESCE(p.name, first_item.product_name) AS product_name,
+        first_item.quantity AS product_quantity
+        FROM mall_order o
+        LEFT JOIN (
+            SELECT oi.order_id, oi.product_id, oi.quantity, oi.product_name
+            FROM mall_order_item oi
+            WHERE oi.id = (
+                SELECT MIN(id)
+                FROM mall_order_item moi
+                WHERE moi.order_id = oi.order_id
+            )
+        ) first_item ON o.id = first_item.order_id
+        LEFT JOIN mall_product p ON first_item.product_id = p.id
+        <where>
+            <if test="request.orderNo != null and request.orderNo != ''">
+                AND o.order_no = #{request.orderNo}
+            </if>
+            <if test="request.payType != null and request.payType != ''">
+                AND o.pay_type = #{request.payType}
+            </if>
+            <if test="request.orderStatus != null and request.orderStatus != ''">
+                AND o.order_status = #{request.orderStatus}
+            </if>
+            <if test="request.deliveryType != null and request.deliveryType != ''">
+                AND o.delivery_type = #{request.deliveryType}
+            </if>
+            <if test="request.receiverName != null and request.receiverName != ''">
+                AND o.receiver_name LIKE CONCAT('%', #{request.receiverName}, '%')
+            </if>
+            <if test="request.receiverPhone != null and request.receiverPhone != ''">
+                AND o.receiver_phone LIKE CONCAT('%', #{request.receiverPhone}, '%')
+            </if>
+        </where>
+        ORDER BY o.create_time DESC
     </select>
 </mapper>
