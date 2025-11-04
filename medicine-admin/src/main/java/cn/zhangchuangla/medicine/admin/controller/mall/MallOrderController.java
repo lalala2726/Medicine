@@ -118,6 +118,12 @@ public class MallOrderController extends BaseController {
         return toAjax(result);
     }
 
+    /**
+     * 构建订单列表VO
+     *
+     * @param source 源数据
+     * @return 订单列表VO
+     */
     private MallOrderListVo buildOrderListVo(OrderWithProductDto source) {
         MallOrderListVo target = BeanCotyUtils.copyProperties(source, MallOrderListVo.class);
         if (target == null) {

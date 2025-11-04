@@ -37,12 +37,6 @@ public class MallOrderListVo {
     private BigDecimal totalAmount;
 
     /**
-     * 实际支付金额
-     */
-    @Schema(description = "实际支付金额", example = "100.00")
-    private BigDecimal payAmount;
-
-    /**
      * 支付方式编码
      */
     @Schema(description = "支付方式编码", example = "ALIPAY")

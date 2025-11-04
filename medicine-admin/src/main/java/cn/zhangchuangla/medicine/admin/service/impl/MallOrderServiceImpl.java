@@ -241,7 +241,7 @@ public class MallOrderServiceImpl extends ServiceImpl<MallOrderMapper, MallOrder
         if (records.isEmpty()) {
             return withProductDtoPage;
         }
-
+        // 获取所有的商品ID
         List<Long> productIds = records.stream()
                 .map(OrderWithProductDto::getProductId)
                 .filter(Objects::nonNull)
@@ -250,15 +250,16 @@ public class MallOrderServiceImpl extends ServiceImpl<MallOrderMapper, MallOrder
         if (productIds.isEmpty()) {
             return withProductDtoPage;
         }
-
+        // 根据商品的ID获取商品的封面图片
         List<MallProductImage> images = mallProductImageService.getFirstImageByProductIds(productIds);
         if (images == null || images.isEmpty()) {
             return withProductDtoPage;
         }
-
+        // 将图片URL映射到商品ID
         Map<Long, String> productImageMap = images.stream()
                 .collect(Collectors.toMap(MallProductImage::getProductId, MallProductImage::getImageUrl, (existing, ignore) -> existing));
 
+        // 为每个订单项设置商品图片URL
         records.forEach(orderWithProductDto -> {
             Long productId = orderWithProductDto.getProductId();
             orderWithProductDto.setProductImage(productImageMap.get(productId));
