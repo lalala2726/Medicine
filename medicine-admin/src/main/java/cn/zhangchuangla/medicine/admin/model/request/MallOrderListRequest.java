@@ -22,19 +22,19 @@ public class MallOrderListRequest extends BasePageRequest {
     private String orderNo;
 
     /**
-     * 支付方式（使用大驼峰编码，例如：Alipay、WechatPay）
+     * 支付方式
      */
     @Schema(description = "支付方式编码")
     private String payType;
 
     /**
-     * 订单状态（使用大驼峰编码，例如：WaitPay、Finished）
+     * 订单状态
      */
     @Schema(description = "订单状态编码")
     private String orderStatus;
 
     /**
-     * 配送方式（使用大驼峰编码，例如：Express、SelfPickup）
+     * 配送方式
      */
     @Schema(description = "配送方式编码")
     private String deliveryType;

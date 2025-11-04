@@ -45,6 +45,7 @@
         <alipay-sdk.version>4.34.0.ALL</alipay-sdk.version>
         <redisson.version>3.52.0</redisson.version>
         <lombok.version>1.18.34</lombok.version>
+        <h2.version>2.3.232</h2.version>
     </properties>
     <dependencyManagement>
         <dependencies>
@@ -234,6 +235,13 @@
                 <groupId>org.redisson</groupId>
                 <artifactId>redisson</artifactId>
                 <version>${redisson.version}</version>
+            </dependency>
+            <!-- Test Dependencies -->
+            <dependency>
+                <groupId>com.h2database</groupId>
+                <artifactId>h2</artifactId>
+                <version>${h2.version}</version>
+                <scope>test</scope>
             </dependency>
         </dependencies>
     </dependencyManagement>

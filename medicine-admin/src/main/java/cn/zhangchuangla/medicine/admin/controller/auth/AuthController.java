@@ -8,6 +8,7 @@ import cn.zhangchuangla.medicine.common.security.annotation.Anonymous;
 import cn.zhangchuangla.medicine.common.security.base.BaseController;
 import cn.zhangchuangla.medicine.common.security.entity.AuthTokenVo;
 import cn.zhangchuangla.medicine.common.security.utils.SecurityUtils;
+import cn.zhangchuangla.medicine.common.security.utils.SessionUtils;
 import cn.zhangchuangla.medicine.model.entity.User;
 import cn.zhangchuangla.medicine.model.request.auth.LoginRequest;
 import cn.zhangchuangla.medicine.model.request.auth.RefreshRequest;
@@ -77,6 +78,19 @@ public class AuthController extends BaseController {
         User user = userService.getUserById(userId);
         CurrentUserInfoVo vo = BeanCotyUtils.copyProperties(user, CurrentUserInfoVo.class);
         return success(vo);
+    }
+
+
+    /**
+     * 登出
+     *
+     * @return 登出结果
+     */
+    @PostMapping("/logout")
+    @Operation(summary = "登出", description = "用户登出")
+    public AjaxResult<Void> logout() {
+        SessionUtils.logoutByToken(SecurityUtils.getToken());
+        return success();
     }
 
 }

@@ -63,6 +63,28 @@ public class MallProductImageServiceImpl extends ServiceImpl<MallProductImageMap
         remove(wrapper);
     }
 
+    @Override
+    public List<MallProductImage> getFirstImageByProductIds(List<Long> productIds) {
+        if (productIds == null || productIds.isEmpty()) {
+            return List.of();
+        }
+
+        // 查询出所有相关产品的图片
+        List<MallProductImage> images = lambdaQuery()
+                .in(MallProductImage::getProductId, productIds)
+                .list();
+
+        // 按产品ID分组，并找出每个产品中sort值最小的图片
+        return images.stream()
+                .collect(java.util.stream.Collectors.groupingBy(MallProductImage::getProductId))
+                .values().stream()
+                .map(mallProductImages -> mallProductImages.stream()
+                        .min(java.util.Comparator.comparing(MallProductImage::getSort))
+                        .orElse(null))
+                .filter(java.util.Objects::nonNull)
+                .toList();
+    }
+
 }
 
 

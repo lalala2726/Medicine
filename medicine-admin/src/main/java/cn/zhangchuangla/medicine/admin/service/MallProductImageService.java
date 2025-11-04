@@ -45,4 +45,12 @@ public interface MallProductImageService extends IService<MallProductImage> {
      * @param ids 商品ID列表
      */
     void removeImagesById(@NotEmpty(message = "商品ID列表不能为空") List<Long> ids);
+
+    /**
+     * 根据商品ID获取商品的首张图片
+     *
+     * @param productIds 商品ID列表
+     * @return 商品首张图片列表
+     */
+    List<MallProductImage> getFirstImageByProductIds(@NotEmpty(message = "商品ID列表不能为空") List<Long> productIds);
 }
