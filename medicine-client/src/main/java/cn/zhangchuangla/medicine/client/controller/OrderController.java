@@ -1,4 +1,4 @@
-package cn.zhangchuangla.medicine.client.controller.order;
+package cn.zhangchuangla.medicine.client.controller;
 
 import cn.zhangchuangla.medicine.client.model.request.OrderConfirmRequest;
 import cn.zhangchuangla.medicine.client.model.request.OrderCreateRequest;

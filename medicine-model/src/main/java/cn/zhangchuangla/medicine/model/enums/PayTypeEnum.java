@@ -29,7 +29,12 @@ public enum PayTypeEnum {
     /**
      * 银行卡
      */
-    BANK_CARD("BANK_CARD", "使用银行卡进行支付");
+    BANK_CARD("BANK_CARD", "使用银行卡进行支付"),
+
+    /**
+     * 待支付
+     */
+    WAIT_PAY("WAIT_PAY", "待支付");
 
     /**
      * 枚举值

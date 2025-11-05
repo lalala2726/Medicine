@@ -1,5 +1,6 @@
 package cn.zhangchuangla.medicine.client.controller.mall;
 
+import cn.zhangchuangla.medicine.client.controller.MallProductController;
 import cn.zhangchuangla.medicine.client.enums.ProductViewPeriod;
 import cn.zhangchuangla.medicine.client.model.vo.MallProductVo;
 import cn.zhangchuangla.medicine.client.service.MallProductService;

@@ -1,5 +1,6 @@
 package cn.zhangchuangla.medicine.client.controller.mall;
 
+import cn.zhangchuangla.medicine.client.controller.MallRecommendController;
 import cn.zhangchuangla.medicine.client.service.MallRecommendService;
 import cn.zhangchuangla.medicine.common.core.base.AjaxResult;
 import cn.zhangchuangla.medicine.common.core.enums.ResponseResultCode;

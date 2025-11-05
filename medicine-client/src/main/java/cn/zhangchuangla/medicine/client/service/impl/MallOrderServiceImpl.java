@@ -51,6 +51,7 @@ public class MallOrderServiceImpl extends ServiceImpl<MallOrderMapper, MallOrder
     private static final String ORDER_STATUS_WAIT_PAY = OrderStatusEnum.PENDING_PAYMENT.getType();
     private static final String ORDER_STATUS_WAIT_SHIPMENT = OrderStatusEnum.PENDING_SHIPMENT.getType();
     private static final String PAY_TYPE_ALIPAY = PayTypeEnum.ALIPAY.getType();
+    private static final String WAIT_PAY = PayTypeEnum.WAIT_PAY.getType();
     private static final int FLAG_FALSE = 0;
 
     private final MallProductService mallProductService;
@@ -91,7 +92,7 @@ public class MallOrderServiceImpl extends ServiceImpl<MallOrderMapper, MallOrder
                 .totalAmount(totalAmount)
                 .payAmount(BigDecimal.ZERO)
                 .freightAmount(BigDecimal.ZERO)
-                .payType(PAY_TYPE_ALIPAY)
+                .payType(WAIT_PAY)
                 .orderStatus(ORDER_STATUS_WAIT_PAY)
                 .deliveryType(deliveryTypeCode)
                 .receiverDetail(request.getAddress())

@@ -1,18 +1,13 @@
-package cn.zhangchuangla.medicine.admin.controller.auth;
+package cn.zhangchuangla.medicine.client.controller;
 
-import cn.zhangchuangla.medicine.admin.service.AuthService;
-import cn.zhangchuangla.medicine.admin.service.UserService;
+import cn.zhangchuangla.medicine.client.service.AuthService;
 import cn.zhangchuangla.medicine.common.core.base.AjaxResult;
-import cn.zhangchuangla.medicine.common.core.utils.BeanCotyUtils;
 import cn.zhangchuangla.medicine.common.security.annotation.Anonymous;
 import cn.zhangchuangla.medicine.common.security.base.BaseController;
 import cn.zhangchuangla.medicine.common.security.entity.AuthTokenVo;
-import cn.zhangchuangla.medicine.common.security.utils.SecurityUtils;
-import cn.zhangchuangla.medicine.common.security.utils.SessionUtils;
-import cn.zhangchuangla.medicine.model.entity.User;
 import cn.zhangchuangla.medicine.model.request.auth.LoginRequest;
 import cn.zhangchuangla.medicine.model.request.auth.RefreshRequest;
-import cn.zhangchuangla.medicine.model.vo.user.CurrentUserInfoVo;
+import cn.zhangchuangla.medicine.model.request.auth.RegisterRequest;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.extern.slf4j.Slf4j;
@@ -21,21 +16,18 @@ import org.springframework.web.bind.annotation.*;
 /**
  * @author Chuang
  * <p>
- * created on 2025/8/28 13:31
+ * created on 2025/10/25 05:12
  */
 @Slf4j
 @RestController
-@Tag(name = "认证接口", description = "注册、登录、刷新、当前用户")
+@Tag(name = "客户端认证接口", description = "用户注册、登录、刷新令牌、获取个人信息")
 @RequestMapping("/auth")
-@Tag(name = "认证接口", description = "用户注册、登录、刷新令牌,获取个人信息")
 public class AuthController extends BaseController {
 
     private final AuthService authService;
-    private final UserService userService;
 
-    public AuthController(AuthService authService, UserService userService) {
+    public AuthController(AuthService authService) {
         this.authService = authService;
-        this.userService = userService;
     }
 
     /**
@@ -53,6 +45,20 @@ public class AuthController extends BaseController {
     }
 
     /**
+     * 注册
+     *
+     * @param request 登录参数
+     * @return 注册结果
+     */
+    @Anonymous
+    @Operation(summary = "注册", description = "注册新用户，返回用户ID")
+    @PostMapping("/register")
+    public AjaxResult<Long> register(@RequestBody RegisterRequest request) {
+        Long userId = authService.register(request.getUsername(), request.getPassword());
+        return success(userId);
+    }
+
+    /**
      * 刷新令牌
      *
      * @param request 刷新令牌参数
@@ -67,29 +73,18 @@ public class AuthController extends BaseController {
     }
 
     /**
-     * 获取当前用户信息
+     * 退出登录
      *
-     * @return 当前用户信息
+     * @param accessToken 访问令牌
+     * @return 退出结果
      */
-    @Operation(summary = "获取当前用户信息", description = "根据认证上下文返回当前登录用户信息")
-    @GetMapping("/currentUser")
-    public AjaxResult<CurrentUserInfoVo> currentUser() {
-        Long userId = SecurityUtils.getUserId();
-        User user = userService.getUserById(userId);
-        CurrentUserInfoVo vo = BeanCotyUtils.copyProperties(user, CurrentUserInfoVo.class);
-        return success(vo);
-    }
-
-
-    /**
-     * 登出
-     *
-     * @return 登出结果
-     */
+    @Operation(summary = "退出登录", description = "清理用户会话信息")
     @PostMapping("/logout")
-    @Operation(summary = "登出", description = "用户登出")
-    public AjaxResult<Void> logout() {
-        SessionUtils.logoutByToken(SecurityUtils.getToken());
+    public AjaxResult<Void> logout(@RequestHeader("Authorization") String accessToken) {
+        if (accessToken.startsWith("Bearer ")) {
+            accessToken = accessToken.substring(7);
+        }
+        authService.logout(accessToken);
         return success();
     }
 

@@ -1,4 +1,4 @@
-package cn.zhangchuangla.medicine.admin.controller.mall;
+package cn.zhangchuangla.medicine.admin.controller;
 
 import cn.zhangchuangla.medicine.admin.model.request.*;
 import cn.zhangchuangla.medicine.admin.model.vo.MallOrderListVo;

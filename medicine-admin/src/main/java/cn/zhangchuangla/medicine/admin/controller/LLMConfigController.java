@@ -1,4 +1,4 @@
-package cn.zhangchuangla.medicine.admin.controller.ai;
+package cn.zhangchuangla.medicine.admin.controller;
 
 import cn.zhangchuangla.medicine.admin.service.LlmConfigService;
 import cn.zhangchuangla.medicine.ai.service.ModelConfigService;
