@@ -38,6 +38,8 @@ import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
 
+import static cn.zhangchuangla.medicine.common.core.constants.Constants.ORDER_TIMEOUT_MINUTES;
+
 /**
  * @author Chuang
  */
@@ -50,7 +52,6 @@ public class MallOrderServiceImpl extends ServiceImpl<MallOrderMapper, MallOrder
     private static final String ORDER_STATUS_WAIT_SHIPMENT = OrderStatusEnum.PENDING_SHIPMENT.getType();
     private static final String PAY_TYPE_ALIPAY = PayTypeEnum.ALIPAY.getType();
     private static final int FLAG_FALSE = 0;
-    private static final int ORDER_TIMEOUT_MINUTES = 30;
 
     private final MallProductService mallProductService;
     private final MallOrderItemService mallOrderItemService;

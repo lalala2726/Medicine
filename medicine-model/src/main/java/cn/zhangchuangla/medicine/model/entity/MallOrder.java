@@ -3,6 +3,7 @@ package cn.zhangchuangla.medicine.model.entity;
 import com.baomidou.mybatisplus.annotation.IdType;
 import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableName;
+import com.baomidou.mybatisplus.annotation.Version;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -140,6 +141,7 @@ public class MallOrder {
     /**
      * 乐观锁版本号(更新时自增)
      */
+    @Version
     private Integer version;
 
     /**

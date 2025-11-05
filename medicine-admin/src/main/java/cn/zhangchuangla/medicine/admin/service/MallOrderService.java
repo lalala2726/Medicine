@@ -7,6 +7,8 @@ import cn.zhangchuangla.medicine.model.entity.MallOrder;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.IService;
 
+import java.util.List;
+
 /**
  * @author Chuang
  */
@@ -83,4 +85,12 @@ public interface MallOrderService extends IService<MallOrder> {
      * @return 订单列表
      */
     Page<OrderWithProductDto> orderWithProduct(MallOrderListRequest request);
+
+    /**
+     * 获取过期订单
+     *
+     * @param expiredTime 过期时间点, 毫秒级时间戳, 小于该时间点的订单视为过期
+     * @return 过期订单
+     */
+    List<MallOrder> getExpiredOrderClean(long expiredTime);
 }

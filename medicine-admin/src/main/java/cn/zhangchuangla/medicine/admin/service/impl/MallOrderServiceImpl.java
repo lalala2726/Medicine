@@ -267,6 +267,11 @@ public class MallOrderServiceImpl extends ServiceImpl<MallOrderMapper, MallOrder
         return withProductDtoPage;
     }
 
+    @Override
+    public List<MallOrder> getExpiredOrderClean(long expiredTime) {
+        return mallOrderMapper.getExpiredOrderClean(expiredTime);
+    }
+
     /**
      * 获取配送方式描述
      */

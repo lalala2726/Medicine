@@ -34,7 +34,8 @@
         <result property="remark" column="remark"/>
     </resultMap>
 
-    <resultMap id="OrderWithProductResultMap" type="cn.zhangchuangla.medicine.model.dto.OrderWithProductDto" extends="BaseResultMap">
+    <resultMap id="OrderWithProductResultMap" type="cn.zhangchuangla.medicine.model.dto.OrderWithProductDto"
+               extends="BaseResultMap">
         <result property="productId" column="product_id"/>
         <result property="productName" column="product_name"/>
         <result property="productQuantity" column="product_quantity"/>
@@ -106,13 +107,13 @@
         first_item.quantity AS product_quantity
         FROM mall_order o
         LEFT JOIN (
-            SELECT oi.order_id, oi.product_id, oi.quantity, oi.product_name
-            FROM mall_order_item oi
-            WHERE oi.id = (
-                SELECT MIN(id)
-                FROM mall_order_item moi
-                WHERE moi.order_id = oi.order_id
-            )
+        SELECT oi.order_id, oi.product_id, oi.quantity, oi.product_name
+        FROM mall_order_item oi
+        WHERE oi.id = (
+        SELECT MIN(id)
+        FROM mall_order_item moi
+        WHERE moi.order_id = oi.order_id
+        )
         ) first_item ON o.id = first_item.order_id
         LEFT JOIN mall_product p ON first_item.product_id = p.id
         <where>
@@ -137,4 +138,13 @@
         </where>
         ORDER BY o.create_time DESC
     </select>
+
+    <select id="getExpiredOrderClean" resultMap="BaseResultMap">
+        SELECT
+        <include refid="Base_Column_List"/>
+        FROM mall_order
+        WHERE order_status = 'PENDING_PAYMENT'
+        AND create_time &lt; FROM_UNIXTIME(#{expiredTime} / 1000)
+    </select>
+
 </mapper>
