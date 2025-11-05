@@ -1,6 +1,6 @@
 spring:
   profiles:
-    active: druid,llm
+    active: druid,llm,payment
   application:
     name: Medical
   servlet:

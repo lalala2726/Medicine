@@ -97,7 +97,6 @@ public class MallOrderServiceImpl extends ServiceImpl<MallOrderMapper, MallOrder
                 .deliveryType(deliveryTypeCode)
                 .receiverDetail(request.getAddress())
                 .note(request.getRemark())
-                .refundFlag(FLAG_FALSE)
                 .afterSaleFlag(FLAG_FALSE)
                 .createTime(now)
                 .updateTime(now)
@@ -300,6 +299,7 @@ public class MallOrderServiceImpl extends ServiceImpl<MallOrderMapper, MallOrder
 
 
     private boolean markOrderPaidByAlipay(String orderNo, BigDecimal payAmount) {
+        final int PAID = 1;
         MallOrder order = lambdaQuery()
                 .eq(MallOrder::getOrderNo, orderNo)
                 .one();
@@ -319,6 +319,7 @@ public class MallOrderServiceImpl extends ServiceImpl<MallOrderMapper, MallOrder
                 .set(MallOrder::getPayAmount, finalPayAmount)
                 .set(MallOrder::getPayTime, now)
                 .set(MallOrder::getUpdateTime, now)
+                .set(MallOrder::getPaid, PAID)
                 .update();
     }
 

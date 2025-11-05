@@ -39,15 +39,15 @@ import java.util.Map;
 @RestController
 @RequestMapping("/order")
 @Tag(name = "订单管理", description = "订单管理")
-public class OrderController extends BaseController {
+public class MallOrderController extends BaseController {
 
     private final MallOrderService mallOrderService;
     private final AlipayProperties alipayProperties;
     private final AlipayPaymentService alipayPaymentService;
 
-    public OrderController(MallOrderService mallOrderService,
-                           AlipayProperties alipayProperties,
-                           AlipayPaymentService alipayPaymentService) {
+    public MallOrderController(MallOrderService mallOrderService,
+                               AlipayProperties alipayProperties,
+                               AlipayPaymentService alipayPaymentService) {
         this.mallOrderService = mallOrderService;
         this.alipayProperties = alipayProperties;
         this.alipayPaymentService = alipayPaymentService;
