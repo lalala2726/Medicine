@@ -1,0 +1,11 @@
+alipay:
+  # 以下四项建议通过环境变量注入，保证密钥不会写死在代码仓库中
+  appId: ${ALIPAY_APPID}
+  private-key: ${ALIPAY_PRIVATE_KEY}
+  alipay-public-key: ${ALIPAY_ALIPAY_PUBLIC_KEY}
+  gatewayUrl: ${ALIPAY_GATEWAY_URL}
+  # notifyUrl 和 returnUrl 在业务代码中也可以覆盖，方便不同系统使用独立的回调地址
+  notifyUrl: http://medicine.zhangchuangla.cn/order/alipay/notify
+  returnUrl: http://localhost:8081/success.html
+  signType: RSA2
+  charset: utf-8

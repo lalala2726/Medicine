@@ -1,4 +1,4 @@
-package cn.zhangchuangla.medicine.client.controller.user;
+package cn.zhangchuangla.medicine.client.controller;
 
 import cn.zhangchuangla.medicine.client.service.UserService;
 import cn.zhangchuangla.medicine.common.core.base.AjaxResult;

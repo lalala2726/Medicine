@@ -1,4 +1,4 @@
-package cn.zhangchuangla.medicine.client.controller.mall;
+package cn.zhangchuangla.medicine.client.controller;
 
 import cn.zhangchuangla.medicine.client.service.MallCartService;
 import cn.zhangchuangla.medicine.common.core.base.AjaxResult;

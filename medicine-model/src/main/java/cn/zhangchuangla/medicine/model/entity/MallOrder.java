@@ -3,6 +3,7 @@ package cn.zhangchuangla.medicine.model.entity;
 import com.baomidou.mybatisplus.annotation.IdType;
 import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableName;
+import com.baomidou.mybatisplus.annotation.Version;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -93,9 +94,19 @@ public class MallOrder {
     private String note;
 
     /**
-     * 是否存在退款申请（0否,1是）
+     * 退款状态
      */
-    private Integer refundFlag;
+    private String refundStatus;
+
+    /**
+     * 退款时间
+     */
+    private Date refundTime;
+
+    /**
+     * 退款金额
+     */
+    private BigDecimal refundPrice;
 
     /**
      * 是否存在售后（0否,1是）
@@ -106,6 +117,11 @@ public class MallOrder {
      * 支付时间
      */
     private Date payTime;
+
+    /**
+     * 是否支付（0否,1是）
+     */
+    private Integer paid;
 
     /**
      * 发货时间
@@ -140,6 +156,7 @@ public class MallOrder {
     /**
      * 乐观锁版本号(更新时自增)
      */
+    @Version
     private Integer version;
 
     /**

@@ -18,16 +18,16 @@ import cn.zhangchuangla.medicine.model.entity.User;
 import cn.zhangchuangla.medicine.model.enums.DeliveryTypeEnum;
 import cn.zhangchuangla.medicine.model.enums.OrderStatusEnum;
 import cn.zhangchuangla.medicine.model.enums.PayTypeEnum;
-import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import cn.zhangchuangla.medicine.payment.model.AlipayRefundRequest;
+import cn.zhangchuangla.medicine.payment.service.AlipayPaymentService;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import org.springframework.stereotype.Service;
+import org.springframework.util.StringUtils;
 
 import java.math.BigDecimal;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
+import java.math.RoundingMode;
+import java.util.*;
 import java.util.stream.Collectors;
 
 /**
@@ -37,17 +37,36 @@ import java.util.stream.Collectors;
 public class MallOrderServiceImpl extends ServiceImpl<MallOrderMapper, MallOrder>
         implements MallOrderService {
 
+    /**
+     * 订单支付成功后在库中持久化的标记位。
+     */
+    private static final int PAID_FLAG = 1;
+    /**
+     * 完整退款的订单状态标记，兼容支付宝与钱包等多种通道。
+     */
+    private static final String REFUND_STATUS_SUCCESS = "SUCCESS";
+    /**
+     * 部分退款的订单状态标记，表示仍有金额未退回。
+     */
+    private static final String REFUND_STATUS_PARTIAL = "PARTIAL";
+    /**
+     * 未传递退款原因时使用的默认描述，方便排查后台手工操作。
+     */
+    private static final String DEFAULT_REFUND_REASON = "管理员发起退款";
+
     private final MallOrderMapper mallOrderMapper;
     private final UserService userService;
     private final MallOrderItemService mallOrderItemService;
     private final MallProductImageService mallProductImageService;
+    private final AlipayPaymentService alipayPaymentService;
 
 
-    public MallOrderServiceImpl(MallOrderMapper mallOrderMapper, UserService userService, MallOrderItemService mallOrderItemService, MallProductImageService mallProductImageService) {
+    public MallOrderServiceImpl(MallOrderMapper mallOrderMapper, UserService userService, MallOrderItemService mallOrderItemService, MallProductImageService mallProductImageService, AlipayPaymentService alipayPaymentService) {
         this.mallOrderMapper = mallOrderMapper;
         this.userService = userService;
         this.mallOrderItemService = mallOrderItemService;
         this.mallProductImageService = mallProductImageService;
+        this.alipayPaymentService = alipayPaymentService;
     }
 
 
@@ -60,9 +79,7 @@ public class MallOrderServiceImpl extends ServiceImpl<MallOrderMapper, MallOrder
     @Override
     public MallOrder getOrderByOrderNo(String orderNo) {
         Assert.isTrue(orderNo != null, "订单号不能为空");
-        LambdaQueryWrapper<MallOrder> mallOrderLambdaQueryWrapper = new LambdaQueryWrapper<MallOrder>()
-                .eq(MallOrder::getOrderNo, orderNo);
-        MallOrder mallOrder = getOne(mallOrderLambdaQueryWrapper);
+        MallOrder mallOrder = lambdaQuery().eq(MallOrder::getOrderNo, orderNo).one();
         if (mallOrder == null) {
             throw new ServiceException(ResponseResultCode.RESULT_IS_NULL, "订单不存在");
         }
@@ -229,8 +246,135 @@ public class MallOrderServiceImpl extends ServiceImpl<MallOrderMapper, MallOrder
      */
     @Override
     public boolean orderRefund(OrderRefundRequest request) {
-        //todo 订单退款待实现
-        return false;
+        // 1. 加载并校验订单基本信息与可退款额度，校验失败会直接抛异常并终止流程。
+        MallOrder mallOrder = loadRefundableOrder(request);
+        PayTypeEnum payType = PayTypeEnum.fromCode(mallOrder.getPayType());
+        if (payType == null) {
+            throw new ServiceException(ResponseResultCode.OPERATION_ERROR, "暂不支持该支付方式退款!");
+        }
+
+        // 2. 根据支付方式路由到具体的退款实现，便于未来扩展到微信、钱包等渠道。
+        switch (payType) {
+            case ALIPAY -> processAlipayRefund(mallOrder, request);
+            case WALLET -> processWalletRefund(mallOrder, request);
+            default -> throw new ServiceException(ResponseResultCode.OPERATION_ERROR, "暂不支持该支付方式退款!");
+        }
+
+        // 3. 刷新订单的退款快照信息，并持久化到数据库。
+        applyRefundSnapshot(mallOrder, request.getRefundAmount());
+        boolean updated = updateById(mallOrder);
+        if (!updated) {
+            throw new ServiceException(ResponseResultCode.OPERATION_ERROR, "更新订单退款状态失败, 请稍后重试!");
+        }
+        return true;
+    }
+
+    /**
+     * 根据退款请求加载订单并进行前置校验。
+     *
+     * @param request 退款请求参数
+     * @return 可退款且校验通过的订单实体
+     */
+    private MallOrder loadRefundableOrder(OrderRefundRequest request) {
+        // 订单号是定位订单的唯一凭证，这里使用业务异常兜底校验。
+        Assert.isTrue(request != null, "订单退款参数不能为空");
+        MallOrder mallOrder = getOrderByOrderNo(request.getOrderNo());
+        BigDecimal refundAmount = request.getRefundAmount();
+        if (refundAmount == null) {
+            throw new ServiceException(ResponseResultCode.PARAM_ERROR, "退款金额不能为空");
+        }
+        if (!Objects.equals(mallOrder.getPaid(), PAID_FLAG)) {
+            throw new ServiceException(ResponseResultCode.OPERATION_ERROR, "订单未支付，无法退款!");
+        }
+
+        ensureRefundAmountAllowed(mallOrder, refundAmount);
+        return mallOrder;
+    }
+
+    /**
+     * 校验退款金额是否合法：大于 0 且不超过剩余可退金额。
+     */
+    private void ensureRefundAmountAllowed(MallOrder mallOrder, BigDecimal refundAmount) {
+        if (refundAmount.compareTo(BigDecimal.ZERO) <= 0) {
+            throw new ServiceException(ResponseResultCode.OPERATION_ERROR, "退款金额必须大于0!");
+        }
+        BigDecimal payAmount = safeAmount(mallOrder.getPayAmount());
+        if (payAmount.compareTo(BigDecimal.ZERO) <= 0) {
+            throw new ServiceException(ResponseResultCode.OPERATION_ERROR, "订单支付金额异常，无法退款!");
+        }
+        BigDecimal alreadyRefunded = safeAmount(mallOrder.getRefundPrice());
+        BigDecimal remainingAmount = payAmount.subtract(alreadyRefunded);
+        if (refundAmount.compareTo(remainingAmount) > 0) {
+            throw new ServiceException(ResponseResultCode.OPERATION_ERROR, "退款金额不能大于可退款金额!");
+        }
+    }
+
+    /**
+     * 调用支付宝退款接口，将平台订单号、退款金额等信息传递给网关。
+     */
+    private void processAlipayRefund(MallOrder mallOrder, OrderRefundRequest request) {
+        alipayPaymentService.refund(AlipayRefundRequest.builder()
+                .outTradeNo(mallOrder.getOrderNo())
+                .refundAmount(formatAmount(request.getRefundAmount()))
+                .refundReason(determineRefundReason(request.getRefundReason()))
+                .outRequestNo(buildOutRequestNo(mallOrder))
+                .build());
+    }
+
+    /**
+     * 钱包退款预留实现。业务方可在此处对接钱包余额返还、日志记录等逻辑。
+     */
+    private void processWalletRefund(MallOrder mallOrder, OrderRefundRequest request) {
+        // TODO 预留钱包退款实现，待钱包模块上线后打通
+        throw new ServiceException(ResponseResultCode.OPERATION_ERROR, "钱包退款功能暂未开通，请使用支付宝退款通道处理");
+    }
+
+    /**
+     * 根据本次退款结果刷新订单对象的退款金额、时间与状态，确保后续查询能实时反映退款情况。
+     */
+    private void applyRefundSnapshot(MallOrder mallOrder, BigDecimal refundAmount) {
+        BigDecimal alreadyRefunded = safeAmount(mallOrder.getRefundPrice());
+        BigDecimal totalRefunded = alreadyRefunded.add(refundAmount);
+        mallOrder.setRefundPrice(totalRefunded);
+        mallOrder.setRefundTime(new Date());
+
+        BigDecimal payableAmount = safeAmount(mallOrder.getPayAmount());
+        boolean fullyRefunded = payableAmount.compareTo(totalRefunded) == 0;
+        mallOrder.setRefundStatus(fullyRefunded ? REFUND_STATUS_SUCCESS : REFUND_STATUS_PARTIAL);
+
+        if (fullyRefunded) {
+            mallOrder.setOrderStatus(OrderStatusEnum.REFUNDED.getType());
+        } else if (!Objects.equals(mallOrder.getOrderStatus(), OrderStatusEnum.REFUNDED.getType())) {
+            mallOrder.setOrderStatus(OrderStatusEnum.AFTER_SALE.getType());
+        }
+    }
+
+    /**
+     * 空值保护，避免金额字段为 null 时触发 NPE。
+     */
+    private BigDecimal safeAmount(BigDecimal amount) {
+        return amount == null ? BigDecimal.ZERO : amount;
+    }
+
+    /**
+     * 若未传退款原因则回落到默认文案，方便审计与追责。
+     */
+    private String determineRefundReason(String refundReason) {
+        return StringUtils.hasText(refundReason) ? refundReason : DEFAULT_REFUND_REASON;
+    }
+
+    /**
+     * 构建支付宝退款的幂等 key，按照「订单号 + 时间戳」规则避免重复退款。
+     */
+    private String buildOutRequestNo(MallOrder mallOrder) {
+        return mallOrder.getOrderNo() + "-REFUND-" + System.currentTimeMillis();
+    }
+
+    /**
+     * 支付宝退款金额必须保留两位小数，这里统一格式化为字符串。
+     */
+    private String formatAmount(BigDecimal amount) {
+        return amount.setScale(2, RoundingMode.HALF_UP).toPlainString();
     }
 
     @Override
@@ -267,6 +411,11 @@ public class MallOrderServiceImpl extends ServiceImpl<MallOrderMapper, MallOrder
         return withProductDtoPage;
     }
 
+    @Override
+    public List<MallOrder> getExpiredOrderClean(long expiredTime) {
+        return mallOrderMapper.getExpiredOrderClean(expiredTime);
+    }
+
     /**
      * 获取配送方式描述
      */
@@ -291,7 +440,3 @@ public class MallOrderServiceImpl extends ServiceImpl<MallOrderMapper, MallOrder
         return payTypeEnum != null ? payTypeEnum.getType() : "未知";
     }
 }
-
-
-
-

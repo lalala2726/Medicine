@@ -1,4 +1,4 @@
-package cn.zhangchuangla.medicine.admin.controller.mall;
+package cn.zhangchuangla.medicine.admin.controller;
 
 import cn.zhangchuangla.medicine.admin.model.request.*;
 import cn.zhangchuangla.medicine.admin.model.vo.MallOrderListVo;
@@ -113,7 +113,7 @@ public class MallOrderController extends BaseController {
      */
     @PostMapping
     @Operation(summary = "订单退款")
-    public AjaxResult<?> OrderRefund(OrderRefundRequest request) {
+    public AjaxResult<?> OrderRefund(@RequestBody OrderRefundRequest request) {
         boolean result = mallOrderService.orderRefund(request);
         return toAjax(result);
     }

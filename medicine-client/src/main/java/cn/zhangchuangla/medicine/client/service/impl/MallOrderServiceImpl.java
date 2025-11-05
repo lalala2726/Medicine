@@ -38,6 +38,8 @@ import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
 
+import static cn.zhangchuangla.medicine.common.core.constants.Constants.ORDER_TIMEOUT_MINUTES;
+
 /**
  * @author Chuang
  */
@@ -49,8 +51,8 @@ public class MallOrderServiceImpl extends ServiceImpl<MallOrderMapper, MallOrder
     private static final String ORDER_STATUS_WAIT_PAY = OrderStatusEnum.PENDING_PAYMENT.getType();
     private static final String ORDER_STATUS_WAIT_SHIPMENT = OrderStatusEnum.PENDING_SHIPMENT.getType();
     private static final String PAY_TYPE_ALIPAY = PayTypeEnum.ALIPAY.getType();
+    private static final String WAIT_PAY = PayTypeEnum.WAIT_PAY.getType();
     private static final int FLAG_FALSE = 0;
-    private static final int ORDER_TIMEOUT_MINUTES = 30;
 
     private final MallProductService mallProductService;
     private final MallOrderItemService mallOrderItemService;
@@ -90,12 +92,11 @@ public class MallOrderServiceImpl extends ServiceImpl<MallOrderMapper, MallOrder
                 .totalAmount(totalAmount)
                 .payAmount(BigDecimal.ZERO)
                 .freightAmount(BigDecimal.ZERO)
-                .payType(PAY_TYPE_ALIPAY)
+                .payType(WAIT_PAY)
                 .orderStatus(ORDER_STATUS_WAIT_PAY)
                 .deliveryType(deliveryTypeCode)
                 .receiverDetail(request.getAddress())
                 .note(request.getRemark())
-                .refundFlag(FLAG_FALSE)
                 .afterSaleFlag(FLAG_FALSE)
                 .createTime(now)
                 .updateTime(now)
@@ -298,6 +299,7 @@ public class MallOrderServiceImpl extends ServiceImpl<MallOrderMapper, MallOrder
 
 
     private boolean markOrderPaidByAlipay(String orderNo, BigDecimal payAmount) {
+        final int PAID = 1;
         MallOrder order = lambdaQuery()
                 .eq(MallOrder::getOrderNo, orderNo)
                 .one();
@@ -317,6 +319,7 @@ public class MallOrderServiceImpl extends ServiceImpl<MallOrderMapper, MallOrder
                 .set(MallOrder::getPayAmount, finalPayAmount)
                 .set(MallOrder::getPayTime, now)
                 .set(MallOrder::getUpdateTime, now)
+                .set(MallOrder::getPaid, PAID)
                 .update();
     }
 

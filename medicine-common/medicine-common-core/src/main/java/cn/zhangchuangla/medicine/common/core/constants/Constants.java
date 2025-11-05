@@ -20,15 +20,9 @@ public class Constants {
 
 
     /**
-     * 已删除状态常量
+     * 订单超时时间
      */
-    public static final int DELETED = 1;
+    public static final int ORDER_TIMEOUT_MINUTES = 30;
 
-    /**
-     * 未删除状态常量
-     */
-    public static final int NOT_DELETED = 0;
-
-    public static final String STATIC_FILE = "files";
 
 }
