@@ -19,9 +19,12 @@
         <result property="receiverPhone" column="receiver_phone"/>
         <result property="receiverDetail" column="receiver_detail"/>
         <result property="note" column="note"/>
-        <result property="refundFlag" column="refund_flag"/>
+        <result property="refundStatus" column="refund_status"/>
+        <result property="refundTime" column="refund_time"/>
+        <result property="refundPrice" column="refund_price"/>
         <result property="afterSaleFlag" column="after_sale_flag"/>
         <result property="payTime" column="pay_time"/>
+        <result property="paid" column="paid"/>
         <result property="deliverTime" column="deliver_time"/>
         <result property="receiveTime" column="receive_time"/>
         <result property="finishTime" column="finish_time"/>
@@ -37,8 +40,8 @@
     <sql id="Base_Column_List">
         id,order_no,user_id,total_amount,pay_amount,freight_amount,
         pay_type,order_status,delivery_type,address_id,receiver_name,
-        receiver_phone,receiver_detail,note,refund_flag,after_sale_flag,
-        pay_time,deliver_time,receive_time,finish_time,close_reason,close_time,remark,create_by,update_by,
+        receiver_phone,receiver_detail,note,refund_status,refund_time,refund_price,after_sale_flag,
+        pay_time,paid,deliver_time,receive_time,finish_time,close_reason,close_time,remark,create_by,update_by,
         create_time,update_time
     </sql>
 </mapper>

@@ -94,9 +94,19 @@ public class MallOrder {
     private String note;
 
     /**
-     * 是否存在退款申请（0否,1是）
+     * 退款状态
      */
-    private Integer refundFlag;
+    private String refundStatus;
+
+    /**
+     * 退款时间
+     */
+    private Date refundTime;
+
+    /**
+     * 退款金额
+     */
+    private BigDecimal refundPrice;
 
     /**
      * 是否存在售后（0否,1是）
@@ -107,6 +117,11 @@ public class MallOrder {
      * 支付时间
      */
     private Date payTime;
+
+    /**
+     * 是否支付（0否,1是）
+     */
+    private Integer paid;
 
     /**
      * 发货时间
