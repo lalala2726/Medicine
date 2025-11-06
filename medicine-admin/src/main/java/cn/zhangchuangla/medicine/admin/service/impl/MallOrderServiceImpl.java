@@ -72,7 +72,7 @@ public class MallOrderServiceImpl extends ServiceImpl<MallOrderMapper, MallOrder
 
     @Override
     public Page<MallOrder> orderList(MallOrderListRequest request) {
-        Page<MallOrder> mallOrderPage = new Page<>(request.getPageNum(), request.getPageSize());
+        Page<MallOrder> mallOrderPage = request.toPage();
         return mallOrderMapper.orderList(mallOrderPage, request);
     }
 
@@ -379,7 +379,7 @@ public class MallOrderServiceImpl extends ServiceImpl<MallOrderMapper, MallOrder
 
     @Override
     public Page<OrderWithProductDto> orderWithProduct(MallOrderListRequest request) {
-        Page<OrderWithProductDto> orderWithProductDtoPage = new Page<>(request.getPageNum(), request.getPageSize());
+        Page<OrderWithProductDto> orderWithProductDtoPage = request.toPage();
         Page<OrderWithProductDto> withProductDtoPage = mallOrderMapper.orderListWithProduct(orderWithProductDtoPage, request);
         List<OrderWithProductDto> records = withProductDtoPage.getRecords();
         if (records.isEmpty()) {

@@ -10,12 +10,11 @@ import java.util.Date;
 
 /**
  * 用户钱包表
- *
- * @TableName user_wallet
  */
 @TableName(value = "user_wallet")
 @Data
 public class UserWallet {
+
     /**
      * 主键ID
      */

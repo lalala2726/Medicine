@@ -24,4 +24,17 @@
         change_type,amount,before_balance,after_balance,remark,
         created_at
     </sql>
+    <select id="getBillPageByUserId" resultMap="BaseResultMap">
+        SELECT
+            <include refid="Base_Column_List"/>
+        FROM user_wallet_log
+        WHERE user_id = #{userId}
+        <if test="request.startTime != null">
+            AND created_at >= #{request.startTime}
+        </if>
+        <if test="request.endTime != null">
+            AND created_at &lt;= #{request.endTime}
+        </if>
+        ORDER BY created_at DESC
+    </select>
 </mapper>

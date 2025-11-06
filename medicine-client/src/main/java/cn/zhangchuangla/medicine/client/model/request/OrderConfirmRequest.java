@@ -16,11 +16,17 @@ import lombok.Data;
 public class OrderConfirmRequest {
 
 
-    @Schema(description = "订单编号")
+    /**
+     * 订单编号
+     */
+    @Schema(description = "订单编号", requiredMode = Schema.RequiredMode.REQUIRED, example = "2025110100000001")
     @NotBlank(message = "订单编号不能为空")
     private String orderNo;
 
-    @Schema(description = "支付方式", example = "ALIPAY")
+    /**
+     * 支付方式
+     */
+    @Schema(description = "支付方式", requiredMode = Schema.RequiredMode.REQUIRED, example = "ALIPAY")
     @NotNull(message = "支付方式不能为空")
     private PayTypeEnum payMethod;
 

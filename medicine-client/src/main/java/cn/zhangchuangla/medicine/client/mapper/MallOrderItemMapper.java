@@ -4,7 +4,7 @@ import cn.zhangchuangla.medicine.model.entity.MallOrderItem;
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
 
 /**
- * @author zhangchuang
+ * @author Chuang
  */
 public interface MallOrderItemMapper extends BaseMapper<MallOrderItem> {
 

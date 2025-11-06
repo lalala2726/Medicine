@@ -66,6 +66,31 @@ public class User {
     private String roles;
 
     /**
+     * 真实姓名
+     */
+    private String realName;
+
+    /**
+     * 身份证号
+     */
+    private String idCard;
+
+    /**
+     * 上次登陆时间
+     */
+    private Date lastLoginTime;
+
+    /**
+     * 上次登陆IP
+     */
+    private String lastLoginIp;
+
+    /**
+     * 上次登陆地点
+     */
+    private String lastLoginLocation;
+
+    /**
      * 状态
      */
     private Integer status;

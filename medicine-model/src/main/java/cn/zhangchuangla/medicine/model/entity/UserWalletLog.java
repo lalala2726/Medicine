@@ -10,12 +10,11 @@ import java.util.Date;
 
 /**
  * 钱包流水记录表
- *
- * @TableName user_wallet_log
  */
 @TableName(value = "user_wallet_log")
 @Data
 public class UserWalletLog {
+
     /**
      * 主键ID
      */
