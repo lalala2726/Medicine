@@ -65,10 +65,10 @@ public class UserController extends BaseController {
     /**
      * 获取用户钱包流水
      */
-    @GetMapping("/wallet/flow")
+    @GetMapping("/{userId}/wallet-flow")
     @Operation(summary = "获取用户钱包流水")
-    public AjaxResult<TableDataResult> getUserWalletFlow(PageRequest request) {
-        Page<UserWalletLog> userWalletLogPage = userService.getUserWalletFlow(request);
+    public AjaxResult<TableDataResult> getUserWalletFlow(@PathVariable("userId")Long userId, PageRequest request) {
+        Page<UserWalletLog> userWalletLogPage = userService.getUserWalletFlow(userId,request);
         List<UserWalletLog> userWalletLogs = copyListProperties(userWalletLogPage, UserWalletLog.class);
         return getTableData(userWalletLogPage, userWalletLogs);
     }

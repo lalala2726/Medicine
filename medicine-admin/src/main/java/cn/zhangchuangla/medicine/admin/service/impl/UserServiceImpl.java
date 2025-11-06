@@ -158,8 +158,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User>
      * @return 用户钱包流水
      */
     @Override
-    public Page<UserWalletLog> getUserWalletFlow(PageRequest request) {
-        Long userId = getUserId();
+    public Page<UserWalletLog> getUserWalletFlow(Long userId,PageRequest request) {
         return userWalletLogService.getUserWalletFlow(userId, request);
     }
 }

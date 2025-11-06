@@ -85,7 +85,7 @@ public interface UserService extends IService<User> {
      *
      * @return 用户钱包流水
      */
-    Page<UserWalletLog> getUserWalletFlow(PageRequest request);
+    Page<UserWalletLog> getUserWalletFlow(Long userId,PageRequest request);
 
 
 }
