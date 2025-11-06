@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="cn.zhangchuangla.medicine.admin.mapper.UserWalletLogMapper">
+
+    <resultMap id="BaseResultMap" type="generator.domain.UserWalletLog">
+            <id property="id" column="id" />
+            <result property="walletId" column="wallet_id" />
+            <result property="userId" column="user_id" />
+            <result property="flowNo" column="flow_no" />
+            <result property="bizType" column="biz_type" />
+            <result property="bizId" column="biz_id" />
+            <result property="changeType" column="change_type" />
+            <result property="amount" column="amount" />
+            <result property="beforeBalance" column="before_balance" />
+            <result property="afterBalance" column="after_balance" />
+            <result property="remark" column="remark" />
+            <result property="createdAt" column="created_at" />
+    </resultMap>
+
+    <sql id="Base_Column_List">
+        id,wallet_id,user_id,flow_no,biz_type,biz_id,
+        change_type,amount,before_balance,after_balance,remark,
+        created_at
+    </sql>
+</mapper>

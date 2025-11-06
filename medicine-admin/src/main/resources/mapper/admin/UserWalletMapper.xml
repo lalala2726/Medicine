@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="cn.zhangchuangla.medicine.admin.mapper.UserWalletMapper">
+
+    <resultMap id="BaseResultMap" type="generator.domain.UserWallet">
+            <id property="id" column="id" />
+            <result property="userId" column="user_id" />
+            <result property="walletNo" column="wallet_no" />
+            <result property="balance" column="balance" />
+            <result property="frozenBalance" column="frozen_balance" />
+            <result property="totalIncome" column="total_income" />
+            <result property="totalExpend" column="total_expend" />
+            <result property="currency" column="currency" />
+            <result property="status" column="status" />
+            <result property="remark" column="remark" />
+            <result property="createdAt" column="created_at" />
+            <result property="updatedAt" column="updated_at" />
+    </resultMap>
+
+    <sql id="Base_Column_List">
+        id,user_id,wallet_no,balance,frozen_balance,total_income,
+        total_expend,currency,status,remark,created_at,
+        updated_at
+    </sql>
+</mapper>
