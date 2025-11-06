@@ -1,9 +1,11 @@
 package cn.zhangchuangla.medicine.admin.service.impl;
 
 import cn.zhangchuangla.medicine.admin.mapper.UserMapper;
+import cn.zhangchuangla.medicine.admin.model.vo.UserWalletFlowInfoVo;
 import cn.zhangchuangla.medicine.admin.service.UserService;
 import cn.zhangchuangla.medicine.admin.service.UserWalletLogService;
 import cn.zhangchuangla.medicine.common.core.base.PageRequest;
+import cn.zhangchuangla.medicine.common.core.base.PageResult;
 import cn.zhangchuangla.medicine.common.core.utils.Assert;
 import cn.zhangchuangla.medicine.common.core.utils.BeanCotyUtils;
 import cn.zhangchuangla.medicine.common.security.base.BaseService;
@@ -18,10 +20,8 @@ import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.stereotype.Service;
 
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.stream.Collectors;
 
 /**
@@ -158,8 +158,24 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User>
      * @return 用户钱包流水
      */
     @Override
-    public Page<UserWalletLog> getUserWalletFlow(Long userId,PageRequest request) {
-        return userWalletLogService.getUserWalletFlow(userId, request);
+    public PageResult<UserWalletFlowInfoVo> getUserWalletFlow(Long userId, PageRequest request) {
+        Page<UserWalletLog> userWalletFlow = userWalletLogService.getUserWalletFlow(userId, request);
+        List<UserWalletFlowInfoVo> userWalletFlowInfoVos = new ArrayList<>();
+
+        AtomicLong atomicLong = new AtomicLong(1);
+        userWalletFlow.getRecords().forEach(userWalletLog -> {
+            UserWalletFlowInfoVo walletFlowInfoVo = UserWalletFlowInfoVo.builder()
+                    .index(atomicLong.getAndIncrement())
+                    .afterBalance(userWalletLog.getAfterBalance())
+                    .amount(userWalletLog.getAmount())
+                    .beforeBalance(userWalletLog.getBeforeBalance())
+                    .changeTime(userWalletLog.getCreatedAt())
+                    .changeType(userWalletLog.getBizType())
+                    .build();
+            userWalletFlowInfoVos.add(walletFlowInfoVo);
+        });
+        return new PageResult<>(userWalletFlow.getTotal(), userWalletFlow.getPages(), userWalletFlow.getSize(), userWalletFlowInfoVos);
+
     }
 }
 

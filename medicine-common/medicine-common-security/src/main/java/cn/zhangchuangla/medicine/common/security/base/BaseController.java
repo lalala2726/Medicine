@@ -69,7 +69,6 @@ public class BaseController {
     protected AjaxResult<TableDataResult> getTableData(Page<?> page) {
         return TableDataResult.build(page);
     }
-
     /**
      * 封装分页数据,如果想要返回VO必须传入VO对象,否则返回的数据总数和页码不正确
      *

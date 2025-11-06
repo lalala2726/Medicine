@@ -22,16 +22,11 @@ import java.util.Date;
 public class UserWalletFlowInfoVo {
 
     /**
-     * 流水编号
+     * 流水索引
      */
-    @Schema(description = "流水编号", example = "2025110616460001")
-    private String flowNo;
+    @Schema(description = "流水索引", example = "1")
+    private Long index;
 
-    /**
-     * 业务类型
-     */
-    @Schema(description = "业务类型", example = "充值")
-    private String bizType;
 
     /**
      * 变动类型
@@ -58,8 +53,9 @@ public class UserWalletFlowInfoVo {
     private BigDecimal afterBalance;
 
     /**
-     * 创建时间
+     * 变动时间
      */
-    @Schema(description = "创建时间", example = "2025-11-06 16:46:00")
-    private Date createdAt;
+    @Schema(description = "变动时间", example = "2025-11-07 04:33:00")
+    private Date changeTime;
+
 }

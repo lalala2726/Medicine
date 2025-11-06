@@ -1,12 +1,13 @@
 package cn.zhangchuangla.medicine.admin.controller;
 
+import cn.zhangchuangla.medicine.admin.model.vo.UserWalletFlowInfoVo;
 import cn.zhangchuangla.medicine.admin.service.UserService;
 import cn.zhangchuangla.medicine.common.core.base.AjaxResult;
 import cn.zhangchuangla.medicine.common.core.base.PageRequest;
+import cn.zhangchuangla.medicine.common.core.base.PageResult;
 import cn.zhangchuangla.medicine.common.core.base.TableDataResult;
 import cn.zhangchuangla.medicine.common.security.base.BaseController;
 import cn.zhangchuangla.medicine.model.entity.User;
-import cn.zhangchuangla.medicine.model.entity.UserWalletLog;
 import cn.zhangchuangla.medicine.model.request.user.UserAddRequest;
 import cn.zhangchuangla.medicine.model.request.user.UserListQueryRequest;
 import cn.zhangchuangla.medicine.model.request.user.UserUpdateRequest;
@@ -67,10 +68,9 @@ public class UserController extends BaseController {
      */
     @GetMapping("/{userId}/wallet-flow")
     @Operation(summary = "获取用户钱包流水")
-    public AjaxResult<TableDataResult> getUserWalletFlow(@PathVariable("userId")Long userId, PageRequest request) {
-        Page<UserWalletLog> userWalletLogPage = userService.getUserWalletFlow(userId,request);
-        List<UserWalletLog> userWalletLogs = copyListProperties(userWalletLogPage, UserWalletLog.class);
-        return getTableData(userWalletLogPage, userWalletLogs);
+    public AjaxResult<TableDataResult> getUserWalletFlow(@PathVariable("userId") Long userId, PageRequest request) {
+        PageResult<UserWalletFlowInfoVo> userWalletLogPage = userService.getUserWalletFlow(userId, request);
+        return getTableData(userWalletLogPage);
     }
 
 

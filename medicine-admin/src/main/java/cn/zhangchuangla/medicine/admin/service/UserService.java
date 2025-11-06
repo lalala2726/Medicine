@@ -1,8 +1,9 @@
 package cn.zhangchuangla.medicine.admin.service;
 
+import cn.zhangchuangla.medicine.admin.model.vo.UserWalletFlowInfoVo;
 import cn.zhangchuangla.medicine.common.core.base.PageRequest;
+import cn.zhangchuangla.medicine.common.core.base.PageResult;
 import cn.zhangchuangla.medicine.model.entity.User;
-import cn.zhangchuangla.medicine.model.entity.UserWalletLog;
 import cn.zhangchuangla.medicine.model.request.user.UserAddRequest;
 import cn.zhangchuangla.medicine.model.request.user.UserListQueryRequest;
 import cn.zhangchuangla.medicine.model.request.user.UserUpdateRequest;
@@ -85,7 +86,7 @@ public interface UserService extends IService<User> {
      *
      * @return 用户钱包流水
      */
-    Page<UserWalletLog> getUserWalletFlow(Long userId,PageRequest request);
+    PageResult<UserWalletFlowInfoVo> getUserWalletFlow(Long userId, PageRequest request);
 
 
 }
