@@ -46,7 +46,7 @@ public class UserWalletServiceImpl extends ServiceImpl<UserWalletMapper, UserWal
 
     @Override
     public List<UserWalletBillVo> getBillList(UserWalletBillRequest request) {
-        Page<UserWalletLog> walletLogPage = new Page<>(request.getPageNum(), request.getPageSize());
+        Page<UserWalletLog> walletLogPage = request.toPage();
         Long userId = getUserId();
         Page<UserWalletLog> page = userWalletLogService.getBillPageByUserId(userId, request, walletLogPage);
         AtomicLong counter = new AtomicLong(1);

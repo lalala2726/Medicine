@@ -55,7 +55,7 @@ public class MallProductServiceImpl extends ServiceImpl<MallProductMapper, MallP
 
     @Override
     public Page<MallProductDto> listMallProductWithCategory(MallProductListQueryRequest request) {
-        Page<MallProductDto> page = new Page<>(request.getPageNum(), request.getPageSize());
+        Page<MallProductDto> page = request.toPage();
         return mallProductMapper.listMallProductWithCategory(page, request);
     }
 

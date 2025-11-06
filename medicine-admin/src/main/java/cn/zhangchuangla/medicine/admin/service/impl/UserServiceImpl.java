@@ -102,7 +102,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User>
      */
     @Override
     public Page<User> listUser(UserListQueryRequest request) {
-        Page<User> userPage = new Page<>(request.getPageNum(), request.getPageSize());
+        Page<User> userPage = request.toPage();
         return baseMapper.listUser(userPage, request);
     }
 
