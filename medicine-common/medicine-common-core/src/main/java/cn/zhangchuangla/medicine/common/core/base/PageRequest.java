@@ -8,7 +8,7 @@ import lombok.Data;
  * @author Chuang
  */
 @Data
-public class BasePageRequest {
+public class PageRequest {
 
     /**
      * 当前页码

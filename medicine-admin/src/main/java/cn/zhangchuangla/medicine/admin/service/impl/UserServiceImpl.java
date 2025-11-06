@@ -2,9 +2,13 @@ package cn.zhangchuangla.medicine.admin.service.impl;
 
 import cn.zhangchuangla.medicine.admin.mapper.UserMapper;
 import cn.zhangchuangla.medicine.admin.service.UserService;
+import cn.zhangchuangla.medicine.admin.service.UserWalletLogService;
+import cn.zhangchuangla.medicine.common.core.base.PageRequest;
 import cn.zhangchuangla.medicine.common.core.utils.Assert;
 import cn.zhangchuangla.medicine.common.core.utils.BeanCotyUtils;
+import cn.zhangchuangla.medicine.common.security.base.BaseService;
 import cn.zhangchuangla.medicine.model.entity.User;
+import cn.zhangchuangla.medicine.model.entity.UserWalletLog;
 import cn.zhangchuangla.medicine.model.request.user.UserAddRequest;
 import cn.zhangchuangla.medicine.model.request.user.UserListQueryRequest;
 import cn.zhangchuangla.medicine.model.request.user.UserUpdateRequest;
@@ -25,7 +29,13 @@ import java.util.stream.Collectors;
  */
 @Service
 public class UserServiceImpl extends ServiceImpl<UserMapper, User>
-        implements UserService {
+        implements UserService, BaseService {
+
+    private final UserWalletLogService userWalletLogService;
+
+    public UserServiceImpl(UserWalletLogService userWalletLogService) {
+        this.userWalletLogService = userWalletLogService;
+    }
 
     /**
      * 根据用户ID查询用户信息
@@ -139,6 +149,18 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User>
     @Override
     public boolean deleteUser(List<Long> userId) {
         return removeByIds(userId);
+    }
+
+    /**
+     * 获取用户钱包流水
+     *
+     * @param request 查询参数
+     * @return 用户钱包流水
+     */
+    @Override
+    public Page<UserWalletLog> getUserWalletFlow(PageRequest request) {
+        Long userId = getUserId();
+        return userWalletLogService.getUserWalletFlow(userId, request);
     }
 }
 

@@ -2,9 +2,11 @@ package cn.zhangchuangla.medicine.admin.controller;
 
 import cn.zhangchuangla.medicine.admin.service.UserService;
 import cn.zhangchuangla.medicine.common.core.base.AjaxResult;
+import cn.zhangchuangla.medicine.common.core.base.PageRequest;
 import cn.zhangchuangla.medicine.common.core.base.TableDataResult;
 import cn.zhangchuangla.medicine.common.security.base.BaseController;
 import cn.zhangchuangla.medicine.model.entity.User;
+import cn.zhangchuangla.medicine.model.entity.UserWalletLog;
 import cn.zhangchuangla.medicine.model.request.user.UserAddRequest;
 import cn.zhangchuangla.medicine.model.request.user.UserListQueryRequest;
 import cn.zhangchuangla.medicine.model.request.user.UserUpdateRequest;
@@ -59,6 +61,18 @@ public class UserController extends BaseController {
         UserVo userVO = copyProperties(user, UserVo.class);
         return success(userVO);
     }
+
+    /**
+     * 获取用户钱包流水
+     */
+    @GetMapping("/wallet/flow")
+    @Operation(summary = "获取用户钱包流水")
+    public AjaxResult<TableDataResult> getUserWalletFlow(PageRequest request) {
+        Page<UserWalletLog> userWalletLogPage = userService.getUserWalletFlow(request);
+        List<UserWalletLog> userWalletLogs = copyListProperties(userWalletLogPage, UserWalletLog.class);
+        return getTableData(userWalletLogPage, userWalletLogs);
+    }
+
 
     /**
      * 添加用户

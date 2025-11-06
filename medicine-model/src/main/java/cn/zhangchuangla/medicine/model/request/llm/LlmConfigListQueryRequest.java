@@ -1,6 +1,6 @@
 package cn.zhangchuangla.medicine.model.request.llm;
 
-import cn.zhangchuangla.medicine.common.core.base.BasePageRequest;
+import cn.zhangchuangla.medicine.common.core.base.PageRequest;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
@@ -13,7 +13,7 @@ import java.util.List;
 @EqualsAndHashCode(callSuper = true)
 @Schema(description = "LLM配置列表查询参数")
 @Data
-public class LlmConfigListQueryRequest extends BasePageRequest {
+public class LlmConfigListQueryRequest extends PageRequest {
 
     /**
      * ID
