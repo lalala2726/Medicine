@@ -14,7 +14,7 @@ import org.springframework.util.CollectionUtils;
 import java.util.List;
 
 /**
- * @author zhangchuang
+ * @author Chuang
  */
 @Service
 public class MallOrderItemServiceImpl extends ServiceImpl<MallOrderItemMapper, MallOrderItem>
