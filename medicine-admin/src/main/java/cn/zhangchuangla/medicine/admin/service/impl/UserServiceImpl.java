@@ -277,7 +277,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User>
                     .build();
             userWalletFlowInfoVos.add(walletFlowInfoVo);
         });
-        return new PageResult<>(userWalletFlow.getTotal(), userWalletFlow.getPages(), userWalletFlow.getSize(), userWalletFlowInfoVos);
+        return new PageResult<>(userWalletFlow.getCurrent(), userWalletFlow.getSize(), userWalletFlow.getTotal(), userWalletFlowInfoVos);
 
     }
 
