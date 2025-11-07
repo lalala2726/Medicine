@@ -149,7 +149,7 @@ public class UserController extends BaseController {
      */
     @PostMapping("/wallet/freeze")
     @Operation(summary = "冻结用户钱包")
-    public AjaxResult<Void> closeUserWallet(@Validated @RequestBody FreezeOrUnUserWalletRequest request) {
+    public AjaxResult<Void> freezeUserWallet(@Validated @RequestBody FreezeOrUnUserWalletRequest request) {
         boolean result = userService.freezeUserWallet(request);
         return toAjax(result);
     }
