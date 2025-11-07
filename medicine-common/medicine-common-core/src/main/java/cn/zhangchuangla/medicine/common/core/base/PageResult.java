@@ -1,10 +1,13 @@
 package cn.zhangchuangla.medicine.common.core.base;
 
+import lombok.Data;
+
 import java.util.List;
 
 /**
  * @author Chuang
  */
+@Data
 public class PageResult<T> {
 
     /**
@@ -34,38 +37,6 @@ public class PageResult<T> {
         this.pageNum = pageNum;
         this.pageSize = pageSize;
         this.total = total;
-        this.rows = rows;
-    }
-
-    public Long getPageNum() {
-        return pageNum;
-    }
-
-    public void setPageNum(Long pageNum) {
-        this.pageNum = pageNum;
-    }
-
-    public Long getPageSize() {
-        return pageSize;
-    }
-
-    public void setPageSize(Long pageSize) {
-        this.pageSize = pageSize;
-    }
-
-    public Long getTotal() {
-        return total;
-    }
-
-    public void setTotal(Long total) {
-        this.total = total;
-    }
-
-    public List<T> getRows() {
-        return rows;
-    }
-
-    public void setRows(List<T> rows) {
         this.rows = rows;
     }
 }

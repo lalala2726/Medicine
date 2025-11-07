@@ -41,4 +41,12 @@ public interface UserService extends IService<User> {
      * @return 用户角色集合
      */
     Set<String> getUserRolesByUserName(String username);
+
+    /**
+     * 更新用户登录信息
+     *
+     * @param userId 用户ID
+     * @param ip     IP地址
+     */
+    void updateLoginInfo(Long userId, String ip);
 }

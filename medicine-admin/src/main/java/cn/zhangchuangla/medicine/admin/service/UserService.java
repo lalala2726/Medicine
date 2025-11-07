@@ -1,5 +1,9 @@
 package cn.zhangchuangla.medicine.admin.service;
 
+import cn.zhangchuangla.medicine.admin.model.vo.UserConsumeInfo;
+import cn.zhangchuangla.medicine.admin.model.vo.UserWalletFlowInfoVo;
+import cn.zhangchuangla.medicine.common.core.base.PageRequest;
+import cn.zhangchuangla.medicine.common.core.base.PageResult;
 import cn.zhangchuangla.medicine.model.entity.User;
 import cn.zhangchuangla.medicine.model.request.user.UserAddRequest;
 import cn.zhangchuangla.medicine.model.request.user.UserListQueryRequest;
@@ -77,4 +81,19 @@ public interface UserService extends IService<User> {
      * @return 是否删除成功
      */
     boolean deleteUser(List<Long> userId);
+
+    /**
+     * 获取用户钱包流水
+     *
+     * @return 用户钱包流水
+     */
+    PageResult<UserWalletFlowInfoVo> getUserWalletFlow(Long userId, PageRequest request);
+
+
+    /**
+     * 获取用户消费信息
+     *
+     * @return 用户消费信息
+     */
+    PageResult<UserConsumeInfo> getConsumeInfo(Long userId, PageRequest request);
 }

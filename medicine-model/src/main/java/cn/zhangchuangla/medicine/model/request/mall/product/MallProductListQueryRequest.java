@@ -1,6 +1,6 @@
 package cn.zhangchuangla.medicine.model.request.mall.product;
 
-import cn.zhangchuangla.medicine.common.core.base.BasePageRequest;
+import cn.zhangchuangla.medicine.common.core.base.PageRequest;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
@@ -16,7 +16,7 @@ import java.math.BigDecimal;
 @Data
 @EqualsAndHashCode(callSuper = true)
 @Schema(description = "商城商品列表查询请求对象")
-public class MallProductListQueryRequest extends BasePageRequest {
+public class MallProductListQueryRequest extends PageRequest {
 
     /**
      * 商品ID

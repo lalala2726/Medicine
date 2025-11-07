@@ -1,6 +1,6 @@
 package cn.zhangchuangla.medicine.client.model.request;
 
-import cn.zhangchuangla.medicine.common.core.base.BasePageRequest;
+import cn.zhangchuangla.medicine.common.core.base.PageRequest;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
@@ -14,7 +14,7 @@ import java.util.Date;
  */
 @EqualsAndHashCode(callSuper = true)
 @Data
-public class UserWalletBillRequest extends BasePageRequest {
+public class UserWalletBillRequest extends PageRequest {
 
     /**
      * 开始时间

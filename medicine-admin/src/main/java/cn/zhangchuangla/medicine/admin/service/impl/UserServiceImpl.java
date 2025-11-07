@@ -1,10 +1,19 @@
 package cn.zhangchuangla.medicine.admin.service.impl;
 
 import cn.zhangchuangla.medicine.admin.mapper.UserMapper;
+import cn.zhangchuangla.medicine.admin.model.vo.UserConsumeInfo;
+import cn.zhangchuangla.medicine.admin.model.vo.UserWalletFlowInfoVo;
+import cn.zhangchuangla.medicine.admin.service.MallOrderService;
 import cn.zhangchuangla.medicine.admin.service.UserService;
+import cn.zhangchuangla.medicine.admin.service.UserWalletLogService;
+import cn.zhangchuangla.medicine.common.core.base.PageRequest;
+import cn.zhangchuangla.medicine.common.core.base.PageResult;
 import cn.zhangchuangla.medicine.common.core.utils.Assert;
 import cn.zhangchuangla.medicine.common.core.utils.BeanCotyUtils;
+import cn.zhangchuangla.medicine.common.security.base.BaseService;
+import cn.zhangchuangla.medicine.model.entity.MallOrder;
 import cn.zhangchuangla.medicine.model.entity.User;
+import cn.zhangchuangla.medicine.model.entity.UserWalletLog;
 import cn.zhangchuangla.medicine.model.request.user.UserAddRequest;
 import cn.zhangchuangla.medicine.model.request.user.UserListQueryRequest;
 import cn.zhangchuangla.medicine.model.request.user.UserUpdateRequest;
@@ -14,10 +23,8 @@ import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.stereotype.Service;
 
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.stream.Collectors;
 
 /**
@@ -25,7 +32,15 @@ import java.util.stream.Collectors;
  */
 @Service
 public class UserServiceImpl extends ServiceImpl<UserMapper, User>
-        implements UserService {
+        implements UserService, BaseService {
+
+    private final UserWalletLogService userWalletLogService;
+    private final MallOrderService mallOrderService;
+
+    public UserServiceImpl(UserWalletLogService userWalletLogService, MallOrderService mallOrderService) {
+        this.userWalletLogService = userWalletLogService;
+        this.mallOrderService = mallOrderService;
+    }
 
     /**
      * 根据用户ID查询用户信息
@@ -139,6 +154,57 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User>
     @Override
     public boolean deleteUser(List<Long> userId) {
         return removeByIds(userId);
+    }
+
+    /**
+     * 获取用户钱包流水
+     *
+     * @param request 查询参数
+     * @return 用户钱包流水
+     */
+    @Override
+    public PageResult<UserWalletFlowInfoVo> getUserWalletFlow(Long userId, PageRequest request) {
+        Page<UserWalletLog> userWalletFlow = userWalletLogService.getUserWalletFlow(userId, request);
+        List<UserWalletFlowInfoVo> userWalletFlowInfoVos = new ArrayList<>();
+
+        AtomicLong atomicLong = new AtomicLong(1);
+        userWalletFlow.getRecords().forEach(userWalletLog -> {
+            UserWalletFlowInfoVo walletFlowInfoVo = UserWalletFlowInfoVo.builder()
+                    .index(atomicLong.getAndIncrement())
+                    .afterBalance(userWalletLog.getAfterBalance())
+                    .amount(userWalletLog.getAmount())
+                    .beforeBalance(userWalletLog.getBeforeBalance())
+                    .changeTime(userWalletLog.getCreatedAt())
+                    .changeType(userWalletLog.getBizType())
+                    .build();
+            userWalletFlowInfoVos.add(walletFlowInfoVo);
+        });
+        return new PageResult<>(userWalletFlow.getTotal(), userWalletFlow.getPages(), userWalletFlow.getSize(), userWalletFlowInfoVos);
+
+    }
+
+    /**
+     * 获取用户消费信息
+     *
+     * @param userId  用户id
+     * @param request 查询参数
+     * @return 用户消费信息
+     */
+    @Override
+    public PageResult<UserConsumeInfo> getConsumeInfo(Long userId, PageRequest request) {
+        Page<MallOrder> mallOrderPage = mallOrderService.getOrderPageByUserId(userId, request);
+        AtomicLong atomicLong = new AtomicLong(1);
+        List<UserConsumeInfo> userConsumeInfos = mallOrderPage.getRecords().stream()
+                .map(order -> UserConsumeInfo.builder()
+                        .index(atomicLong.getAndIncrement())
+                        .orderNo(order.getOrderNo())
+                        .payPrice(order.getPayAmount())
+                        .finishTime(order.getFinishTime())
+                        .totalPrice(order.getTotalAmount())
+                        .userId(order.getUserId())
+                        .build())
+                .toList();
+        return new PageResult<>(mallOrderPage.getCurrent(), mallOrderPage.getSize(), mallOrderPage.getTotal(), userConsumeInfos);
     }
 }
 

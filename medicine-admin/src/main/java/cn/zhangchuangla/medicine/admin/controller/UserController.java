@@ -1,7 +1,11 @@
 package cn.zhangchuangla.medicine.admin.controller;
 
+import cn.zhangchuangla.medicine.admin.model.vo.UserConsumeInfo;
+import cn.zhangchuangla.medicine.admin.model.vo.UserWalletFlowInfoVo;
 import cn.zhangchuangla.medicine.admin.service.UserService;
 import cn.zhangchuangla.medicine.common.core.base.AjaxResult;
+import cn.zhangchuangla.medicine.common.core.base.PageRequest;
+import cn.zhangchuangla.medicine.common.core.base.PageResult;
 import cn.zhangchuangla.medicine.common.core.base.TableDataResult;
 import cn.zhangchuangla.medicine.common.security.base.BaseController;
 import cn.zhangchuangla.medicine.model.entity.User;
@@ -58,6 +62,26 @@ public class UserController extends BaseController {
         User user = userService.getUserById(id);
         UserVo userVO = copyProperties(user, UserVo.class);
         return success(userVO);
+    }
+
+    /**
+     * 获取用户钱包流水
+     */
+    @GetMapping("/{userId}/wallet-flow")
+    @Operation(summary = "获取用户钱包流水")
+    public AjaxResult<TableDataResult> getUserWalletFlow(@PathVariable("userId") Long userId, PageRequest request) {
+        PageResult<UserWalletFlowInfoVo> userWalletLogPage = userService.getUserWalletFlow(userId, request);
+        return getTableData(userWalletLogPage);
+    }
+
+    /**
+     * 获取消费信息
+     */
+    @GetMapping("/{userId}/consume-info")
+    @Operation(summary = "获取消费信息")
+    public AjaxResult<TableDataResult> getConsumeInfo(@PathVariable("userId") Long userId, PageRequest request) {
+        PageResult<UserConsumeInfo> consumeInfo = userService.getConsumeInfo(userId, request);
+        return getTableData(consumeInfo);
     }
 
     /**

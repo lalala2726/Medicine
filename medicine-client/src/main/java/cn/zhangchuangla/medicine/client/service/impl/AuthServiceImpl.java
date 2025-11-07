@@ -2,16 +2,20 @@ package cn.zhangchuangla.medicine.client.service.impl;
 
 import cn.zhangchuangla.medicine.client.service.AuthService;
 import cn.zhangchuangla.medicine.client.service.UserService;
+import cn.zhangchuangla.medicine.client.task.AsyncUserLogService;
 import cn.zhangchuangla.medicine.common.core.constants.RolesConstant;
 import cn.zhangchuangla.medicine.common.core.exception.LoginException;
 import cn.zhangchuangla.medicine.common.core.exception.ParamException;
 import cn.zhangchuangla.medicine.common.core.exception.ServiceException;
 import cn.zhangchuangla.medicine.common.core.utils.Assert;
+import cn.zhangchuangla.medicine.common.core.utils.IPUtils;
 import cn.zhangchuangla.medicine.common.security.entity.AuthTokenVo;
 import cn.zhangchuangla.medicine.common.security.entity.OnlineLoginUser;
+import cn.zhangchuangla.medicine.common.security.entity.SysUserDetails;
 import cn.zhangchuangla.medicine.common.security.token.JwtTokenProvider;
 import cn.zhangchuangla.medicine.common.security.token.RedisTokenStore;
 import cn.zhangchuangla.medicine.common.security.token.TokenService;
+import cn.zhangchuangla.medicine.common.security.utils.SecurityUtils;
 import cn.zhangchuangla.medicine.model.entity.User;
 import io.jsonwebtoken.Claims;
 import lombok.RequiredArgsConstructor;
@@ -41,6 +45,7 @@ public class AuthServiceImpl implements AuthService {
     private final BCryptPasswordEncoder passwordEncoder;
     private final RedisTokenStore redisTokenStore;
     private final JwtTokenProvider jwtTokenProvider;
+    private final AsyncUserLogService asyncUserLogService;
 
     @Override
     public Long register(String username, String password) {
@@ -75,8 +80,13 @@ public class AuthServiceImpl implements AuthService {
         } finally {
             SecurityContextHolder.clearContext();
         }
-        // 生成会话令牌
+        // 生成会话令牌˚
         var session = tokenService.createToken(authentication);
+        SysUserDetails sysUserDetails = (SysUserDetails) authentication.getPrincipal();
+        Long userId = sysUserDetails.getUserId();
+        // 记录登录信息异步任务
+        String ipAddress = IPUtils.getIpAddress(SecurityUtils.getHttpServletRequest());
+        asyncUserLogService.recordUserLoginLog(userId, ipAddress);
         return AuthTokenVo.builder()
                 .accessToken(session.getAccessToken())
                 .refreshToken(session.getRefreshToken())

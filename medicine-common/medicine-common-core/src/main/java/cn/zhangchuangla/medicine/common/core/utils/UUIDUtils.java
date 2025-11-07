@@ -16,4 +16,15 @@ public class UUIDUtils {
         return UUID.randomUUID().toString().replace("-", "");
     }
 
+
+    /**
+     * 复杂UUID
+     */
+    public static String complex() {
+        String simple = simple();
+        // 五位随机数
+        int random = (int) (Math.random() * 100000);
+        long currentTimeMillis = System.currentTimeMillis();
+        return simple + currentTimeMillis + random;
+    }
 }

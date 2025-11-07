@@ -1,6 +1,6 @@
 package cn.zhangchuangla.medicine.admin.model.request;
 
-import cn.zhangchuangla.medicine.common.core.base.BasePageRequest;
+import cn.zhangchuangla.medicine.common.core.base.PageRequest;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
@@ -13,7 +13,7 @@ import lombok.EqualsAndHashCode;
 @EqualsAndHashCode(callSuper = true)
 @Schema(description = "订单列表查询参数")
 @Data
-public class MallOrderListRequest extends BasePageRequest {
+public class MallOrderListRequest extends PageRequest {
 
     /**
      * 订单编号（业务唯一标识）
