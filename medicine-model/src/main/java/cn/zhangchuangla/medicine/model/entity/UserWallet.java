@@ -3,7 +3,11 @@ package cn.zhangchuangla.medicine.model.entity;
 import com.baomidou.mybatisplus.annotation.IdType;
 import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableName;
+import com.baomidou.mybatisplus.annotation.Version;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Data;
+import lombok.NoArgsConstructor;
 
 import java.math.BigDecimal;
 import java.util.Date;
@@ -13,6 +17,9 @@ import java.util.Date;
  */
 @TableName(value = "user_wallet")
 @Data
+@AllArgsConstructor
+@NoArgsConstructor
+@Builder
 public class UserWallet {
 
     /**
@@ -57,9 +64,30 @@ public class UserWallet {
     private String currency;
 
     /**
-     * 状态：1正常，0冻结
+     * 状态：0正常，1冻结
      */
     private Integer status;
+
+    /**
+     * 冻结原因
+     */
+    private String freezeReason;
+
+    /**
+     * 冻结时间
+     */
+    private Date freezeTime;
+
+    /**
+     * 版本号
+     */
+    @Version
+    private Integer version;
+
+    /**
+     * 是否删除：0否，1是
+     */
+    private Integer isDeleted;
 
     /**
      * 备注
