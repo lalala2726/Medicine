@@ -3,6 +3,7 @@ package cn.zhangchuangla.medicine.admin.service;
 import cn.zhangchuangla.medicine.admin.model.request.FreezeOrUnUserWalletRequest;
 import cn.zhangchuangla.medicine.admin.model.request.WalletRechargeRequest;
 import cn.zhangchuangla.medicine.admin.model.vo.UserConsumeInfo;
+import cn.zhangchuangla.medicine.admin.model.vo.UserDetailVo;
 import cn.zhangchuangla.medicine.admin.model.vo.UserWalletFlowInfoVo;
 import cn.zhangchuangla.medicine.common.core.base.PageRequest;
 import cn.zhangchuangla.medicine.common.core.base.PageResult;
@@ -27,7 +28,7 @@ public interface UserService extends IService<User> {
      * @param userId 用户ID
      * @return 用户
      */
-    User getUserById(Long userId);
+    UserDetailVo getUserDetailById(Long userId);
 
     /**
      * 根据用户名获取用户
@@ -131,4 +132,12 @@ public interface UserService extends IService<User> {
      * @return 是否充值成功
      */
     boolean rechargeUserWallet(WalletRechargeRequest request);
+
+    /**
+     * 根据用户ID获取用户
+     *
+     * @param userId 用户ID
+     * @return 用户
+     */
+    User getUserById(Long userId);
 }

@@ -2,6 +2,7 @@ package cn.zhangchuangla.medicine.admin.service.impl;
 
 import cn.zhangchuangla.medicine.admin.mapper.MallOrderMapper;
 import cn.zhangchuangla.medicine.admin.mapper.UserMapper;
+import cn.zhangchuangla.medicine.admin.model.dto.UserOrderStatistics;
 import cn.zhangchuangla.medicine.admin.model.request.*;
 import cn.zhangchuangla.medicine.admin.model.vo.OrderDetailVo;
 import cn.zhangchuangla.medicine.admin.service.MallOrderItemService;
@@ -421,6 +422,11 @@ public class MallOrderServiceImpl extends ServiceImpl<MallOrderMapper, MallOrder
     public Page<MallOrder> getOrderPageByUserId(Long userId, PageRequest request) {
         Page<MallOrder> page = request.toPage();
         return mallOrderMapper.getOrderPageByUserId(page, userId);
+    }
+
+    @Override
+    public UserOrderStatistics getOrderStatisticsByUserId(Long userId) {
+        return null;
     }
 
     /**

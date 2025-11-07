@@ -3,8 +3,6 @@ package cn.zhangchuangla.medicine.model.vo;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 
-import java.util.Date;
-
 /**
  * 用户
  */
@@ -53,36 +51,6 @@ public class UserVo {
      */
     @Schema(description = "性别", example = "男")
     private String gender;
-
-    /**
-     * 身份证号
-     */
-    @Schema(description = "身份证号", example = "110101199001011234")
-    private String idCard;
-
-    /**
-     * 注册时间
-     */
-    @Schema(description = "注册时间", example = "2025-11-06 16:46:00")
-    private Date registerTime;
-
-    /**
-     * 上次登录时间
-     */
-    @Schema(description = "上次登录时间", example = "2025-11-06 16:46:00")
-    private Date lastLoginTime;
-
-    /**
-     * 上次登录IP
-     */
-    @Schema(description = "上次登录IP", example = "192.168.1.1")
-    private String lastLoginIp;
-
-    /**
-     * 上次登录地点
-     */
-    @Schema(description = "上次登录地点", example = "中国北京")
-    private String lastLoginLocation;
 
     /**
      * 状态

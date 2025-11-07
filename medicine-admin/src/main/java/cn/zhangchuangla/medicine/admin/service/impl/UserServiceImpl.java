@@ -1,9 +1,11 @@
 package cn.zhangchuangla.medicine.admin.service.impl;
 
 import cn.zhangchuangla.medicine.admin.mapper.UserMapper;
+import cn.zhangchuangla.medicine.admin.model.dto.UserOrderStatistics;
 import cn.zhangchuangla.medicine.admin.model.request.FreezeOrUnUserWalletRequest;
 import cn.zhangchuangla.medicine.admin.model.request.WalletRechargeRequest;
 import cn.zhangchuangla.medicine.admin.model.vo.UserConsumeInfo;
+import cn.zhangchuangla.medicine.admin.model.vo.UserDetailVo;
 import cn.zhangchuangla.medicine.admin.model.vo.UserWalletFlowInfoVo;
 import cn.zhangchuangla.medicine.admin.service.MallOrderService;
 import cn.zhangchuangla.medicine.admin.service.UserService;
@@ -14,8 +16,10 @@ import cn.zhangchuangla.medicine.common.core.base.PageResult;
 import cn.zhangchuangla.medicine.common.core.utils.Assert;
 import cn.zhangchuangla.medicine.common.core.utils.BeanCotyUtils;
 import cn.zhangchuangla.medicine.common.security.base.BaseService;
+import cn.zhangchuangla.medicine.common.security.utils.SecurityUtils;
 import cn.zhangchuangla.medicine.model.entity.MallOrder;
 import cn.zhangchuangla.medicine.model.entity.User;
+import cn.zhangchuangla.medicine.model.entity.UserWallet;
 import cn.zhangchuangla.medicine.model.entity.UserWalletLog;
 import cn.zhangchuangla.medicine.model.request.user.UserAddRequest;
 import cn.zhangchuangla.medicine.model.request.user.UserListQueryRequest;
@@ -27,6 +31,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.math.BigDecimal;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.stream.Collectors;
@@ -55,8 +60,47 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User>
      * @return 用户信息
      */
     @Override
-    public User getUserById(Long userId) {
-        return getById(userId);
+    public UserDetailVo getUserDetailById(Long userId) {
+        Assert.notNull(userId, "用户ID不能为空");
+        User user = getById(userId);
+        Assert.notNull(user, "用户不存在");
+        UserOrderStatistics userOrderStatistics = mallOrderService.getOrderStatisticsByUserId(userId);
+        UserWallet userWallet = userWalletService.lambdaQuery()
+                .eq(UserWallet::getUserId, userId)
+                .one();
+
+        BigDecimal walletBalance = userWallet == null ? BigDecimal.ZERO : defaultBigDecimal(userWallet.getBalance());
+        long totalOrderCount = userOrderStatistics == null || userOrderStatistics.getTotalOrderCount() == null
+                ? 0L : userOrderStatistics.getTotalOrderCount();
+        BigDecimal totalConsumption = userOrderStatistics == null ? BigDecimal.ZERO
+                : defaultBigDecimal(userOrderStatistics.getTotalConsumption());
+
+        UserDetailVo.BasicInfo basicInfo = UserDetailVo.BasicInfo.builder()
+                .userId(user.getId())
+                .realName(user.getRealName())
+                .phoneNumber(user.getPhoneNumber())
+                .email(user.getEmail())
+                .gender(user.getGender())
+                .idCard(user.getIdCard())
+                .build();
+
+        UserDetailVo.SecurityInfo securityInfo = UserDetailVo.SecurityInfo.builder()
+                .registerTime(user.getCreateTime())
+                .lastLoginTime(user.getLastLoginTime())
+                .lastLoginIp(user.getLastLoginIp())
+                .lastLoginLocation(user.getLastLoginLocation())
+                .status(user.getStatus())
+                .build();
+
+        return UserDetailVo.builder()
+                .avatar(user.getAvatar())
+                .nickName(user.getNickname())
+                .walletBalance(walletBalance)
+                .totalOrders(safeOrderCount(totalOrderCount))
+                .totalConsume(totalConsumption)
+                .basicInfo(basicInfo)
+                .securityInfo(securityInfo)
+                .build();
     }
 
     /**
@@ -148,7 +192,14 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User>
      */
     @Override
     public boolean updateUser(UserUpdateRequest request) {
-        return false;
+        User user = BeanCotyUtils.copyProperties(request, User.class);
+
+        if (request.getPassword() != null) {
+            String password = request.getPassword();
+            String encryptPassword = SecurityUtils.encryptPassword(password);
+            user.setPassword(encryptPassword);
+        }
+        return updateById(user);
     }
 
     /**
@@ -236,5 +287,24 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User>
     public boolean rechargeUserWallet(WalletRechargeRequest request) {
         return userWalletService.rechargeWallet(request.getUserId(), request.getAmount(), request.getReason());
     }
-}
 
+    @Override
+    public User getUserById(Long userId) {
+        return getById(userId);
+    }
+
+    private BigDecimal defaultBigDecimal(BigDecimal value) {
+        return value == null ? BigDecimal.ZERO : value;
+    }
+
+    private int safeOrderCount(long count) {
+        if (count > Integer.MAX_VALUE) {
+            return Integer.MAX_VALUE;
+        }
+        if (count < Integer.MIN_VALUE) {
+            return Integer.MIN_VALUE;
+        }
+        return (int) count;
+    }
+
+}

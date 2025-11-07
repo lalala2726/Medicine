@@ -3,6 +3,7 @@ package cn.zhangchuangla.medicine.admin.controller;
 import cn.zhangchuangla.medicine.admin.model.request.FreezeOrUnUserWalletRequest;
 import cn.zhangchuangla.medicine.admin.model.request.WalletRechargeRequest;
 import cn.zhangchuangla.medicine.admin.model.vo.UserConsumeInfo;
+import cn.zhangchuangla.medicine.admin.model.vo.UserDetailVo;
 import cn.zhangchuangla.medicine.admin.model.vo.UserWalletFlowInfoVo;
 import cn.zhangchuangla.medicine.admin.service.UserService;
 import cn.zhangchuangla.medicine.common.core.base.AjaxResult;
@@ -15,7 +16,6 @@ import cn.zhangchuangla.medicine.model.entity.User;
 import cn.zhangchuangla.medicine.model.request.user.UserAddRequest;
 import cn.zhangchuangla.medicine.model.request.user.UserListQueryRequest;
 import cn.zhangchuangla.medicine.model.request.user.UserUpdateRequest;
-import cn.zhangchuangla.medicine.model.vo.UserVo;
 import cn.zhangchuangla.medicine.model.vo.user.UserListVo;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import io.swagger.v3.oas.annotations.Operation;
@@ -61,12 +61,11 @@ public class UserController extends BaseController {
      * @param id 用户ID
      * @return 用户详情
      */
-    @GetMapping("/{id:\\d+}")
+    @GetMapping("/{id:\\d+}/detail")
     @Operation(summary = "用户详情")
-    public AjaxResult<UserVo> getUserById(@PathVariable("id") Long id) {
-        User user = userService.getUserById(id);
-        UserVo userVO = copyProperties(user, UserVo.class);
-        return success(userVO);
+    public AjaxResult<UserDetailVo> getUserById(@PathVariable("id") Long id) {
+        UserDetailVo userDetailVo = userService.getUserDetailById(id);
+        return success(userDetailVo);
     }
 
     /**
