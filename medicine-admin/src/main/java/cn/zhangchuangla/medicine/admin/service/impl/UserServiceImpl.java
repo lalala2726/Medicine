@@ -1,11 +1,14 @@
 package cn.zhangchuangla.medicine.admin.service.impl;
 
 import cn.zhangchuangla.medicine.admin.mapper.UserMapper;
+import cn.zhangchuangla.medicine.admin.model.request.FreezeOrUnUserWalletRequest;
+import cn.zhangchuangla.medicine.admin.model.request.WalletRechargeRequest;
 import cn.zhangchuangla.medicine.admin.model.vo.UserConsumeInfo;
 import cn.zhangchuangla.medicine.admin.model.vo.UserWalletFlowInfoVo;
 import cn.zhangchuangla.medicine.admin.service.MallOrderService;
 import cn.zhangchuangla.medicine.admin.service.UserService;
 import cn.zhangchuangla.medicine.admin.service.UserWalletLogService;
+import cn.zhangchuangla.medicine.admin.service.UserWalletService;
 import cn.zhangchuangla.medicine.common.core.base.PageRequest;
 import cn.zhangchuangla.medicine.common.core.base.PageResult;
 import cn.zhangchuangla.medicine.common.core.utils.Assert;
@@ -22,6 +25,7 @@ import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.*;
 import java.util.concurrent.atomic.AtomicLong;
@@ -36,10 +40,12 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User>
 
     private final UserWalletLogService userWalletLogService;
     private final MallOrderService mallOrderService;
+    private final UserWalletService userWalletService;
 
-    public UserServiceImpl(UserWalletLogService userWalletLogService, MallOrderService mallOrderService) {
+    public UserServiceImpl(UserWalletLogService userWalletLogService, MallOrderService mallOrderService, UserWalletService userWalletService) {
         this.userWalletLogService = userWalletLogService;
         this.mallOrderService = mallOrderService;
+        this.userWalletService = userWalletService;
     }
 
     /**
@@ -205,6 +211,30 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User>
                         .build())
                 .toList();
         return new PageResult<>(mallOrderPage.getCurrent(), mallOrderPage.getSize(), mallOrderPage.getTotal(), userConsumeInfos);
+    }
+
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public boolean openUserWallet(Long userId) {
+        return userWalletService.openWallet(userId);
+    }
+
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public boolean freezeUserWallet(FreezeOrUnUserWalletRequest request) {
+        return userWalletService.freezeWallet(request.getUserId(), request.getReason());
+    }
+
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public boolean unfreezeUserWallet(FreezeOrUnUserWalletRequest request) {
+        return userWalletService.unfreezeWallet(request.getUserId(), request.getReason());
+    }
+
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public boolean rechargeUserWallet(WalletRechargeRequest request) {
+        return userWalletService.rechargeWallet(request.getUserId(), request.getAmount(), request.getReason());
     }
 }
 

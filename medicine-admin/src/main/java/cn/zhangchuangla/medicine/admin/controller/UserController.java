@@ -1,5 +1,7 @@
 package cn.zhangchuangla.medicine.admin.controller;
 
+import cn.zhangchuangla.medicine.admin.model.request.FreezeOrUnUserWalletRequest;
+import cn.zhangchuangla.medicine.admin.model.request.WalletRechargeRequest;
 import cn.zhangchuangla.medicine.admin.model.vo.UserConsumeInfo;
 import cn.zhangchuangla.medicine.admin.model.vo.UserWalletFlowInfoVo;
 import cn.zhangchuangla.medicine.admin.service.UserService;
@@ -7,6 +9,7 @@ import cn.zhangchuangla.medicine.common.core.base.AjaxResult;
 import cn.zhangchuangla.medicine.common.core.base.PageRequest;
 import cn.zhangchuangla.medicine.common.core.base.PageResult;
 import cn.zhangchuangla.medicine.common.core.base.TableDataResult;
+import cn.zhangchuangla.medicine.common.security.annotation.IsAdmin;
 import cn.zhangchuangla.medicine.common.security.base.BaseController;
 import cn.zhangchuangla.medicine.model.entity.User;
 import cn.zhangchuangla.medicine.model.request.user.UserAddRequest;
@@ -18,6 +21,7 @@ import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -31,6 +35,7 @@ import java.util.List;
 @RequestMapping("/user")
 @RequiredArgsConstructor
 @Tag(name = "用户接口", description = "提供用户的增删改查")
+@IsAdmin
 public class UserController extends BaseController {
 
     private final UserService userService;
@@ -120,6 +125,60 @@ public class UserController extends BaseController {
     @Operation(summary = "删除用户")
     public AjaxResult<Void> deleteUser(@PathVariable("ids") List<Long> userId) {
         boolean result = userService.deleteUser(userId);
+        return toAjax(result);
+    }
+
+
+    /**
+     * 开通用户钱包
+     *
+     * @param userId 用户ID
+     * @return 开通结果
+     */
+    @PostMapping("/wallet/open/{userId}")
+    @Operation(summary = "开通用户钱包")
+    public AjaxResult<Void> openUserWallet(@PathVariable("userId") Long userId) {
+        boolean result = userService.openUserWallet(userId);
+        return toAjax(result);
+    }
+
+    /**
+     * 冻结用户钱包
+     *
+     * @param request 冻结用户钱包参数
+     * @return 关闭结果
+     */
+    @PostMapping("/wallet/freeze")
+    @Operation(summary = "冻结用户钱包")
+    public AjaxResult<Void> closeUserWallet(@Validated @RequestBody FreezeOrUnUserWalletRequest request) {
+        boolean result = userService.freezeUserWallet(request);
+        return toAjax(result);
+    }
+
+    /**
+     * 解冻用户钱包
+     *
+     * @param request 解冻用户钱包参数
+     * @return 解冻结果
+     */
+    @PostMapping("/wallet/unfreeze")
+    @Operation(summary = "解冻用户钱包")
+    public AjaxResult<Void> unfreezeUserWallet(@Validated @RequestBody FreezeOrUnUserWalletRequest request) {
+        boolean result = userService.unfreezeUserWallet(request);
+        return toAjax(result);
+    }
+
+
+    /**
+     * 用户钱包充值
+     *
+     * @param request 充值参数
+     * @return 充值结果
+     */
+    @PostMapping("/wallet/recharge")
+    @Operation(summary = "用户钱包充值")
+    public AjaxResult<Void> rechargeUserWallet(@Validated @RequestBody WalletRechargeRequest request) {
+        boolean result = userService.rechargeUserWallet(request);
         return toAjax(result);
     }
 
