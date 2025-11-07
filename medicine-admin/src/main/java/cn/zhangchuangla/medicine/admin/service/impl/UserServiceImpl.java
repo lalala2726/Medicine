@@ -13,6 +13,9 @@ import cn.zhangchuangla.medicine.admin.service.UserWalletLogService;
 import cn.zhangchuangla.medicine.admin.service.UserWalletService;
 import cn.zhangchuangla.medicine.common.core.base.PageRequest;
 import cn.zhangchuangla.medicine.common.core.base.PageResult;
+import cn.zhangchuangla.medicine.common.core.constants.RolesConstant;
+import cn.zhangchuangla.medicine.common.core.enums.ResponseResultCode;
+import cn.zhangchuangla.medicine.common.core.exception.ServiceException;
 import cn.zhangchuangla.medicine.common.core.utils.Assert;
 import cn.zhangchuangla.medicine.common.core.utils.BeanCotyUtils;
 import cn.zhangchuangla.medicine.common.security.base.BaseService;
@@ -177,12 +180,49 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User>
      * @param request 用户添加请求对象
      * @return 添加结果
      */
-    @Override
-    public boolean addUser(UserAddRequest request) {
-        Assert.notNull(request, "用户添加请求对象不能为空");
-        User user = BeanCotyUtils.copyProperties(request, User.class);
-        return save(user);
+@Override
+@Transactional(rollbackFor = Exception.class)
+public boolean addUser(UserAddRequest request) {
+    // 参数校验
+    Assert.notNull(request, "用户添加请求对象不能为空");
+
+    // 转换请求对象为实体对象
+    User user = BeanCotyUtils.copyProperties(request, User.class);
+
+    // 检查角色是否合法
+    if (!request.getRoles().isEmpty()) {
+        // 检查角色是否都是有效的角色
+        boolean hasInvalidRole = request.getRoles().stream()
+                .anyMatch(role -> !RolesConstant.ADMIN.equals(role) && !RolesConstant.USER.equals(role));
+        if (hasInvalidRole) {
+            throw new ServiceException(ResponseResultCode.OPERATION_ERROR, "角色系统不存在");
+        }
     }
+
+    // 设置默认角色
+    if (request.getRoles().isEmpty()) {
+        user.setRoles("[" + RolesConstant.USER + "]");
+    } else {
+        // 设置角色信息
+        String roles = request.getRoles().toString();
+        user.setRoles(roles);
+    }
+
+    // 加密密码
+    String encryptPassword = SecurityUtils.encryptPassword(request.getPassword());
+    user.setPassword(encryptPassword);
+
+    // 保存用户信息
+    boolean result = save(user);
+    if (!result) {
+        throw new ServiceException(ResponseResultCode.OPERATION_ERROR, "添加用户失败");
+    }
+
+    // 开通钱包
+    userWalletService.openWallet(user.getId());
+
+    return true;
+}
 
     /**
      * 修改用户
