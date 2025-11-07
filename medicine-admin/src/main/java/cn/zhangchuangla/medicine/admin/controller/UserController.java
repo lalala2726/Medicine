@@ -1,7 +1,7 @@
 package cn.zhangchuangla.medicine.admin.controller;
 
 import cn.zhangchuangla.medicine.admin.model.request.FreezeOrUnUserWalletRequest;
-import cn.zhangchuangla.medicine.admin.model.request.WalletRechargeRequest;
+import cn.zhangchuangla.medicine.admin.model.request.WalletChangeRequest;
 import cn.zhangchuangla.medicine.admin.model.vo.UserConsumeInfo;
 import cn.zhangchuangla.medicine.admin.model.vo.UserDetailVo;
 import cn.zhangchuangla.medicine.admin.model.vo.UserWalletFlowInfoVo;
@@ -169,15 +169,15 @@ public class UserController extends BaseController {
 
 
     /**
-     * 用户钱包充值
+     * 钱包充值/扣款
      *
-     * @param request 充值参数
-     * @return 充值结果
+     * @param request 钱包充值/扣款
+     * @return 钱包充值/扣款
      */
-    @PostMapping("/wallet/recharge")
-    @Operation(summary = "用户钱包充值")
-    public AjaxResult<Void> rechargeUserWallet(@Validated @RequestBody WalletRechargeRequest request) {
-        boolean result = userService.rechargeUserWallet(request);
+    @PostMapping("/wallet/change")
+    @Operation(summary = "钱包充值/扣款")
+    public AjaxResult<Void> rechargeUserWallet(@Validated @RequestBody WalletChangeRequest request) {
+        boolean result = userService.walletAmountChange(request);
         return toAjax(result);
     }
 

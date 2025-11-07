@@ -29,6 +29,16 @@ public interface UserWalletService extends IService<UserWallet> {
     boolean rechargeWallet(Long userId, BigDecimal amount, String reason);
 
     /**
+     * 扣减钱包余额
+     *
+     * @param userId 用户ID
+     * @param amount 扣减金额
+     * @param reason 扣减原因
+     * @return 是否扣减成功
+     */
+    boolean deductBalance(Long userId, BigDecimal amount, String reason);
+
+    /**
      * 冻结钱包
      *
      * @param userId 用户ID

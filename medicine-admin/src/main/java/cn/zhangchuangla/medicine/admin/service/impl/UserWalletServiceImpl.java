@@ -24,6 +24,10 @@ public class UserWalletServiceImpl extends ServiceImpl<UserWalletMapper, UserWal
 
     private static final int WALLET_STATUS_NORMAL = 0;
     private static final int WALLET_STATUS_FROZEN = 1;
+    private static final String BIZ_TYPE_RECHARGE = "recharge";
+    private static final String BIZ_TYPE_FREEZE = "freeze";
+    private static final String BIZ_TYPE_UNFREEZE = "unfreeze";
+    private static final String BIZ_TYPE_MANUAL_DEDUCT = "manual_deduct";
 
     private final UserWalletLogService userWalletLogService;
 
@@ -75,7 +79,34 @@ public class UserWalletServiceImpl extends ServiceImpl<UserWalletMapper, UserWal
         if (!updateById(userWallet)) {
             throw new ServiceException(ResponseResultCode.OPERATION_ERROR, "充值失败, 请稍后重试");
         }
-        recordWalletLog(userWallet, amount, beforeBalance, newBalance, "recharge", 1, reason);
+        recordWalletLog(userWallet, amount, beforeBalance, newBalance, BIZ_TYPE_RECHARGE, 1, reason);
+        return true;
+    }
+
+    @Override
+    public boolean deductBalance(Long userId, BigDecimal amount, String reason) {
+        Assert.notNull(userId, "用户ID不能为空");
+        Assert.notNull(amount, "扣减金额不能为空");
+        Assert.isTrue(amount.compareTo(BigDecimal.ZERO) > 0, "扣减金额必须大于0");
+        Assert.notEmpty(reason, "扣减原因不能为空");
+
+        UserWallet userWallet = getWalletOrThrow(userId);
+        ensureWalletNotFrozen(userWallet);
+
+        BigDecimal beforeBalance = safeAmount(userWallet.getBalance());
+        if (beforeBalance.compareTo(amount) < 0) {
+            throw new ServiceException(ResponseResultCode.OPERATION_ERROR, "钱包余额不足");
+        }
+        BigDecimal afterBalance = beforeBalance.subtract(amount);
+
+        userWallet.setBalance(afterBalance);
+        userWallet.setTotalExpend(safeAmount(userWallet.getTotalExpend()).add(amount));
+        userWallet.setRemark(reason);
+
+        if (!updateById(userWallet)) {
+            throw new ServiceException(ResponseResultCode.OPERATION_ERROR, "扣款失败, 请稍后重试");
+        }
+        recordWalletLog(userWallet, amount, beforeBalance, afterBalance, BIZ_TYPE_MANUAL_DEDUCT, 2, reason);
         return true;
     }
 
@@ -98,7 +129,7 @@ public class UserWalletServiceImpl extends ServiceImpl<UserWalletMapper, UserWal
             throw new ServiceException(ResponseResultCode.OPERATION_ERROR, "冻结失败, 请稍后重试");
         }
         BigDecimal balance = safeAmount(userWallet.getBalance());
-        recordWalletLog(userWallet, BigDecimal.ZERO, balance, balance, "freeze", 3, reason);
+        recordWalletLog(userWallet, BigDecimal.ZERO, balance, balance, BIZ_TYPE_FREEZE, 3, reason);
         return true;
     }
 
@@ -121,7 +152,7 @@ public class UserWalletServiceImpl extends ServiceImpl<UserWalletMapper, UserWal
             throw new ServiceException(ResponseResultCode.OPERATION_ERROR, "解冻失败, 请稍后重试");
         }
         BigDecimal balance = safeAmount(userWallet.getBalance());
-        recordWalletLog(userWallet, BigDecimal.ZERO, balance, balance, "unfreeze", 4, reason);
+        recordWalletLog(userWallet, BigDecimal.ZERO, balance, balance, BIZ_TYPE_UNFREEZE, 4, reason);
         return true;
     }
 

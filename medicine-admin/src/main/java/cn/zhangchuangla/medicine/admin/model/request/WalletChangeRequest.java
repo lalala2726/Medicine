@@ -19,8 +19,8 @@ import java.math.BigDecimal;
 @AllArgsConstructor
 @NoArgsConstructor
 @Builder
-@Schema(description = "钱包充值请求参数")
-public class WalletRechargeRequest {
+@Schema(description = "钱包金额修改请求对象")
+public class WalletChangeRequest {
 
     /**
      * 用户ID
@@ -37,10 +37,17 @@ public class WalletRechargeRequest {
     private BigDecimal amount;
 
     /**
+     * 操作类型 (1-充值, 2-扣款)
+     */
+    @Schema(description = "操作类型 (1-充值, 2-扣款)", requiredMode = Schema.RequiredMode.REQUIRED, example = "1")
+    @NotNull(message = "操作类型不能为空")
+    private Integer operationType;
+
+    /**
      * 充值原因
      */
-    @Schema(description = "充值原因", requiredMode = Schema.RequiredMode.REQUIRED, example = "充值")
-    @NotBlank(message = "充值原因不能为空")
+    @Schema(description = "修改原因", requiredMode = Schema.RequiredMode.REQUIRED, example = "充值")
+    @NotBlank(message = "修改原因不能为空")
     private String reason;
 
 

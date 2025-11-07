@@ -3,7 +3,7 @@ package cn.zhangchuangla.medicine.admin.service.impl;
 import cn.zhangchuangla.medicine.admin.mapper.UserMapper;
 import cn.zhangchuangla.medicine.admin.model.dto.UserOrderStatistics;
 import cn.zhangchuangla.medicine.admin.model.request.FreezeOrUnUserWalletRequest;
-import cn.zhangchuangla.medicine.admin.model.request.WalletRechargeRequest;
+import cn.zhangchuangla.medicine.admin.model.request.WalletChangeRequest;
 import cn.zhangchuangla.medicine.admin.model.vo.UserConsumeInfo;
 import cn.zhangchuangla.medicine.admin.model.vo.UserDetailVo;
 import cn.zhangchuangla.medicine.admin.model.vo.UserWalletFlowInfoVo;
@@ -180,49 +180,49 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User>
      * @param request 用户添加请求对象
      * @return 添加结果
      */
-@Override
-@Transactional(rollbackFor = Exception.class)
-public boolean addUser(UserAddRequest request) {
-    // 参数校验
-    Assert.notNull(request, "用户添加请求对象不能为空");
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public boolean addUser(UserAddRequest request) {
+        // 参数校验
+        Assert.notNull(request, "用户添加请求对象不能为空");
 
-    // 转换请求对象为实体对象
-    User user = BeanCotyUtils.copyProperties(request, User.class);
+        // 转换请求对象为实体对象
+        User user = BeanCotyUtils.copyProperties(request, User.class);
 
-    // 检查角色是否合法
-    if (!request.getRoles().isEmpty()) {
-        // 检查角色是否都是有效的角色
-        boolean hasInvalidRole = request.getRoles().stream()
-                .anyMatch(role -> !RolesConstant.ADMIN.equals(role) && !RolesConstant.USER.equals(role));
-        if (hasInvalidRole) {
-            throw new ServiceException(ResponseResultCode.OPERATION_ERROR, "角色系统不存在");
+        // 检查角色是否合法
+        if (!request.getRoles().isEmpty()) {
+            // 检查角色是否都是有效的角色
+            boolean hasInvalidRole = request.getRoles().stream()
+                    .anyMatch(role -> !RolesConstant.ADMIN.equals(role) && !RolesConstant.USER.equals(role));
+            if (hasInvalidRole) {
+                throw new ServiceException(ResponseResultCode.OPERATION_ERROR, "角色系统不存在");
+            }
         }
+
+        // 设置默认角色
+        if (request.getRoles().isEmpty()) {
+            user.setRoles("[" + RolesConstant.USER + "]");
+        } else {
+            // 设置角色信息
+            String roles = request.getRoles().toString();
+            user.setRoles(roles);
+        }
+
+        // 加密密码
+        String encryptPassword = SecurityUtils.encryptPassword(request.getPassword());
+        user.setPassword(encryptPassword);
+
+        // 保存用户信息
+        boolean result = save(user);
+        if (!result) {
+            throw new ServiceException(ResponseResultCode.OPERATION_ERROR, "添加用户失败");
+        }
+
+        // 开通钱包
+        userWalletService.openWallet(user.getId());
+
+        return true;
     }
-
-    // 设置默认角色
-    if (request.getRoles().isEmpty()) {
-        user.setRoles("[" + RolesConstant.USER + "]");
-    } else {
-        // 设置角色信息
-        String roles = request.getRoles().toString();
-        user.setRoles(roles);
-    }
-
-    // 加密密码
-    String encryptPassword = SecurityUtils.encryptPassword(request.getPassword());
-    user.setPassword(encryptPassword);
-
-    // 保存用户信息
-    boolean result = save(user);
-    if (!result) {
-        throw new ServiceException(ResponseResultCode.OPERATION_ERROR, "添加用户失败");
-    }
-
-    // 开通钱包
-    userWalletService.openWallet(user.getId());
-
-    return true;
-}
 
     /**
      * 修改用户
@@ -324,8 +324,25 @@ public boolean addUser(UserAddRequest request) {
 
     @Override
     @Transactional(rollbackFor = Exception.class)
-    public boolean rechargeUserWallet(WalletRechargeRequest request) {
-        return userWalletService.rechargeWallet(request.getUserId(), request.getAmount(), request.getReason());
+    public boolean walletAmountChange(WalletChangeRequest request) {
+        Assert.notNull(request, "请求参数不能为空");
+        Assert.notNull(request.getUserId(), "用户ID不能为空");
+        Assert.notNull(request.getAmount(), "金额不能为空");
+        Assert.isTrue(request.getAmount().compareTo(BigDecimal.ZERO) > 0, "金额必须大于0");
+        Assert.notNull(request.getOperationType(), "操作类型不能为空");
+        Assert.notEmpty(request.getReason(), "操作原因不能为空");
+
+        User user = getById(request.getUserId());
+        if (user == null) {
+            throw new ServiceException(ResponseResultCode.OPERATION_ERROR, "用户不存在");
+        }
+
+        return switch (request.getOperationType()) {
+            case 1 -> userWalletService.rechargeWallet(request.getUserId(), request.getAmount(), request.getReason());
+            case 2 -> userWalletService.deductBalance(request.getUserId(), request.getAmount(), request.getReason());
+            default ->
+                    throw new ServiceException(ResponseResultCode.PARAM_ERROR, "不支持的操作类型: " + request.getOperationType());
+        };
     }
 
     @Override
