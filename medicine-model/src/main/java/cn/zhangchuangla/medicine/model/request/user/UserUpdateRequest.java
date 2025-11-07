@@ -10,6 +10,11 @@ import lombok.Data;
 @Data
 public class UserUpdateRequest {
 
+    /**
+     * 用户ID
+     */
+    @Schema(description = "用户ID", type = "long", example = "1")
+    private Long id;
 
     /**
      * 用户名
@@ -46,4 +51,23 @@ public class UserUpdateRequest {
      */
     @Schema(description = "状态", type = "int", example = "1")
     private Integer status;
+
+    /**
+     * 身份证号码
+     */
+    @Schema(description = "身份证号码", type = "string", example = "123456789012345678")
+    private String idCard;
+
+    /**
+     * 手机号码
+     */
+    @Schema(description = "手机号码", type = "string", example = "13800000000")
+    private String phoneNumber;
+
+    /**
+     * 真实姓名
+     */
+    @Schema(description = "真实姓名", type = "string", example = "张三")
+    private String realName;
+
 }

@@ -14,19 +14,8 @@ public class RolesConstant {
      */
     public static final String ADMIN = "admin";
 
-
     /**
      * 用户
      */
     public static final String USER = "user";
-
-    /**
-     * 访客
-     */
-    public static final String GUEST = "guest";
-
-    /**
-     * 匿名
-     */
-    public static final String ANONYMOUS = "anonymous";
 }

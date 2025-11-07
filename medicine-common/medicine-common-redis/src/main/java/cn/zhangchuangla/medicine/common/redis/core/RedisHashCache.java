@@ -27,9 +27,8 @@ import java.util.concurrent.TimeUnit;
 public final class RedisHashCache {
 
 
-    private final RedisTemplate redisTemplate;
     private final static int scanCount = 1000;
-
+    private final RedisTemplate redisTemplate;
 
     /**
      * 向 Hash 添加单个字段

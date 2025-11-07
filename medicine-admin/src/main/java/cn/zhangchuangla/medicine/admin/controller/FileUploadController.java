@@ -2,6 +2,7 @@ package cn.zhangchuangla.medicine.admin.controller;
 
 import cn.zhangchuangla.medicine.admin.common.storage.service.FileUploadService;
 import cn.zhangchuangla.medicine.common.core.base.AjaxResult;
+import cn.zhangchuangla.medicine.common.security.annotation.IsAdmin;
 import cn.zhangchuangla.medicine.common.security.base.BaseController;
 import cn.zhangchuangla.medicine.model.vo.FileUploadVo;
 import io.swagger.v3.oas.annotations.Operation;
@@ -19,6 +20,7 @@ import org.springframework.web.multipart.MultipartFile;
 @RestController
 @RequestMapping("/file")
 @Tag(name = "文件上传接口", description = "文件上传接口")
+@IsAdmin
 public class FileUploadController extends BaseController {
 
     private final FileUploadService fileUploadService;

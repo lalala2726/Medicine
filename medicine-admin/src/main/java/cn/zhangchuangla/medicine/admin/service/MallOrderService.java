@@ -1,5 +1,6 @@
 package cn.zhangchuangla.medicine.admin.service;
 
+import cn.zhangchuangla.medicine.admin.model.dto.UserOrderStatistics;
 import cn.zhangchuangla.medicine.admin.model.request.*;
 import cn.zhangchuangla.medicine.admin.model.vo.OrderDetailVo;
 import cn.zhangchuangla.medicine.common.core.base.PageRequest;
@@ -103,4 +104,12 @@ public interface MallOrderService extends IService<MallOrder> {
      * @return 用户订单
      */
     Page<MallOrder> getOrderPageByUserId(Long userId, PageRequest request);
+
+    /**
+     * 获取用户订单统计信息
+     *
+     * @param userId 用户ID
+     * @return 订单统计信息
+     */
+    UserOrderStatistics getOrderStatisticsByUserId(Long userId);
 }

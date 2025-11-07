@@ -4,8 +4,8 @@ import cn.zhangchuangla.medicine.model.entity.UserWallet;
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
 
 /**
-* @author Chuang
-*/
+ * @author Chuang
+ */
 public interface UserWalletMapper extends BaseMapper<UserWallet> {
 
 }

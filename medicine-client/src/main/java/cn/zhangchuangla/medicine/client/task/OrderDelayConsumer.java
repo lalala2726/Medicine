@@ -9,7 +9,7 @@ import org.springframework.stereotype.Component;
 
 @Component
 @Slf4j
-public class OrderDelayConsumer implements CommandLineRunner{
+public class OrderDelayConsumer implements CommandLineRunner {
 
     private final RedissonClient redissonClient;
     private final MallOrderService mallOrderService;

@@ -1,7 +1,11 @@
 package cn.zhangchuangla.medicine.admin.service;
 
+import cn.zhangchuangla.medicine.admin.model.request.FreezeOrUnUserWalletRequest;
+import cn.zhangchuangla.medicine.admin.model.request.WalletChangeRequest;
 import cn.zhangchuangla.medicine.admin.model.vo.UserConsumeInfo;
+import cn.zhangchuangla.medicine.admin.model.vo.UserDetailVo;
 import cn.zhangchuangla.medicine.admin.model.vo.UserWalletFlowInfoVo;
+import cn.zhangchuangla.medicine.admin.model.vo.UserWalletVo;
 import cn.zhangchuangla.medicine.common.core.base.PageRequest;
 import cn.zhangchuangla.medicine.common.core.base.PageResult;
 import cn.zhangchuangla.medicine.model.entity.User;
@@ -25,7 +29,7 @@ public interface UserService extends IService<User> {
      * @param userId 用户ID
      * @return 用户
      */
-    User getUserById(Long userId);
+    UserDetailVo getUserDetailById(Long userId);
 
     /**
      * 根据用户名获取用户
@@ -96,4 +100,52 @@ public interface UserService extends IService<User> {
      * @return 用户消费信息
      */
     PageResult<UserConsumeInfo> getConsumeInfo(Long userId, PageRequest request);
+
+    /**
+     * 开通用户钱包
+     *
+     * @param userId 用户ID
+     * @return 是否开通成功
+     */
+    boolean openUserWallet(Long userId);
+
+    /**
+     * 关闭用户钱包
+     *
+     * @param request 请求参数
+     * @return 是否关闭成功
+     */
+    boolean freezeUserWallet(FreezeOrUnUserWalletRequest request);
+
+
+    /**
+     * 解冻用户钱包
+     *
+     * @param request 请求参数
+     * @return 是否解冻成功
+     */
+    boolean unfreezeUserWallet(FreezeOrUnUserWalletRequest request);
+
+    /**
+     * 充值用户钱包
+     *
+     * @param request 请求参数
+     * @return 是否充值成功
+     */
+    boolean walletAmountChange(WalletChangeRequest request);
+
+    /**
+     * 根据用户ID获取用户
+     *
+     * @param userId 用户ID
+     * @return 用户
+     */
+    User getUserById(Long userId);
+
+    /**
+     * 获取用户钱包
+     * @param userId 用户ID
+     * @return 用户钱包
+     */
+    UserWalletVo getUserWallet(Long userId);
 }

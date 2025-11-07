@@ -3,6 +3,7 @@ package cn.zhangchuangla.medicine.admin.controller;
 import cn.zhangchuangla.medicine.admin.service.MallProductService;
 import cn.zhangchuangla.medicine.common.core.base.AjaxResult;
 import cn.zhangchuangla.medicine.common.core.base.TableDataResult;
+import cn.zhangchuangla.medicine.common.security.annotation.IsAdmin;
 import cn.zhangchuangla.medicine.common.security.base.BaseController;
 import cn.zhangchuangla.medicine.model.dto.MallProductDetailDto;
 import cn.zhangchuangla.medicine.model.dto.MallProductDto;
@@ -32,6 +33,7 @@ import java.util.List;
 @RestController
 @RequestMapping("/mall/product")
 @RequiredArgsConstructor
+@IsAdmin
 @Tag(name = "商城商品接口", description = "提供商城商品的增删改查")
 public class MallProductController extends BaseController {
 

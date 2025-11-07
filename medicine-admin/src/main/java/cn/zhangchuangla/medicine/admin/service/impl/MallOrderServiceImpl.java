@@ -2,6 +2,7 @@ package cn.zhangchuangla.medicine.admin.service.impl;
 
 import cn.zhangchuangla.medicine.admin.mapper.MallOrderMapper;
 import cn.zhangchuangla.medicine.admin.mapper.UserMapper;
+import cn.zhangchuangla.medicine.admin.model.dto.UserOrderStatistics;
 import cn.zhangchuangla.medicine.admin.model.request.*;
 import cn.zhangchuangla.medicine.admin.model.vo.OrderDetailVo;
 import cn.zhangchuangla.medicine.admin.service.MallOrderItemService;
@@ -326,7 +327,6 @@ public class MallOrderServiceImpl extends ServiceImpl<MallOrderMapper, MallOrder
      * 钱包退款预留实现。业务方可在此处对接钱包余额返还、日志记录等逻辑。
      */
     private void processWalletRefund(MallOrder mallOrder, OrderRefundRequest request) {
-        // TODO 预留钱包退款实现，待钱包模块上线后打通
         throw new ServiceException(ResponseResultCode.OPERATION_ERROR, "钱包退款功能暂未开通，请使用支付宝退款通道处理");
     }
 
@@ -421,6 +421,12 @@ public class MallOrderServiceImpl extends ServiceImpl<MallOrderMapper, MallOrder
     public Page<MallOrder> getOrderPageByUserId(Long userId, PageRequest request) {
         Page<MallOrder> page = request.toPage();
         return mallOrderMapper.getOrderPageByUserId(page, userId);
+    }
+
+    @Override
+    public UserOrderStatistics getOrderStatisticsByUserId(Long userId) {
+        Assert.notNull(userId, "用户ID不能为空");
+        return userMapper.getOrderStatisticsByUserId(userId);
     }
 
     /**

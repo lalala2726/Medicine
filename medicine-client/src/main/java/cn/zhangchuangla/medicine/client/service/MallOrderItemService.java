@@ -4,8 +4,8 @@ import cn.zhangchuangla.medicine.model.entity.MallOrderItem;
 import com.baomidou.mybatisplus.extension.service.IService;
 
 /**
-* @author Chuang
-*/
+ * @author Chuang
+ */
 public interface MallOrderItemService extends IService<MallOrderItem> {
 
 }

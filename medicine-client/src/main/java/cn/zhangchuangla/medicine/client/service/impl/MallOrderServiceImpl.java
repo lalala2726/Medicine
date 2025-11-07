@@ -7,6 +7,7 @@ import cn.zhangchuangla.medicine.client.model.vo.OrderCreateVo;
 import cn.zhangchuangla.medicine.client.service.MallOrderItemService;
 import cn.zhangchuangla.medicine.client.service.MallOrderService;
 import cn.zhangchuangla.medicine.client.service.MallProductService;
+import cn.zhangchuangla.medicine.client.service.UserWalletService;
 import cn.zhangchuangla.medicine.client.task.OrderDelayProducer;
 import cn.zhangchuangla.medicine.common.core.enums.ResponseResultCode;
 import cn.zhangchuangla.medicine.common.core.exception.ServiceException;
@@ -59,6 +60,8 @@ public class MallOrderServiceImpl extends ServiceImpl<MallOrderMapper, MallOrder
     private final AlipayPaymentService alipayPaymentService;
     private final AlipayProperties alipayProperties;
     private final OrderDelayProducer orderDelayProducer;
+    private final UserWalletService userWalletService;
+
 
     /**
      * 创建商城订单的核心流程：校验库存 → 扣减库存 → 构建订单 → 返回支付信息。
@@ -294,7 +297,13 @@ public class MallOrderServiceImpl extends ServiceImpl<MallOrderMapper, MallOrder
      * 钱包支付
      */
     private String walletPay(MallOrder order) {
-        throw new ServiceException(ResponseResultCode.OPERATION_ERROR, "钱包支付功能暂未开放");
+        BigDecimal totalAmount = order.getTotalAmount();
+        Long userId = getUserId();
+        boolean result = userWalletService.deductBalance(userId, totalAmount, "商城内购订单支付");
+        if (result) {
+            markOrderPaidByAlipay(order.getOrderNo(), totalAmount);
+        }
+        return "支付成功";
     }
 
 
