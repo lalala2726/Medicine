@@ -1,5 +1,6 @@
 package cn.zhangchuangla.medicine.admin.service;
 
+import cn.zhangchuangla.medicine.admin.model.vo.UserConsumeInfo;
 import cn.zhangchuangla.medicine.admin.model.vo.UserWalletFlowInfoVo;
 import cn.zhangchuangla.medicine.common.core.base.PageRequest;
 import cn.zhangchuangla.medicine.common.core.base.PageResult;
@@ -89,4 +90,10 @@ public interface UserService extends IService<User> {
     PageResult<UserWalletFlowInfoVo> getUserWalletFlow(Long userId, PageRequest request);
 
 
+    /**
+     * 获取用户消费信息
+     *
+     * @return 用户消费信息
+     */
+    PageResult<UserConsumeInfo> getConsumeInfo(Long userId, PageRequest request);
 }

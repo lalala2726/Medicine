@@ -38,6 +38,15 @@ public interface MallOrderMapper extends BaseMapper<MallOrder> {
      * @return 过期的订单
      */
     List<MallOrder> getExpiredOrderClean(long expiredTime);
+
+    /**
+     * 获取用户订单列表
+     *
+     * @param page   分页参数
+     * @param userId 用户ID
+     * @return 用户订单列表
+     */
+    Page<MallOrder> getOrderPageByUserId(Page<MallOrder> page, @Param("userId") Long userId);
 }
 
 

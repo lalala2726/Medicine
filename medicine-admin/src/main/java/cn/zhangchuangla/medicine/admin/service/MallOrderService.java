@@ -2,6 +2,7 @@ package cn.zhangchuangla.medicine.admin.service;
 
 import cn.zhangchuangla.medicine.admin.model.request.*;
 import cn.zhangchuangla.medicine.admin.model.vo.OrderDetailVo;
+import cn.zhangchuangla.medicine.common.core.base.PageRequest;
 import cn.zhangchuangla.medicine.model.dto.OrderWithProductDto;
 import cn.zhangchuangla.medicine.model.entity.MallOrder;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
@@ -93,4 +94,13 @@ public interface MallOrderService extends IService<MallOrder> {
      * @return 过期订单
      */
     List<MallOrder> getExpiredOrderClean(long expiredTime);
+
+    /**
+     * 获取用户订单
+     *
+     * @param userId  用户ID
+     * @param request 查询参数
+     * @return 用户订单
+     */
+    Page<MallOrder> getOrderPageByUserId(Long userId, PageRequest request);
 }

@@ -1,7 +1,9 @@
 package cn.zhangchuangla.medicine.admin.service.impl;
 
 import cn.zhangchuangla.medicine.admin.mapper.UserMapper;
+import cn.zhangchuangla.medicine.admin.model.vo.UserConsumeInfo;
 import cn.zhangchuangla.medicine.admin.model.vo.UserWalletFlowInfoVo;
+import cn.zhangchuangla.medicine.admin.service.MallOrderService;
 import cn.zhangchuangla.medicine.admin.service.UserService;
 import cn.zhangchuangla.medicine.admin.service.UserWalletLogService;
 import cn.zhangchuangla.medicine.common.core.base.PageRequest;
@@ -9,6 +11,7 @@ import cn.zhangchuangla.medicine.common.core.base.PageResult;
 import cn.zhangchuangla.medicine.common.core.utils.Assert;
 import cn.zhangchuangla.medicine.common.core.utils.BeanCotyUtils;
 import cn.zhangchuangla.medicine.common.security.base.BaseService;
+import cn.zhangchuangla.medicine.model.entity.MallOrder;
 import cn.zhangchuangla.medicine.model.entity.User;
 import cn.zhangchuangla.medicine.model.entity.UserWalletLog;
 import cn.zhangchuangla.medicine.model.request.user.UserAddRequest;
@@ -32,9 +35,11 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User>
         implements UserService, BaseService {
 
     private final UserWalletLogService userWalletLogService;
+    private final MallOrderService mallOrderService;
 
-    public UserServiceImpl(UserWalletLogService userWalletLogService) {
+    public UserServiceImpl(UserWalletLogService userWalletLogService, MallOrderService mallOrderService) {
         this.userWalletLogService = userWalletLogService;
+        this.mallOrderService = mallOrderService;
     }
 
     /**
@@ -176,6 +181,30 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User>
         });
         return new PageResult<>(userWalletFlow.getTotal(), userWalletFlow.getPages(), userWalletFlow.getSize(), userWalletFlowInfoVos);
 
+    }
+
+    /**
+     * 获取用户消费信息
+     *
+     * @param userId  用户id
+     * @param request 查询参数
+     * @return 用户消费信息
+     */
+    @Override
+    public PageResult<UserConsumeInfo> getConsumeInfo(Long userId, PageRequest request) {
+        Page<MallOrder> mallOrderPage = mallOrderService.getOrderPageByUserId(userId, request);
+        AtomicLong atomicLong = new AtomicLong(1);
+        List<UserConsumeInfo> userConsumeInfos = mallOrderPage.getRecords().stream()
+                .map(order -> UserConsumeInfo.builder()
+                        .index(atomicLong.getAndIncrement())
+                        .orderNo(order.getOrderNo())
+                        .payPrice(order.getPayAmount())
+                        .finishTime(order.getFinishTime())
+                        .totalPrice(order.getTotalAmount())
+                        .userId(order.getUserId())
+                        .build())
+                .toList();
+        return new PageResult<>(mallOrderPage.getTotal(), mallOrderPage.getPages(), mallOrderPage.getSize(), userConsumeInfos);
     }
 }
 

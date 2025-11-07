@@ -1,10 +1,10 @@
 package cn.zhangchuangla.medicine.admin.service.impl;
 
 import cn.zhangchuangla.medicine.admin.mapper.MallOrderMapper;
+import cn.zhangchuangla.medicine.admin.mapper.UserMapper;
 import cn.zhangchuangla.medicine.admin.model.request.OrderRefundRequest;
 import cn.zhangchuangla.medicine.admin.service.MallOrderItemService;
 import cn.zhangchuangla.medicine.admin.service.MallProductImageService;
-import cn.zhangchuangla.medicine.admin.service.UserService;
 import cn.zhangchuangla.medicine.common.core.exception.ServiceException;
 import cn.zhangchuangla.medicine.model.entity.MallOrder;
 import cn.zhangchuangla.medicine.model.enums.OrderStatusEnum;
@@ -32,7 +32,7 @@ class MallOrderServiceImplTest {
     @Mock
     private MallOrderMapper mallOrderMapper;
     @Mock
-    private UserService userService;
+    private UserMapper userMapper;
     @Mock
     private MallOrderItemService mallOrderItemService;
     @Mock
@@ -44,7 +44,7 @@ class MallOrderServiceImplTest {
 
     @BeforeEach
     void setUp() {
-        MallOrderServiceImpl target = new MallOrderServiceImpl(mallOrderMapper, userService, mallOrderItemService, mallProductImageService, alipayPaymentService);
+        MallOrderServiceImpl target = new MallOrderServiceImpl(mallOrderMapper, userMapper, mallOrderItemService, mallProductImageService, alipayPaymentService);
         // 使用 Spy 拦截持久层调用，方便断言订单对象的最终状态。
         this.mallOrderService = Mockito.spy(target);
     }

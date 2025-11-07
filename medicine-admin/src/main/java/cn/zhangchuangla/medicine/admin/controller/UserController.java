@@ -1,5 +1,6 @@
 package cn.zhangchuangla.medicine.admin.controller;
 
+import cn.zhangchuangla.medicine.admin.model.vo.UserConsumeInfo;
 import cn.zhangchuangla.medicine.admin.model.vo.UserWalletFlowInfoVo;
 import cn.zhangchuangla.medicine.admin.service.UserService;
 import cn.zhangchuangla.medicine.common.core.base.AjaxResult;
@@ -73,6 +74,15 @@ public class UserController extends BaseController {
         return getTableData(userWalletLogPage);
     }
 
+    /**
+     * 获取消费信息
+     */
+    @GetMapping("/{userId}/consume-info")
+    @Operation(summary = "获取消费信息")
+    public AjaxResult<TableDataResult> getConsumeInfo(@PathVariable("userId") Long userId, PageRequest request) {
+        PageResult<UserConsumeInfo> consumeInfo = userService.getConsumeInfo(userId, request);
+        return getTableData(consumeInfo);
+    }
 
     /**
      * 添加用户

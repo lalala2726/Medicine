@@ -1,12 +1,13 @@
 package cn.zhangchuangla.medicine.admin.service.impl;
 
 import cn.zhangchuangla.medicine.admin.mapper.MallOrderMapper;
+import cn.zhangchuangla.medicine.admin.mapper.UserMapper;
 import cn.zhangchuangla.medicine.admin.model.request.*;
 import cn.zhangchuangla.medicine.admin.model.vo.OrderDetailVo;
 import cn.zhangchuangla.medicine.admin.service.MallOrderItemService;
 import cn.zhangchuangla.medicine.admin.service.MallOrderService;
 import cn.zhangchuangla.medicine.admin.service.MallProductImageService;
-import cn.zhangchuangla.medicine.admin.service.UserService;
+import cn.zhangchuangla.medicine.common.core.base.PageRequest;
 import cn.zhangchuangla.medicine.common.core.enums.ResponseResultCode;
 import cn.zhangchuangla.medicine.common.core.exception.ServiceException;
 import cn.zhangchuangla.medicine.common.core.utils.Assert;
@@ -55,15 +56,15 @@ public class MallOrderServiceImpl extends ServiceImpl<MallOrderMapper, MallOrder
     private static final String DEFAULT_REFUND_REASON = "管理员发起退款";
 
     private final MallOrderMapper mallOrderMapper;
-    private final UserService userService;
+    private final UserMapper userMapper;
     private final MallOrderItemService mallOrderItemService;
     private final MallProductImageService mallProductImageService;
     private final AlipayPaymentService alipayPaymentService;
 
 
-    public MallOrderServiceImpl(MallOrderMapper mallOrderMapper, UserService userService, MallOrderItemService mallOrderItemService, MallProductImageService mallProductImageService, AlipayPaymentService alipayPaymentService) {
+    public MallOrderServiceImpl(MallOrderMapper mallOrderMapper, UserMapper userMapper, MallOrderItemService mallOrderItemService, MallProductImageService mallProductImageService, AlipayPaymentService alipayPaymentService) {
         this.mallOrderMapper = mallOrderMapper;
-        this.userService = userService;
+        this.userMapper = userMapper;
         this.mallOrderItemService = mallOrderItemService;
         this.mallProductImageService = mallProductImageService;
         this.alipayPaymentService = alipayPaymentService;
@@ -102,7 +103,7 @@ public class MallOrderServiceImpl extends ServiceImpl<MallOrderMapper, MallOrder
         // 获取订单信息
         MallOrder mallOrder = getOrderById(orderId);
         // 获取用户信息
-        User userInfo = userService.getUserById(mallOrder.getUserId());
+        User userInfo = userMapper.selectById(mallOrder.getUserId());
         // 获取商品信息
         List<MallOrderItem> mallOrderItems = mallOrderItemService.getOrderItemByOrderId(mallOrder.getId());
 
@@ -414,6 +415,12 @@ public class MallOrderServiceImpl extends ServiceImpl<MallOrderMapper, MallOrder
     @Override
     public List<MallOrder> getExpiredOrderClean(long expiredTime) {
         return mallOrderMapper.getExpiredOrderClean(expiredTime);
+    }
+
+    @Override
+    public Page<MallOrder> getOrderPageByUserId(Long userId, PageRequest request) {
+        Page<MallOrder> page = request.toPage();
+        return mallOrderMapper.getOrderPageByUserId(page, userId);
     }
 
     /**
