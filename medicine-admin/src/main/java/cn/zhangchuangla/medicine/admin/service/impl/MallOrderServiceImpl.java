@@ -327,7 +327,6 @@ public class MallOrderServiceImpl extends ServiceImpl<MallOrderMapper, MallOrder
      * 钱包退款预留实现。业务方可在此处对接钱包余额返还、日志记录等逻辑。
      */
     private void processWalletRefund(MallOrder mallOrder, OrderRefundRequest request) {
-        // TODO 预留钱包退款实现，待钱包模块上线后打通
         throw new ServiceException(ResponseResultCode.OPERATION_ERROR, "钱包退款功能暂未开通，请使用支付宝退款通道处理");
     }
 
@@ -426,7 +425,8 @@ public class MallOrderServiceImpl extends ServiceImpl<MallOrderMapper, MallOrder
 
     @Override
     public UserOrderStatistics getOrderStatisticsByUserId(Long userId) {
-        return null;
+        Assert.notNull(userId, "用户ID不能为空");
+        return userMapper.getOrderStatisticsByUserId(userId);
     }
 
     /**
