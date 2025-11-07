@@ -5,6 +5,7 @@ import cn.zhangchuangla.medicine.admin.model.request.WalletChangeRequest;
 import cn.zhangchuangla.medicine.admin.model.vo.UserConsumeInfo;
 import cn.zhangchuangla.medicine.admin.model.vo.UserDetailVo;
 import cn.zhangchuangla.medicine.admin.model.vo.UserWalletFlowInfoVo;
+import cn.zhangchuangla.medicine.admin.model.vo.UserWalletVo;
 import cn.zhangchuangla.medicine.admin.service.UserService;
 import cn.zhangchuangla.medicine.common.core.base.AjaxResult;
 import cn.zhangchuangla.medicine.common.core.base.PageRequest;
@@ -125,6 +126,19 @@ public class UserController extends BaseController {
     public AjaxResult<Void> deleteUser(@PathVariable("ids") List<Long> userId) {
         boolean result = userService.deleteUser(userId);
         return toAjax(result);
+    }
+
+    /**
+     * 获取用户钱包金额
+     *
+     * @param userId 用户ID
+     * @return 钱包金额
+     */
+    @GetMapping("/{userId}/wallet")
+    @Operation(summary = "获取用户钱包金额")
+    public AjaxResult<UserWalletVo> getUserWalletBalance(@PathVariable("userId") Long userId) {
+        UserWalletVo userWalletVo = userService.getUserWallet(userId);
+        return success(userWalletVo);
     }
 
 

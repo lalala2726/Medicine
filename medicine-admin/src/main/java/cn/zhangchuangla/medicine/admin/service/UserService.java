@@ -5,6 +5,7 @@ import cn.zhangchuangla.medicine.admin.model.request.WalletChangeRequest;
 import cn.zhangchuangla.medicine.admin.model.vo.UserConsumeInfo;
 import cn.zhangchuangla.medicine.admin.model.vo.UserDetailVo;
 import cn.zhangchuangla.medicine.admin.model.vo.UserWalletFlowInfoVo;
+import cn.zhangchuangla.medicine.admin.model.vo.UserWalletVo;
 import cn.zhangchuangla.medicine.common.core.base.PageRequest;
 import cn.zhangchuangla.medicine.common.core.base.PageResult;
 import cn.zhangchuangla.medicine.model.entity.User;
@@ -140,4 +141,11 @@ public interface UserService extends IService<User> {
      * @return 用户
      */
     User getUserById(Long userId);
+
+    /**
+     * 获取用户钱包
+     * @param userId 用户ID
+     * @return 用户钱包
+     */
+    UserWalletVo getUserWallet(Long userId);
 }

@@ -156,6 +156,18 @@ public class UserWalletServiceImpl extends ServiceImpl<UserWalletMapper, UserWal
         return true;
     }
 
+    @Override
+    public UserWallet getUserWalletByUserId(Long userId) {
+        Assert.notNull(userId, "用户ID不能为空");
+        UserWallet userWallet = lambdaQuery()
+                .eq(UserWallet::getUserId, userId)
+                .one();
+        if (userWallet == null) {
+            throw new ServiceException(ResponseResultCode.OPERATION_ERROR, "用户钱包不存在");
+        }
+        return userWallet;
+    }
+
     private UserWallet getWalletOrThrow(Long userId) {
         UserWallet userWallet = lambdaQuery()
                 .eq(UserWallet::getUserId, userId)

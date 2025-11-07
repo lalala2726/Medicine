@@ -7,6 +7,7 @@ import cn.zhangchuangla.medicine.admin.model.request.WalletChangeRequest;
 import cn.zhangchuangla.medicine.admin.model.vo.UserConsumeInfo;
 import cn.zhangchuangla.medicine.admin.model.vo.UserDetailVo;
 import cn.zhangchuangla.medicine.admin.model.vo.UserWalletFlowInfoVo;
+import cn.zhangchuangla.medicine.admin.model.vo.UserWalletVo;
 import cn.zhangchuangla.medicine.admin.service.MallOrderService;
 import cn.zhangchuangla.medicine.admin.service.UserService;
 import cn.zhangchuangla.medicine.admin.service.UserWalletLogService;
@@ -349,6 +350,13 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User>
     public User getUserById(Long userId) {
         return getById(userId);
     }
+
+    @Override
+    public UserWalletVo getUserWallet(Long userId) {
+        UserWallet wallet = userWalletService.getUserWalletByUserId(userId);
+        return BeanCotyUtils.copyProperties(wallet, UserWalletVo.class);
+    }
+
 
     private BigDecimal defaultBigDecimal(BigDecimal value) {
         return value == null ? BigDecimal.ZERO : value;

@@ -56,4 +56,12 @@ public interface UserWalletService extends IService<UserWallet> {
      */
     boolean unfreezeWallet(Long userId, String reason);
 
+    /**
+     * 获取用户钱包信息
+     *
+     * @param userId 用户ID
+     * @return 用户钱包信息
+     */
+    UserWallet getUserWalletByUserId(Long userId);
+
 }
