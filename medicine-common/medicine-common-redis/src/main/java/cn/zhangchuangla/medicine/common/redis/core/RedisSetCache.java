@@ -24,8 +24,9 @@ import java.util.concurrent.TimeUnit;
 @SuppressWarnings(value = {"unchecked", "rawtypes"})
 public final class RedisSetCache {
 
-    private final RedisTemplate redisTemplate;
     private final static int scanCount = 1000;
+    private final RedisTemplate redisTemplate;
+
     /**
      * 添加一个成员到集合
      */

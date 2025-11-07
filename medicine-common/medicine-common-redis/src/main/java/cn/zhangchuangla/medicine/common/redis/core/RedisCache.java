@@ -25,9 +25,8 @@ import java.util.concurrent.TimeUnit;
 public final class RedisCache {
 
 
-    public final RedisTemplate redisTemplate;
     private final static int scanCount = 1000;
-
+    public final RedisTemplate redisTemplate;
 
     /**
      * 缓存基本的对象，Integer、String、实体类等
