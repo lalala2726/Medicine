@@ -7,6 +7,7 @@ import cn.zhangchuangla.medicine.common.core.base.Option;
 import cn.zhangchuangla.medicine.common.core.base.TableDataResult;
 import cn.zhangchuangla.medicine.common.core.utils.Assert;
 import cn.zhangchuangla.medicine.common.core.utils.BeanCotyUtils;
+import cn.zhangchuangla.medicine.common.security.annotation.IsAdmin;
 import cn.zhangchuangla.medicine.common.security.base.BaseController;
 import cn.zhangchuangla.medicine.model.dto.ModelConfigDto;
 import cn.zhangchuangla.medicine.model.entity.LlmConfig;
@@ -37,6 +38,7 @@ import java.util.List;
 @RequestMapping("/llm/config")
 @RequiredArgsConstructor
 @Tag(name = "大模型配置接口", description = "提供大模型的管理")
+@IsAdmin
 public class LLMConfigController extends BaseController {
 
     private final LlmConfigService llmConfigService;
