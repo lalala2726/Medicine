@@ -204,7 +204,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User>
                         .userId(order.getUserId())
                         .build())
                 .toList();
-        return new PageResult<>(mallOrderPage.getTotal(), mallOrderPage.getPages(), mallOrderPage.getSize(), userConsumeInfos);
+        return new PageResult<>(mallOrderPage.getCurrent(), mallOrderPage.getSize(), mallOrderPage.getTotal(), userConsumeInfos);
     }
 }
 

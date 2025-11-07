@@ -158,8 +158,8 @@
         <include refid="Base_Column_List"/>
         FROM mall_order
         WHERE user_id = #{userId}
-        AND order_status = 'COMPLETED'
-        AND paid = 1
+        and order_status = 'COMPLETED'
+        and paid = 1
     </select>
 
 </mapper>

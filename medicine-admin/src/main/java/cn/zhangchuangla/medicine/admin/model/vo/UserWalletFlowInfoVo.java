@@ -27,7 +27,6 @@ public class UserWalletFlowInfoVo {
     @Schema(description = "流水索引", example = "1")
     private Long index;
 
-
     /**
      * 变动类型
      */
