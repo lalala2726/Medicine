@@ -1,8 +1,7 @@
 package cn.zhangchuangla.medicine.admin.controller;
 
 import cn.zhangchuangla.medicine.admin.model.request.*;
-import cn.zhangchuangla.medicine.admin.model.vo.MallOrderListVo;
-import cn.zhangchuangla.medicine.admin.model.vo.OrderDetailVo;
+import cn.zhangchuangla.medicine.admin.model.vo.*;
 import cn.zhangchuangla.medicine.admin.service.MallOrderService;
 import cn.zhangchuangla.medicine.admin.service.MallOrderTimelineService;
 import cn.zhangchuangla.medicine.common.core.base.AjaxResult;
@@ -71,6 +70,19 @@ public class MallOrderController extends BaseController {
     }
 
     /**
+     * 获取订单地址信息
+     *
+     * @param orderId 订单ID
+     * @return 订单地址信息
+     */
+    @GetMapping("/address/{orderId}")
+    @Operation(summary = "获取订单地址信息")
+    public AjaxResult<OrderAddressVo> getOrderAddress(@PathVariable("orderId") Long orderId) {
+        OrderAddressVo orderAddressVo = mallOrderService.getOrderAddress(orderId);
+        return success(orderAddressVo);
+    }
+
+    /**
      * 修改订单地址
      *
      * @param request 修改参数
@@ -84,6 +96,19 @@ public class MallOrderController extends BaseController {
     }
 
     /**
+     * 获取订单备注信息
+     *
+     * @param orderId 订单ID
+     * @return 订单备注信息
+     */
+    @GetMapping("/remark/{orderId}")
+    @Operation(summary = "获取订单备注信息")
+    public AjaxResult<OrderRemarkVo> getOrderRemark(@PathVariable("orderId") Long orderId) {
+        OrderRemarkVo orderRemarkVo = mallOrderService.getOrderRemark(orderId);
+        return success(orderRemarkVo);
+    }
+
+    /**
      * 修改订单备注
      *
      * @param request 修改参数
@@ -94,6 +119,19 @@ public class MallOrderController extends BaseController {
     public AjaxResult<Void> updateOrderRemark(@Validated @RequestBody RemarkUpdateRequest request) {
         boolean result = mallOrderService.updateOrderRemark(request);
         return toAjax(result);
+    }
+
+    /**
+     * 获取订单价格信息
+     *
+     * @param orderId 订单ID
+     * @return 订单价格信息
+     */
+    @GetMapping("/price/{orderId}")
+    @Operation(summary = "获取订单价格信息")
+    public AjaxResult<OrderPriceVo> getOrderPrice(@PathVariable("orderId") Long orderId) {
+        OrderPriceVo orderPriceVo = mallOrderService.getOrderPrice(orderId);
+        return success(orderPriceVo);
     }
 
     /**

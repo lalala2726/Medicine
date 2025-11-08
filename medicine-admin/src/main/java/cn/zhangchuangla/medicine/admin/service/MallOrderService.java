@@ -2,7 +2,10 @@ package cn.zhangchuangla.medicine.admin.service;
 
 import cn.zhangchuangla.medicine.admin.model.dto.UserOrderStatistics;
 import cn.zhangchuangla.medicine.admin.model.request.*;
+import cn.zhangchuangla.medicine.admin.model.vo.OrderAddressVo;
 import cn.zhangchuangla.medicine.admin.model.vo.OrderDetailVo;
+import cn.zhangchuangla.medicine.admin.model.vo.OrderPriceVo;
+import cn.zhangchuangla.medicine.admin.model.vo.OrderRemarkVo;
 import cn.zhangchuangla.medicine.common.core.base.PageRequest;
 import cn.zhangchuangla.medicine.model.dto.OrderWithProductDto;
 import cn.zhangchuangla.medicine.model.entity.MallOrder;
@@ -49,6 +52,14 @@ public interface MallOrderService extends IService<MallOrder> {
     OrderDetailVo orderDetail(Long orderId);
 
     /**
+     * 获取订单地址信息
+     *
+     * @param orderId 订单ID
+     * @return 订单地址信息
+     */
+    OrderAddressVo getOrderAddress(Long orderId);
+
+    /**
      * 更新订单地址
      *
      * @param request 更新参数
@@ -57,12 +68,28 @@ public interface MallOrderService extends IService<MallOrder> {
     boolean updateOrderAddress(AddressUpdateRequest request);
 
     /**
+     * 获取订单备注信息
+     *
+     * @param orderId 订单ID
+     * @return 订单备注信息
+     */
+    OrderRemarkVo getOrderRemark(Long orderId);
+
+    /**
      * 更新订单备注
      *
      * @param request 更新参数
      * @return 是否成功
      */
     boolean updateOrderRemark(RemarkUpdateRequest request);
+
+    /**
+     * 获取订单价格信息
+     *
+     * @param orderId 订单ID
+     * @return 订单价格信息
+     */
+    OrderPriceVo getOrderPrice(Long orderId);
 
     /**
      * 更新订单价格

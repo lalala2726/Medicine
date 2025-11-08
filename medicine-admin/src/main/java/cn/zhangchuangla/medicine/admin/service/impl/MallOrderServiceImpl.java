@@ -4,7 +4,10 @@ import cn.zhangchuangla.medicine.admin.mapper.MallOrderMapper;
 import cn.zhangchuangla.medicine.admin.mapper.UserMapper;
 import cn.zhangchuangla.medicine.admin.model.dto.UserOrderStatistics;
 import cn.zhangchuangla.medicine.admin.model.request.*;
+import cn.zhangchuangla.medicine.admin.model.vo.OrderAddressVo;
 import cn.zhangchuangla.medicine.admin.model.vo.OrderDetailVo;
+import cn.zhangchuangla.medicine.admin.model.vo.OrderPriceVo;
+import cn.zhangchuangla.medicine.admin.model.vo.OrderRemarkVo;
 import cn.zhangchuangla.medicine.admin.service.*;
 import cn.zhangchuangla.medicine.common.core.base.PageRequest;
 import cn.zhangchuangla.medicine.common.core.enums.ResponseResultCode;
@@ -161,6 +164,26 @@ public class MallOrderServiceImpl extends ServiceImpl<MallOrderMapper, MallOrder
     }
 
     /**
+     * 获取订单地址信息
+     *
+     * @param orderId 订单ID
+     * @return 订单地址信息
+     */
+    @Override
+    public OrderAddressVo getOrderAddress(Long orderId) {
+        MallOrder mallOrder = getOrderById(orderId);
+        return OrderAddressVo.builder()
+                .orderId(mallOrder.getId())
+                .orderNo(mallOrder.getOrderNo())
+                .orderStatus(mallOrder.getOrderStatus())
+                .receiverName(mallOrder.getReceiverName())
+                .receiverPhone(mallOrder.getReceiverPhone())
+                .receiverDetail(mallOrder.getReceiverDetail())
+                .deliveryType(mallOrder.getDeliveryType())
+                .build();
+    }
+
+    /**
      * 更新订单配送信息
      *
      * @param request 更新参数
@@ -181,7 +204,7 @@ public class MallOrderServiceImpl extends ServiceImpl<MallOrderMapper, MallOrder
         // 更新配送信息
         mallOrder.setReceiverName(request.getReceiverName());
         mallOrder.setReceiverPhone(request.getReceiverPhone());
-        mallOrder.setReceiverDetail(request.getReceiverDetail());
+        mallOrder.setReceiverDetail(request.getReceiverAddress());
         DeliveryTypeEnum deliveryTypeEnum = DeliveryTypeEnum.fromCode(request.getDeliveryType());
         Assert.isTrue(deliveryTypeEnum != null, "配送方式不存在");
         mallOrder.setDeliveryType(deliveryTypeEnum.getType());
@@ -201,6 +224,23 @@ public class MallOrderServiceImpl extends ServiceImpl<MallOrderMapper, MallOrder
         }
 
         return updated;
+    }
+
+    /**
+     * 获取订单备注信息
+     *
+     * @param orderId 订单ID
+     * @return 订单备注信息
+     */
+    @Override
+    public OrderRemarkVo getOrderRemark(Long orderId) {
+        MallOrder mallOrder = getOrderById(orderId);
+        return OrderRemarkVo.builder()
+                .orderId(mallOrder.getId())
+                .orderNo(mallOrder.getOrderNo())
+                .remark(mallOrder.getRemark())
+                .note(mallOrder.getNote())
+                .build();
     }
 
     /**
@@ -232,6 +272,23 @@ public class MallOrderServiceImpl extends ServiceImpl<MallOrderMapper, MallOrder
         }
 
         return updated;
+    }
+
+    /**
+     * 获取订单价格信息
+     *
+     * @param orderId 订单ID
+     * @return 订单价格信息
+     */
+    @Override
+    public OrderPriceVo getOrderPrice(Long orderId) {
+        MallOrder mallOrder = getOrderById(orderId);
+        return OrderPriceVo.builder()
+                .orderId(mallOrder.getId())
+                .orderNo(mallOrder.getOrderNo())
+                .totalAmount(mallOrder.getTotalAmount())
+                .payAmount(mallOrder.getPayAmount())
+                .build();
     }
 
     /**

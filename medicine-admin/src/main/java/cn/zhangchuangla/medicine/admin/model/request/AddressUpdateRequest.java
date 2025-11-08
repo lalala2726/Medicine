@@ -40,7 +40,7 @@ public class AddressUpdateRequest {
      */
     @Schema(description = "收货人地址")
     @NotBlank(message = "收货人地址不能为空")
-    private String receiverDetail;
+    private String receiverAddress;
 
     /**
      * 配送方式
