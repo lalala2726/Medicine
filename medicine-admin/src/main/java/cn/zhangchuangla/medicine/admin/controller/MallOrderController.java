@@ -78,7 +78,7 @@ public class MallOrderController extends BaseController {
      */
     @PutMapping("/address")
     @Operation(summary = "修改订单地址")
-    public AjaxResult<?> updateOrderAddress(@Validated @RequestBody AddressUpdateRequest request) {
+    public AjaxResult<Void> updateOrderAddress(@Validated @RequestBody AddressUpdateRequest request) {
         boolean result = mallOrderService.updateOrderAddress(request);
         return toAjax(result);
     }
@@ -91,7 +91,7 @@ public class MallOrderController extends BaseController {
      */
     @PutMapping("/remark")
     @Operation(summary = "修改订单备注")
-    public AjaxResult<?> updateOrderRemark(@Validated @RequestBody RemarkUpdateRequest request) {
+    public AjaxResult<Void> updateOrderRemark(@Validated @RequestBody RemarkUpdateRequest request) {
         boolean result = mallOrderService.updateOrderRemark(request);
         return toAjax(result);
     }
@@ -104,7 +104,7 @@ public class MallOrderController extends BaseController {
      */
     @PutMapping("/price")
     @Operation(summary = "订单改价")
-    public AjaxResult<?> updateOrderPrice(@Validated @RequestBody OrderUpdatePriceRequest request) {
+    public AjaxResult<Void> updateOrderPrice(@Validated @RequestBody OrderUpdatePriceRequest request) {
         boolean result = mallOrderService.updateOrderPrice(request);
         return toAjax(result);
     }
@@ -118,7 +118,7 @@ public class MallOrderController extends BaseController {
      */
     @PostMapping
     @Operation(summary = "订单退款")
-    public AjaxResult<?> OrderRefund(@RequestBody OrderRefundRequest request) {
+    public AjaxResult<Void> OrderRefund(@RequestBody OrderRefundRequest request) {
         boolean result = mallOrderService.orderRefund(request);
         return toAjax(result);
     }

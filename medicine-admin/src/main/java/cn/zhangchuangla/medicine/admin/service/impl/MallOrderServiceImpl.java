@@ -169,7 +169,7 @@ public class MallOrderServiceImpl extends ServiceImpl<MallOrderMapper, MallOrder
     @Override
     public boolean updateOrderAddress(AddressUpdateRequest request) {
         // 根据订单号查询订单
-        MallOrder mallOrder = getOrderByOrderNo(request.getOrderNo());
+        MallOrder mallOrder = getOrderById(request.getOrderId());
 
         // 检查订单状态是否允许修改地址（只有待支付和待发货状态可以修改地址）
         OrderStatusEnum orderStatusEnum = OrderStatusEnum.fromCode(mallOrder.getOrderStatus());
@@ -212,10 +212,10 @@ public class MallOrderServiceImpl extends ServiceImpl<MallOrderMapper, MallOrder
     @Override
     public boolean updateOrderRemark(RemarkUpdateRequest request) {
         // 根据订单号查询订单
-        MallOrder mallOrder = getOrderByOrderNo(request.getOrderNo());
+        MallOrder mallOrder = getOrderById(request.getOrderId());
 
         // 更新订单备注
-        mallOrder.setNote(request.getRemark());
+        mallOrder.setRemark(request.getRemark());
 
         boolean updated = updateById(mallOrder);
 
@@ -243,7 +243,7 @@ public class MallOrderServiceImpl extends ServiceImpl<MallOrderMapper, MallOrder
     @Override
     public boolean updateOrderPrice(OrderUpdatePriceRequest request) {
         // 根据订单号查询订单
-        MallOrder mallOrder = getOrderByOrderNo(request.getOrderNo());
+        MallOrder mallOrder = getOrderById(request.getOrderId());
 
         // 检查订单状态是否允许修改价格（只有待支付状态可以修改价格）
         OrderStatusEnum orderStatusEnum = OrderStatusEnum.fromCode(mallOrder.getOrderStatus());
