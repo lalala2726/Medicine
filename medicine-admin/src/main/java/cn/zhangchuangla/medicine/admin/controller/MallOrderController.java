@@ -11,6 +11,7 @@ import cn.zhangchuangla.medicine.common.security.base.BaseController;
 import cn.zhangchuangla.medicine.model.dto.OrderWithProductDto;
 import cn.zhangchuangla.medicine.model.entity.MallOrderTimeline;
 import cn.zhangchuangla.medicine.model.vo.MallOrderTimelineVo;
+import cn.zhangchuangla.medicine.model.vo.OrderShippingVo;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -189,6 +190,45 @@ public class MallOrderController extends BaseController {
         List<MallOrderTimeline> timeline = mallOrderTimelineService.getTimelineByOrderId(orderId);
         List<MallOrderTimelineVo> mallOrderTimelineVos = copyListProperties(timeline, MallOrderTimelineVo.class);
         return success(mallOrderTimelineVos);
+    }
+
+    /**
+     * 订单发货
+     *
+     * @param request 发货请求参数
+     * @return 发货结果
+     */
+    @PostMapping("/ship")
+    @Operation(summary = "订单发货")
+    public AjaxResult<Void> shipOrder(@Validated @RequestBody OrderShipRequest request) {
+        boolean result = mallOrderService.shipOrder(request);
+        return toAjax(result);
+    }
+
+    /**
+     * 查询订单物流信息
+     *
+     * @param orderId 订单ID
+     * @return 物流信息
+     */
+    @GetMapping("/shipping/{orderId}")
+    @Operation(summary = "查询订单物流信息")
+    public AjaxResult<OrderShippingVo> getOrderShipping(@PathVariable("orderId") Long orderId) {
+        OrderShippingVo orderShippingVo = mallOrderService.getOrderShipping(orderId);
+        return success(orderShippingVo);
+    }
+
+    /**
+     * 管理员手动确认收货
+     *
+     * @param request 确认收货请求
+     * @return 操作结果
+     */
+    @PostMapping("/confirm-receipt")
+    @Operation(summary = "管理员手动确认收货", description = "管理员手动确认订单收货，适用于特殊场景（如客户电话确认等）")
+    public AjaxResult<Void> manualConfirmReceipt(@Validated @RequestBody OrderReceiveRequest request) {
+        boolean result = mallOrderService.manualConfirmReceipt(request);
+        return toAjax(result);
     }
 
     /**

@@ -2,9 +2,11 @@ package cn.zhangchuangla.medicine.client.service;
 
 import cn.zhangchuangla.medicine.client.model.request.OrderConfirmRequest;
 import cn.zhangchuangla.medicine.client.model.request.OrderCreateRequest;
+import cn.zhangchuangla.medicine.client.model.request.OrderReceiveRequest;
 import cn.zhangchuangla.medicine.client.model.vo.OrderCreateVo;
 import cn.zhangchuangla.medicine.model.dto.AlipayNotifyDTO;
 import cn.zhangchuangla.medicine.model.entity.MallOrder;
+import cn.zhangchuangla.medicine.model.vo.OrderShippingVo;
 import com.baomidou.mybatisplus.extension.service.IService;
 import jakarta.servlet.http.HttpServletRequest;
 
@@ -52,4 +54,20 @@ public interface MallOrderService extends IService<MallOrder> {
      * @param orderNo 订单编号
      */
     void closeOrderIfUnpaid(String orderNo);
+
+    /**
+     * 用户确认收货
+     *
+     * @param request 确认收货请求参数
+     * @return 是否成功
+     */
+    boolean confirmReceipt(OrderReceiveRequest request);
+
+    /**
+     * 查询订单物流信息
+     *
+     * @param orderId 订单ID
+     * @return 物流信息
+     */
+    OrderShippingVo getOrderShipping(Long orderId);
 }

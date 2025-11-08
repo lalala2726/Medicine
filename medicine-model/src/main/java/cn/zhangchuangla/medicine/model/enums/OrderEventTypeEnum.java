@@ -27,6 +27,11 @@ public enum OrderEventTypeEnum {
     ORDER_SHIPPED("ORDER_SHIPPED", "订单发货", "订单已发货"),
 
     /**
+     * 确认收货
+     */
+    ORDER_RECEIVED("ORDER_RECEIVED", "确认收货", "用户确认收货"),
+
+    /**
      * 订单完成
      */
     ORDER_COMPLETED("ORDER_COMPLETED", "订单完成", "订单已完成"),
