@@ -5,6 +5,7 @@ import cn.zhangchuangla.medicine.admin.service.MallCategoryService;
 import cn.zhangchuangla.medicine.admin.service.MallProductImageService;
 import cn.zhangchuangla.medicine.admin.service.MallProductService;
 import cn.zhangchuangla.medicine.common.core.constants.RedisConstants;
+import cn.zhangchuangla.medicine.common.core.enums.ResponseResultCode;
 import cn.zhangchuangla.medicine.common.core.exception.ServiceException;
 import cn.zhangchuangla.medicine.common.core.utils.Assert;
 import cn.zhangchuangla.medicine.common.security.utils.SecurityUtils;
@@ -196,6 +197,37 @@ public class MallProductServiceImpl extends ServiceImpl<MallProductMapper, MallP
         // 删除关联的图片
         mallProductImageService.removeImagesById(ids);
         return removeByIds(ids);
+    }
+
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public void restoreStock(Long productId, Integer quantity) {
+        Assert.isPositive(quantity, "商品数量不能小于0");
+        Assert.isPositive(productId, "商品ID不能小于0");
+        
+        MallProduct mallProduct = lambdaQuery()
+                .eq(MallProduct::getId, productId)
+                .select(MallProduct::getStock, MallProduct::getVersion)
+                .one();
+
+        if (mallProduct == null) {
+            throw new ServiceException(ResponseResultCode.OPERATION_ERROR, "商品不存在");
+        }
+        
+        Integer currentStock = mallProduct.getStock();
+        int newStock = (currentStock == null ? 0 : currentStock) + quantity;
+        int currentVersion = mallProduct.getVersion() == null ? 0 : mallProduct.getVersion();
+        
+        boolean updated = lambdaUpdate()
+                .eq(MallProduct::getId, productId)
+                .eq(MallProduct::getVersion, currentVersion)
+                .set(MallProduct::getStock, newStock)
+                .set(MallProduct::getVersion, currentVersion + 1)
+                .update();
+                
+        if (!updated) {
+            throw new ServiceException(ResponseResultCode.OPERATION_ERROR, "库存更新失败，请重试");
+        }
     }
 
 }

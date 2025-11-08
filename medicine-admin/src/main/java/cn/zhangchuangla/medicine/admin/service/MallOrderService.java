@@ -108,6 +108,17 @@ public interface MallOrderService extends IService<MallOrder> {
     boolean orderRefund(OrderRefundRequest request);
 
     /**
+     * 取消订单
+     * <p>
+     * 如果订单已支付，会自动退款；如果未支付，直接取消并恢复库存
+     * </p>
+     *
+     * @param request 订单取消参数
+     * @return 是否成功
+     */
+    boolean cancelOrder(OrderCancelRequest request);
+
+    /**
      * 订单列表（带商品信息）
      *
      * @param request 订单列表参数

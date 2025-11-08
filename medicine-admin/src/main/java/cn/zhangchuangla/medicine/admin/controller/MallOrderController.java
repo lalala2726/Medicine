@@ -154,10 +154,26 @@ public class MallOrderController extends BaseController {
      * @param request 订单退款参数
      * @return 订单退款结果
      */
-    @PostMapping
+    @PostMapping("/refund")
     @Operation(summary = "订单退款")
-    public AjaxResult<Void> OrderRefund(@RequestBody OrderRefundRequest request) {
+    public AjaxResult<Void> orderRefund(@RequestBody OrderRefundRequest request) {
         boolean result = mallOrderService.orderRefund(request);
+        return toAjax(result);
+    }
+
+    /**
+     * 取消订单
+     * <p>
+     * 如果订单已支付，会自动退款；如果未支付，直接取消并恢复库存
+     * </p>
+     *
+     * @param request 订单取消参数
+     * @return 取消结果
+     */
+    @PostMapping("/cancel")
+    @Operation(summary = "取消订单")
+    public AjaxResult<Void> cancelOrder(@Validated @RequestBody OrderCancelRequest request) {
+        boolean result = mallOrderService.cancelOrder(request);
         return toAjax(result);
     }
 
