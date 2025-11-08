@@ -38,11 +38,5 @@ public class OrderPriceVo {
     @Schema(description = "订单总金额")
     private BigDecimal totalAmount;
 
-    /**
-     * 实际支付金额
-     */
-    @Schema(description = "实际支付金额")
-    private BigDecimal payAmount;
-
 }
 

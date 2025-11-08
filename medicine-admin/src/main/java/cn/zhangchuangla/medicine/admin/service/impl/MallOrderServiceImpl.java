@@ -287,7 +287,6 @@ public class MallOrderServiceImpl extends ServiceImpl<MallOrderMapper, MallOrder
                 .orderId(mallOrder.getId())
                 .orderNo(mallOrder.getOrderNo())
                 .totalAmount(mallOrder.getTotalAmount())
-                .payAmount(mallOrder.getPayAmount())
                 .build();
     }
 
