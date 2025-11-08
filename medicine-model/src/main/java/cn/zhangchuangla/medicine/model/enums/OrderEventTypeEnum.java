@@ -59,7 +59,12 @@ public enum OrderEventTypeEnum {
     /**
      * 管理员添加备注
      */
-    ADMIN_UPDATE_REMARK("ADMIN_UPDATE_REMARK", "添加备注", "管理员添加了订单备注");
+    ADMIN_UPDATE_REMARK("ADMIN_UPDATE_REMARK", "添加备注", "管理员添加了订单备注"),
+
+    /**
+     * 其他
+     */
+    OTHER("OTHER", "其他", "其他事件");
 
     /**
      * 枚举值
