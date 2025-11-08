@@ -5,10 +5,7 @@ import cn.zhangchuangla.medicine.admin.mapper.UserMapper;
 import cn.zhangchuangla.medicine.admin.model.dto.UserOrderStatistics;
 import cn.zhangchuangla.medicine.admin.model.request.*;
 import cn.zhangchuangla.medicine.admin.model.vo.OrderDetailVo;
-import cn.zhangchuangla.medicine.admin.service.MallOrderItemService;
-import cn.zhangchuangla.medicine.admin.service.MallOrderService;
-import cn.zhangchuangla.medicine.admin.service.MallOrderTimelineService;
-import cn.zhangchuangla.medicine.admin.service.MallProductImageService;
+import cn.zhangchuangla.medicine.admin.service.*;
 import cn.zhangchuangla.medicine.common.core.base.PageRequest;
 import cn.zhangchuangla.medicine.common.core.enums.ResponseResultCode;
 import cn.zhangchuangla.medicine.common.core.exception.ServiceException;
@@ -24,6 +21,7 @@ import cn.zhangchuangla.medicine.payment.model.AlipayRefundRequest;
 import cn.zhangchuangla.medicine.payment.service.AlipayPaymentService;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
 
@@ -35,6 +33,7 @@ import java.util.stream.Collectors;
 /**
  * @author Chuang
  */
+@Slf4j
 @Service
 public class MallOrderServiceImpl extends ServiceImpl<MallOrderMapper, MallOrder>
         implements MallOrderService {
@@ -62,15 +61,17 @@ public class MallOrderServiceImpl extends ServiceImpl<MallOrderMapper, MallOrder
     private final MallProductImageService mallProductImageService;
     private final AlipayPaymentService alipayPaymentService;
     private final MallOrderTimelineService mallOrderTimelineService;
+    private final UserWalletService userWalletService;
 
 
-    public MallOrderServiceImpl(MallOrderMapper mallOrderMapper, UserMapper userMapper, MallOrderItemService mallOrderItemService, MallProductImageService mallProductImageService, AlipayPaymentService alipayPaymentService, MallOrderTimelineService mallOrderTimelineService) {
+    public MallOrderServiceImpl(MallOrderMapper mallOrderMapper, UserMapper userMapper, MallOrderItemService mallOrderItemService, MallProductImageService mallProductImageService, AlipayPaymentService alipayPaymentService, MallOrderTimelineService mallOrderTimelineService, UserWalletService userWalletService) {
         this.mallOrderMapper = mallOrderMapper;
         this.userMapper = userMapper;
         this.mallOrderItemService = mallOrderItemService;
         this.mallProductImageService = mallProductImageService;
         this.alipayPaymentService = alipayPaymentService;
         this.mallOrderTimelineService = mallOrderTimelineService;
+        this.userWalletService = userWalletService;
     }
 
 
@@ -379,10 +380,38 @@ public class MallOrderServiceImpl extends ServiceImpl<MallOrderMapper, MallOrder
     }
 
     /**
-     * 钱包退款预留实现。业务方可在此处对接钱包余额返还、日志记录等逻辑。
+     * 钱包退款实现
+     * <p>
+     * 将退款金额返还到用户钱包余额中，并记录钱包流水
+     * </p>
+     *
+     * @param mallOrder 订单信息
+     * @param request   退款请求参数
      */
     private void processWalletRefund(MallOrder mallOrder, OrderRefundRequest request) {
-        throw new ServiceException(ResponseResultCode.OPERATION_ERROR, "钱包退款功能暂未开通，请使用支付宝退款通道处理");
+        // 获取退款金额和用户ID
+        BigDecimal refundAmount = request.getRefundAmount();
+        Long userId = mallOrder.getUserId();
+
+        if (userId == null) {
+            throw new ServiceException(ResponseResultCode.OPERATION_ERROR, "订单用户信息异常，无法退款");
+        }
+
+        // 构建退款原因描述
+        String walletRemark = String.format("订单退款（订单号：%s，退款原因：%s，退款金额：%s元）",
+                mallOrder.getOrderNo(),
+                determineRefundReason(request.getRefundReason()),
+                formatAmount(refundAmount));
+
+        // 调用钱包服务进行余额充值（退款）
+        boolean success = userWalletService.rechargeWallet(userId, refundAmount, walletRemark);
+
+        if (!success) {
+            throw new ServiceException(ResponseResultCode.OPERATION_ERROR, "钱包退款失败，请稍后重试");
+        }
+
+        log.info("钱包退款成功，订单号：{}，用户ID：{}，退款金额：{}",
+                mallOrder.getOrderNo(), userId, refundAmount);
     }
 
     /**
