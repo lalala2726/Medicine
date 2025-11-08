@@ -4,7 +4,10 @@ import cn.zhangchuangla.medicine.admin.mapper.MallOrderMapper;
 import cn.zhangchuangla.medicine.admin.mapper.UserMapper;
 import cn.zhangchuangla.medicine.admin.model.dto.UserOrderStatistics;
 import cn.zhangchuangla.medicine.admin.model.request.*;
+import cn.zhangchuangla.medicine.admin.model.vo.OrderAddressVo;
 import cn.zhangchuangla.medicine.admin.model.vo.OrderDetailVo;
+import cn.zhangchuangla.medicine.admin.model.vo.OrderPriceVo;
+import cn.zhangchuangla.medicine.admin.model.vo.OrderRemarkVo;
 import cn.zhangchuangla.medicine.admin.service.*;
 import cn.zhangchuangla.medicine.common.core.base.PageRequest;
 import cn.zhangchuangla.medicine.common.core.enums.ResponseResultCode;
@@ -63,9 +66,10 @@ public class MallOrderServiceImpl extends ServiceImpl<MallOrderMapper, MallOrder
     private final AlipayPaymentService alipayPaymentService;
     private final MallOrderTimelineService mallOrderTimelineService;
     private final UserWalletService userWalletService;
+    private final MallProductService mallProductService;
 
 
-    public MallOrderServiceImpl(MallOrderMapper mallOrderMapper, UserMapper userMapper, MallOrderItemService mallOrderItemService, MallProductImageService mallProductImageService, AlipayPaymentService alipayPaymentService, MallOrderTimelineService mallOrderTimelineService, UserWalletService userWalletService) {
+    public MallOrderServiceImpl(MallOrderMapper mallOrderMapper, UserMapper userMapper, MallOrderItemService mallOrderItemService, MallProductImageService mallProductImageService, AlipayPaymentService alipayPaymentService, MallOrderTimelineService mallOrderTimelineService, UserWalletService userWalletService, MallProductService mallProductService) {
         this.mallOrderMapper = mallOrderMapper;
         this.userMapper = userMapper;
         this.mallOrderItemService = mallOrderItemService;
@@ -73,6 +77,7 @@ public class MallOrderServiceImpl extends ServiceImpl<MallOrderMapper, MallOrder
         this.alipayPaymentService = alipayPaymentService;
         this.mallOrderTimelineService = mallOrderTimelineService;
         this.userWalletService = userWalletService;
+        this.mallProductService = mallProductService;
     }
 
 
@@ -130,7 +135,7 @@ public class MallOrderServiceImpl extends ServiceImpl<MallOrderMapper, MallOrder
         // 构建订单信息
         OrderDetailVo.OrderInfo orderInfo = OrderDetailVo.OrderInfo.builder()
                 .orderNo(mallOrder.getOrderNo())
-                .orderStatus(getOrderStatusDesc(mallOrder.getOrderStatus()))
+                .orderStatus(mallOrder.getOrderStatus())
                 .payType(getPayTypeDesc(mallOrder.getPayType()))
                 .totalAmount(mallOrder.getTotalAmount())
                 .payAmount(mallOrder.getPayAmount())
@@ -161,6 +166,26 @@ public class MallOrderServiceImpl extends ServiceImpl<MallOrderMapper, MallOrder
     }
 
     /**
+     * 获取订单地址信息
+     *
+     * @param orderId 订单ID
+     * @return 订单地址信息
+     */
+    @Override
+    public OrderAddressVo getOrderAddress(Long orderId) {
+        MallOrder mallOrder = getOrderById(orderId);
+        return OrderAddressVo.builder()
+                .orderId(mallOrder.getId())
+                .orderNo(mallOrder.getOrderNo())
+                .orderStatus(mallOrder.getOrderStatus())
+                .receiverName(mallOrder.getReceiverName())
+                .receiverPhone(mallOrder.getReceiverPhone())
+                .receiverDetail(mallOrder.getReceiverDetail())
+                .deliveryType(mallOrder.getDeliveryType())
+                .build();
+    }
+
+    /**
      * 更新订单配送信息
      *
      * @param request 更新参数
@@ -169,7 +194,7 @@ public class MallOrderServiceImpl extends ServiceImpl<MallOrderMapper, MallOrder
     @Override
     public boolean updateOrderAddress(AddressUpdateRequest request) {
         // 根据订单号查询订单
-        MallOrder mallOrder = getOrderByOrderNo(request.getOrderNo());
+        MallOrder mallOrder = getOrderById(request.getOrderId());
 
         // 检查订单状态是否允许修改地址（只有待支付和待发货状态可以修改地址）
         OrderStatusEnum orderStatusEnum = OrderStatusEnum.fromCode(mallOrder.getOrderStatus());
@@ -181,7 +206,7 @@ public class MallOrderServiceImpl extends ServiceImpl<MallOrderMapper, MallOrder
         // 更新配送信息
         mallOrder.setReceiverName(request.getReceiverName());
         mallOrder.setReceiverPhone(request.getReceiverPhone());
-        mallOrder.setReceiverDetail(request.getReceiverDetail());
+        mallOrder.setReceiverDetail(request.getReceiverAddress());
         DeliveryTypeEnum deliveryTypeEnum = DeliveryTypeEnum.fromCode(request.getDeliveryType());
         Assert.isTrue(deliveryTypeEnum != null, "配送方式不存在");
         mallOrder.setDeliveryType(deliveryTypeEnum.getType());
@@ -204,6 +229,23 @@ public class MallOrderServiceImpl extends ServiceImpl<MallOrderMapper, MallOrder
     }
 
     /**
+     * 获取订单备注信息
+     *
+     * @param orderId 订单ID
+     * @return 订单备注信息
+     */
+    @Override
+    public OrderRemarkVo getOrderRemark(Long orderId) {
+        MallOrder mallOrder = getOrderById(orderId);
+        return OrderRemarkVo.builder()
+                .orderId(mallOrder.getId())
+                .orderNo(mallOrder.getOrderNo())
+                .remark(mallOrder.getRemark())
+                .note(mallOrder.getNote())
+                .build();
+    }
+
+    /**
      * 更新订单备注
      *
      * @param request 更新参数
@@ -212,10 +254,10 @@ public class MallOrderServiceImpl extends ServiceImpl<MallOrderMapper, MallOrder
     @Override
     public boolean updateOrderRemark(RemarkUpdateRequest request) {
         // 根据订单号查询订单
-        MallOrder mallOrder = getOrderByOrderNo(request.getOrderNo());
+        MallOrder mallOrder = getOrderById(request.getOrderId());
 
         // 更新订单备注
-        mallOrder.setNote(request.getRemark());
+        mallOrder.setRemark(request.getRemark());
 
         boolean updated = updateById(mallOrder);
 
@@ -235,6 +277,22 @@ public class MallOrderServiceImpl extends ServiceImpl<MallOrderMapper, MallOrder
     }
 
     /**
+     * 获取订单价格信息
+     *
+     * @param orderId 订单ID
+     * @return 订单价格信息
+     */
+    @Override
+    public OrderPriceVo getOrderPrice(Long orderId) {
+        MallOrder mallOrder = getOrderById(orderId);
+        return OrderPriceVo.builder()
+                .orderId(mallOrder.getId())
+                .orderNo(mallOrder.getOrderNo())
+                .totalAmount(mallOrder.getTotalAmount())
+                .build();
+    }
+
+    /**
      * 更新订单价格
      *
      * @param request 订单价格更新参数
@@ -243,7 +301,7 @@ public class MallOrderServiceImpl extends ServiceImpl<MallOrderMapper, MallOrder
     @Override
     public boolean updateOrderPrice(OrderUpdatePriceRequest request) {
         // 根据订单号查询订单
-        MallOrder mallOrder = getOrderByOrderNo(request.getOrderNo());
+        MallOrder mallOrder = getOrderById(request.getOrderId());
 
         // 检查订单状态是否允许修改价格（只有待支付状态可以修改价格）
         OrderStatusEnum orderStatusEnum = OrderStatusEnum.fromCode(mallOrder.getOrderStatus());
@@ -331,6 +389,129 @@ public class MallOrderServiceImpl extends ServiceImpl<MallOrderMapper, MallOrder
                 .build();
         mallOrderTimelineService.addTimelineIfNotExists(timelineDto);
 
+        return true;
+    }
+
+    /**
+     * 取消订单
+     * <p>
+     * 取消逻辑：
+     * 1. 如果订单未支付：直接取消并恢复库存
+     * 2. 如果订单已支付：先全额退款，再取消订单
+     * 3. 只有待支付、待发货状态的订单可以取消
+     * </p>
+     *
+     * @param request 订单取消参数
+     * @return 是否取消成功
+     */
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public boolean cancelOrder(OrderCancelRequest request) {
+        // 1. 查询订单并校验状态
+        MallOrder mallOrder = getOrderById(request.getOrderId());
+        
+        // 2. 校验订单状态是否允许取消
+        OrderStatusEnum orderStatusEnum = OrderStatusEnum.fromCode(mallOrder.getOrderStatus());
+        if (orderStatusEnum == null) {
+            throw new ServiceException(ResponseResultCode.OPERATION_ERROR, "订单状态异常");
+        }
+        
+        // 只有待支付、待发货状态可以取消
+        if (orderStatusEnum != OrderStatusEnum.PENDING_PAYMENT && 
+            orderStatusEnum != OrderStatusEnum.PENDING_SHIPMENT) {
+            throw new ServiceException(ResponseResultCode.OPERATION_ERROR, 
+                    String.format("当前订单状态[%s]不允许取消", orderStatusEnum.getName()));
+        }
+
+        // 3. 查询订单项，用于恢复库存
+        List<MallOrderItem> orderItems = mallOrderItemService.lambdaQuery()
+                .eq(MallOrderItem::getOrderId, mallOrder.getId())
+                .list();
+
+        // 4. 如果订单已支付，需要先退款
+        if (Objects.equals(mallOrder.getPaid(), PAID_FLAG)) {
+            log.info("订单{}已支付，执行全额退款", mallOrder.getOrderNo());
+            
+            BigDecimal refundAmount = mallOrder.getPayAmount();
+            if (refundAmount == null || refundAmount.compareTo(BigDecimal.ZERO) <= 0) {
+                throw new ServiceException(ResponseResultCode.OPERATION_ERROR, "订单支付金额异常，无法退款");
+            }
+
+            // 根据支付方式执行退款
+            PayTypeEnum payType = PayTypeEnum.fromCode(mallOrder.getPayType());
+            if (payType == null) {
+                throw new ServiceException(ResponseResultCode.OPERATION_ERROR, "支付方式异常");
+            }
+
+            switch (payType) {
+                case ALIPAY -> {
+                    // 支付宝退款
+                    alipayPaymentService.refund(AlipayRefundRequest.builder()
+                            .outTradeNo(mallOrder.getOrderNo())
+                            .refundAmount(formatAmount(refundAmount))
+                            .refundReason("订单取消-" + (request.getCancelReason() != null ? request.getCancelReason() : "用户取消"))
+                            .outRequestNo(buildOutRequestNo(mallOrder))
+                            .build());
+                }
+                case WALLET -> {
+                    // 钱包退款
+                    Long userId = mallOrder.getUserId();
+                    if (userId == null) {
+                        throw new ServiceException(ResponseResultCode.OPERATION_ERROR, "订单用户信息异常");
+                    }
+                    String walletRemark = String.format("订单取消退款（订单号：%s，退款金额：%s元）",
+                            mallOrder.getOrderNo(), formatAmount(refundAmount));
+                    boolean success = userWalletService.rechargeWallet(userId, refundAmount, walletRemark);
+                    if (!success) {
+                        throw new ServiceException(ResponseResultCode.OPERATION_ERROR, "钱包退款失败");
+                    }
+                }
+                default -> throw new ServiceException(ResponseResultCode.OPERATION_ERROR, "不支持的支付方式");
+            }
+
+            // 更新退款信息
+            mallOrder.setRefundPrice(refundAmount);
+            mallOrder.setRefundTime(new Date());
+            mallOrder.setRefundStatus(REFUND_STATUS_SUCCESS);
+        }
+
+        // 5. 更新订单状态为已取消
+        String cancelReason = request.getCancelReason();
+        if (!StringUtils.hasText(cancelReason)) {
+            cancelReason = "管理员取消订单";
+        }
+        
+        mallOrder.setOrderStatus(OrderStatusEnum.CANCELLED.getType());
+        mallOrder.setCloseReason(cancelReason);
+        mallOrder.setCloseTime(new Date());
+        mallOrder.setUpdateTime(new Date());
+        
+        boolean updated = updateById(mallOrder);
+        if (!updated) {
+            throw new ServiceException(ResponseResultCode.OPERATION_ERROR, "取消订单失败");
+        }
+
+        // 6. 恢复库存
+        if (orderItems != null && !orderItems.isEmpty()) {
+            for (MallOrderItem orderItem : orderItems) {
+                if (orderItem != null && orderItem.getProductId() != null && orderItem.getQuantity() != null) {
+                    mallProductService.restoreStock(orderItem.getProductId(), orderItem.getQuantity());
+                    log.info("恢复商品库存，商品ID：{}，数量：{}", orderItem.getProductId(), orderItem.getQuantity());
+                }
+            }
+        }
+
+        // 7. 添加订单时间线记录
+        OrderTimelineDto timelineDto = OrderTimelineDto.builder()
+                .orderId(mallOrder.getId())
+                .eventType(OrderEventTypeEnum.ORDER_CANCELLED.getType())
+                .eventStatus(OrderStatusEnum.CANCELLED.getType())
+                .operatorType(OperatorTypeEnum.ADMIN.getType())
+                .description("管理员取消了订单：" + cancelReason)
+                .build();
+        mallOrderTimelineService.addTimelineIfNotExists(timelineDto);
+
+        log.info("订单{}取消成功，是否退款：{}", mallOrder.getOrderNo(), Objects.equals(mallOrder.getPaid(), PAID_FLAG));
         return true;
     }
 
@@ -528,13 +709,6 @@ public class MallOrderServiceImpl extends ServiceImpl<MallOrderMapper, MallOrder
         return deliveryTypeEnum != null ? deliveryTypeEnum.getName() : "未知";
     }
 
-    /**
-     * 获取订单状态描述
-     */
-    private String getOrderStatusDesc(String orderStatus) {
-        OrderStatusEnum orderStatusEnum = OrderStatusEnum.fromCode(orderStatus);
-        return orderStatusEnum != null ? orderStatusEnum.getName() : "未知";
-    }
 
     /**
      * 获取支付方式描述

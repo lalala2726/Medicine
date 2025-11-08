@@ -70,4 +70,12 @@ public interface MallProductService extends IService<MallProduct> {
      */
     boolean deleteMallProduct(List<Long> ids);
 
+    /**
+     * 恢复库存
+     *
+     * @param productId 商品ID
+     * @param quantity  数量
+     */
+    void restoreStock(Long productId, Integer quantity);
+
 }

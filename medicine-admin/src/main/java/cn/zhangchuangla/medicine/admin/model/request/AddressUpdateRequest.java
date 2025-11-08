@@ -2,6 +2,7 @@ package cn.zhangchuangla.medicine.admin.model.request;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
 import lombok.Data;
 
 /**
@@ -14,11 +15,11 @@ import lombok.Data;
 public class AddressUpdateRequest {
 
     /**
-     * 订单编号
+     * 订单ID
      */
-    @Schema(description = "订单编号")
-    @NotBlank(message = "订单编号不能为空")
-    private String orderNo;
+    @Schema(description = "订单ID")
+    @NotNull(message = "订单ID不能为空")
+    private Long orderId;
 
     /**
      * 收货人姓名
@@ -39,7 +40,7 @@ public class AddressUpdateRequest {
      */
     @Schema(description = "收货人地址")
     @NotBlank(message = "收货人地址不能为空")
-    private String receiverDetail;
+    private String receiverAddress;
 
     /**
      * 配送方式

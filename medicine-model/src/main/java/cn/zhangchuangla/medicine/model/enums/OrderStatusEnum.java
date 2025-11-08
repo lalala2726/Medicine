@@ -44,7 +44,12 @@ public enum OrderStatusEnum {
     /**
      * 已过期
      */
-    EXPIRED("EXPIRED", "已过期", "订单已过期，请重新下单");
+    EXPIRED("EXPIRED", "已过期", "订单已过期，请重新下单"),
+
+    /**
+     * 已取消
+     */
+    CANCELLED("CANCELLED", "已取消", "订单已取消");
 
     /**
      * 枚举值
