@@ -1,7 +1,7 @@
 package cn.zhangchuangla.medicine.common.security.token;
 
 import cn.zhangchuangla.medicine.common.core.constants.SecurityConstants;
-import cn.zhangchuangla.medicine.common.core.enums.ResponseResultCode;
+import cn.zhangchuangla.medicine.common.core.enums.ResponseCode;
 import cn.zhangchuangla.medicine.common.core.exception.AuthorizationException;
 import cn.zhangchuangla.medicine.common.core.utils.IPUtils;
 import cn.zhangchuangla.medicine.common.core.utils.UUIDUtils;
@@ -47,7 +47,7 @@ public class TokenService {
         SysUserDetails userDetails = (SysUserDetails) authentication.getPrincipal();
         AuthUser authUser = userDetails.getUser();
         if (authUser == null) {
-            throw new AuthorizationException(ResponseResultCode.UNAUTHORIZED, "用户信息异常");
+            throw new AuthorizationException(ResponseCode.UNAUTHORIZED, "用户信息异常");
         }
         String username = authUser.getUsername();
         Long userId = authUser.getId();
@@ -92,12 +92,12 @@ public class TokenService {
     public AuthTokenVo refreshToken(String jwtRefreshToken) {
         Claims refreshClaims = jwtTokenProvider.getClaimsFromToken(jwtRefreshToken);
         if (refreshClaims == null) {
-            throw new AuthorizationException(ResponseResultCode.REFRESH_TOKEN_INVALID);
+            throw new AuthorizationException(ResponseCode.REFRESH_TOKEN_INVALID);
         }
 
         String refreshTokenSessionId = refreshClaims.get(CLAIM_KEY_SESSION_ID, String.class);
         if (!redisTokenStore.isValidRefreshToken(refreshTokenSessionId)) {
-            throw new AuthorizationException(ResponseResultCode.REFRESH_TOKEN_INVALID);
+            throw new AuthorizationException(ResponseCode.REFRESH_TOKEN_INVALID);
         }
 
         String username = refreshClaims.get(SecurityConstants.CLAIM_KEY_USERNAME, String.class);
@@ -139,17 +139,17 @@ public class TokenService {
                 return authUser;
             }
         }
-        throw new AuthorizationException(ResponseResultCode.REFRESH_TOKEN_INVALID, "无法加载用户信息");
+        throw new AuthorizationException(ResponseCode.REFRESH_TOKEN_INVALID, "无法加载用户信息");
     }
 
     private UserDetailsService resolveUserDetailsService() {
         var iterator = userDetailsServices.iterator();
         if (!iterator.hasNext()) {
-            throw new AuthorizationException(ResponseResultCode.REFRESH_TOKEN_INVALID, "未配置用户详情服务");
+            throw new AuthorizationException(ResponseCode.REFRESH_TOKEN_INVALID, "未配置用户详情服务");
         }
         UserDetailsService service = iterator.next();
         if (iterator.hasNext()) {
-            throw new AuthorizationException(ResponseResultCode.REFRESH_TOKEN_INVALID, "存在多个用户详情服务，无法确定刷新令牌使用的实现");
+            throw new AuthorizationException(ResponseCode.REFRESH_TOKEN_INVALID, "存在多个用户详情服务，无法确定刷新令牌使用的实现");
         }
         return service;
     }

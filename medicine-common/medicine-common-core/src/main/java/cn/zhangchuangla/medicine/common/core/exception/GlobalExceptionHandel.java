@@ -1,7 +1,7 @@
 package cn.zhangchuangla.medicine.common.core.exception;
 
 import cn.zhangchuangla.medicine.common.core.base.AjaxResult;
-import cn.zhangchuangla.medicine.common.core.enums.ResponseResultCode;
+import cn.zhangchuangla.medicine.common.core.enums.ResponseCode;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -20,7 +20,7 @@ import org.springframework.web.servlet.resource.NoResourceFoundException;
  *
  * @author Chuang
  * <p>
- * created on 2025/1/11 
+ * created on 2025/1/11
  */
 @RestControllerAdvice
 @Slf4j
@@ -51,7 +51,7 @@ public class GlobalExceptionHandel {
     @ExceptionHandler(HttpRequestMethodNotSupportedException.class)
     public AjaxResult<Void> httpRequestMethodNotSupportedExceptionHandel(HttpRequestMethodNotSupportedException exception) {
         log.error("请求方法不支持", exception);
-        return AjaxResult.error(ResponseResultCode.NOT_SUPPORT);
+        return AjaxResult.error(ResponseCode.NOT_SUPPORT);
     }
 
     /**
@@ -64,7 +64,7 @@ public class GlobalExceptionHandel {
     @ExceptionHandler(HttpMessageNotReadableException.class)
     public AjaxResult<Void> httpMessageNotReadableExceptionHandel(HttpMessageNotReadableException exception) {
         log.error("请求参数非法: ", exception);
-        return AjaxResult.error(ResponseResultCode.PARAM_ERROR, exception.getMessage());
+        return AjaxResult.error(ResponseCode.PARAM_ERROR, exception.getMessage());
     }
 
     /**
@@ -85,7 +85,7 @@ public class GlobalExceptionHandel {
                     exception.getRequiredType().getSimpleName(),
                     exception.getValue());
         }
-        return AjaxResult.error(ResponseResultCode.PARAM_ERROR, errorMessage);
+        return AjaxResult.error(ResponseCode.PARAM_ERROR, errorMessage);
     }
 
     /**
@@ -98,7 +98,7 @@ public class GlobalExceptionHandel {
     @ExceptionHandler(IllegalArgumentException.class)
     public AjaxResult<Void> illegalArgumentExceptionHandel(IllegalArgumentException exception) {
         log.error("请求参数非法: ", exception);
-        return AjaxResult.error(ResponseResultCode.PARAM_ERROR, exception.getMessage());
+        return AjaxResult.error(ResponseCode.PARAM_ERROR, exception.getMessage());
     }
 
 
@@ -137,7 +137,7 @@ public class GlobalExceptionHandel {
     @ExceptionHandler(AuthorizationDeniedException.class)
     public AjaxResult<Void> authorizationDeniedExceptionHandel(HttpServletRequest request, AuthorizationDeniedException exception) {
         log.error("授权失败", exception);
-        return AjaxResult.error(ResponseResultCode.FORBIDDEN.getCode(), "您没有权限访问此资源!");
+        return AjaxResult.error(ResponseCode.FORBIDDEN.getCode(), "您没有权限访问此资源!");
     }
 
     /**
@@ -159,7 +159,7 @@ public class GlobalExceptionHandel {
     @ExceptionHandler(ParamException.class)
     public AjaxResult<Void> paramExceptionHandel(ParamException exception) {
         log.error("参数异常:", exception);
-        return AjaxResult.error(ResponseResultCode.PARAM_ERROR, exception.getMessage());
+        return AjaxResult.error(ResponseCode.PARAM_ERROR, exception.getMessage());
     }
 
 
@@ -184,7 +184,7 @@ public class GlobalExceptionHandel {
         });
 
         String message = !errorMessage.isEmpty() ? errorMessage.toString() : "参数校验失败";
-        return AjaxResult.error(ResponseResultCode.PARAM_ERROR, message);
+        return AjaxResult.error(ResponseCode.PARAM_ERROR, message);
     }
 
     /**
@@ -199,7 +199,7 @@ public class GlobalExceptionHandel {
     public AjaxResult<Void> noResourceFoundExceptionHandel(NoResourceFoundException exception, HttpServletRequest request) {
         log.error("资源不存在：{}", exception.toString());
         String message = String.format("资源不存在: %s", request.getRequestURI());
-        return AjaxResult.error(ResponseResultCode.NOT_FOUND, message);
+        return AjaxResult.error(ResponseCode.NOT_FOUND, message);
     }
 
 
@@ -222,7 +222,7 @@ public class GlobalExceptionHandel {
                 paramName = message.substring(start, end);
             }
         }
-        return AjaxResult.error(ResponseResultCode.PARAM_ERROR, "缺少请求参数: " + paramName);
+        return AjaxResult.error(ResponseCode.PARAM_ERROR, "缺少请求参数: " + paramName);
     }
 
     /**
@@ -235,7 +235,7 @@ public class GlobalExceptionHandel {
     @ExceptionHandler(Exception.class)
     public AjaxResult<Void> exceptionHandel(Exception exception) {
         log.error("系统异常", exception);
-        return AjaxResult.error(ResponseResultCode.SERVER_ERROR, exception.getMessage());
+        return AjaxResult.error(ResponseCode.SERVER_ERROR, exception.getMessage());
     }
 
 

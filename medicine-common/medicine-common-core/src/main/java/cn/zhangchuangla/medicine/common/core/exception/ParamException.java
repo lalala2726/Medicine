@@ -1,12 +1,12 @@
 package cn.zhangchuangla.medicine.common.core.exception;
 
-import cn.zhangchuangla.medicine.common.core.enums.ResponseResultCode;
+import cn.zhangchuangla.medicine.common.core.enums.ResponseCode;
 import lombok.Getter;
 
 /**
  * @author Chuang
  * <p>
- * created on 2025/1/12 
+ * created on 2025/1/12
  */
 @Getter
 public class ParamException extends RuntimeException {
@@ -15,10 +15,10 @@ public class ParamException extends RuntimeException {
 
     public ParamException(String message) {
         super(message);
-        this.code = ResponseResultCode.PARAM_ERROR.getCode();
+        this.code = ResponseCode.PARAM_ERROR.getCode();
     }
 
-    public ParamException(ResponseResultCode resultCode) {
+    public ParamException(ResponseCode resultCode) {
         super(resultCode.getMessage());
         this.code = resultCode.getCode();
     }
@@ -28,7 +28,7 @@ public class ParamException extends RuntimeException {
         this.code = code;
     }
 
-    public ParamException(ResponseResultCode resultCode, String message) {
+    public ParamException(ResponseCode resultCode, String message) {
         super(message);
         this.code = resultCode.getCode();
     }

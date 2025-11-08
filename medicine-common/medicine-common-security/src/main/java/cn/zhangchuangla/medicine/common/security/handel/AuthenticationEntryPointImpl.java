@@ -1,6 +1,6 @@
 package cn.zhangchuangla.medicine.common.security.handel;
 
-import cn.zhangchuangla.medicine.common.core.enums.ResponseResultCode;
+import cn.zhangchuangla.medicine.common.core.enums.ResponseCode;
 import cn.zhangchuangla.medicine.common.core.utils.ResponseUtils;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
@@ -18,7 +18,7 @@ import java.io.Serializable;
  * 该类用于处理认证失败的情况，返回相应的错误信息。
  *
  * @author Chuang
- * created on 2025/2/19 
+ * created on 2025/2/19
  */
 @Slf4j
 @Component
@@ -38,6 +38,6 @@ public class AuthenticationEntryPointImpl implements AuthenticationEntryPoint, S
     public void commence(HttpServletRequest request, HttpServletResponse response, AuthenticationException authException) {
         String format = String.format("请求访问:%s 认证失败，无法访问系统资源", request.getRequestURI());
         log.error(format);
-        ResponseUtils.writeErrMsg(response, HttpStatus.OK, ResponseResultCode.UNAUTHORIZED, format);
+        ResponseUtils.writeErrMsg(response, HttpStatus.OK, ResponseCode.UNAUTHORIZED, format);
     }
 }

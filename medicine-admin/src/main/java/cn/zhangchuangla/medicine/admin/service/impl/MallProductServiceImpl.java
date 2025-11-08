@@ -5,7 +5,7 @@ import cn.zhangchuangla.medicine.admin.service.MallCategoryService;
 import cn.zhangchuangla.medicine.admin.service.MallProductImageService;
 import cn.zhangchuangla.medicine.admin.service.MallProductService;
 import cn.zhangchuangla.medicine.common.core.constants.RedisConstants;
-import cn.zhangchuangla.medicine.common.core.enums.ResponseResultCode;
+import cn.zhangchuangla.medicine.common.core.enums.ResponseCode;
 import cn.zhangchuangla.medicine.common.core.exception.ServiceException;
 import cn.zhangchuangla.medicine.common.core.utils.Assert;
 import cn.zhangchuangla.medicine.common.security.utils.SecurityUtils;
@@ -37,7 +37,7 @@ import java.util.List;
  * 商品列表查询、商品详情获取等功能。
  *
  * @author Chuang
- * created on 2025/10/4 
+ * created on 2025/10/4
  */
 @Service
 @RequiredArgsConstructor
@@ -211,7 +211,7 @@ public class MallProductServiceImpl extends ServiceImpl<MallProductMapper, MallP
                 .one();
 
         if (mallProduct == null) {
-            throw new ServiceException(ResponseResultCode.OPERATION_ERROR, "商品不存在");
+            throw new ServiceException(ResponseCode.OPERATION_ERROR, "商品不存在");
         }
 
         Integer currentStock = mallProduct.getStock();
@@ -226,7 +226,7 @@ public class MallProductServiceImpl extends ServiceImpl<MallProductMapper, MallP
                 .update();
 
         if (!updated) {
-            throw new ServiceException(ResponseResultCode.OPERATION_ERROR, "库存更新失败，请重试");
+            throw new ServiceException(ResponseCode.OPERATION_ERROR, "库存更新失败，请重试");
         }
     }
 

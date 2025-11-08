@@ -3,7 +3,7 @@ package cn.zhangchuangla.medicine.common.security.base;
 import cn.zhangchuangla.medicine.common.core.base.AjaxResult;
 import cn.zhangchuangla.medicine.common.core.base.PageResult;
 import cn.zhangchuangla.medicine.common.core.base.TableDataResult;
-import cn.zhangchuangla.medicine.common.core.enums.ResponseResultCode;
+import cn.zhangchuangla.medicine.common.core.enums.ResponseCode;
 import cn.zhangchuangla.medicine.common.core.utils.BeanCotyUtils;
 import cn.zhangchuangla.medicine.common.security.entity.SysUserDetails;
 import cn.zhangchuangla.medicine.common.security.utils.SecurityUtils;
@@ -17,7 +17,7 @@ import java.util.Set;
 /**
  * @author Chuang
  * <p>
- * created on 2025/3/20 
+ * created on 2025/3/20
  */
 @Component
 public class BaseController {
@@ -239,7 +239,7 @@ public class BaseController {
      * @param resultCode 响应枚举
      * @return 结果
      */
-    protected <T> AjaxResult<T> error(ResponseResultCode resultCode) {
+    protected <T> AjaxResult<T> error(ResponseCode resultCode) {
         return AjaxResult.error(resultCode);
     }
 

@@ -1,7 +1,7 @@
 package cn.zhangchuangla.medicine.common.security.utils;
 
 import cn.zhangchuangla.medicine.common.core.constants.RolesConstant;
-import cn.zhangchuangla.medicine.common.core.enums.ResponseResultCode;
+import cn.zhangchuangla.medicine.common.core.enums.ResponseCode;
 import cn.zhangchuangla.medicine.common.core.exception.LoginException;
 import cn.zhangchuangla.medicine.common.security.entity.SysUserDetails;
 import com.baomidou.mybatisplus.core.toolkit.CollectionUtils;
@@ -47,7 +47,7 @@ public class SecurityUtils {
     public static SysUserDetails getLoginUser() {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         if (authentication == null || !(authentication.getPrincipal() instanceof SysUserDetails)) {
-            throw new LoginException(ResponseResultCode.UNAUTHORIZED, "用户未登录");
+            throw new LoginException(ResponseCode.UNAUTHORIZED, "用户未登录");
         }
         return (SysUserDetails) authentication.getPrincipal();
     }

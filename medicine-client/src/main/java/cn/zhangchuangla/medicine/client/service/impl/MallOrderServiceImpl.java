@@ -7,7 +7,7 @@ import cn.zhangchuangla.medicine.client.model.request.OrderReceiveRequest;
 import cn.zhangchuangla.medicine.client.model.vo.OrderCreateVo;
 import cn.zhangchuangla.medicine.client.service.*;
 import cn.zhangchuangla.medicine.client.task.OrderDelayProducer;
-import cn.zhangchuangla.medicine.common.core.enums.ResponseResultCode;
+import cn.zhangchuangla.medicine.common.core.enums.ResponseCode;
 import cn.zhangchuangla.medicine.common.core.exception.ServiceException;
 import cn.zhangchuangla.medicine.common.security.base.BaseService;
 import cn.zhangchuangla.medicine.common.security.utils.SecurityUtils;
@@ -72,7 +72,7 @@ public class MallOrderServiceImpl extends ServiceImpl<MallOrderMapper, MallOrder
         // 1. 查询商品详情并校验上架状态
         MallProductWithImageDto mallProductWithImageDto = mallProductService.getProductWithImagesById(request.getProductId());
         if (mallProductWithImageDto == null) {
-            throw new ServiceException(ResponseResultCode.RESULT_IS_NULL, "商品不存在");
+            throw new ServiceException(ResponseCode.RESULT_IS_NULL, "商品不存在");
         }
         BigDecimal totalAmount = validateProductAndCalculateAmount(request, mallProductWithImageDto);
 
@@ -85,7 +85,7 @@ public class MallOrderServiceImpl extends ServiceImpl<MallOrderMapper, MallOrder
 
         DeliveryTypeEnum deliveryTypeEnum = DeliveryTypeEnum.fromLegacyCode(mallProductWithImageDto.getDeliveryType());
         if (deliveryTypeEnum == null) {
-            throw new ServiceException(ResponseResultCode.OPERATION_ERROR, "商品配送方式配置异常");
+            throw new ServiceException(ResponseCode.OPERATION_ERROR, "商品配送方式配置异常");
         }
         String deliveryTypeCode = deliveryTypeEnum.getType();
 
@@ -107,7 +107,7 @@ public class MallOrderServiceImpl extends ServiceImpl<MallOrderMapper, MallOrder
 
         // 6. 先保存订单
         if (!save(order)) {
-            throw new ServiceException(ResponseResultCode.OPERATION_ERROR, "创建订单失败，请稍后再试");
+            throw new ServiceException(ResponseCode.OPERATION_ERROR, "创建订单失败，请稍后再试");
         }
 
         MallProductImage mallProductImage = null;
@@ -129,7 +129,7 @@ public class MallOrderServiceImpl extends ServiceImpl<MallOrderMapper, MallOrder
 
         // 7. 保存订单项
         if (!mallOrderItemService.save(mallOrderItem)) {
-            throw new ServiceException(ResponseResultCode.OPERATION_ERROR, "创建订单失败，请稍后再试");
+            throw new ServiceException(ResponseCode.OPERATION_ERROR, "创建订单失败，请稍后再试");
         }
 
         Date expireTime = Date.from(LocalDateTime.now()
@@ -167,22 +167,22 @@ public class MallOrderServiceImpl extends ServiceImpl<MallOrderMapper, MallOrder
     private BigDecimal validateProductAndCalculateAmount(OrderCreateRequest request, MallProduct product) {
         final Integer PRODUCT_STATUS_ON_SALE = 1;
         if (product == null) {
-            throw new ServiceException(ResponseResultCode.RESULT_IS_NULL, "商品不存在");
+            throw new ServiceException(ResponseCode.RESULT_IS_NULL, "商品不存在");
         }
         if (!Objects.equals(product.getStatus(), PRODUCT_STATUS_ON_SALE)) {
-            throw new ServiceException(ResponseResultCode.OPERATION_ERROR, "商品未上架或已下架");
+            throw new ServiceException(ResponseCode.OPERATION_ERROR, "商品未上架或已下架");
         }
         // 2. 校验库存是否满足下单数量
         Integer stock = product.getStock();
         if (stock == null || stock < request.getQuantity()) {
-            throw new ServiceException(ResponseResultCode.OPERATION_ERROR,
+            throw new ServiceException(ResponseCode.OPERATION_ERROR,
                     String.format("商品库存不足，当前库存：%d", stock == null ? 0 : stock));
         }
 
         // 3. 计算订单应付金额（示例中不包含运费、优惠）
         BigDecimal price = product.getPrice();
         if (price == null) {
-            throw new ServiceException(ResponseResultCode.OPERATION_ERROR, "商品价格未配置");
+            throw new ServiceException(ResponseCode.OPERATION_ERROR, "商品价格未配置");
         }
         return price.multiply(BigDecimal.valueOf(request.getQuantity()));
     }
@@ -215,7 +215,7 @@ public class MallOrderServiceImpl extends ServiceImpl<MallOrderMapper, MallOrder
         Long orderUserId = order.getUserId();
         Long userId = getUserId();
         if (!Objects.equals(orderUserId, userId)) {
-            throw new ServiceException(ResponseResultCode.OPERATION_ERROR, "订单信息不存在!");
+            throw new ServiceException(ResponseCode.OPERATION_ERROR, "订单信息不存在!");
         }
     }
 
@@ -239,7 +239,7 @@ public class MallOrderServiceImpl extends ServiceImpl<MallOrderMapper, MallOrder
         return switch (request.getPayMethod()) {
             case ALIPAY -> alipayPay(order);
             case WALLET -> walletPay(order);
-            default -> throw new ServiceException(ResponseResultCode.OPERATION_ERROR, "不支持的支付方式");
+            default -> throw new ServiceException(ResponseCode.OPERATION_ERROR, "不支持的支付方式");
         };
     }
 
@@ -248,13 +248,13 @@ public class MallOrderServiceImpl extends ServiceImpl<MallOrderMapper, MallOrder
      */
     private void checkOrderStatus(MallOrder order) {
         if (order == null) {
-            throw new ServiceException(ResponseResultCode.RESULT_IS_NULL, "订单不存在");
+            throw new ServiceException(ResponseCode.RESULT_IS_NULL, "订单不存在");
         }
         if (!Objects.equals(order.getOrderStatus(), ORDER_STATUS_WAIT_PAY)) {
             OrderStatusEnum statusEnum = OrderStatusEnum.fromCode(order.getOrderStatus());
             String description = statusEnum != null ? statusEnum.getName() : "未知状态";
             String hint = String.format("订单状态异常，请勿重复支付，当前状态：%s", description);
-            throw new ServiceException(ResponseResultCode.OPERATION_ERROR, hint);
+            throw new ServiceException(ResponseCode.OPERATION_ERROR, hint);
         }
     }
 
@@ -264,7 +264,7 @@ public class MallOrderServiceImpl extends ServiceImpl<MallOrderMapper, MallOrder
     private String alipayPay(MallOrder order) {
         BigDecimal amount = order.getTotalAmount();
         if (amount == null) {
-            throw new ServiceException(ResponseResultCode.OPERATION_ERROR, "订单金额缺失，无法发起支付");
+            throw new ServiceException(ResponseCode.OPERATION_ERROR, "订单金额缺失，无法发起支付");
         }
 
         MallOrderItem firstItem = mallOrderItemService.lambdaQuery()
@@ -617,25 +617,25 @@ public class MallOrderServiceImpl extends ServiceImpl<MallOrderMapper, MallOrder
                 .one();
 
         if (mallOrder == null) {
-            throw new ServiceException(ResponseResultCode.RESULT_IS_NULL, "订单不存在");
+            throw new ServiceException(ResponseCode.RESULT_IS_NULL, "订单不存在");
         }
 
         // 2. 校验订单所属用户
         Long orderUserId = mallOrder.getUserId();
         Long userId = getUserId();
         if (!Objects.equals(orderUserId, userId)) {
-            throw new ServiceException(ResponseResultCode.OPERATION_ERROR, "订单信息不存在!");
+            throw new ServiceException(ResponseCode.OPERATION_ERROR, "订单信息不存在!");
         }
 
         // 3. 校验订单状态是否允许确认收货
         OrderStatusEnum orderStatusEnum = OrderStatusEnum.fromCode(mallOrder.getOrderStatus());
         if (orderStatusEnum == null) {
-            throw new ServiceException(ResponseResultCode.OPERATION_ERROR, "订单状态异常");
+            throw new ServiceException(ResponseCode.OPERATION_ERROR, "订单状态异常");
         }
 
         // 只有待收货状态可以确认收货
         if (orderStatusEnum != OrderStatusEnum.PENDING_RECEIPT) {
-            throw new ServiceException(ResponseResultCode.OPERATION_ERROR,
+            throw new ServiceException(ResponseCode.OPERATION_ERROR,
                     String.format("当前订单状态[%s]不允许确认收货", orderStatusEnum.getName()));
         }
 
@@ -648,7 +648,7 @@ public class MallOrderServiceImpl extends ServiceImpl<MallOrderMapper, MallOrder
 
         boolean updated = updateById(mallOrder);
         if (!updated) {
-            throw new ServiceException(ResponseResultCode.OPERATION_ERROR, "确认收货失败，请重试");
+            throw new ServiceException(ResponseCode.OPERATION_ERROR, "确认收货失败，请重试");
         }
 
         // 5. 更新物流状态为已签收
@@ -683,14 +683,14 @@ public class MallOrderServiceImpl extends ServiceImpl<MallOrderMapper, MallOrder
                 .one();
 
         if (mallOrder == null) {
-            throw new ServiceException(ResponseResultCode.RESULT_IS_NULL, "订单不存在");
+            throw new ServiceException(ResponseCode.RESULT_IS_NULL, "订单不存在");
         }
 
         // 2. 校验订单所属用户
         Long orderUserId = mallOrder.getUserId();
         Long userId = getUserId();
         if (!Objects.equals(orderUserId, userId)) {
-            throw new ServiceException(ResponseResultCode.OPERATION_ERROR, "订单信息不存在!");
+            throw new ServiceException(ResponseCode.OPERATION_ERROR, "订单信息不存在!");
         }
 
         // 3. 查询物流信息

@@ -2,7 +2,7 @@ package cn.zhangchuangla.medicine.client.controller;
 
 import cn.zhangchuangla.medicine.client.service.MallRecommendService;
 import cn.zhangchuangla.medicine.common.core.base.AjaxResult;
-import cn.zhangchuangla.medicine.common.core.enums.ResponseResultCode;
+import cn.zhangchuangla.medicine.common.core.enums.ResponseCode;
 import cn.zhangchuangla.medicine.model.entity.MallProduct;
 import cn.zhangchuangla.medicine.model.request.mall.product.RecommendRequest;
 import cn.zhangchuangla.medicine.model.vo.RecommendListVo;
@@ -55,7 +55,7 @@ class MallRecommendControllerTests {
         System.out.println("推荐列表：" + result.getData());
 
         verify(mallRecommendService).recommend(request);
-        assertEquals(ResponseResultCode.SUCCESS.getCode(), result.getCode());
+        assertEquals(ResponseCode.SUCCESS.getCode(), result.getCode());
         assertNotNull(result.getData());
         assertEquals(1, result.getData().size());
 

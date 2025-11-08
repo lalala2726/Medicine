@@ -3,7 +3,7 @@ package cn.zhangchuangla.medicine.client.service.impl;
 import cn.zhangchuangla.medicine.client.enums.ProductViewPeriod;
 import cn.zhangchuangla.medicine.client.mapper.MallProductMapper;
 import cn.zhangchuangla.medicine.client.service.MallProductService;
-import cn.zhangchuangla.medicine.common.core.enums.ResponseResultCode;
+import cn.zhangchuangla.medicine.common.core.enums.ResponseCode;
 import cn.zhangchuangla.medicine.common.core.exception.ServiceException;
 import cn.zhangchuangla.medicine.common.core.utils.Assert;
 import cn.zhangchuangla.medicine.model.entity.MallProduct;
@@ -29,7 +29,7 @@ public class MallProductServiceImpl extends ServiceImpl<MallProductMapper, MallP
     public MallProduct getMallProductById(Long id) {
         MallProduct mallProduct = getById(id);
         if (mallProduct == null) {
-            throw new ServiceException(ResponseResultCode.RESULT_IS_NULL, "商品不存在");
+            throw new ServiceException(ResponseCode.RESULT_IS_NULL, "商品不存在");
         }
         return mallProduct;
     }
@@ -70,12 +70,12 @@ public class MallProductServiceImpl extends ServiceImpl<MallProductMapper, MallP
         // 1. 查询商品信息
         MallProduct product = getById(productId);
         if (product == null) {
-            throw new ServiceException(ResponseResultCode.OPERATION_ERROR, "商品不存在");
+            throw new ServiceException(ResponseCode.OPERATION_ERROR, "商品不存在");
         }
         // 2. 校验库存
         Integer stock = product.getStock();
         if (stock == null || stock < quantity) {
-            throw new ServiceException(ResponseResultCode.OPERATION_ERROR,
+            throw new ServiceException(ResponseCode.OPERATION_ERROR,
                     String.format("商品库存不足，当前库存：%d", stock));
         }
         // 3. 扣减库存，带乐观锁防止并发超卖
@@ -87,7 +87,7 @@ public class MallProductServiceImpl extends ServiceImpl<MallProductMapper, MallP
 
         if (updated == 0) {
             // 更新失败说明库存不足或版本冲突
-            throw new ServiceException(ResponseResultCode.OPERATION_ERROR, "库存更新失败，请重试");
+            throw new ServiceException(ResponseCode.OPERATION_ERROR, "库存更新失败，请重试");
         }
     }
 
@@ -102,7 +102,7 @@ public class MallProductServiceImpl extends ServiceImpl<MallProductMapper, MallP
                 .one();
 
         if (mallProduct == null) {
-            throw new ServiceException(ResponseResultCode.OPERATION_ERROR, "商品不存在");
+            throw new ServiceException(ResponseCode.OPERATION_ERROR, "商品不存在");
         }
         Integer currentStock = mallProduct.getStock();
         int newStock = (currentStock == null ? 0 : currentStock) + quantity;
@@ -114,7 +114,7 @@ public class MallProductServiceImpl extends ServiceImpl<MallProductMapper, MallP
                 .set(MallProduct::getVersion, currentVersion + 1)
                 .update();
         if (!updated) {
-            throw new ServiceException(ResponseResultCode.OPERATION_ERROR, "库存更新失败，请重试");
+            throw new ServiceException(ResponseCode.OPERATION_ERROR, "库存更新失败，请重试");
         }
     }
 }

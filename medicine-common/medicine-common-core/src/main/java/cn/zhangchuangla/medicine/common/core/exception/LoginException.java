@@ -1,9 +1,9 @@
 package cn.zhangchuangla.medicine.common.core.exception;
 
-import cn.zhangchuangla.medicine.common.core.enums.ResponseResultCode;
+import cn.zhangchuangla.medicine.common.core.enums.ResponseCode;
 import lombok.Getter;
 
-import static cn.zhangchuangla.medicine.common.core.enums.ResponseResultCode.LOGIN_ERROR;
+import static cn.zhangchuangla.medicine.common.core.enums.ResponseCode.LOGIN_ERROR;
 
 
 /**
@@ -26,12 +26,12 @@ public final class LoginException extends RuntimeException {
         this.code = LOGIN_ERROR.getCode();
     }
 
-    public LoginException(ResponseResultCode resultCode, String message) {
+    public LoginException(ResponseCode resultCode, String message) {
         super(message);
         this.code = LOGIN_ERROR.getCode();
     }
 
-    public LoginException(ResponseResultCode resultCode) {
+    public LoginException(ResponseCode resultCode) {
         super(resultCode.getMessage());
         this.code = resultCode.getCode();
     }

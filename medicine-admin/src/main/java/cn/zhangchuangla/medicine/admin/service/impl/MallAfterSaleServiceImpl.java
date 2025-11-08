@@ -5,7 +5,7 @@ import cn.zhangchuangla.medicine.admin.model.request.AfterSaleAuditRequest;
 import cn.zhangchuangla.medicine.admin.model.request.AfterSaleListRequest;
 import cn.zhangchuangla.medicine.admin.model.request.AfterSaleProcessRequest;
 import cn.zhangchuangla.medicine.admin.service.*;
-import cn.zhangchuangla.medicine.common.core.enums.ResponseResultCode;
+import cn.zhangchuangla.medicine.common.core.enums.ResponseCode;
 import cn.zhangchuangla.medicine.common.core.exception.ServiceException;
 import cn.zhangchuangla.medicine.common.security.utils.SecurityUtils;
 import cn.zhangchuangla.medicine.model.dto.OrderTimelineDto;
@@ -64,7 +64,7 @@ public class MallAfterSaleServiceImpl extends ServiceImpl<MallAfterSaleMapper, M
         // 1. 查询售后申请
         MallAfterSale afterSale = getById(afterSaleId);
         if (afterSale == null) {
-            throw new ServiceException(ResponseResultCode.RESULT_IS_NULL, "售后申请不存在");
+            throw new ServiceException(ResponseCode.RESULT_IS_NULL, "售后申请不存在");
         }
 
         // 2. 查询用户信息
@@ -138,13 +138,13 @@ public class MallAfterSaleServiceImpl extends ServiceImpl<MallAfterSaleMapper, M
         // 1. 查询售后申请
         MallAfterSale afterSale = getById(request.getAfterSaleId());
         if (afterSale == null) {
-            throw new ServiceException(ResponseResultCode.RESULT_IS_NULL, "售后申请不存在");
+            throw new ServiceException(ResponseCode.RESULT_IS_NULL, "售后申请不存在");
         }
 
         // 2. 校验售后状态
         AfterSaleStatusEnum afterSaleStatus = AfterSaleStatusEnum.fromCode(afterSale.getAfterSaleStatus());
         if (afterSaleStatus != AfterSaleStatusEnum.PENDING) {
-            throw new ServiceException(ResponseResultCode.OPERATION_ERROR,
+            throw new ServiceException(ResponseCode.OPERATION_ERROR,
                     String.format("当前售后状态[%s]不允许审核", afterSaleStatus != null ? afterSaleStatus.getName() : "未知"));
         }
 
@@ -160,7 +160,7 @@ public class MallAfterSaleServiceImpl extends ServiceImpl<MallAfterSaleMapper, M
 
             boolean updated = updateById(afterSale);
             if (!updated) {
-                throw new ServiceException(ResponseResultCode.OPERATION_ERROR, "审核失败，请重试");
+                throw new ServiceException(ResponseCode.OPERATION_ERROR, "审核失败，请重试");
             }
 
             // 添加售后时间线记录
@@ -189,7 +189,7 @@ public class MallAfterSaleServiceImpl extends ServiceImpl<MallAfterSaleMapper, M
         } else {
             // 审核拒绝
             if (request.getRejectReason() == null || request.getRejectReason().trim().isEmpty()) {
-                throw new ServiceException(ResponseResultCode.PARAM_ERROR, "拒绝原因不能为空");
+                throw new ServiceException(ResponseCode.PARAM_ERROR, "拒绝原因不能为空");
             }
 
             afterSale.setAfterSaleStatus(AfterSaleStatusEnum.REJECTED.getStatus());
@@ -202,7 +202,7 @@ public class MallAfterSaleServiceImpl extends ServiceImpl<MallAfterSaleMapper, M
 
             boolean updated = updateById(afterSale);
             if (!updated) {
-                throw new ServiceException(ResponseResultCode.OPERATION_ERROR, "审核失败，请重试");
+                throw new ServiceException(ResponseCode.OPERATION_ERROR, "审核失败，请重试");
             }
 
             // 更新订单项售后状态为无售后
@@ -267,31 +267,31 @@ public class MallAfterSaleServiceImpl extends ServiceImpl<MallAfterSaleMapper, M
         // 1. 查询售后申请
         MallAfterSale afterSale = getById(request.getAfterSaleId());
         if (afterSale == null) {
-            throw new ServiceException(ResponseResultCode.RESULT_IS_NULL, "售后申请不存在");
+            throw new ServiceException(ResponseCode.RESULT_IS_NULL, "售后申请不存在");
         }
 
         // 2. 校验售后状态
         AfterSaleStatusEnum afterSaleStatus = AfterSaleStatusEnum.fromCode(afterSale.getAfterSaleStatus());
         if (afterSaleStatus != AfterSaleStatusEnum.APPROVED) {
-            throw new ServiceException(ResponseResultCode.OPERATION_ERROR,
+            throw new ServiceException(ResponseCode.OPERATION_ERROR,
                     String.format("当前售后状态[%s]不允许处理退款", afterSaleStatus != null ? afterSaleStatus.getName() : "未知"));
         }
 
         // 3. 校验售后类型
         AfterSaleTypeEnum afterSaleType = AfterSaleTypeEnum.fromCode(afterSale.getAfterSaleType());
         if (afterSaleType != AfterSaleTypeEnum.REFUND_ONLY && afterSaleType != AfterSaleTypeEnum.RETURN_REFUND) {
-            throw new ServiceException(ResponseResultCode.OPERATION_ERROR, "该售后类型不支持退款处理");
+            throw new ServiceException(ResponseCode.OPERATION_ERROR, "该售后类型不支持退款处理");
         }
 
         // 4. 查询订单信息
         MallOrder order = mallOrderService.getById(afterSale.getOrderId());
         if (order == null) {
-            throw new ServiceException(ResponseResultCode.RESULT_IS_NULL, "订单不存在");
+            throw new ServiceException(ResponseCode.RESULT_IS_NULL, "订单不存在");
         }
 
         // 校验订单是否已支付
         if (!Objects.equals(order.getPaid(), 1)) {
-            throw new ServiceException(ResponseResultCode.OPERATION_ERROR, "订单未支付，无法退款");
+            throw new ServiceException(ResponseCode.OPERATION_ERROR, "订单未支付，无法退款");
         }
 
         // 5. 更新售后状态为处理中
@@ -320,16 +320,16 @@ public class MallAfterSaleServiceImpl extends ServiceImpl<MallAfterSaleMapper, M
                         afterSale.getAfterSaleNo(), formatAmount(refundAmount));
                 boolean success = userWalletService.rechargeWallet(afterSale.getUserId(), refundAmount, walletRemark);
                 if (!success) {
-                    throw new ServiceException(ResponseResultCode.OPERATION_ERROR, "钱包退款失败");
+                    throw new ServiceException(ResponseCode.OPERATION_ERROR, "钱包退款失败");
                 }
             } else {
-                throw new ServiceException(ResponseResultCode.OPERATION_ERROR, "不支持的支付方式");
+                throw new ServiceException(ResponseCode.OPERATION_ERROR, "不支持的支付方式");
             }
         } catch (Exception e) {
             // 退款失败，恢复售后状态
             afterSale.setAfterSaleStatus(AfterSaleStatusEnum.APPROVED.getStatus());
             updateById(afterSale);
-            throw new ServiceException(ResponseResultCode.OPERATION_ERROR, "退款失败：" + e.getMessage());
+            throw new ServiceException(ResponseCode.OPERATION_ERROR, "退款失败：" + e.getMessage());
         }
 
         // 7. 更新订单退款信息
@@ -401,20 +401,20 @@ public class MallAfterSaleServiceImpl extends ServiceImpl<MallAfterSaleMapper, M
         // 1. 查询售后申请
         MallAfterSale afterSale = getById(request.getAfterSaleId());
         if (afterSale == null) {
-            throw new ServiceException(ResponseResultCode.RESULT_IS_NULL, "售后申请不存在");
+            throw new ServiceException(ResponseCode.RESULT_IS_NULL, "售后申请不存在");
         }
 
         // 2. 校验售后状态
         AfterSaleStatusEnum afterSaleStatus = AfterSaleStatusEnum.fromCode(afterSale.getAfterSaleStatus());
         if (afterSaleStatus != AfterSaleStatusEnum.APPROVED) {
-            throw new ServiceException(ResponseResultCode.OPERATION_ERROR,
+            throw new ServiceException(ResponseCode.OPERATION_ERROR,
                     String.format("当前售后状态[%s]不允许处理换货", afterSaleStatus != null ? afterSaleStatus.getName() : "未知"));
         }
 
         // 3. 校验售后类型
         AfterSaleTypeEnum afterSaleType = AfterSaleTypeEnum.fromCode(afterSale.getAfterSaleType());
         if (afterSaleType != AfterSaleTypeEnum.EXCHANGE) {
-            throw new ServiceException(ResponseResultCode.OPERATION_ERROR, "该售后类型不支持换货处理");
+            throw new ServiceException(ResponseCode.OPERATION_ERROR, "该售后类型不支持换货处理");
         }
 
         // 4. 更新售后状态为处理中

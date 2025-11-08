@@ -13,7 +13,6 @@ public class PageRequest {
     /**
      * 当前页码
      */
-
     @Schema(description = "当前页码", type = "integer", format = "int32", defaultValue = "1", requiredMode = Schema.RequiredMode.AUTO)
     private int pageNum = 1;
 

@@ -5,7 +5,7 @@ import cn.zhangchuangla.medicine.client.model.vo.MallProductVo;
 import cn.zhangchuangla.medicine.client.service.MallProductService;
 import cn.zhangchuangla.medicine.client.service.MallUserBrowseHistoryService;
 import cn.zhangchuangla.medicine.common.core.base.AjaxResult;
-import cn.zhangchuangla.medicine.common.core.enums.ResponseResultCode;
+import cn.zhangchuangla.medicine.common.core.enums.ResponseCode;
 import cn.zhangchuangla.medicine.model.entity.MallProduct;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -66,7 +66,7 @@ class MallProductControllerTests {
         verify(mallUserBrowseHistoryService).recordProductBrowse(100L, productId);
         verify(mallProductService).recordView(productId);
 
-        assertEquals(ResponseResultCode.SUCCESS.getCode(), result.getCode());
+        assertEquals(ResponseCode.SUCCESS.getCode(), result.getCode());
         assertNotNull(result.getData());
         assertEquals(mallProduct.getId(), result.getData().getId());
         assertEquals(mallProduct.getName(), result.getData().getName());
@@ -93,7 +93,7 @@ class MallProductControllerTests {
 
         verify(mallProductService).getViewCount(productId, ProductViewPeriod.TOTAL);
 
-        assertEquals(ResponseResultCode.SUCCESS.getCode(), result.getCode());
+        assertEquals(ResponseCode.SUCCESS.getCode(), result.getCode());
         assertEquals(viewCount, result.getData());
     }
 }

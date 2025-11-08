@@ -1,6 +1,6 @@
 package cn.zhangchuangla.medicine.common.core.exception;
 
-import cn.zhangchuangla.medicine.common.core.enums.ResponseResultCode;
+import cn.zhangchuangla.medicine.common.core.enums.ResponseCode;
 import lombok.Getter;
 
 /**
@@ -17,19 +17,19 @@ public final class ServiceException extends RuntimeException {
     private final Integer code;
 
 
-    public ServiceException(ResponseResultCode resultCode, String message) {
+    public ServiceException(ResponseCode resultCode, String message) {
         super(message);
         this.code = resultCode.getCode();
     }
 
-    public ServiceException(ResponseResultCode resultCode) {
+    public ServiceException(ResponseCode resultCode) {
         super(resultCode.getMessage());
         this.code = resultCode.getCode();
     }
 
     public ServiceException(String message) {
         super(message);
-        this.code = ResponseResultCode.ERROR.getCode();
+        this.code = ResponseCode.ERROR.getCode();
     }
 
 }
