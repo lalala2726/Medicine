@@ -6,7 +6,7 @@ import cn.zhangchuangla.medicine.model.entity.ModelConfig;
 /**
  * @author Chuang
  * <p>
- * created on 2025/9/9 20:29
+ * created on 2025/9/9 
  */
 public interface ModelConfigService {
 

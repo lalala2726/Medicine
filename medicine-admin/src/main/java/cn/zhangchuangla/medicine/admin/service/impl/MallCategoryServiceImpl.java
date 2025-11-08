@@ -25,7 +25,7 @@ import java.util.Objects;
  * 分类树构建、分类选项获取等功能。
  *
  * @author Chuang
- * created on 2025/10/4 01:46
+ * created on 2025/10/4 
  */
 @Service
 public class MallCategoryServiceImpl extends ServiceImpl<MallCategoryMapper, MallCategory>

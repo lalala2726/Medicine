@@ -6,7 +6,7 @@ import lombok.Getter;
 /**
  * @author Chuang
  * <p>
- * created on 2025/1/12 11:32
+ * created on 2025/1/12 
  */
 @Getter
 public class ParamException extends RuntimeException {

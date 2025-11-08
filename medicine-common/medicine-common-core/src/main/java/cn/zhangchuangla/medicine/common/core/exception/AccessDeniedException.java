@@ -8,7 +8,7 @@ import lombok.Getter;
  *
  * @author Chuang
  * <p>
- * created on 2025/7/27 23:03
+ * created on 2025/7/27 
  */
 @Getter
 public final class AccessDeniedException extends RuntimeException {

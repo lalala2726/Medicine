@@ -17,7 +17,7 @@ import reactor.core.publisher.Flux;
 /**
  * @author Chuang
  * <p>
- * created on 2025/9/10 15:21
+ * created on 2025/9/10 
  */
 @RequestMapping("/assistant")
 @Tag(name = "医疗助手", description = "医疗助手接口")

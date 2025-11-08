@@ -18,7 +18,7 @@ import java.util.List;
  * 商品列表查询、商品详情获取等功能。
  *
  * @author Chuang
- * created on 2025/10/4 02:32
+ * created on 2025/10/4 
  */
 public interface MallProductService extends IService<MallProduct> {
 

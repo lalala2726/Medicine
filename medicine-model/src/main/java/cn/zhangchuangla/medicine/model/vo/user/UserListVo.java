@@ -13,47 +13,26 @@ import java.util.Date;
 @Data
 public class UserListVo {
 
-    /**
-     * 用户ID
-     */
-    @Schema(description = "用户ID", type = "int", format = "int64", example = "1")
+    @Schema(description = "用户ID", format = "int64", example = "1")
     private Long id;
 
-    /**
-     * 用户名
-     */
-    @Schema(description = "用户名", type = "string", example = "zhangsan")
+    @Schema(description = "用户名", example = "zhangsan")
     private String username;
 
-    /**
-     * 昵称
-     */
-    @Schema(description = "昵称", type = "string", example = "张三")
+    @Schema(description = "昵称", example = "张三")
     private String nickname;
 
-    /**
-     * 头像
-     */
-    @Schema(description = "头像URL", type = "string", example = "https://example.com/avatar.jpg")
+    @Schema(description = "头像URL", example = "https://example.com/avatar.jpg")
     private String avatar;
 
-    /**
-     * 角色
-     */
-    @Schema(description = "角色", type = "string", example = "admin")
+    @Schema(description = "角色", example = "admin")
     private String roles;
 
-    /**
-     * 状态
-     */
-    @Schema(description = "状态", type = "int", example = "1")
+    @Schema(description = "状态", example = "1")
     private Integer status;
 
-    /**
-     * 创建时间
-     */
     @JSONField(format = "yyyy-MM-dd HH:mm:ss")
-    @Schema(description = "创建时间", type = "date", example = "2023-01-01 00:00:00")
+    @Schema(description = "创建时间", example = "2023-01-01 00:00:00")
     private Date createTime;
 
 }

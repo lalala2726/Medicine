@@ -6,7 +6,7 @@ import lombok.Getter;
  * 配送方式枚举
  *
  * @author Chuang
- * @since 2025/10/14
+ * created 2025/10/14
  */
 @Getter
 public enum DeliveryTypeEnum {

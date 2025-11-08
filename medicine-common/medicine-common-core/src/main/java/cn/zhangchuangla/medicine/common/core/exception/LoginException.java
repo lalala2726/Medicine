@@ -11,7 +11,7 @@ import static cn.zhangchuangla.medicine.common.core.enums.ResponseResultCode.LOG
  *
  * @author Chuang
  * <p>
- * created on 2025/7/27 23:23
+ * created on 2025/7/27
  */
 @Getter
 public final class LoginException extends RuntimeException {

@@ -14,7 +14,7 @@ import java.util.Date;
  * 订单配送物流表
  *
  * @author Chuang
- * @since 2025/11/08
+ * created 2025/11/08
  */
 @TableName(value = "mall_order_shipping")
 @Data

@@ -6,7 +6,7 @@ import lombok.Getter;
  * 收货状态枚举
  *
  * @author Chuang
- * @since 2025/11/08
+ * created 2025/11/08
  */
 @Getter
 public enum ReceiveStatusEnum {

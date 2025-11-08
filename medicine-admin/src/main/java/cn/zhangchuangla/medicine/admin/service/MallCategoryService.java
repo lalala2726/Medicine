@@ -16,7 +16,7 @@ import java.util.List;
  * 分类树构建、分类选项获取等功能。
  *
  * @author Chuang
- * created on 2025/10/4 01:45
+ * created on 2025/10/4 
  */
 public interface MallCategoryService extends IService<MallCategory> {
 

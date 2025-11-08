@@ -6,7 +6,7 @@ import lombok.Getter;
  * 钱包变动类型枚举
  *
  * @author Chuang
- * @since 2025/11/08
+ * created 2025/11/08
  */
 @Getter
 public enum WalletChangeTypeEnum {

@@ -8,15 +8,12 @@ import lombok.Data;
  * 确认收货请求参数
  *
  * @author Chuang
- * @since 2025/11/08
+ * created 2025/11/08
  */
 @Data
 @Schema(description = "确认收货请求参数")
 public class OrderReceiveRequest {
 
-    /**
-     * 订单ID
-     */
     @Schema(description = "订单ID", example = "1")
     @NotNull(message = "订单ID不能为空")
     private Long orderId;

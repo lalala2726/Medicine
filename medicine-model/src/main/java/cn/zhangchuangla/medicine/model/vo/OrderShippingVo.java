@@ -12,7 +12,7 @@ import java.util.Date;
  * 订单物流信息VO
  *
  * @author Chuang
- * @since 2025/11/08
+ * created 2025/11/08
  */
 @Data
 @Builder
@@ -103,33 +103,18 @@ public class OrderShippingVo {
     @Schema(description = "收货人信息")
     public static class ReceiverInfo {
 
-        /**
-         * 收货人姓名
-         */
         @Schema(description = "收货人姓名", example = "张三")
         private String receiverName;
 
-        /**
-         * 收货人电话
-         */
         @Schema(description = "收货人电话", example = "13800138000")
         private String receiverPhone;
 
-        /**
-         * 收货详细地址
-         */
         @Schema(description = "收货详细地址", example = "广东省深圳市南山区科技园xxx号")
         private String receiverDetail;
 
-        /**
-         * 配送方式
-         */
         @Schema(description = "配送方式", example = "EXPRESS")
         private String deliveryType;
 
-        /**
-         * 配送方式名称
-         */
         @Schema(description = "配送方式名称", example = "快递配送")
         private String deliveryTypeName;
     }

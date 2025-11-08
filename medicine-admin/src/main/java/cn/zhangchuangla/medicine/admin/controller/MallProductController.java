@@ -28,7 +28,7 @@ import java.util.List;
  * 商品添加、商品修改和商品删除等功能。
  *
  * @author Chuang
- * created on 2025/10/4 02:33
+ * created on 2025/10/4 
  */
 @RestController
 @RequestMapping("/mall/product")

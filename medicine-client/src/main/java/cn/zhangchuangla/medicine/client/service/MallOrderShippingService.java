@@ -7,7 +7,7 @@ import com.baomidou.mybatisplus.extension.service.IService;
  * 订单物流服务
  *
  * @author Chuang
- * @since 2025/11/08
+ * created 2025/11/08
  */
 public interface MallOrderShippingService extends IService<MallOrderShipping> {
 

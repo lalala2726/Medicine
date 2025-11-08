@@ -14,7 +14,7 @@ import java.util.Date;
  * 售后时间线表
  *
  * @author Chuang
- * @since 2025/11/08
+ * created 2025/11/08
  */
 @TableName(value = "mall_after_sale_timeline")
 @Data

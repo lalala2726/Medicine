@@ -19,7 +19,7 @@ import java.util.List;
 /**
  * @author Chuang
  * <p>
- * created on 2025/10/16 15:31
+ * created on 2025/10/16 
  */
 @RestController
 @RequestMapping("/mall/product/recommend")

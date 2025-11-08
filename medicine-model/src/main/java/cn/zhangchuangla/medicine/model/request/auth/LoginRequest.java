@@ -6,15 +6,15 @@ import lombok.Data;
 /**
  * @author Chuang
  * <p>
- * created on 2025/8/28 16:27
+ * created on 2025/8/28 
  */
 @Schema(description = "登录请求参数")
 @Data
 public class LoginRequest {
 
-    @Schema(description = "用户名", type = "string", requiredMode = Schema.RequiredMode.REQUIRED, example = "admin")
+    @Schema(description = "用户名", requiredMode = Schema.RequiredMode.REQUIRED, example = "admin")
     private String username;
 
-    @Schema(description = "密码", type = "string", requiredMode = Schema.RequiredMode.REQUIRED, example = "123456")
+    @Schema(description = "密码", requiredMode = Schema.RequiredMode.REQUIRED, example = "123456")
     private String password;
 }

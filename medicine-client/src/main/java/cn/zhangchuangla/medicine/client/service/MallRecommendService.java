@@ -8,7 +8,7 @@ import java.util.List;
 /**
  * @author Chuang
  * <p>
- * created on 2025/10/16 15:34
+ * created on 2025/10/16 
  */
 public interface MallRecommendService {
 

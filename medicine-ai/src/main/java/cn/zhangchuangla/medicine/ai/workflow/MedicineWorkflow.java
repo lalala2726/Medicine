@@ -27,7 +27,7 @@ import static com.alibaba.cloud.ai.graph.action.AsyncNodeAction.node_async;
  * 基于Spring AI Alibaba Graph实现医疗咨询工作流
  *
  * @author Chuang
- * @since 2025/9/10
+ * created 2025/9/10
  */
 @Slf4j
 @RequiredArgsConstructor

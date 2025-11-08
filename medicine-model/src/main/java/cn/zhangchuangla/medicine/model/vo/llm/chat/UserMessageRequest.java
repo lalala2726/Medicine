@@ -7,7 +7,7 @@ import lombok.Data;
 /**
  * @author Chuang
  * <p>
- * created on 2025/9/12 09:31
+ * created on 2025/9/12 
  */
 @Data
 public class UserMessageRequest {

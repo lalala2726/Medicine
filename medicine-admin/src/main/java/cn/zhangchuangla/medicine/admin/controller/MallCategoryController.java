@@ -25,7 +25,7 @@ import java.util.List;
  * 分类详情查询、分类添加、分类修改和分类删除等功能。
  *
  * @author Chuang
- * created on 2025/10/4 01:43
+ * created on 2025/10/4 
  */
 @RestController
 @RequestMapping("/mall/category")

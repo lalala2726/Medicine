@@ -13,7 +13,7 @@ import com.baomidou.mybatisplus.extension.service.IService;
  * 售后申请Service(管理端)
  *
  * @author Chuang
- * @since 2025/11/08
+ * created 2025/11/08
  */
 public interface MallAfterSaleService extends IService<MallAfterSale> {
 

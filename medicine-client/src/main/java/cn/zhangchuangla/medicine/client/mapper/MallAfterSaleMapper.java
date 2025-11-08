@@ -12,7 +12,7 @@ import org.apache.ibatis.annotations.Param;
  * 售后申请Mapper
  *
  * @author Chuang
- * @since 2025/11/08
+ * created 2025/11/08
  */
 @Mapper
 public interface MallAfterSaleMapper extends BaseMapper<MallAfterSale> {

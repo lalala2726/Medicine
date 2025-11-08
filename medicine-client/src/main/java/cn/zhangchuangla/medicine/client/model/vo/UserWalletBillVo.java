@@ -12,7 +12,7 @@ import java.util.Date;
 /**
  * @author Chuang
  * <p>
- * created on 2025/11/6 06:41
+ * created on 2025/11/6 
  */
 @Data
 @Schema(description = "用户钱包流水信息")
@@ -21,27 +21,15 @@ import java.util.Date;
 @Builder
 public class UserWalletBillVo {
 
-    /**
-     * 流水索引
-     */
     @Schema(description = "流水索引", example = "1")
     private Long index;
 
-    /**
-     * 流水标题
-     */
     @Schema(description = "流水标题", example = "充值")
     private String title;
 
-    /**
-     * 流水时间
-     */
     @Schema(description = "流水时间", example = "2025-11-06 06:30:17")
     private Date time;
 
-    /**
-     * 流水金额
-     */
     @Schema(description = "流水金额", example = "100.00")
     private BigDecimal amount;
 }

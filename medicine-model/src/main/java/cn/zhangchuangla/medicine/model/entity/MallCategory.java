@@ -14,7 +14,7 @@ import java.util.Date;
  * 包含分类基本信息、层级关系、排序和状态管理等字段。
  *
  * @author Chuang
- * created on 2025/10/4 01:42
+ * created on 2025/10/4 
  */
 @TableName(value = "mall_category")
 @Data
