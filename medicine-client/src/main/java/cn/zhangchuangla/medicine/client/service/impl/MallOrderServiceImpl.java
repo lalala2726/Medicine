@@ -308,30 +308,61 @@ public class MallOrderServiceImpl extends ServiceImpl<MallOrderMapper, MallOrder
         Long userId = getUserId();
         boolean result = userWalletService.deductBalance(userId, totalAmount, "商城内购订单支付");
         if (result) {
-            markOrderPaidByAlipay(order.getOrderNo(), totalAmount);
+            markOrderPaid(order.getOrderNo(), totalAmount, PayTypeEnum.WALLET.getType());
         }
         return "支付成功";
     }
 
-
+    /**
+     * 标记订单为已支付（支付宝支付）
+     *
+     * @param orderNo   订单号
+     * @param payAmount 支付金额
+     * @return 是否更新成功
+     */
     private boolean markOrderPaidByAlipay(String orderNo, BigDecimal payAmount) {
+        return markOrderPaid(orderNo, payAmount, PAY_TYPE_ALIPAY);
+    }
+
+    /**
+     * 标记订单为已支付（通用方法）
+     * <p>
+     * 更新订单状态为待发货，设置支付方式、支付金额、支付时间等信息，并添加时间线记录
+     * </p>
+     *
+     * @param orderNo   订单号
+     * @param payAmount 支付金额
+     * @param payType   支付方式
+     * @return 是否更新成功
+     */
+    private boolean markOrderPaid(String orderNo, BigDecimal payAmount, String payType) {
         final int PAID = 1;
+
+        // 查询订单信息
         MallOrder order = lambdaQuery()
                 .eq(MallOrder::getOrderNo, orderNo)
                 .one();
         if (order == null) {
+            log.warn("订单不存在，订单号：{}", orderNo);
             return false;
         }
+
+        // 如果订单状态不是待支付，说明已经处理过了
         if (!Objects.equals(order.getOrderStatus(), ORDER_STATUS_WAIT_PAY)) {
+            log.info("订单状态不是待支付，跳过处理，订单号：{}，当前状态：{}", orderNo, order.getOrderStatus());
             return true;
         }
+
+        // 计算最终支付金额
         Date now = new Date();
         BigDecimal finalPayAmount = payAmount != null ? payAmount : order.getTotalAmount();
-        log.info("订单支付成功，订单号：{}，支付金额：{}", orderNo, finalPayAmount);
+        log.info("订单支付成功，订单号：{}，支付方式：{}，支付金额：{}", orderNo, payType, finalPayAmount);
+
+        // 更新订单状态
         boolean updated = lambdaUpdate()
                 .eq(MallOrder::getId, order.getId())
                 .set(MallOrder::getOrderStatus, ORDER_STATUS_WAIT_SHIPMENT)
-                .set(MallOrder::getPayType, PAY_TYPE_ALIPAY)
+                .set(MallOrder::getPayType, payType)
                 .set(MallOrder::getPayAmount, finalPayAmount)
                 .set(MallOrder::getPayTime, now)
                 .set(MallOrder::getUpdateTime, now)
@@ -340,12 +371,14 @@ public class MallOrderServiceImpl extends ServiceImpl<MallOrderMapper, MallOrder
 
         // 添加订单支付时间线记录
         if (updated) {
+            PayTypeEnum payTypeEnum = PayTypeEnum.fromCode(payType);
+            String payTypeName = payTypeEnum != null ? payTypeEnum.getDescription() : "未知支付方式";
             OrderTimelineDto timelineDto = OrderTimelineDto.builder()
                     .orderId(order.getId())
                     .eventType(OrderEventTypeEnum.ORDER_PAID.getType())
                     .eventStatus(ORDER_STATUS_WAIT_SHIPMENT)
                     .operatorType(OperatorTypeEnum.USER.getType())
-                    .description("用户完成订单支付")
+                    .description("用户完成订单支付（" + payTypeName + "）")
                     .build();
             mallOrderTimelineService.addTimelineIfNotExists(timelineDto);
         }
