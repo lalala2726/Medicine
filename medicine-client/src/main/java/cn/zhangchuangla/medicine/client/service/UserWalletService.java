@@ -31,11 +31,11 @@ public interface UserWalletService extends IService<UserWallet> {
     /**
      * 扣除用户钱包余额
      *
-     * @param userId  用户ID
-     * @param amount  扣除金额
-     * @param bizType 业务类型
+     * @param userId 用户ID
+     * @param amount 扣除金额
+     * @param reason 扣除原因
      * @return 是否扣除成功
      */
-    boolean deductBalance(Long userId, BigDecimal amount, String bizType);
+    boolean deductBalance(Long userId, BigDecimal amount, String reason);
 
 }

@@ -25,6 +25,7 @@ import cn.zhangchuangla.medicine.model.entity.MallOrder;
 import cn.zhangchuangla.medicine.model.entity.User;
 import cn.zhangchuangla.medicine.model.entity.UserWallet;
 import cn.zhangchuangla.medicine.model.entity.UserWalletLog;
+import cn.zhangchuangla.medicine.model.enums.WalletChangeTypeEnum;
 import cn.zhangchuangla.medicine.model.request.user.UserAddRequest;
 import cn.zhangchuangla.medicine.model.request.user.UserListQueryRequest;
 import cn.zhangchuangla.medicine.model.request.user.UserUpdateRequest;
@@ -267,13 +268,20 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User>
 
         AtomicLong atomicLong = new AtomicLong(1);
         userWalletFlow.getRecords().forEach(userWalletLog -> {
+            // 获取变动类型：1收入、2支出、3冻结、4解冻
+            Integer changeType = userWalletLog.getChangeType();
+            // 判断是否为收入（使用枚举类的工具方法）
+            Boolean isIncome = WalletChangeTypeEnum.isIncome(changeType);
+
             UserWalletFlowInfoVo walletFlowInfoVo = UserWalletFlowInfoVo.builder()
                     .index(atomicLong.getAndIncrement())
                     .afterBalance(userWalletLog.getAfterBalance())
                     .amount(userWalletLog.getAmount())
                     .beforeBalance(userWalletLog.getBeforeBalance())
                     .changeTime(userWalletLog.getCreatedAt())
-                    .changeType(userWalletLog.getBizType())
+                    .changeType(userWalletLog.getReason())
+                    .amountDirection(changeType)
+                    .isIncome(isIncome)
                     .build();
             userWalletFlowInfoVos.add(walletFlowInfoVo);
         });

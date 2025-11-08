@@ -43,9 +43,9 @@ public class UserWalletLog {
     private String flowNo;
 
     /**
-     * 业务类型：recharge(充值)、pay(支付)、refund(退款)、withdraw(提现)
+     * 原因说明
      */
-    private String bizType;
+    private String reason;
 
     /**
      * 业务关联单号（如订单号、提现单号等）

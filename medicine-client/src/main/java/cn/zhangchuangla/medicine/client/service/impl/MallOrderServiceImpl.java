@@ -306,7 +306,7 @@ public class MallOrderServiceImpl extends ServiceImpl<MallOrderMapper, MallOrder
     private String walletPay(MallOrder order) {
         BigDecimal totalAmount = order.getTotalAmount();
         Long userId = getUserId();
-        boolean result = userWalletService.deductBalance(userId, totalAmount, "商城内购订单支付");
+        boolean result = userWalletService.deductBalance(userId, totalAmount, String.format("订单支付-%s", order.getOrderNo()));
         if (result) {
             markOrderPaid(order.getOrderNo(), totalAmount, PayTypeEnum.WALLET.getType());
         }
