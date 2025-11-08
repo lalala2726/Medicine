@@ -133,7 +133,7 @@ public class MallOrderServiceImpl extends ServiceImpl<MallOrderMapper, MallOrder
         // 构建订单信息
         OrderDetailVo.OrderInfo orderInfo = OrderDetailVo.OrderInfo.builder()
                 .orderNo(mallOrder.getOrderNo())
-                .orderStatus(getOrderStatusDesc(mallOrder.getOrderStatus()))
+                .orderStatus(mallOrder.getOrderStatus())
                 .payType(getPayTypeDesc(mallOrder.getPayType()))
                 .totalAmount(mallOrder.getTotalAmount())
                 .payAmount(mallOrder.getPayAmount())
@@ -585,13 +585,6 @@ public class MallOrderServiceImpl extends ServiceImpl<MallOrderMapper, MallOrder
         return deliveryTypeEnum != null ? deliveryTypeEnum.getName() : "未知";
     }
 
-    /**
-     * 获取订单状态描述
-     */
-    private String getOrderStatusDesc(String orderStatus) {
-        OrderStatusEnum orderStatusEnum = OrderStatusEnum.fromCode(orderStatus);
-        return orderStatusEnum != null ? orderStatusEnum.getName() : "未知";
-    }
 
     /**
      * 获取支付方式描述
