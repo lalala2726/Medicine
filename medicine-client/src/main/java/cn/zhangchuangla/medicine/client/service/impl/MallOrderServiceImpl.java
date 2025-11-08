@@ -4,20 +4,16 @@ import cn.zhangchuangla.medicine.client.mapper.MallOrderMapper;
 import cn.zhangchuangla.medicine.client.model.request.OrderConfirmRequest;
 import cn.zhangchuangla.medicine.client.model.request.OrderCreateRequest;
 import cn.zhangchuangla.medicine.client.model.vo.OrderCreateVo;
-import cn.zhangchuangla.medicine.client.service.MallOrderItemService;
-import cn.zhangchuangla.medicine.client.service.MallOrderService;
-import cn.zhangchuangla.medicine.client.service.MallProductService;
-import cn.zhangchuangla.medicine.client.service.UserWalletService;
+import cn.zhangchuangla.medicine.client.service.*;
 import cn.zhangchuangla.medicine.client.task.OrderDelayProducer;
 import cn.zhangchuangla.medicine.common.core.enums.ResponseResultCode;
 import cn.zhangchuangla.medicine.common.core.exception.ServiceException;
 import cn.zhangchuangla.medicine.common.security.base.BaseService;
 import cn.zhangchuangla.medicine.common.security.utils.SecurityUtils;
 import cn.zhangchuangla.medicine.model.dto.AlipayNotifyDTO;
+import cn.zhangchuangla.medicine.model.dto.OrderTimelineDto;
 import cn.zhangchuangla.medicine.model.entity.*;
-import cn.zhangchuangla.medicine.model.enums.DeliveryTypeEnum;
-import cn.zhangchuangla.medicine.model.enums.OrderStatusEnum;
-import cn.zhangchuangla.medicine.model.enums.PayTypeEnum;
+import cn.zhangchuangla.medicine.model.enums.*;
 import cn.zhangchuangla.medicine.payment.config.AlipayProperties;
 import cn.zhangchuangla.medicine.payment.model.AlipayPagePayRequest;
 import cn.zhangchuangla.medicine.payment.service.AlipayPaymentService;
@@ -61,6 +57,7 @@ public class MallOrderServiceImpl extends ServiceImpl<MallOrderMapper, MallOrder
     private final AlipayProperties alipayProperties;
     private final OrderDelayProducer orderDelayProducer;
     private final UserWalletService userWalletService;
+    private final MallOrderTimelineService mallOrderTimelineService;
 
 
     /**
@@ -139,6 +136,16 @@ public class MallOrderServiceImpl extends ServiceImpl<MallOrderMapper, MallOrder
 
         // 设置订单定时关闭
         orderDelayProducer.addOrderToDelayQueue(orderNo, ORDER_TIMEOUT_MINUTES);
+
+        // 添加订单创建时间线记录
+        OrderTimelineDto timelineDto = OrderTimelineDto.builder()
+                .orderId(order.getId())
+                .eventType(OrderEventTypeEnum.ORDER_CREATED.getType())
+                .eventStatus(order.getOrderStatus())
+                .operatorType(OperatorTypeEnum.USER.getType())
+                .description("用户创建订单")
+                .build();
+        mallOrderTimelineService.addTimelineIfNotExists(timelineDto);
 
         return OrderCreateVo.builder()
                 .orderNo(orderNo)
@@ -321,7 +328,7 @@ public class MallOrderServiceImpl extends ServiceImpl<MallOrderMapper, MallOrder
         Date now = new Date();
         BigDecimal finalPayAmount = payAmount != null ? payAmount : order.getTotalAmount();
         log.info("订单支付成功，订单号：{}，支付金额：{}", orderNo, finalPayAmount);
-        return lambdaUpdate()
+        boolean updated = lambdaUpdate()
                 .eq(MallOrder::getId, order.getId())
                 .set(MallOrder::getOrderStatus, ORDER_STATUS_WAIT_SHIPMENT)
                 .set(MallOrder::getPayType, PAY_TYPE_ALIPAY)
@@ -330,6 +337,20 @@ public class MallOrderServiceImpl extends ServiceImpl<MallOrderMapper, MallOrder
                 .set(MallOrder::getUpdateTime, now)
                 .set(MallOrder::getPaid, PAID)
                 .update();
+
+        // 添加订单支付时间线记录
+        if (updated) {
+            OrderTimelineDto timelineDto = OrderTimelineDto.builder()
+                    .orderId(order.getId())
+                    .eventType(OrderEventTypeEnum.ORDER_PAID.getType())
+                    .eventStatus(ORDER_STATUS_WAIT_SHIPMENT)
+                    .operatorType(OperatorTypeEnum.USER.getType())
+                    .description("用户完成订单支付")
+                    .build();
+            mallOrderTimelineService.addTimelineIfNotExists(timelineDto);
+        }
+
+        return updated;
     }
 
     /**
@@ -455,6 +476,16 @@ public class MallOrderServiceImpl extends ServiceImpl<MallOrderMapper, MallOrder
                     }
                 }
             }
+
+            // 添加订单过期时间线记录
+            OrderTimelineDto timelineDto = OrderTimelineDto.builder()
+                    .orderId(order.getId())
+                    .eventType(OrderEventTypeEnum.ORDER_EXPIRED.getType())
+                    .eventStatus(OrderStatusEnum.EXPIRED.getType())
+                    .operatorType(OperatorTypeEnum.SYSTEM.getType())
+                    .description("订单支付超时，系统自动关闭")
+                    .build();
+            mallOrderTimelineService.addTimelineIfNotExists(timelineDto);
         } else {
             log.info("订单 {} 未执行关闭，当前状态可能已变更", orderNo);
         }

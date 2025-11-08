@@ -7,19 +7,19 @@ import cn.zhangchuangla.medicine.admin.model.request.*;
 import cn.zhangchuangla.medicine.admin.model.vo.OrderDetailVo;
 import cn.zhangchuangla.medicine.admin.service.MallOrderItemService;
 import cn.zhangchuangla.medicine.admin.service.MallOrderService;
+import cn.zhangchuangla.medicine.admin.service.MallOrderTimelineService;
 import cn.zhangchuangla.medicine.admin.service.MallProductImageService;
 import cn.zhangchuangla.medicine.common.core.base.PageRequest;
 import cn.zhangchuangla.medicine.common.core.enums.ResponseResultCode;
 import cn.zhangchuangla.medicine.common.core.exception.ServiceException;
 import cn.zhangchuangla.medicine.common.core.utils.Assert;
+import cn.zhangchuangla.medicine.model.dto.OrderTimelineDto;
 import cn.zhangchuangla.medicine.model.dto.OrderWithProductDto;
 import cn.zhangchuangla.medicine.model.entity.MallOrder;
 import cn.zhangchuangla.medicine.model.entity.MallOrderItem;
 import cn.zhangchuangla.medicine.model.entity.MallProductImage;
 import cn.zhangchuangla.medicine.model.entity.User;
-import cn.zhangchuangla.medicine.model.enums.DeliveryTypeEnum;
-import cn.zhangchuangla.medicine.model.enums.OrderStatusEnum;
-import cn.zhangchuangla.medicine.model.enums.PayTypeEnum;
+import cn.zhangchuangla.medicine.model.enums.*;
 import cn.zhangchuangla.medicine.payment.model.AlipayRefundRequest;
 import cn.zhangchuangla.medicine.payment.service.AlipayPaymentService;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
@@ -61,14 +61,16 @@ public class MallOrderServiceImpl extends ServiceImpl<MallOrderMapper, MallOrder
     private final MallOrderItemService mallOrderItemService;
     private final MallProductImageService mallProductImageService;
     private final AlipayPaymentService alipayPaymentService;
+    private final MallOrderTimelineService mallOrderTimelineService;
 
 
-    public MallOrderServiceImpl(MallOrderMapper mallOrderMapper, UserMapper userMapper, MallOrderItemService mallOrderItemService, MallProductImageService mallProductImageService, AlipayPaymentService alipayPaymentService) {
+    public MallOrderServiceImpl(MallOrderMapper mallOrderMapper, UserMapper userMapper, MallOrderItemService mallOrderItemService, MallProductImageService mallProductImageService, AlipayPaymentService alipayPaymentService, MallOrderTimelineService mallOrderTimelineService) {
         this.mallOrderMapper = mallOrderMapper;
         this.userMapper = userMapper;
         this.mallOrderItemService = mallOrderItemService;
         this.mallProductImageService = mallProductImageService;
         this.alipayPaymentService = alipayPaymentService;
+        this.mallOrderTimelineService = mallOrderTimelineService;
     }
 
 
@@ -182,7 +184,21 @@ public class MallOrderServiceImpl extends ServiceImpl<MallOrderMapper, MallOrder
         Assert.isTrue(deliveryTypeEnum != null, "配送方式不存在");
         mallOrder.setDeliveryType(deliveryTypeEnum.getType());
 
-        return updateById(mallOrder);
+        boolean updated = updateById(mallOrder);
+
+        // 添加订单时间线记录
+        if (updated) {
+            OrderTimelineDto timelineDto = OrderTimelineDto.builder()
+                    .orderId(mallOrder.getId())
+                    .eventType(OrderEventTypeEnum.ADMIN_UPDATE_ADDRESS.getType())
+                    .eventStatus(mallOrder.getOrderStatus())
+                    .operatorType(OperatorTypeEnum.ADMIN.getType())
+                    .description("管理员修改了收货地址")
+                    .build();
+            mallOrderTimelineService.addTimelineIfNotExists(timelineDto);
+        }
+
+        return updated;
     }
 
     /**
@@ -199,7 +215,21 @@ public class MallOrderServiceImpl extends ServiceImpl<MallOrderMapper, MallOrder
         // 更新订单备注
         mallOrder.setNote(request.getRemark());
 
-        return updateById(mallOrder);
+        boolean updated = updateById(mallOrder);
+
+        // 添加订单时间线记录
+        if (updated) {
+            OrderTimelineDto timelineDto = OrderTimelineDto.builder()
+                    .orderId(mallOrder.getId())
+                    .eventType(OrderEventTypeEnum.ADMIN_UPDATE_REMARK.getType())
+                    .eventStatus(mallOrder.getOrderStatus())
+                    .operatorType(OperatorTypeEnum.ADMIN.getType())
+                    .description("管理员添加了订单备注")
+                    .build();
+            mallOrderTimelineService.addTimelineIfNotExists(timelineDto);
+        }
+
+        return updated;
     }
 
     /**
@@ -234,7 +264,21 @@ public class MallOrderServiceImpl extends ServiceImpl<MallOrderMapper, MallOrder
             // 如果是修改总价，通常支付金额也会相应修改
             mallOrder.setPayAmount(newPrice);
 
-            return updateById(mallOrder);
+            boolean updated = updateById(mallOrder);
+
+            // 添加订单时间线记录
+            if (updated) {
+                OrderTimelineDto timelineDto = OrderTimelineDto.builder()
+                        .orderId(mallOrder.getId())
+                        .eventType(OrderEventTypeEnum.ADMIN_UPDATE_PRICE.getType())
+                        .eventStatus(mallOrder.getOrderStatus())
+                        .operatorType(OperatorTypeEnum.ADMIN.getType())
+                        .description("管理员修改了订单价格")
+                        .build();
+                mallOrderTimelineService.addTimelineIfNotExists(timelineDto);
+            }
+
+            return updated;
         } catch (NumberFormatException e) {
             throw new ServiceException(ResponseResultCode.PARAM_ERROR, "价格格式不正确");
         }
@@ -268,6 +312,17 @@ public class MallOrderServiceImpl extends ServiceImpl<MallOrderMapper, MallOrder
         if (!updated) {
             throw new ServiceException(ResponseResultCode.OPERATION_ERROR, "更新订单退款状态失败, 请稍后重试!");
         }
+
+        // 添加订单时间线记录
+        OrderTimelineDto timelineDto = OrderTimelineDto.builder()
+                .orderId(mallOrder.getId())
+                .eventType(OrderEventTypeEnum.ORDER_REFUNDED.getType())
+                .eventStatus(mallOrder.getOrderStatus())
+                .operatorType(OperatorTypeEnum.ADMIN.getType())
+                .description("管理员发起订单退款")
+                .build();
+        mallOrderTimelineService.addTimelineIfNotExists(timelineDto);
+
         return true;
     }
 

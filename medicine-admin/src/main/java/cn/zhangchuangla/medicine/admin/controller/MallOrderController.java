@@ -4,11 +4,14 @@ import cn.zhangchuangla.medicine.admin.model.request.*;
 import cn.zhangchuangla.medicine.admin.model.vo.MallOrderListVo;
 import cn.zhangchuangla.medicine.admin.model.vo.OrderDetailVo;
 import cn.zhangchuangla.medicine.admin.service.MallOrderService;
+import cn.zhangchuangla.medicine.admin.service.MallOrderTimelineService;
 import cn.zhangchuangla.medicine.common.core.base.AjaxResult;
 import cn.zhangchuangla.medicine.common.core.utils.BeanCotyUtils;
 import cn.zhangchuangla.medicine.common.security.annotation.IsAdmin;
 import cn.zhangchuangla.medicine.common.security.base.BaseController;
 import cn.zhangchuangla.medicine.model.dto.OrderWithProductDto;
+import cn.zhangchuangla.medicine.model.entity.MallOrderTimeline;
+import cn.zhangchuangla.medicine.model.vo.MallOrderTimelineVo;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -29,10 +32,12 @@ import java.util.List;
 public class MallOrderController extends BaseController {
 
     private final MallOrderService mallOrderService;
+    private final MallOrderTimelineService mallOrderTimelineService;
 
 
-    public MallOrderController(MallOrderService mallOrderService) {
+    public MallOrderController(MallOrderService mallOrderService, MallOrderTimelineService mallOrderTimelineService) {
         this.mallOrderService = mallOrderService;
+        this.mallOrderTimelineService = mallOrderTimelineService;
     }
 
 
@@ -116,6 +121,20 @@ public class MallOrderController extends BaseController {
     public AjaxResult<?> OrderRefund(@RequestBody OrderRefundRequest request) {
         boolean result = mallOrderService.orderRefund(request);
         return toAjax(result);
+    }
+
+    /**
+     * 查询订单时间线
+     *
+     * @param orderId 订单ID
+     * @return 订单时间线列表
+     */
+    @GetMapping("/timeline/{orderId}")
+    @Operation(summary = "查询订单时间线")
+    public AjaxResult<List<MallOrderTimelineVo>> getOrderTimeline(@PathVariable("orderId") Long orderId) {
+        List<MallOrderTimeline> timeline = mallOrderTimelineService.getTimelineByOrderId(orderId);
+        List<MallOrderTimelineVo> mallOrderTimelineVos = copyListProperties(timeline, MallOrderTimelineVo.class);
+        return success(mallOrderTimelineVos);
     }
 
     /**
