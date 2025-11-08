@@ -103,7 +103,7 @@ public interface MallOrderService extends IService<MallOrder> {
      * @param request 查询参数
      * @return 用户订单
      */
-    Page<MallOrder> getOrderPageByUserId(Long userId, PageRequest request);
+    Page<MallOrder> getPaidOrderPage(Long userId, PageRequest request);
 
     /**
      * 获取用户订单统计信息

@@ -502,9 +502,9 @@ public class MallOrderServiceImpl extends ServiceImpl<MallOrderMapper, MallOrder
     }
 
     @Override
-    public Page<MallOrder> getOrderPageByUserId(Long userId, PageRequest request) {
+    public Page<MallOrder> getPaidOrderPage(Long userId, PageRequest request) {
         Page<MallOrder> page = request.toPage();
-        return mallOrderMapper.getOrderPageByUserId(page, userId);
+        return mallOrderMapper.getPaidOrderPage(page, userId);
     }
 
     @Override

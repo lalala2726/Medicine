@@ -298,7 +298,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User>
      */
     @Override
     public PageResult<UserConsumeInfo> getConsumeInfo(Long userId, PageRequest request) {
-        Page<MallOrder> mallOrderPage = mallOrderService.getOrderPageByUserId(userId, request);
+        Page<MallOrder> mallOrderPage = mallOrderService.getPaidOrderPage(userId, request);
         AtomicLong atomicLong = new AtomicLong(1);
         List<UserConsumeInfo> userConsumeInfos = mallOrderPage.getRecords().stream()
                 .map(order -> UserConsumeInfo.builder()
