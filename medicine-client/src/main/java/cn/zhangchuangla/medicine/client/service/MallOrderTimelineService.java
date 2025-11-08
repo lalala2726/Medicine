@@ -1,0 +1,34 @@
+package cn.zhangchuangla.medicine.client.service;
+
+import cn.zhangchuangla.medicine.model.dto.OrderTimelineDto;
+import cn.zhangchuangla.medicine.model.entity.MallOrderTimeline;
+import com.baomidou.mybatisplus.extension.service.IService;
+
+/**
+ * 订单时间线服务接口
+ *
+ * @author Chuang
+ */
+public interface MallOrderTimelineService extends IService<MallOrderTimeline> {
+
+    /**
+     * 添加订单时间线记录
+     * <p>
+     * 插入前会检查该订单是否已存在相同的事件类型，如果存在则抛出异常
+     * </p>
+     *
+     * @param dto 时间线数据传输对象
+     * @return 是否添加成功
+     */
+    boolean addTimeline(OrderTimelineDto dto);
+
+    /**
+     * 添加时间线记录（如果不存在）
+     * <p>
+     * 用于自动创建时间线，如果该订单已存在相同的事件类型则跳过，不抛出异常
+     * </p>
+     *
+     * @param dto 时间线数据传输对象
+     */
+    void addTimelineIfNotExists(OrderTimelineDto dto);
+}

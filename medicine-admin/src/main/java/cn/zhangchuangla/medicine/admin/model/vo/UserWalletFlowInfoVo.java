@@ -40,6 +40,21 @@ public class UserWalletFlowInfoVo {
     private BigDecimal amount;
 
     /**
+     * 金额变动方向：1收入(正)、2支出(负)、3冻结、4解冻
+     */
+    @Schema(description = "金额变动方向：1收入(正)、2支出(负)、3冻结、4解冻", example = "1")
+    private Integer amountDirection;
+
+    /**
+     * 是否为收入（true:收入/正数, false:支出/负数）
+     * <p>
+     * 方便前端判断是否显示为正数（绿色）或负数（红色）
+     * </p>
+     */
+    @Schema(description = "是否为收入", example = "true")
+    private Boolean isIncome;
+
+    /**
      * 变动前余额
      */
     @Schema(description = "变动前余额", example = "10.00")

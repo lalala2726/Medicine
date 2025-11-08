@@ -153,12 +153,11 @@
         AND create_time &lt; FROM_UNIXTIME(#{expiredTime} / 1000)
     </select>
 
-    <select id="getOrderPageByUserId" resultMap="BaseResultMap">
+    <select id="getPaidOrderPage" resultMap="BaseResultMap">
         SELECT
         <include refid="Base_Column_List"/>
         FROM mall_order
         WHERE user_id = #{userId}
-        and order_status = 'COMPLETED'
         and paid = 1
     </select>
 

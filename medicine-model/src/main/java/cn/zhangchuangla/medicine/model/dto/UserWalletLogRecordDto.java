@@ -32,9 +32,9 @@ public class UserWalletLogRecordDto {
     private String flowNo;
 
     /**
-     * 业务类型
+     * 原因
      */
-    private String bizType;
+    private String reason;
 
     /**
      * 业务关联ID

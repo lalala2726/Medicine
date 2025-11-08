@@ -57,7 +57,7 @@ public class UserWalletServiceImpl extends ServiceImpl<UserWalletMapper, UserWal
         return page.getRecords().stream()
                 .map(bill -> UserWalletBillVo.builder()
                         .index(counter.getAndIncrement())
-                        .title(bill.getBizType())
+                        .title(bill.getReason())
                         .time(bill.getCreatedAt())
                         .amount(bill.getAmount())
                         .build())
@@ -66,11 +66,11 @@ public class UserWalletServiceImpl extends ServiceImpl<UserWalletMapper, UserWal
     }
 
     @Override
-    public boolean deductBalance(Long userId, BigDecimal amount, String bizType) {
+    public boolean deductBalance(Long userId, BigDecimal amount, String reason) {
         Assert.notNull(userId, "用户ID不能为空");
         Assert.notNull(amount, "扣减金额不能为空");
         Assert.isTrue(amount.compareTo(BigDecimal.ZERO) > 0, "扣减金额必须大于0");
-        Assert.notEmpty(bizType, "业务类型不能为空");
+        Assert.notEmpty(reason, "原因不能为空");
 
         UserWallet userWallet = getWalletOrThrow(userId);
         ensureWalletNotFrozen(userWallet);
@@ -82,7 +82,7 @@ public class UserWalletServiceImpl extends ServiceImpl<UserWalletMapper, UserWal
         BigDecimal afterBalance = beforeBalance.subtract(amount);
         userWallet.setBalance(afterBalance);
         userWallet.setTotalExpend(safeAmount(userWallet.getTotalExpend()).add(amount));
-        userWallet.setRemark("扣减-" + bizType);
+        userWallet.setRemark("扣减-" + reason);
 
         boolean updated = updateById(userWallet);
         if (!updated) {
@@ -94,9 +94,9 @@ public class UserWalletServiceImpl extends ServiceImpl<UserWalletMapper, UserWal
                 .amount(amount)
                 .beforeBalance(beforeBalance)
                 .afterBalance(afterBalance)
-                .bizType(bizType)
+                .reason(reason)
                 .changeType(2)
-                .remark("余额扣减-" + bizType)
+                .remark("余额扣减-" + reason)
                 .build();
         userWalletLogService.recordWalletLog(recordDto);
         return true;

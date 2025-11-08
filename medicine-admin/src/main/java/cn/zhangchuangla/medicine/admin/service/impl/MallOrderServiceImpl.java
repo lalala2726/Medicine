@@ -5,26 +5,25 @@ import cn.zhangchuangla.medicine.admin.mapper.UserMapper;
 import cn.zhangchuangla.medicine.admin.model.dto.UserOrderStatistics;
 import cn.zhangchuangla.medicine.admin.model.request.*;
 import cn.zhangchuangla.medicine.admin.model.vo.OrderDetailVo;
-import cn.zhangchuangla.medicine.admin.service.MallOrderItemService;
-import cn.zhangchuangla.medicine.admin.service.MallOrderService;
-import cn.zhangchuangla.medicine.admin.service.MallProductImageService;
+import cn.zhangchuangla.medicine.admin.service.*;
 import cn.zhangchuangla.medicine.common.core.base.PageRequest;
 import cn.zhangchuangla.medicine.common.core.enums.ResponseResultCode;
 import cn.zhangchuangla.medicine.common.core.exception.ServiceException;
 import cn.zhangchuangla.medicine.common.core.utils.Assert;
+import cn.zhangchuangla.medicine.model.dto.OrderTimelineDto;
 import cn.zhangchuangla.medicine.model.dto.OrderWithProductDto;
 import cn.zhangchuangla.medicine.model.entity.MallOrder;
 import cn.zhangchuangla.medicine.model.entity.MallOrderItem;
 import cn.zhangchuangla.medicine.model.entity.MallProductImage;
 import cn.zhangchuangla.medicine.model.entity.User;
-import cn.zhangchuangla.medicine.model.enums.DeliveryTypeEnum;
-import cn.zhangchuangla.medicine.model.enums.OrderStatusEnum;
-import cn.zhangchuangla.medicine.model.enums.PayTypeEnum;
+import cn.zhangchuangla.medicine.model.enums.*;
 import cn.zhangchuangla.medicine.payment.model.AlipayRefundRequest;
 import cn.zhangchuangla.medicine.payment.service.AlipayPaymentService;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
 
 import java.math.BigDecimal;
@@ -35,6 +34,7 @@ import java.util.stream.Collectors;
 /**
  * @author Chuang
  */
+@Slf4j
 @Service
 public class MallOrderServiceImpl extends ServiceImpl<MallOrderMapper, MallOrder>
         implements MallOrderService {
@@ -61,14 +61,18 @@ public class MallOrderServiceImpl extends ServiceImpl<MallOrderMapper, MallOrder
     private final MallOrderItemService mallOrderItemService;
     private final MallProductImageService mallProductImageService;
     private final AlipayPaymentService alipayPaymentService;
+    private final MallOrderTimelineService mallOrderTimelineService;
+    private final UserWalletService userWalletService;
 
 
-    public MallOrderServiceImpl(MallOrderMapper mallOrderMapper, UserMapper userMapper, MallOrderItemService mallOrderItemService, MallProductImageService mallProductImageService, AlipayPaymentService alipayPaymentService) {
+    public MallOrderServiceImpl(MallOrderMapper mallOrderMapper, UserMapper userMapper, MallOrderItemService mallOrderItemService, MallProductImageService mallProductImageService, AlipayPaymentService alipayPaymentService, MallOrderTimelineService mallOrderTimelineService, UserWalletService userWalletService) {
         this.mallOrderMapper = mallOrderMapper;
         this.userMapper = userMapper;
         this.mallOrderItemService = mallOrderItemService;
         this.mallProductImageService = mallProductImageService;
         this.alipayPaymentService = alipayPaymentService;
+        this.mallOrderTimelineService = mallOrderTimelineService;
+        this.userWalletService = userWalletService;
     }
 
 
@@ -182,7 +186,21 @@ public class MallOrderServiceImpl extends ServiceImpl<MallOrderMapper, MallOrder
         Assert.isTrue(deliveryTypeEnum != null, "配送方式不存在");
         mallOrder.setDeliveryType(deliveryTypeEnum.getType());
 
-        return updateById(mallOrder);
+        boolean updated = updateById(mallOrder);
+
+        // 添加订单时间线记录
+        if (updated) {
+            OrderTimelineDto timelineDto = OrderTimelineDto.builder()
+                    .orderId(mallOrder.getId())
+                    .eventType(OrderEventTypeEnum.ADMIN_UPDATE_ADDRESS.getType())
+                    .eventStatus(mallOrder.getOrderStatus())
+                    .operatorType(OperatorTypeEnum.ADMIN.getType())
+                    .description("管理员修改了收货地址")
+                    .build();
+            mallOrderTimelineService.addTimelineIfNotExists(timelineDto);
+        }
+
+        return updated;
     }
 
     /**
@@ -199,7 +217,21 @@ public class MallOrderServiceImpl extends ServiceImpl<MallOrderMapper, MallOrder
         // 更新订单备注
         mallOrder.setNote(request.getRemark());
 
-        return updateById(mallOrder);
+        boolean updated = updateById(mallOrder);
+
+        // 添加订单时间线记录
+        if (updated) {
+            OrderTimelineDto timelineDto = OrderTimelineDto.builder()
+                    .orderId(mallOrder.getId())
+                    .eventType(OrderEventTypeEnum.ADMIN_UPDATE_REMARK.getType())
+                    .eventStatus(mallOrder.getOrderStatus())
+                    .operatorType(OperatorTypeEnum.ADMIN.getType())
+                    .description("管理员添加了订单备注")
+                    .build();
+            mallOrderTimelineService.addTimelineIfNotExists(timelineDto);
+        }
+
+        return updated;
     }
 
     /**
@@ -234,7 +266,21 @@ public class MallOrderServiceImpl extends ServiceImpl<MallOrderMapper, MallOrder
             // 如果是修改总价，通常支付金额也会相应修改
             mallOrder.setPayAmount(newPrice);
 
-            return updateById(mallOrder);
+            boolean updated = updateById(mallOrder);
+
+            // 添加订单时间线记录
+            if (updated) {
+                OrderTimelineDto timelineDto = OrderTimelineDto.builder()
+                        .orderId(mallOrder.getId())
+                        .eventType(OrderEventTypeEnum.ADMIN_UPDATE_PRICE.getType())
+                        .eventStatus(mallOrder.getOrderStatus())
+                        .operatorType(OperatorTypeEnum.ADMIN.getType())
+                        .description("管理员修改了订单价格")
+                        .build();
+                mallOrderTimelineService.addTimelineIfNotExists(timelineDto);
+            }
+
+            return updated;
         } catch (NumberFormatException e) {
             throw new ServiceException(ResponseResultCode.PARAM_ERROR, "价格格式不正确");
         }
@@ -242,11 +288,16 @@ public class MallOrderServiceImpl extends ServiceImpl<MallOrderMapper, MallOrder
 
     /**
      * 订单退款
+     * <p>
+     * 整个退款流程必须在事务中执行，确保订单状态更新和钱包充值的原子性。
+     * 如果钱包退款成功但订单状态更新失败，会导致重复退款问题。
+     * </p>
      *
      * @param request 订单退款参数
      * @return 是否退款成功
      */
     @Override
+    @Transactional(rollbackFor = Exception.class)
     public boolean orderRefund(OrderRefundRequest request) {
         // 1. 加载并校验订单基本信息与可退款额度，校验失败会直接抛异常并终止流程。
         MallOrder mallOrder = loadRefundableOrder(request);
@@ -255,19 +306,31 @@ public class MallOrderServiceImpl extends ServiceImpl<MallOrderMapper, MallOrder
             throw new ServiceException(ResponseResultCode.OPERATION_ERROR, "暂不支持该支付方式退款!");
         }
 
-        // 2. 根据支付方式路由到具体的退款实现，便于未来扩展到微信、钱包等渠道。
+        // 2. 先更新订单状态，确保退款金额被记录，防止重复退款
+        applyRefundSnapshot(mallOrder, request.getRefundAmount());
+        boolean updated = updateById(mallOrder);
+        if (!updated) {
+            throw new ServiceException(ResponseResultCode.OPERATION_ERROR, "更新订单退款状态失败, 请稍后重试!");
+        }
+
+        // 3. 根据支付方式路由到具体的退款实现，便于未来扩展到微信、钱包等渠道。
+        // 注意：支付宝退款失败会抛异常，触发事务回滚，订单状态会恢复
         switch (payType) {
             case ALIPAY -> processAlipayRefund(mallOrder, request);
             case WALLET -> processWalletRefund(mallOrder, request);
             default -> throw new ServiceException(ResponseResultCode.OPERATION_ERROR, "暂不支持该支付方式退款!");
         }
 
-        // 3. 刷新订单的退款快照信息，并持久化到数据库。
-        applyRefundSnapshot(mallOrder, request.getRefundAmount());
-        boolean updated = updateById(mallOrder);
-        if (!updated) {
-            throw new ServiceException(ResponseResultCode.OPERATION_ERROR, "更新订单退款状态失败, 请稍后重试!");
-        }
+        // 4. 添加订单时间线记录
+        OrderTimelineDto timelineDto = OrderTimelineDto.builder()
+                .orderId(mallOrder.getId())
+                .eventType(OrderEventTypeEnum.ORDER_REFUNDED.getType())
+                .eventStatus(mallOrder.getOrderStatus())
+                .operatorType(OperatorTypeEnum.ADMIN.getType())
+                .description("管理员发起订单退款")
+                .build();
+        mallOrderTimelineService.addTimelineIfNotExists(timelineDto);
+
         return true;
     }
 
@@ -324,10 +387,38 @@ public class MallOrderServiceImpl extends ServiceImpl<MallOrderMapper, MallOrder
     }
 
     /**
-     * 钱包退款预留实现。业务方可在此处对接钱包余额返还、日志记录等逻辑。
+     * 钱包退款实现
+     * <p>
+     * 将退款金额返还到用户钱包余额中，并记录钱包流水
+     * </p>
+     *
+     * @param mallOrder 订单信息
+     * @param request   退款请求参数
      */
     private void processWalletRefund(MallOrder mallOrder, OrderRefundRequest request) {
-        throw new ServiceException(ResponseResultCode.OPERATION_ERROR, "钱包退款功能暂未开通，请使用支付宝退款通道处理");
+        // 获取退款金额和用户ID
+        BigDecimal refundAmount = request.getRefundAmount();
+        Long userId = mallOrder.getUserId();
+
+        if (userId == null) {
+            throw new ServiceException(ResponseResultCode.OPERATION_ERROR, "订单用户信息异常，无法退款");
+        }
+
+        // 构建退款原因描述
+        String walletRemark = String.format("订单退款（订单号：%s，退款原因：%s，退款金额：%s元）",
+                mallOrder.getOrderNo(),
+                determineRefundReason(request.getRefundReason()),
+                formatAmount(refundAmount));
+
+        // 调用钱包服务进行余额充值（退款）
+        boolean success = userWalletService.rechargeWallet(userId, refundAmount, walletRemark);
+
+        if (!success) {
+            throw new ServiceException(ResponseResultCode.OPERATION_ERROR, "钱包退款失败，请稍后重试");
+        }
+
+        log.info("钱包退款成功，订单号：{}，用户ID：{}，退款金额：{}",
+                mallOrder.getOrderNo(), userId, refundAmount);
     }
 
     /**
@@ -418,9 +509,9 @@ public class MallOrderServiceImpl extends ServiceImpl<MallOrderMapper, MallOrder
     }
 
     @Override
-    public Page<MallOrder> getOrderPageByUserId(Long userId, PageRequest request) {
+    public Page<MallOrder> getPaidOrderPage(Long userId, PageRequest request) {
         Page<MallOrder> page = request.toPage();
-        return mallOrderMapper.getOrderPageByUserId(page, userId);
+        return mallOrderMapper.getPaidOrderPage(page, userId);
     }
 
     @Override

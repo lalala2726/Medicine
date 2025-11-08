@@ -41,14 +41,14 @@ public class UserWalletLogServiceImpl extends ServiceImpl<UserWalletLogMapper, U
         Assert.notNull(recordDto.getWalletId(), "钱包ID不能为空");
         Assert.notNull(recordDto.getUserId(), "钱包用户不能为空");
         Assert.notNull(recordDto.getAmount(), "变动金额不能为空");
-        Assert.notNull(recordDto.getBizType(), "业务类型不能为空");
+        Assert.notNull(recordDto.getReason(), "业务类型不能为空");
         Assert.notNull(recordDto.getChangeType(), "变动类型不能为空");
 
         UserWalletLog walletLog = UserWalletLog.builder()
                 .walletId(recordDto.getWalletId())
                 .userId(recordDto.getUserId())
                 .flowNo(Optional.ofNullable(recordDto.getFlowNo()).orElse(UUIDUtils.complex()))
-                .bizType(recordDto.getBizType())
+                .reason(recordDto.getReason())
                 .bizId(recordDto.getBizId())
                 .changeType(recordDto.getChangeType())
                 .amount(recordDto.getAmount())

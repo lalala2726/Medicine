@@ -4,7 +4,7 @@ import cn.zhangchuangla.medicine.client.model.request.UserWalletBillRequest;
 import cn.zhangchuangla.medicine.model.entity.UserWalletLog;
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
-import io.lettuce.core.dynamic.annotation.Param;
+import org.apache.ibatis.annotations.Param;
 
 /**
  * @author Chuang
