@@ -23,6 +23,7 @@ import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
 
 import java.math.BigDecimal;
@@ -287,11 +288,16 @@ public class MallOrderServiceImpl extends ServiceImpl<MallOrderMapper, MallOrder
 
     /**
      * 订单退款
+     * <p>
+     * 整个退款流程必须在事务中执行，确保订单状态更新和钱包充值的原子性。
+     * 如果钱包退款成功但订单状态更新失败，会导致重复退款问题。
+     * </p>
      *
      * @param request 订单退款参数
      * @return 是否退款成功
      */
     @Override
+    @Transactional(rollbackFor = Exception.class)
     public boolean orderRefund(OrderRefundRequest request) {
         // 1. 加载并校验订单基本信息与可退款额度，校验失败会直接抛异常并终止流程。
         MallOrder mallOrder = loadRefundableOrder(request);
@@ -300,21 +306,22 @@ public class MallOrderServiceImpl extends ServiceImpl<MallOrderMapper, MallOrder
             throw new ServiceException(ResponseResultCode.OPERATION_ERROR, "暂不支持该支付方式退款!");
         }
 
-        // 2. 根据支付方式路由到具体的退款实现，便于未来扩展到微信、钱包等渠道。
-        switch (payType) {
-            case ALIPAY -> processAlipayRefund(mallOrder, request);
-            case WALLET -> processWalletRefund(mallOrder, request);
-            default -> throw new ServiceException(ResponseResultCode.OPERATION_ERROR, "暂不支持该支付方式退款!");
-        }
-
-        // 3. 刷新订单的退款快照信息，并持久化到数据库。
+        // 2. 先更新订单状态，确保退款金额被记录，防止重复退款
         applyRefundSnapshot(mallOrder, request.getRefundAmount());
         boolean updated = updateById(mallOrder);
         if (!updated) {
             throw new ServiceException(ResponseResultCode.OPERATION_ERROR, "更新订单退款状态失败, 请稍后重试!");
         }
 
-        // 添加订单时间线记录
+        // 3. 根据支付方式路由到具体的退款实现，便于未来扩展到微信、钱包等渠道。
+        // 注意：支付宝退款失败会抛异常，触发事务回滚，订单状态会恢复
+        switch (payType) {
+            case ALIPAY -> processAlipayRefund(mallOrder, request);
+            case WALLET -> processWalletRefund(mallOrder, request);
+            default -> throw new ServiceException(ResponseResultCode.OPERATION_ERROR, "暂不支持该支付方式退款!");
+        }
+
+        // 4. 添加订单时间线记录
         OrderTimelineDto timelineDto = OrderTimelineDto.builder()
                 .orderId(mallOrder.getId())
                 .eventType(OrderEventTypeEnum.ORDER_REFUNDED.getType())

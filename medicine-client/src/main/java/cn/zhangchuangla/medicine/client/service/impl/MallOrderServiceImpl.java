@@ -138,12 +138,13 @@ public class MallOrderServiceImpl extends ServiceImpl<MallOrderMapper, MallOrder
         orderDelayProducer.addOrderToDelayQueue(orderNo, ORDER_TIMEOUT_MINUTES);
 
         // 添加订单创建时间线记录
+        String username = getUsername();
         OrderTimelineDto timelineDto = OrderTimelineDto.builder()
                 .orderId(order.getId())
                 .eventType(OrderEventTypeEnum.ORDER_CREATED.getType())
                 .eventStatus(order.getOrderStatus())
                 .operatorType(OperatorTypeEnum.USER.getType())
-                .description("用户创建订单")
+                .description(String.format("用户%s创建了订单", username))
                 .build();
         mallOrderTimelineService.addTimelineIfNotExists(timelineDto);
 
@@ -371,6 +372,7 @@ public class MallOrderServiceImpl extends ServiceImpl<MallOrderMapper, MallOrder
 
         // 添加订单支付时间线记录
         if (updated) {
+            String username = getUsername();
             PayTypeEnum payTypeEnum = PayTypeEnum.fromCode(payType);
             String payTypeName = payTypeEnum != null ? payTypeEnum.getDescription() : "未知支付方式";
             OrderTimelineDto timelineDto = OrderTimelineDto.builder()
@@ -378,7 +380,7 @@ public class MallOrderServiceImpl extends ServiceImpl<MallOrderMapper, MallOrder
                     .eventType(OrderEventTypeEnum.ORDER_PAID.getType())
                     .eventStatus(ORDER_STATUS_WAIT_SHIPMENT)
                     .operatorType(OperatorTypeEnum.USER.getType())
-                    .description("用户完成订单支付（" + payTypeName + "）")
+                    .description(String.format("用户%s使用%s完成了订单支付", username, payTypeName))
                     .build();
             mallOrderTimelineService.addTimelineIfNotExists(timelineDto);
         }
