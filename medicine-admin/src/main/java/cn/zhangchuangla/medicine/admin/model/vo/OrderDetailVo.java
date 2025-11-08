@@ -25,25 +25,25 @@ public class OrderDetailVo {
     /**
      * 用户信息
      */
-    @Schema(description = "用户信息")
+    @Schema(description = "用户信息", example = "{\"userId\":\"1\",\"nickname\":\"张三\",\"phoneNumber\":\"138****0000\"}")
     private UserInfo userInfo;
 
     /**
      * 配送信息
      */
-    @Schema(description = "配送信息")
+    @Schema(description = "配送信息", example = "{\"receiverName\":\"张三\",\"receiverAddress\":\"中国北京市海淀区\",\"receiverPhone\":\"13800000000\",\"deliveryMethod\":\"顺丰\"}")
     private DeliveryInfo deliveryInfo;
 
     /**
      * 订单信息
      */
-    @Schema(description = "订单信息")
+    @Schema(description = "订单信息", example = "{\"orderNo\":\"O2025103123456789\",\"orderStatus\":\"待付款\",\"payType\":\"支付宝\",\"totalAmount\":10.00,\"payAmount\":10.00,\"freightAmount\":0.00}")
     private OrderInfo orderInfo;
 
     /**
      * 商品信息
      */
-    @Schema(description = "商品信息")
+    @Schema(description = "商品信息", example = "[{\"productId\":1,\"productName\":\"商品名称\",\"productImage\":\"https://www.baidu.com/img/PCtm_d9c8750bed0b3c7d089fa7d55720d6cf.png\",\"productPrice\":10.00,\"productQuantity\":1,\"productTotalAmount\":10.00}]")
     private List<ProductInfo> productInfo;
 
 

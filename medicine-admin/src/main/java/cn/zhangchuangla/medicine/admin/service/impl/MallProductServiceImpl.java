@@ -204,7 +204,7 @@ public class MallProductServiceImpl extends ServiceImpl<MallProductMapper, MallP
     public void restoreStock(Long productId, Integer quantity) {
         Assert.isPositive(quantity, "商品数量不能小于0");
         Assert.isPositive(productId, "商品ID不能小于0");
-        
+
         MallProduct mallProduct = lambdaQuery()
                 .eq(MallProduct::getId, productId)
                 .select(MallProduct::getStock, MallProduct::getVersion)
@@ -213,18 +213,18 @@ public class MallProductServiceImpl extends ServiceImpl<MallProductMapper, MallP
         if (mallProduct == null) {
             throw new ServiceException(ResponseResultCode.OPERATION_ERROR, "商品不存在");
         }
-        
+
         Integer currentStock = mallProduct.getStock();
         int newStock = (currentStock == null ? 0 : currentStock) + quantity;
         int currentVersion = mallProduct.getVersion() == null ? 0 : mallProduct.getVersion();
-        
+
         boolean updated = lambdaUpdate()
                 .eq(MallProduct::getId, productId)
                 .eq(MallProduct::getVersion, currentVersion)
                 .set(MallProduct::getStock, newStock)
                 .set(MallProduct::getVersion, currentVersion + 1)
                 .update();
-                
+
         if (!updated) {
             throw new ServiceException(ResponseResultCode.OPERATION_ERROR, "库存更新失败，请重试");
         }

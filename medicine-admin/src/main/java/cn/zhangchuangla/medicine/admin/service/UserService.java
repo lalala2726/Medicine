@@ -144,6 +144,7 @@ public interface UserService extends IService<User> {
 
     /**
      * 获取用户钱包
+     *
      * @param userId 用户ID
      * @return 用户钱包
      */

@@ -68,9 +68,8 @@
 
     <select id="getOrderStatisticsByUserId"
             resultMap="UserOrderStatisticsMap">
-        SELECT
-            COUNT(1) AS total_order_count,
-            COALESCE(SUM(pay_amount), 0) AS total_consumption
+        SELECT COUNT(1)                     AS total_order_count,
+               COALESCE(SUM(pay_amount), 0) AS total_consumption
         FROM mall_order
         WHERE user_id = #{userId}
     </select>

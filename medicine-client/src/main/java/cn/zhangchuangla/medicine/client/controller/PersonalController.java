@@ -21,6 +21,7 @@ import org.springframework.web.bind.annotation.RestController;
 @RestController
 @RequestMapping("/personal")
 @Tag(name = "个人中心", description = "个人中心接口")
+@Tag(name = "用户接口", description = "用户接口")
 public class PersonalController extends BaseController {
 
     private final UserService userService;

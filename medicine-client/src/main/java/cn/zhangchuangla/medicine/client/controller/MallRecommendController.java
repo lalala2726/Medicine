@@ -8,6 +8,7 @@ import cn.zhangchuangla.medicine.model.entity.MallProduct;
 import cn.zhangchuangla.medicine.model.request.mall.product.RecommendRequest;
 import cn.zhangchuangla.medicine.model.vo.RecommendListVo;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -23,6 +24,7 @@ import java.util.List;
 @RestController
 @RequestMapping("/mall/product/recommend")
 @RequiredArgsConstructor
+@Tag(name = "商品推荐", description = "商品推荐")
 public class MallRecommendController extends BaseController {
 
     private final MallRecommendService mallRecommendService;

@@ -102,7 +102,7 @@ public class UserWalletServiceImpl extends ServiceImpl<UserWalletMapper, UserWal
         if (!updateById(userWallet)) {
             throw new ServiceException(ResponseResultCode.OPERATION_ERROR, "扣款失败, 请稍后重试");
         }
-        recordWalletLog(userWallet, amount, beforeBalance, afterBalance,reason, 2, reason);
+        recordWalletLog(userWallet, amount, beforeBalance, afterBalance, reason, 2, reason);
         return true;
     }
 

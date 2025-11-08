@@ -218,7 +218,7 @@ public class MallOrderServiceImpl extends ServiceImpl<MallOrderMapper, MallOrder
         if (updated) {
             OrderTimelineDto timelineDto = OrderTimelineDto.builder()
                     .orderId(mallOrder.getId())
-                    .eventType(OrderEventTypeEnum.ADMIN_UPDATE_ADDRESS.getType())
+                    .eventType(OrderEventTypeEnum.OTHER.getType())
                     .eventStatus(mallOrder.getOrderStatus())
                     .operatorType(OperatorTypeEnum.ADMIN.getType())
                     .description("管理员修改了收货地址")
@@ -266,7 +266,7 @@ public class MallOrderServiceImpl extends ServiceImpl<MallOrderMapper, MallOrder
         if (updated) {
             OrderTimelineDto timelineDto = OrderTimelineDto.builder()
                     .orderId(mallOrder.getId())
-                    .eventType(OrderEventTypeEnum.ADMIN_UPDATE_REMARK.getType())
+                    .eventType(OrderEventTypeEnum.OTHER.getType())
                     .eventStatus(mallOrder.getOrderStatus())
                     .operatorType(OperatorTypeEnum.ADMIN.getType())
                     .description("管理员添加了订单备注")
@@ -331,7 +331,7 @@ public class MallOrderServiceImpl extends ServiceImpl<MallOrderMapper, MallOrder
             if (updated) {
                 OrderTimelineDto timelineDto = OrderTimelineDto.builder()
                         .orderId(mallOrder.getId())
-                        .eventType(OrderEventTypeEnum.ADMIN_UPDATE_PRICE.getType())
+                        .eventType(OrderEventTypeEnum.OTHER.getType())
                         .eventStatus(mallOrder.getOrderStatus())
                         .operatorType(OperatorTypeEnum.ADMIN.getType())
                         .description("管理员修改了订单价格")
@@ -419,7 +419,7 @@ public class MallOrderServiceImpl extends ServiceImpl<MallOrderMapper, MallOrder
 
         // 只有待支付、待发货状态可以取消
         if (orderStatusEnum != OrderStatusEnum.PENDING_PAYMENT &&
-            orderStatusEnum != OrderStatusEnum.PENDING_SHIPMENT) {
+                orderStatusEnum != OrderStatusEnum.PENDING_SHIPMENT) {
             throw new ServiceException(ResponseResultCode.OPERATION_ERROR,
                     String.format("当前订单状态[%s]不允许取消", orderStatusEnum.getName()));
         }
