@@ -80,7 +80,7 @@ public class MallProductServiceImpl extends ServiceImpl<MallProductMapper, MallP
 
         if (product.getImages() != null && !product.getImages().isEmpty()) {
             // 后台表单中按约定首图为列表缩略图
-            product.setImage(product.getImages().get(0));
+            product.setImage(product.getImages().getFirst());
         }
 
         return product;
