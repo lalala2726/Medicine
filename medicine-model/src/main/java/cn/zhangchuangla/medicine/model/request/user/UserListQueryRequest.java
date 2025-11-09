@@ -37,7 +37,6 @@ public class UserListQueryRequest extends PageRequest {
     @Schema(description = "头像URL", example = "https://example.com/avatar.jpg")
     private String avatar;
 
-
     /**
      * 角色
      */
