@@ -473,9 +473,10 @@ public class MallAfterSaleServiceImpl extends ServiceImpl<MallAfterSaleMapper, M
 
     /**
      * 构建支付宝退款的幂等key
+     * 使用售后单号作为稳定的幂等键,确保重试时不会产生重复退款
      */
     private String buildOutRequestNo(MallAfterSale afterSale) {
-        return afterSale.getAfterSaleNo() + "-REFUND-" + System.currentTimeMillis();
+        return afterSale.getAfterSaleNo() + "-REFUND";
     }
 
     /**

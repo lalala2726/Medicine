@@ -3,16 +3,22 @@ package cn.zhangchuangla.medicine.model.entity;
 import com.baomidou.mybatisplus.annotation.IdType;
 import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableName;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Data;
+import lombok.NoArgsConstructor;
 
 import java.util.Date;
 
 /**
  * 药品详细信息表
  */
-@TableName(value = "medicine_detail")
+@TableName(value = "mall_medicine_detail")
 @Data
-public class MedicineDetail {
+@AllArgsConstructor
+@NoArgsConstructor
+@Builder
+public class MallMedicineDetail {
 
     /**
      * 主键ID

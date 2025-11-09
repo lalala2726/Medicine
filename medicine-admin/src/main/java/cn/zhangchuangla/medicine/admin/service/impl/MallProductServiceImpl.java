@@ -128,6 +128,9 @@ public class MallProductServiceImpl extends ServiceImpl<MallProductMapper, MallP
         // 仅聚焦商品与图片：确保至少一张图片后批量写入图片表
         Assert.isTrue(request.getImages() != null && !request.getImages().isEmpty(), "商品图片至少需要上传一张图片");
         mallProductImageService.addProductImages(request.getImages(), product.getId());
+        // 上述是通用的商城属性,下面是药品特有的属性
+
+        // todo 添加药品的属性
         return save;
     }
 

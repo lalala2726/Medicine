@@ -1,5 +1,6 @@
 package cn.zhangchuangla.medicine.model.request.mall.product;
 
+import cn.zhangchuangla.medicine.model.dto.MedicineDetailDto;
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.NotNull;
@@ -12,7 +13,7 @@ import java.util.List;
  * 商城商品添加请求对象
  *
  * @author Chuang
- * created on 2025/10/4 
+ * created on 2025/10/4
  */
 @Data
 @Schema(description = "商城商品添加请求对象")
@@ -53,5 +54,7 @@ public class MallProductAddRequest {
     @Schema(description = "商品图片列表", example = "[\"https://example.com/image1.jpg\", \"https://example.com/image2.jpg\"]")
     @NotEmpty(message = "商品图片列表不能为空")
     private List<String> images;
+
+    private MedicineDetailDto medicineDetail;
 
 }
