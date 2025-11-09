@@ -9,9 +9,9 @@ import cn.zhangchuangla.medicine.admin.model.vo.UserWalletVo;
 import cn.zhangchuangla.medicine.common.core.base.PageRequest;
 import cn.zhangchuangla.medicine.common.core.base.PageResult;
 import cn.zhangchuangla.medicine.model.entity.User;
-import cn.zhangchuangla.medicine.model.request.user.UserAddRequest;
-import cn.zhangchuangla.medicine.model.request.user.UserListQueryRequest;
-import cn.zhangchuangla.medicine.model.request.user.UserUpdateRequest;
+import cn.zhangchuangla.medicine.model.request.UserAddRequest;
+import cn.zhangchuangla.medicine.model.request.UserListQueryRequest;
+import cn.zhangchuangla.medicine.model.request.UserUpdateRequest;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.IService;
 

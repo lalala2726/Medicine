@@ -4,8 +4,8 @@ import cn.zhangchuangla.medicine.client.model.request.AfterSaleApplyRequest;
 import cn.zhangchuangla.medicine.client.model.request.AfterSaleCancelRequest;
 import cn.zhangchuangla.medicine.client.model.request.AfterSaleListRequest;
 import cn.zhangchuangla.medicine.model.entity.MallAfterSale;
-import cn.zhangchuangla.medicine.model.vo.AfterSaleDetailVo;
-import cn.zhangchuangla.medicine.model.vo.AfterSaleListVo;
+import cn.zhangchuangla.medicine.model.vo.mall.AfterSaleDetailVo;
+import cn.zhangchuangla.medicine.model.vo.mall.AfterSaleListVo;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.IService;
 

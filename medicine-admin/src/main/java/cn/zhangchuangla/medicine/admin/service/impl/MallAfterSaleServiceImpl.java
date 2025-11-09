@@ -14,8 +14,9 @@ import cn.zhangchuangla.medicine.model.entity.MallOrder;
 import cn.zhangchuangla.medicine.model.entity.MallOrderItem;
 import cn.zhangchuangla.medicine.model.entity.User;
 import cn.zhangchuangla.medicine.model.enums.*;
-import cn.zhangchuangla.medicine.model.vo.AfterSaleDetailVo;
-import cn.zhangchuangla.medicine.model.vo.AfterSaleListVo;
+import cn.zhangchuangla.medicine.model.vo.mall.AfterSaleDetailVo;
+import cn.zhangchuangla.medicine.model.vo.mall.AfterSaleListVo;
+import cn.zhangchuangla.medicine.model.vo.mall.AfterSaleTimelineVo;
 import cn.zhangchuangla.medicine.payment.model.AlipayRefundRequest;
 import cn.zhangchuangla.medicine.payment.service.AlipayPaymentService;
 import com.alibaba.fastjson2.JSON;
@@ -97,7 +98,7 @@ public class MallAfterSaleServiceImpl extends ServiceImpl<MallAfterSaleMapper, M
         }
 
         // 5. 查询时间线
-        List<cn.zhangchuangla.medicine.model.vo.AfterSaleTimelineVo> timeline =
+        List<AfterSaleTimelineVo> timeline =
                 mallAfterSaleTimelineService.getTimelineList(afterSaleId);
 
         return AfterSaleDetailVo.builder()

@@ -5,7 +5,7 @@ import cn.zhangchuangla.medicine.admin.service.MallAfterSaleTimelineService;
 import cn.zhangchuangla.medicine.model.entity.MallAfterSaleTimeline;
 import cn.zhangchuangla.medicine.model.enums.OperatorTypeEnum;
 import cn.zhangchuangla.medicine.model.enums.OrderEventTypeEnum;
-import cn.zhangchuangla.medicine.model.vo.AfterSaleTimelineVo;
+import cn.zhangchuangla.medicine.model.vo.mall.AfterSaleTimelineVo;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;

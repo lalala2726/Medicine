@@ -12,12 +12,12 @@ import cn.zhangchuangla.medicine.common.security.base.BaseController;
 import cn.zhangchuangla.medicine.model.dto.ModelConfigDto;
 import cn.zhangchuangla.medicine.model.entity.LlmConfig;
 import cn.zhangchuangla.medicine.model.entity.ModelConfig;
-import cn.zhangchuangla.medicine.model.request.llm.LlmConfigAddRequest;
-import cn.zhangchuangla.medicine.model.request.llm.LlmConfigListQueryRequest;
-import cn.zhangchuangla.medicine.model.request.llm.LlmConfigUpdateRequest;
-import cn.zhangchuangla.medicine.model.vo.llm.LLMOptions;
-import cn.zhangchuangla.medicine.model.vo.llm.LlmConfigListVo;
-import cn.zhangchuangla.medicine.model.vo.llm.LlmConfigVo;
+import cn.zhangchuangla.medicine.model.request.LlmConfigAddRequest;
+import cn.zhangchuangla.medicine.model.request.LlmConfigListQueryRequest;
+import cn.zhangchuangla.medicine.model.request.LlmConfigUpdateRequest;
+import cn.zhangchuangla.medicine.model.vo.LLMOptions;
+import cn.zhangchuangla.medicine.model.vo.LlmConfigListVo;
+import cn.zhangchuangla.medicine.model.vo.LlmConfigVo;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -32,7 +32,7 @@ import java.util.List;
  *
  * @author Chuang
  * <p>
- * created on 2025/9/6 
+ * created on 2025/9/6
  */
 @RestController
 @RequestMapping("/llm/config")

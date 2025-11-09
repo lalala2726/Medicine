@@ -10,7 +10,7 @@ import cn.zhangchuangla.medicine.common.core.utils.Assert;
 import cn.zhangchuangla.medicine.model.entity.MallProduct;
 import cn.zhangchuangla.medicine.model.entity.MallProductImage;
 import cn.zhangchuangla.medicine.model.entity.MallProductWithImageDto;
-import cn.zhangchuangla.medicine.model.vo.RecommendListVo;
+import cn.zhangchuangla.medicine.model.vo.mall.RecommendListVo;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;

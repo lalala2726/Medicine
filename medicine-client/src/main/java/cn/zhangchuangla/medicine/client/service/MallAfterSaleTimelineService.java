@@ -1,7 +1,7 @@
 package cn.zhangchuangla.medicine.client.service;
 
 import cn.zhangchuangla.medicine.model.entity.MallAfterSaleTimeline;
-import cn.zhangchuangla.medicine.model.vo.AfterSaleTimelineVo;
+import cn.zhangchuangla.medicine.model.vo.mall.AfterSaleTimelineVo;
 import com.baomidou.mybatisplus.extension.service.IService;
 
 import java.util.List;

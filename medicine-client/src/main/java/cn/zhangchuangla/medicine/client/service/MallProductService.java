@@ -3,7 +3,7 @@ package cn.zhangchuangla.medicine.client.service;
 import cn.zhangchuangla.medicine.client.enums.ProductViewPeriod;
 import cn.zhangchuangla.medicine.model.entity.MallProduct;
 import cn.zhangchuangla.medicine.model.entity.MallProductWithImageDto;
-import cn.zhangchuangla.medicine.model.vo.RecommendListVo;
+import cn.zhangchuangla.medicine.model.vo.mall.RecommendListVo;
 import com.baomidou.mybatisplus.extension.service.IService;
 
 import java.util.List;

@@ -10,8 +10,8 @@ import cn.zhangchuangla.medicine.common.security.annotation.IsAdmin;
 import cn.zhangchuangla.medicine.common.security.base.BaseController;
 import cn.zhangchuangla.medicine.model.dto.OrderWithProductDto;
 import cn.zhangchuangla.medicine.model.entity.MallOrderTimeline;
-import cn.zhangchuangla.medicine.model.vo.MallOrderTimelineVo;
-import cn.zhangchuangla.medicine.model.vo.OrderShippingVo;
+import cn.zhangchuangla.medicine.model.vo.mall.MallOrderTimelineVo;
+import cn.zhangchuangla.medicine.model.vo.mall.OrderShippingVo;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -23,7 +23,7 @@ import java.util.List;
 /**
  * @author Chuang
  * <p>
- * created on 2025/10/31 
+ * created on 2025/10/31
  */
 @RestController
 @RequestMapping("/mall/order")

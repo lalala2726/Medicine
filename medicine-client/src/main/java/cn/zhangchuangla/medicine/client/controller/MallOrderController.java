@@ -9,7 +9,7 @@ import cn.zhangchuangla.medicine.common.core.base.AjaxResult;
 import cn.zhangchuangla.medicine.common.security.annotation.Anonymous;
 import cn.zhangchuangla.medicine.common.security.base.BaseController;
 import cn.zhangchuangla.medicine.model.dto.AlipayNotifyDTO;
-import cn.zhangchuangla.medicine.model.vo.OrderShippingVo;
+import cn.zhangchuangla.medicine.model.vo.mall.OrderShippingVo;
 import cn.zhangchuangla.medicine.payment.config.AlipayProperties;
 import cn.zhangchuangla.medicine.payment.model.AlipayQrCodeRequest;
 import cn.zhangchuangla.medicine.payment.service.AlipayPaymentService;
@@ -35,7 +35,7 @@ import java.util.Map;
  * 方便第一次接入支付宝时快速理解整条业务链路。
  * </p>
  * <p>
- * created on 2025/10/31 
+ * created on 2025/10/31
  */
 @Slf4j
 @RestController

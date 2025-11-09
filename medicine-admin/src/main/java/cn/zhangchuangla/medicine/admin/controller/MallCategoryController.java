@@ -6,10 +6,10 @@ import cn.zhangchuangla.medicine.common.core.base.Option;
 import cn.zhangchuangla.medicine.common.security.annotation.IsAdmin;
 import cn.zhangchuangla.medicine.common.security.base.BaseController;
 import cn.zhangchuangla.medicine.model.entity.MallCategory;
-import cn.zhangchuangla.medicine.model.request.mall.category.MallCategoryAddRequest;
-import cn.zhangchuangla.medicine.model.request.mall.category.MallCategoryUpdateRequest;
-import cn.zhangchuangla.medicine.model.vo.mall.category.MallCategoryTree;
-import cn.zhangchuangla.medicine.model.vo.mall.category.MallCategoryVo;
+import cn.zhangchuangla.medicine.model.request.mall.MallCategoryAddRequest;
+import cn.zhangchuangla.medicine.model.request.mall.MallCategoryUpdateRequest;
+import cn.zhangchuangla.medicine.model.vo.mall.MallCategoryTree;
+import cn.zhangchuangla.medicine.model.vo.mall.MallCategoryVo;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
@@ -25,7 +25,7 @@ import java.util.List;
  * 分类详情查询、分类添加、分类修改和分类删除等功能。
  *
  * @author Chuang
- * created on 2025/10/4 
+ * created on 2025/10/4
  */
 @RestController
 @RequestMapping("/mall/category")

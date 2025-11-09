@@ -5,9 +5,9 @@ import cn.zhangchuangla.medicine.common.core.base.AjaxResult;
 import cn.zhangchuangla.medicine.common.security.annotation.Anonymous;
 import cn.zhangchuangla.medicine.common.security.base.BaseController;
 import cn.zhangchuangla.medicine.common.security.entity.AuthTokenVo;
-import cn.zhangchuangla.medicine.model.request.auth.LoginRequest;
-import cn.zhangchuangla.medicine.model.request.auth.RefreshRequest;
-import cn.zhangchuangla.medicine.model.request.auth.RegisterRequest;
+import cn.zhangchuangla.medicine.model.request.LoginRequest;
+import cn.zhangchuangla.medicine.model.request.RefreshRequest;
+import cn.zhangchuangla.medicine.model.request.RegisterRequest;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.extern.slf4j.Slf4j;
@@ -16,7 +16,7 @@ import org.springframework.web.bind.annotation.*;
 /**
  * @author Chuang
  * <p>
- * created on 2025/10/25 
+ * created on 2025/10/25
  */
 @Slf4j
 @RestController
