@@ -4,7 +4,6 @@ import cn.zhangchuangla.medicine.client.service.MallRecommendService;
 import cn.zhangchuangla.medicine.common.core.base.AjaxResult;
 import cn.zhangchuangla.medicine.common.security.annotation.Anonymous;
 import cn.zhangchuangla.medicine.common.security.base.BaseController;
-import cn.zhangchuangla.medicine.model.entity.MallProduct;
 import cn.zhangchuangla.medicine.model.request.mall.product.RecommendRequest;
 import cn.zhangchuangla.medicine.model.vo.RecommendListVo;
 import io.swagger.v3.oas.annotations.Operation;
@@ -19,7 +18,7 @@ import java.util.List;
 /**
  * @author Chuang
  * <p>
- * created on 2025/10/16 
+ * created on 2025/10/16
  */
 @RestController
 @RequestMapping("/mall/product/recommend")
@@ -40,9 +39,8 @@ public class MallRecommendController extends BaseController {
     @Operation(summary = "商品推荐")
     @Anonymous
     public AjaxResult<List<RecommendListVo>> recommend(RecommendRequest request) {
-        List<MallProduct> mallProducts = mallRecommendService.recommend(request);
-        List<RecommendListVo> recommendListVos = copyListProperties(mallProducts, RecommendListVo.class);
-        return success(recommendListVos);
+        List<RecommendListVo> mallProducts = mallRecommendService.recommend(request);
+        return success(mallProducts);
     }
 
 }
