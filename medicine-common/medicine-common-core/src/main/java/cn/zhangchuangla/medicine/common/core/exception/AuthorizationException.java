@@ -1,6 +1,6 @@
 package cn.zhangchuangla.medicine.common.core.exception;
 
-import cn.zhangchuangla.medicine.common.core.enums.ResponseResultCode;
+import cn.zhangchuangla.medicine.common.core.enums.ResponseCode;
 import lombok.Getter;
 
 /**
@@ -8,7 +8,7 @@ import lombok.Getter;
  *
  * @author Chuang
  * <p>
- * created on 2025/1/11 10:04
+ * created on 2025/1/11
  */
 @Getter
 public final class AuthorizationException extends RuntimeException {
@@ -19,23 +19,23 @@ public final class AuthorizationException extends RuntimeException {
     private final Integer code;
 
     public AuthorizationException() {
-        super(ResponseResultCode.AUTHORIZED.getMessage());
-        this.code = ResponseResultCode.AUTHORIZED.getCode();
+        super(ResponseCode.AUTHORIZED.getMessage());
+        this.code = ResponseCode.AUTHORIZED.getCode();
     }
 
-    public AuthorizationException(ResponseResultCode responseResultCode, String message) {
+    public AuthorizationException(ResponseCode responseCode, String message) {
         super(message);
-        this.code = responseResultCode.getCode();
+        this.code = responseCode.getCode();
     }
 
-    public AuthorizationException(ResponseResultCode responseResultCode) {
-        super(responseResultCode.getMessage());
-        this.code = responseResultCode.getCode();
+    public AuthorizationException(ResponseCode responseCode) {
+        super(responseCode.getMessage());
+        this.code = responseCode.getCode();
     }
 
     public AuthorizationException(String message) {
         super(message);
-        this.code = ResponseResultCode.AUTHORIZED.getCode();
+        this.code = ResponseCode.AUTHORIZED.getCode();
     }
 
 }

@@ -5,7 +5,7 @@ import cn.zhangchuangla.medicine.common.security.entity.AuthTokenVo;
 /**
  * @author Chuang
  * <p>
- * created on 2025/8/28 16:18
+ * created on 2025/8/28 
  */
 public interface AuthService {
 

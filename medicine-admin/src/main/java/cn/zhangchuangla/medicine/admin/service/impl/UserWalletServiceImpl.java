@@ -3,7 +3,7 @@ package cn.zhangchuangla.medicine.admin.service.impl;
 import cn.zhangchuangla.medicine.admin.mapper.UserWalletMapper;
 import cn.zhangchuangla.medicine.admin.service.UserWalletLogService;
 import cn.zhangchuangla.medicine.admin.service.UserWalletService;
-import cn.zhangchuangla.medicine.common.core.enums.ResponseResultCode;
+import cn.zhangchuangla.medicine.common.core.enums.ResponseCode;
 import cn.zhangchuangla.medicine.common.core.exception.ServiceException;
 import cn.zhangchuangla.medicine.common.core.utils.Assert;
 import cn.zhangchuangla.medicine.common.core.utils.UUIDUtils;
@@ -38,7 +38,7 @@ public class UserWalletServiceImpl extends ServiceImpl<UserWalletMapper, UserWal
                 .eq(UserWallet::getUserId, userId)
                 .count() > 0;
         if (exists) {
-            throw new ServiceException(ResponseResultCode.OPERATION_ERROR, "用户已开通钱包");
+            throw new ServiceException(ResponseCode.OPERATION_ERROR, "用户已开通钱包");
         }
         UserWallet userWallet = UserWallet.builder()
                 .userId(userId)
@@ -73,7 +73,7 @@ public class UserWalletServiceImpl extends ServiceImpl<UserWalletMapper, UserWal
         userWallet.setRemark(reason);
 
         if (!updateById(userWallet)) {
-            throw new ServiceException(ResponseResultCode.OPERATION_ERROR, "充值失败, 请稍后重试");
+            throw new ServiceException(ResponseCode.OPERATION_ERROR, "充值失败, 请稍后重试");
         }
         recordWalletLog(userWallet, amount, beforeBalance, newBalance, reason, 1, reason);
         return true;
@@ -91,7 +91,7 @@ public class UserWalletServiceImpl extends ServiceImpl<UserWalletMapper, UserWal
 
         BigDecimal beforeBalance = safeAmount(userWallet.getBalance());
         if (beforeBalance.compareTo(amount) < 0) {
-            throw new ServiceException(ResponseResultCode.OPERATION_ERROR, "钱包余额不足");
+            throw new ServiceException(ResponseCode.OPERATION_ERROR, "钱包余额不足");
         }
         BigDecimal afterBalance = beforeBalance.subtract(amount);
 
@@ -100,9 +100,9 @@ public class UserWalletServiceImpl extends ServiceImpl<UserWalletMapper, UserWal
         userWallet.setRemark(reason);
 
         if (!updateById(userWallet)) {
-            throw new ServiceException(ResponseResultCode.OPERATION_ERROR, "扣款失败, 请稍后重试");
+            throw new ServiceException(ResponseCode.OPERATION_ERROR, "扣款失败, 请稍后重试");
         }
-        recordWalletLog(userWallet, amount, beforeBalance, afterBalance,reason, 2, reason);
+        recordWalletLog(userWallet, amount, beforeBalance, afterBalance, reason, 2, reason);
         return true;
     }
 
@@ -113,7 +113,7 @@ public class UserWalletServiceImpl extends ServiceImpl<UserWalletMapper, UserWal
 
         UserWallet userWallet = getWalletOrThrow(userId);
         if (isWalletFrozen(userWallet)) {
-            throw new ServiceException(ResponseResultCode.OPERATION_ERROR, "钱包已冻结");
+            throw new ServiceException(ResponseCode.OPERATION_ERROR, "钱包已冻结");
         }
 
         userWallet.setStatus(WALLET_STATUS_FROZEN);
@@ -122,7 +122,7 @@ public class UserWalletServiceImpl extends ServiceImpl<UserWalletMapper, UserWal
         userWallet.setRemark(reason);
 
         if (!updateById(userWallet)) {
-            throw new ServiceException(ResponseResultCode.OPERATION_ERROR, "冻结失败, 请稍后重试");
+            throw new ServiceException(ResponseCode.OPERATION_ERROR, "冻结失败, 请稍后重试");
         }
         BigDecimal balance = safeAmount(userWallet.getBalance());
         recordWalletLog(userWallet, BigDecimal.ZERO, balance, balance, reason, 3, reason);
@@ -136,7 +136,7 @@ public class UserWalletServiceImpl extends ServiceImpl<UserWalletMapper, UserWal
 
         UserWallet userWallet = getWalletOrThrow(userId);
         if (!isWalletFrozen(userWallet)) {
-            throw new ServiceException(ResponseResultCode.OPERATION_ERROR, "钱包未冻结");
+            throw new ServiceException(ResponseCode.OPERATION_ERROR, "钱包未冻结");
         }
 
         userWallet.setStatus(WALLET_STATUS_NORMAL);
@@ -145,7 +145,7 @@ public class UserWalletServiceImpl extends ServiceImpl<UserWalletMapper, UserWal
         userWallet.setRemark(reason);
 
         if (!updateById(userWallet)) {
-            throw new ServiceException(ResponseResultCode.OPERATION_ERROR, "解冻失败, 请稍后重试");
+            throw new ServiceException(ResponseCode.OPERATION_ERROR, "解冻失败, 请稍后重试");
         }
         BigDecimal balance = safeAmount(userWallet.getBalance());
         recordWalletLog(userWallet, BigDecimal.ZERO, balance, balance, reason, 4, reason);
@@ -159,7 +159,7 @@ public class UserWalletServiceImpl extends ServiceImpl<UserWalletMapper, UserWal
                 .eq(UserWallet::getUserId, userId)
                 .one();
         if (userWallet == null) {
-            throw new ServiceException(ResponseResultCode.OPERATION_ERROR, "用户钱包不存在");
+            throw new ServiceException(ResponseCode.OPERATION_ERROR, "用户钱包不存在");
         }
         return userWallet;
     }
@@ -169,14 +169,14 @@ public class UserWalletServiceImpl extends ServiceImpl<UserWalletMapper, UserWal
                 .eq(UserWallet::getUserId, userId)
                 .one();
         if (userWallet == null) {
-            throw new ServiceException(ResponseResultCode.OPERATION_ERROR, "用户钱包不存在");
+            throw new ServiceException(ResponseCode.OPERATION_ERROR, "用户钱包不存在");
         }
         return userWallet;
     }
 
     private void ensureWalletNotFrozen(UserWallet userWallet) {
         if (isWalletFrozen(userWallet)) {
-            throw new ServiceException(ResponseResultCode.OPERATION_ERROR, "钱包已冻结, 暂不可操作");
+            throw new ServiceException(ResponseCode.OPERATION_ERROR, "钱包已冻结, 暂不可操作");
         }
     }
 

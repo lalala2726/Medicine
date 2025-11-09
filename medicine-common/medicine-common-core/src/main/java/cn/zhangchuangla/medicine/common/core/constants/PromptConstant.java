@@ -4,7 +4,7 @@ package cn.zhangchuangla.medicine.common.core.constants;
  * 医疗工作流提示词常量类
  *
  * @author Chuang
- * @since 2025/9/10
+ * created 2025/9/10
  */
 public class PromptConstant {
 

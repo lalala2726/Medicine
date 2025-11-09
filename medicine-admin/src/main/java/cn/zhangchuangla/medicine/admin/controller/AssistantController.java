@@ -3,10 +3,10 @@ package cn.zhangchuangla.medicine.admin.controller;
 import cn.zhangchuangla.medicine.admin.service.AssistantService;
 import cn.zhangchuangla.medicine.common.core.base.AjaxResult;
 import cn.zhangchuangla.medicine.common.security.base.BaseController;
-import cn.zhangchuangla.medicine.model.request.assistant.HistoryRequest;
-import cn.zhangchuangla.medicine.model.vo.chat.StreamChatResponse;
-import cn.zhangchuangla.medicine.model.vo.llm.chat.ChatHistoryResponse;
-import cn.zhangchuangla.medicine.model.vo.llm.chat.UserMessageRequest;
+import cn.zhangchuangla.medicine.model.request.HistoryRequest;
+import cn.zhangchuangla.medicine.model.vo.ChatHistoryResponse;
+import cn.zhangchuangla.medicine.model.vo.StreamChatResponse;
+import cn.zhangchuangla.medicine.model.vo.UserMessageRequest;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.http.MediaType;
@@ -17,7 +17,7 @@ import reactor.core.publisher.Flux;
 /**
  * @author Chuang
  * <p>
- * created on 2025/9/10 15:21
+ * created on 2025/9/10
  */
 @RequestMapping("/assistant")
 @Tag(name = "医疗助手", description = "医疗助手接口")

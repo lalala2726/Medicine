@@ -1,7 +1,7 @@
 package cn.zhangchuangla.medicine.common.security.token;
 
 import cn.zhangchuangla.medicine.common.core.constants.RedisConstants;
-import cn.zhangchuangla.medicine.common.core.enums.ResponseResultCode;
+import cn.zhangchuangla.medicine.common.core.enums.ResponseCode;
 import cn.zhangchuangla.medicine.common.core.exception.AuthorizationException;
 import cn.zhangchuangla.medicine.common.core.exception.ServiceException;
 import cn.zhangchuangla.medicine.common.core.utils.Assert;
@@ -15,7 +15,7 @@ import org.springframework.stereotype.Component;
 /**
  * @author Chuang
  * <p>
- * created on 2025/8/28 14:19
+ * created on 2025/8/28
  */
 @Component
 @Slf4j
@@ -150,19 +150,19 @@ public class RedisTokenStore {
         String refreshKey = RedisConstants.Auth.USER_REFRESH_TOKEN + refreshTokenId;
         // 1. 验证 refreshKey 存在
         if (!redisCache.exists(refreshKey)) {
-            throw new AuthorizationException(ResponseResultCode.REFRESH_TOKEN_INVALID);
+            throw new AuthorizationException(ResponseCode.REFRESH_TOKEN_INVALID);
         }
 
         // 2. 取出旧的 accessToken
         String oldAccessToken = redisCache.getCacheObject(refreshKey);
         if (oldAccessToken == null) {
-            throw new AuthorizationException(ResponseResultCode.REFRESH_TOKEN_INVALID);
+            throw new AuthorizationException(ResponseCode.REFRESH_TOKEN_INVALID);
         }
 
         // 3. 拿到剩余 TTL
         long ttlSeconds = redisCache.getKeyExpire(refreshKey);
         if (ttlSeconds <= 0) {
-            throw new AuthorizationException(ResponseResultCode.REFRESH_TOKEN_INVALID);
+            throw new AuthorizationException(ResponseCode.REFRESH_TOKEN_INVALID);
         }
 
         // 4. 删除旧的双向映射
@@ -211,7 +211,7 @@ public class RedisTokenStore {
         String accessTokenRedisKey = RedisConstants.Auth.USER_ACCESS_TOKEN + accessTokenId;
         OnlineLoginUser onlineLoginUser = redisCache.getCacheObject(accessTokenRedisKey);
         if (onlineLoginUser == null) {
-            throw new ServiceException(ResponseResultCode.ACCESS_TOKEN_INVALID, "访问令牌无效!");
+            throw new ServiceException(ResponseCode.ACCESS_TOKEN_INVALID, "访问令牌无效!");
         }
         String refreshTokenId = onlineLoginUser.getRefreshTokenId();
         //删除访问令牌

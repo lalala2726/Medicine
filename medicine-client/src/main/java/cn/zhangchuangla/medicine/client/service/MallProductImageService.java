@@ -5,6 +5,8 @@ import com.baomidou.mybatisplus.extension.service.IService;
 import jakarta.validation.constraints.NotNull;
 import org.springframework.validation.annotation.Validated;
 
+import java.util.List;
+
 /**
  * @author Chuang
  */
@@ -18,4 +20,12 @@ public interface MallProductImageService extends IService<MallProductImage> {
      * @return 商品封面图片
      */
     String getProductCoverImage(@NotNull(message = "商品ID不能为空") Long productId);
+
+    /**
+     * 获取商品图片列表
+     *
+     * @param productIds 商品ID集合
+     * @return 商品图片列表
+     */
+    List<MallProductImage> getProductCoverImage(@NotNull(message = "商品ID不能为空") List<Long> productIds);
 }

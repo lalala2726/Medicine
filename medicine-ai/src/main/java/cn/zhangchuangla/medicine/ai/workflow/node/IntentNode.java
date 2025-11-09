@@ -20,7 +20,7 @@ import java.util.Map;
  * 识别用户输入的意图类型
  *
  * @author Chuang
- * @since 2025/9/10
+ * created 2025/9/10
  */
 @Slf4j
 @RequiredArgsConstructor

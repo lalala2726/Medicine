@@ -2,7 +2,7 @@ package cn.zhangchuangla.medicine.admin.service.impl;
 
 import cn.zhangchuangla.medicine.admin.mapper.MallOrderItemMapper;
 import cn.zhangchuangla.medicine.admin.service.MallOrderItemService;
-import cn.zhangchuangla.medicine.common.core.enums.ResponseResultCode;
+import cn.zhangchuangla.medicine.common.core.enums.ResponseCode;
 import cn.zhangchuangla.medicine.common.core.exception.ServiceException;
 import cn.zhangchuangla.medicine.common.core.utils.Assert;
 import cn.zhangchuangla.medicine.model.entity.MallOrderItem;
@@ -25,7 +25,7 @@ public class MallOrderItemServiceImpl extends ServiceImpl<MallOrderItemMapper, M
         List<MallOrderItem> list = list(new LambdaQueryWrapper<MallOrderItem>()
                 .in(MallOrderItem::getOrderId, orderId));
         if (CollectionUtils.isEmpty(list)) {
-            throw new ServiceException(ResponseResultCode.DATA_NOT_FOUND, "订单项不存在");
+            throw new ServiceException(ResponseCode.DATA_NOT_FOUND, "订单项不存在");
         }
         return list;
 

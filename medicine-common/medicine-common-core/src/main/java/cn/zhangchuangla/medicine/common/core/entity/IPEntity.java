@@ -3,7 +3,7 @@ package cn.zhangchuangla.medicine.common.core.entity;
 /**
  * @author Chuang
  * <p>
- * created on 2025/4/17 21:50
+ * created on 2025/4/17 
  */
 public class IPEntity {
 

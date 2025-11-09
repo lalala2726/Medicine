@@ -2,7 +2,7 @@ package cn.zhangchuangla.medicine.admin.service.impl;
 
 import cn.zhangchuangla.medicine.admin.mapper.MallOrderTimelineMapper;
 import cn.zhangchuangla.medicine.admin.service.MallOrderTimelineService;
-import cn.zhangchuangla.medicine.common.core.enums.ResponseResultCode;
+import cn.zhangchuangla.medicine.common.core.enums.ResponseCode;
 import cn.zhangchuangla.medicine.common.core.exception.ServiceException;
 import cn.zhangchuangla.medicine.common.core.utils.Assert;
 import cn.zhangchuangla.medicine.model.dto.OrderTimelineDto;
@@ -49,7 +49,7 @@ public class MallOrderTimelineServiceImpl extends ServiceImpl<MallOrderTimelineM
 
         if (count > 0) {
             log.warn("订单时间线记录已存在，orderId={}, eventType={}", dto.getOrderId(), dto.getEventType());
-            throw new ServiceException(ResponseResultCode.OPERATION_ERROR, "该订单已存在相同的事件记录，不能重复添加");
+            throw new ServiceException(ResponseCode.OPERATION_ERROR, "该订单已存在相同的事件记录，不能重复添加");
         }
 
         // 构建时间线实体

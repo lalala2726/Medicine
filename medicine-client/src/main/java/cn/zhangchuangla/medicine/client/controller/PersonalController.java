@@ -6,7 +6,7 @@ import cn.zhangchuangla.medicine.common.core.utils.BeanCotyUtils;
 import cn.zhangchuangla.medicine.common.security.base.BaseController;
 import cn.zhangchuangla.medicine.common.security.utils.SecurityUtils;
 import cn.zhangchuangla.medicine.model.entity.User;
-import cn.zhangchuangla.medicine.model.vo.user.CurrentUserInfoVo;
+import cn.zhangchuangla.medicine.model.vo.CurrentUserInfoVo;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -16,11 +16,12 @@ import org.springframework.web.bind.annotation.RestController;
 /**
  * @author Chuang
  * <p>
- * created on 2025/10/28 20:50
+ * created on 2025/10/28
  */
 @RestController
 @RequestMapping("/personal")
 @Tag(name = "个人中心", description = "个人中心接口")
+@Tag(name = "用户接口", description = "用户接口")
 public class PersonalController extends BaseController {
 
     private final UserService userService;

@@ -18,12 +18,12 @@ import java.security.NoSuchAlgorithmException;
 import java.util.HashMap;
 import java.util.Map;
 
-import static cn.zhangchuangla.medicine.common.core.enums.ResponseResultCode.ACCESS_TOKEN_INVALID;
+import static cn.zhangchuangla.medicine.common.core.enums.ResponseCode.ACCESS_TOKEN_INVALID;
 
 /**
  * @author Chuang
  * <p>
- * created on 2025/8/28 14:19
+ * created on 2025/8/28
  */
 @Slf4j
 @RequiredArgsConstructor

@@ -17,6 +17,12 @@ import java.util.List;
 public class MallProductImageServiceImpl extends ServiceImpl<MallProductImageMapper, MallProductImage>
         implements MallProductImageService {
 
+    private final MallProductImageMapper mallProductImageMapper;
+
+    public MallProductImageServiceImpl(MallProductImageMapper mallProductImageMapper) {
+        this.mallProductImageMapper = mallProductImageMapper;
+    }
+
     /**
      * 获取商品封面图片
      *
@@ -31,6 +37,11 @@ public class MallProductImageServiceImpl extends ServiceImpl<MallProductImageMap
                 .min(Comparator.comparingInt(MallProductImage::getSort))
                 .map(MallProductImage::getImageUrl)
                 .orElse("");
+    }
+
+    @Override
+    public List<MallProductImage> getProductCoverImage(List<Long> productIds) {
+        return mallProductImageMapper.getProductCoverImage(productIds);
     }
 }
 

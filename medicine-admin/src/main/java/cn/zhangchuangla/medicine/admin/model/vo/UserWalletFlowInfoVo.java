@@ -12,7 +12,7 @@ import java.util.Date;
 /**
  * @author Chuang
  * <p>
- * created on 2025/11/7 04:33
+ * created on 2025/11/7 
  */
 @Data
 @AllArgsConstructor
@@ -21,54 +21,27 @@ import java.util.Date;
 @Schema(description = "用户钱包流水信息")
 public class UserWalletFlowInfoVo {
 
-    /**
-     * 流水索引
-     */
     @Schema(description = "流水索引", example = "1")
     private Long index;
 
-    /**
-     * 变动类型
-     */
     @Schema(description = "变动类型", example = "充值")
     private String changeType;
 
-    /**
-     * 变动金额
-     */
     @Schema(description = "变动金额", example = "10.00")
     private BigDecimal amount;
 
-    /**
-     * 金额变动方向：1收入(正)、2支出(负)、3冻结、4解冻
-     */
     @Schema(description = "金额变动方向：1收入(正)、2支出(负)、3冻结、4解冻", example = "1")
     private Integer amountDirection;
 
-    /**
-     * 是否为收入（true:收入/正数, false:支出/负数）
-     * <p>
-     * 方便前端判断是否显示为正数（绿色）或负数（红色）
-     * </p>
-     */
     @Schema(description = "是否为收入", example = "true")
     private Boolean isIncome;
 
-    /**
-     * 变动前余额
-     */
     @Schema(description = "变动前余额", example = "10.00")
     private BigDecimal beforeBalance;
 
-    /**
-     * 变动后余额
-     */
     @Schema(description = "变动后余额", example = "10.00")
     private BigDecimal afterBalance;
 
-    /**
-     * 变动时间
-     */
     @Schema(description = "变动时间", example = "2025-11-07 04:33:00")
     private Date changeTime;
 

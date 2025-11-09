@@ -7,23 +7,17 @@ import lombok.Data;
 /**
  * @author Chuang
  * <p>
- * created on 2025/11/1 02:07
+ * created on 2025/11/1 
  */
 @Data
 @Schema(description = "订单备注更新参数")
 public class RemarkUpdateRequest {
 
-    /**
-     * 订单ID
-     */
-    @Schema(description = "订单ID")
+    @Schema(description = "订单ID", example = "123456")
     @NotNull(message = "订单ID不能为空")
     private Long orderId;
 
-    /**
-     * 订单备注
-     */
-    @Schema(description = "订单备注")
+    @Schema(description = "订单备注", example = "客户要求尽快发货")
     private String remark;
 
 }

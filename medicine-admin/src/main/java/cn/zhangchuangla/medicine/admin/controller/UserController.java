@@ -14,10 +14,10 @@ import cn.zhangchuangla.medicine.common.core.base.TableDataResult;
 import cn.zhangchuangla.medicine.common.security.annotation.IsAdmin;
 import cn.zhangchuangla.medicine.common.security.base.BaseController;
 import cn.zhangchuangla.medicine.model.entity.User;
-import cn.zhangchuangla.medicine.model.request.user.UserAddRequest;
-import cn.zhangchuangla.medicine.model.request.user.UserListQueryRequest;
-import cn.zhangchuangla.medicine.model.request.user.UserUpdateRequest;
-import cn.zhangchuangla.medicine.model.vo.user.UserListVo;
+import cn.zhangchuangla.medicine.model.request.UserAddRequest;
+import cn.zhangchuangla.medicine.model.request.UserListQueryRequest;
+import cn.zhangchuangla.medicine.model.request.UserUpdateRequest;
+import cn.zhangchuangla.medicine.model.vo.UserListVo;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -30,7 +30,7 @@ import java.util.List;
 /**
  * @author Chuang
  * <p>
- * created on 2025/9/3 09:09
+ * created on 2025/9/3
  */
 @RestController
 @RequestMapping("/user")

@@ -63,6 +63,16 @@ public class MallOrderItem {
     private String imageUrl;
 
     /**
+     * 售后状态(NONE-无售后, IN_PROGRESS-售后中, COMPLETED-售后完成)
+     */
+    private String afterSaleStatus;
+
+    /**
+     * 已退款金额
+     */
+    private BigDecimal refundedAmount;
+
+    /**
      * 创建时间
      */
     private Date createTime;

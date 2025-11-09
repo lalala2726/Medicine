@@ -15,7 +15,7 @@ import cn.zhangchuangla.medicine.admin.service.UserWalletService;
 import cn.zhangchuangla.medicine.common.core.base.PageRequest;
 import cn.zhangchuangla.medicine.common.core.base.PageResult;
 import cn.zhangchuangla.medicine.common.core.constants.RolesConstant;
-import cn.zhangchuangla.medicine.common.core.enums.ResponseResultCode;
+import cn.zhangchuangla.medicine.common.core.enums.ResponseCode;
 import cn.zhangchuangla.medicine.common.core.exception.ServiceException;
 import cn.zhangchuangla.medicine.common.core.utils.Assert;
 import cn.zhangchuangla.medicine.common.core.utils.BeanCotyUtils;
@@ -26,9 +26,9 @@ import cn.zhangchuangla.medicine.model.entity.User;
 import cn.zhangchuangla.medicine.model.entity.UserWallet;
 import cn.zhangchuangla.medicine.model.entity.UserWalletLog;
 import cn.zhangchuangla.medicine.model.enums.WalletChangeTypeEnum;
-import cn.zhangchuangla.medicine.model.request.user.UserAddRequest;
-import cn.zhangchuangla.medicine.model.request.user.UserListQueryRequest;
-import cn.zhangchuangla.medicine.model.request.user.UserUpdateRequest;
+import cn.zhangchuangla.medicine.model.request.UserAddRequest;
+import cn.zhangchuangla.medicine.model.request.UserListQueryRequest;
+import cn.zhangchuangla.medicine.model.request.UserUpdateRequest;
 import com.baomidou.mybatisplus.extension.conditions.query.LambdaQueryChainWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
@@ -197,7 +197,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User>
             boolean hasInvalidRole = request.getRoles().stream()
                     .anyMatch(role -> !RolesConstant.ADMIN.equals(role) && !RolesConstant.USER.equals(role));
             if (hasInvalidRole) {
-                throw new ServiceException(ResponseResultCode.OPERATION_ERROR, "角色系统不存在");
+                throw new ServiceException(ResponseCode.OPERATION_ERROR, "角色系统不存在");
             }
         }
 
@@ -217,7 +217,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User>
         // 保存用户信息
         boolean result = save(user);
         if (!result) {
-            throw new ServiceException(ResponseResultCode.OPERATION_ERROR, "添加用户失败");
+            throw new ServiceException(ResponseCode.OPERATION_ERROR, "添加用户失败");
         }
 
         // 开通钱包
@@ -343,14 +343,14 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User>
 
         User user = getById(request.getUserId());
         if (user == null) {
-            throw new ServiceException(ResponseResultCode.OPERATION_ERROR, "用户不存在");
+            throw new ServiceException(ResponseCode.OPERATION_ERROR, "用户不存在");
         }
 
         return switch (request.getOperationType()) {
             case 1 -> userWalletService.rechargeWallet(request.getUserId(), request.getAmount(), request.getReason());
             case 2 -> userWalletService.deductBalance(request.getUserId(), request.getAmount(), request.getReason());
             default ->
-                    throw new ServiceException(ResponseResultCode.PARAM_ERROR, "不支持的操作类型: " + request.getOperationType());
+                    throw new ServiceException(ResponseCode.PARAM_ERROR, "不支持的操作类型: " + request.getOperationType());
         };
     }
 

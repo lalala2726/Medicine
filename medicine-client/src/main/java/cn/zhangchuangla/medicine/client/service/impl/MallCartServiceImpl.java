@@ -4,7 +4,7 @@ import cn.zhangchuangla.medicine.client.mapper.MallCartMapper;
 import cn.zhangchuangla.medicine.client.service.MallCartService;
 import cn.zhangchuangla.medicine.client.service.MallProductImageService;
 import cn.zhangchuangla.medicine.client.service.MallProductService;
-import cn.zhangchuangla.medicine.common.core.enums.ResponseResultCode;
+import cn.zhangchuangla.medicine.common.core.enums.ResponseCode;
 import cn.zhangchuangla.medicine.common.core.exception.ServiceException;
 import cn.zhangchuangla.medicine.common.security.base.BaseService;
 import cn.zhangchuangla.medicine.model.entity.MallCart;
@@ -43,11 +43,11 @@ public class MallCartServiceImpl extends ServiceImpl<MallCartMapper, MallCart>
     public boolean addProduct(Long productId, Integer quantity) {
         // 参数验证
         if (productId == null || productId <= 0) {
-            throw new ServiceException(ResponseResultCode.PARAM_ERROR, "商品ID无效");
+            throw new ServiceException(ResponseCode.PARAM_ERROR, "商品ID无效");
         }
         if (quantity == null || quantity <= 0) {
             log.warn("用户{}尝试添加无效数量{}的商品{}", getUserId(), quantity, productId);
-            throw new ServiceException(ResponseResultCode.PARAM_ERROR, "添加数量必须大于0");
+            throw new ServiceException(ResponseCode.PARAM_ERROR, "添加数量必须大于0");
         }
 
         Long currentUserId = getUserId();
@@ -83,12 +83,12 @@ public class MallCartServiceImpl extends ServiceImpl<MallCartMapper, MallCart>
         MallProduct mallProduct = mallProductService.getById(productId);
         if (mallProduct == null) {
             log.warn("商品{}不存在", productId);
-            throw new ServiceException(ResponseResultCode.RESULT_IS_NULL, "商品不存在");
+            throw new ServiceException(ResponseCode.RESULT_IS_NULL, "商品不存在");
         }
 
         if (mallProduct.getStatus() != 1) { // 假设1表示上架状态
             log.warn("商品{}已下架", productId);
-            throw new ServiceException(ResponseResultCode.RESULT_IS_NULL, "商品已下架");
+            throw new ServiceException(ResponseCode.RESULT_IS_NULL, "商品已下架");
         }
 
         return mallProduct;
@@ -122,7 +122,7 @@ public class MallCartServiceImpl extends ServiceImpl<MallCartMapper, MallCart>
             Integer currentStock = currentProduct != null ? currentProduct.getStock() : 0;
 
             log.warn("商品{}库存不足，当前库存：{}，需求：{}", productName, currentStock, quantity);
-            throw new ServiceException(ResponseResultCode.RESULT_IS_NULL,
+            throw new ServiceException(ResponseCode.RESULT_IS_NULL,
                     String.format("商品库存不足，当前库存：%d", currentStock));
         }
 

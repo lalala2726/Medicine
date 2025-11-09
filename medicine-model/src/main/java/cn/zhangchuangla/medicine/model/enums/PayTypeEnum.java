@@ -6,7 +6,7 @@ import lombok.Getter;
  * 支付方式枚举
  *
  * @author Chuang
- * @since 2025/11/01
+ * created 2025/11/01
  */
 @Getter
 public enum PayTypeEnum {

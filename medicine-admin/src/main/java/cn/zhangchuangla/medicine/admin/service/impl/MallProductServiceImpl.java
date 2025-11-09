@@ -5,7 +5,7 @@ import cn.zhangchuangla.medicine.admin.service.MallCategoryService;
 import cn.zhangchuangla.medicine.admin.service.MallProductImageService;
 import cn.zhangchuangla.medicine.admin.service.MallProductService;
 import cn.zhangchuangla.medicine.common.core.constants.RedisConstants;
-import cn.zhangchuangla.medicine.common.core.enums.ResponseResultCode;
+import cn.zhangchuangla.medicine.common.core.enums.ResponseCode;
 import cn.zhangchuangla.medicine.common.core.exception.ServiceException;
 import cn.zhangchuangla.medicine.common.core.utils.Assert;
 import cn.zhangchuangla.medicine.common.security.utils.SecurityUtils;
@@ -14,9 +14,9 @@ import cn.zhangchuangla.medicine.model.dto.MallProductDto;
 import cn.zhangchuangla.medicine.model.entity.MallCategory;
 import cn.zhangchuangla.medicine.model.entity.MallProduct;
 import cn.zhangchuangla.medicine.model.enums.DeliveryTypeEnum;
-import cn.zhangchuangla.medicine.model.request.mall.product.MallProductAddRequest;
-import cn.zhangchuangla.medicine.model.request.mall.product.MallProductListQueryRequest;
-import cn.zhangchuangla.medicine.model.request.mall.product.MallProductUpdateRequest;
+import cn.zhangchuangla.medicine.model.request.mall.MallProductAddRequest;
+import cn.zhangchuangla.medicine.model.request.mall.MallProductListQueryRequest;
+import cn.zhangchuangla.medicine.model.request.mall.MallProductUpdateRequest;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
@@ -37,7 +37,7 @@ import java.util.List;
  * 商品列表查询、商品详情获取等功能。
  *
  * @author Chuang
- * created on 2025/10/4 02:34
+ * created on 2025/10/4
  */
 @Service
 @RequiredArgsConstructor
@@ -128,6 +128,9 @@ public class MallProductServiceImpl extends ServiceImpl<MallProductMapper, MallP
         // 仅聚焦商品与图片：确保至少一张图片后批量写入图片表
         Assert.isTrue(request.getImages() != null && !request.getImages().isEmpty(), "商品图片至少需要上传一张图片");
         mallProductImageService.addProductImages(request.getImages(), product.getId());
+        // 上述是通用的商城属性,下面是药品特有的属性
+
+        // todo 添加药品的属性
         return save;
     }
 
@@ -204,29 +207,29 @@ public class MallProductServiceImpl extends ServiceImpl<MallProductMapper, MallP
     public void restoreStock(Long productId, Integer quantity) {
         Assert.isPositive(quantity, "商品数量不能小于0");
         Assert.isPositive(productId, "商品ID不能小于0");
-        
+
         MallProduct mallProduct = lambdaQuery()
                 .eq(MallProduct::getId, productId)
                 .select(MallProduct::getStock, MallProduct::getVersion)
                 .one();
 
         if (mallProduct == null) {
-            throw new ServiceException(ResponseResultCode.OPERATION_ERROR, "商品不存在");
+            throw new ServiceException(ResponseCode.OPERATION_ERROR, "商品不存在");
         }
-        
+
         Integer currentStock = mallProduct.getStock();
         int newStock = (currentStock == null ? 0 : currentStock) + quantity;
         int currentVersion = mallProduct.getVersion() == null ? 0 : mallProduct.getVersion();
-        
+
         boolean updated = lambdaUpdate()
                 .eq(MallProduct::getId, productId)
                 .eq(MallProduct::getVersion, currentVersion)
                 .set(MallProduct::getStock, newStock)
                 .set(MallProduct::getVersion, currentVersion + 1)
                 .update();
-                
+
         if (!updated) {
-            throw new ServiceException(ResponseResultCode.OPERATION_ERROR, "库存更新失败，请重试");
+            throw new ServiceException(ResponseCode.OPERATION_ERROR, "库存更新失败，请重试");
         }
     }
 

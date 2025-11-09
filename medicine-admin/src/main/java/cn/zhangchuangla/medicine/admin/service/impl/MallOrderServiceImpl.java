@@ -10,16 +10,15 @@ import cn.zhangchuangla.medicine.admin.model.vo.OrderPriceVo;
 import cn.zhangchuangla.medicine.admin.model.vo.OrderRemarkVo;
 import cn.zhangchuangla.medicine.admin.service.*;
 import cn.zhangchuangla.medicine.common.core.base.PageRequest;
-import cn.zhangchuangla.medicine.common.core.enums.ResponseResultCode;
+import cn.zhangchuangla.medicine.common.core.enums.ResponseCode;
 import cn.zhangchuangla.medicine.common.core.exception.ServiceException;
 import cn.zhangchuangla.medicine.common.core.utils.Assert;
+import cn.zhangchuangla.medicine.common.security.utils.SecurityUtils;
 import cn.zhangchuangla.medicine.model.dto.OrderTimelineDto;
 import cn.zhangchuangla.medicine.model.dto.OrderWithProductDto;
-import cn.zhangchuangla.medicine.model.entity.MallOrder;
-import cn.zhangchuangla.medicine.model.entity.MallOrderItem;
-import cn.zhangchuangla.medicine.model.entity.MallProductImage;
-import cn.zhangchuangla.medicine.model.entity.User;
+import cn.zhangchuangla.medicine.model.entity.*;
 import cn.zhangchuangla.medicine.model.enums.*;
+import cn.zhangchuangla.medicine.model.vo.mall.OrderShippingVo;
 import cn.zhangchuangla.medicine.payment.model.AlipayRefundRequest;
 import cn.zhangchuangla.medicine.payment.service.AlipayPaymentService;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
@@ -67,9 +66,10 @@ public class MallOrderServiceImpl extends ServiceImpl<MallOrderMapper, MallOrder
     private final MallOrderTimelineService mallOrderTimelineService;
     private final UserWalletService userWalletService;
     private final MallProductService mallProductService;
+    private final MallOrderShippingService mallOrderShippingService;
 
 
-    public MallOrderServiceImpl(MallOrderMapper mallOrderMapper, UserMapper userMapper, MallOrderItemService mallOrderItemService, MallProductImageService mallProductImageService, AlipayPaymentService alipayPaymentService, MallOrderTimelineService mallOrderTimelineService, UserWalletService userWalletService, MallProductService mallProductService) {
+    public MallOrderServiceImpl(MallOrderMapper mallOrderMapper, UserMapper userMapper, MallOrderItemService mallOrderItemService, MallProductImageService mallProductImageService, AlipayPaymentService alipayPaymentService, MallOrderTimelineService mallOrderTimelineService, UserWalletService userWalletService, MallProductService mallProductService, MallOrderShippingService mallOrderShippingService) {
         this.mallOrderMapper = mallOrderMapper;
         this.userMapper = userMapper;
         this.mallOrderItemService = mallOrderItemService;
@@ -78,6 +78,7 @@ public class MallOrderServiceImpl extends ServiceImpl<MallOrderMapper, MallOrder
         this.mallOrderTimelineService = mallOrderTimelineService;
         this.userWalletService = userWalletService;
         this.mallProductService = mallProductService;
+        this.mallOrderShippingService = mallOrderShippingService;
     }
 
 
@@ -92,7 +93,7 @@ public class MallOrderServiceImpl extends ServiceImpl<MallOrderMapper, MallOrder
         Assert.isTrue(orderNo != null, "订单号不能为空");
         MallOrder mallOrder = lambdaQuery().eq(MallOrder::getOrderNo, orderNo).one();
         if (mallOrder == null) {
-            throw new ServiceException(ResponseResultCode.RESULT_IS_NULL, "订单不存在");
+            throw new ServiceException(ResponseCode.RESULT_IS_NULL, "订单不存在");
         }
         return mallOrder;
     }
@@ -102,7 +103,7 @@ public class MallOrderServiceImpl extends ServiceImpl<MallOrderMapper, MallOrder
         Assert.isPositive(id, "订单ID不能小于0");
         MallOrder mallOrder = getById(id);
         if (mallOrder == null) {
-            throw new ServiceException(ResponseResultCode.RESULT_IS_NULL, "订单不存在");
+            throw new ServiceException(ResponseCode.RESULT_IS_NULL, "订单不存在");
         }
         return mallOrder;
     }
@@ -200,7 +201,7 @@ public class MallOrderServiceImpl extends ServiceImpl<MallOrderMapper, MallOrder
         OrderStatusEnum orderStatusEnum = OrderStatusEnum.fromCode(mallOrder.getOrderStatus());
         if (orderStatusEnum != null &&
                 orderStatusEnum.ordinal() > OrderStatusEnum.PENDING_SHIPMENT.ordinal()) {
-            throw new ServiceException(ResponseResultCode.PARAM_ERROR, "当前订单状态不允许修改收货地址");
+            throw new ServiceException(ResponseCode.PARAM_ERROR, "当前订单状态不允许修改收货地址");
         }
 
         // 更新配送信息
@@ -217,7 +218,7 @@ public class MallOrderServiceImpl extends ServiceImpl<MallOrderMapper, MallOrder
         if (updated) {
             OrderTimelineDto timelineDto = OrderTimelineDto.builder()
                     .orderId(mallOrder.getId())
-                    .eventType(OrderEventTypeEnum.ADMIN_UPDATE_ADDRESS.getType())
+                    .eventType(OrderEventTypeEnum.OTHER.getType())
                     .eventStatus(mallOrder.getOrderStatus())
                     .operatorType(OperatorTypeEnum.ADMIN.getType())
                     .description("管理员修改了收货地址")
@@ -265,7 +266,7 @@ public class MallOrderServiceImpl extends ServiceImpl<MallOrderMapper, MallOrder
         if (updated) {
             OrderTimelineDto timelineDto = OrderTimelineDto.builder()
                     .orderId(mallOrder.getId())
-                    .eventType(OrderEventTypeEnum.ADMIN_UPDATE_REMARK.getType())
+                    .eventType(OrderEventTypeEnum.OTHER.getType())
                     .eventStatus(mallOrder.getOrderStatus())
                     .operatorType(OperatorTypeEnum.ADMIN.getType())
                     .description("管理员添加了订单备注")
@@ -307,7 +308,7 @@ public class MallOrderServiceImpl extends ServiceImpl<MallOrderMapper, MallOrder
         OrderStatusEnum orderStatusEnum = OrderStatusEnum.fromCode(mallOrder.getOrderStatus());
         if (orderStatusEnum != null &&
                 orderStatusEnum.ordinal() > OrderStatusEnum.PENDING_PAYMENT.ordinal()) {
-            throw new ServiceException(ResponseResultCode.PARAM_ERROR, "当前订单状态不允许修改价格");
+            throw new ServiceException(ResponseCode.PARAM_ERROR, "当前订单状态不允许修改价格");
         }
 
         try {
@@ -316,7 +317,7 @@ public class MallOrderServiceImpl extends ServiceImpl<MallOrderMapper, MallOrder
 
             // 验证价格是否合法
             if (newPrice.compareTo(BigDecimal.ZERO) <= 0) {
-                throw new ServiceException(ResponseResultCode.PARAM_ERROR, "价格必须大于0");
+                throw new ServiceException(ResponseCode.PARAM_ERROR, "价格必须大于0");
             }
 
             // 更新订单价格
@@ -330,7 +331,7 @@ public class MallOrderServiceImpl extends ServiceImpl<MallOrderMapper, MallOrder
             if (updated) {
                 OrderTimelineDto timelineDto = OrderTimelineDto.builder()
                         .orderId(mallOrder.getId())
-                        .eventType(OrderEventTypeEnum.ADMIN_UPDATE_PRICE.getType())
+                        .eventType(OrderEventTypeEnum.OTHER.getType())
                         .eventStatus(mallOrder.getOrderStatus())
                         .operatorType(OperatorTypeEnum.ADMIN.getType())
                         .description("管理员修改了订单价格")
@@ -340,7 +341,7 @@ public class MallOrderServiceImpl extends ServiceImpl<MallOrderMapper, MallOrder
 
             return updated;
         } catch (NumberFormatException e) {
-            throw new ServiceException(ResponseResultCode.PARAM_ERROR, "价格格式不正确");
+            throw new ServiceException(ResponseCode.PARAM_ERROR, "价格格式不正确");
         }
     }
 
@@ -361,14 +362,14 @@ public class MallOrderServiceImpl extends ServiceImpl<MallOrderMapper, MallOrder
         MallOrder mallOrder = loadRefundableOrder(request);
         PayTypeEnum payType = PayTypeEnum.fromCode(mallOrder.getPayType());
         if (payType == null) {
-            throw new ServiceException(ResponseResultCode.OPERATION_ERROR, "暂不支持该支付方式退款!");
+            throw new ServiceException(ResponseCode.OPERATION_ERROR, "暂不支持该支付方式退款!");
         }
 
         // 2. 先更新订单状态，确保退款金额被记录，防止重复退款
         applyRefundSnapshot(mallOrder, request.getRefundAmount());
         boolean updated = updateById(mallOrder);
         if (!updated) {
-            throw new ServiceException(ResponseResultCode.OPERATION_ERROR, "更新订单退款状态失败, 请稍后重试!");
+            throw new ServiceException(ResponseCode.OPERATION_ERROR, "更新订单退款状态失败, 请稍后重试!");
         }
 
         // 3. 根据支付方式路由到具体的退款实现，便于未来扩展到微信、钱包等渠道。
@@ -376,7 +377,7 @@ public class MallOrderServiceImpl extends ServiceImpl<MallOrderMapper, MallOrder
         switch (payType) {
             case ALIPAY -> processAlipayRefund(mallOrder, request);
             case WALLET -> processWalletRefund(mallOrder, request);
-            default -> throw new ServiceException(ResponseResultCode.OPERATION_ERROR, "暂不支持该支付方式退款!");
+            default -> throw new ServiceException(ResponseCode.OPERATION_ERROR, "暂不支持该支付方式退款!");
         }
 
         // 4. 添加订单时间线记录
@@ -409,17 +410,17 @@ public class MallOrderServiceImpl extends ServiceImpl<MallOrderMapper, MallOrder
     public boolean cancelOrder(OrderCancelRequest request) {
         // 1. 查询订单并校验状态
         MallOrder mallOrder = getOrderById(request.getOrderId());
-        
+
         // 2. 校验订单状态是否允许取消
         OrderStatusEnum orderStatusEnum = OrderStatusEnum.fromCode(mallOrder.getOrderStatus());
         if (orderStatusEnum == null) {
-            throw new ServiceException(ResponseResultCode.OPERATION_ERROR, "订单状态异常");
+            throw new ServiceException(ResponseCode.OPERATION_ERROR, "订单状态异常");
         }
-        
+
         // 只有待支付、待发货状态可以取消
-        if (orderStatusEnum != OrderStatusEnum.PENDING_PAYMENT && 
-            orderStatusEnum != OrderStatusEnum.PENDING_SHIPMENT) {
-            throw new ServiceException(ResponseResultCode.OPERATION_ERROR, 
+        if (orderStatusEnum != OrderStatusEnum.PENDING_PAYMENT &&
+                orderStatusEnum != OrderStatusEnum.PENDING_SHIPMENT) {
+            throw new ServiceException(ResponseCode.OPERATION_ERROR,
                     String.format("当前订单状态[%s]不允许取消", orderStatusEnum.getName()));
         }
 
@@ -431,16 +432,16 @@ public class MallOrderServiceImpl extends ServiceImpl<MallOrderMapper, MallOrder
         // 4. 如果订单已支付，需要先退款
         if (Objects.equals(mallOrder.getPaid(), PAID_FLAG)) {
             log.info("订单{}已支付，执行全额退款", mallOrder.getOrderNo());
-            
+
             BigDecimal refundAmount = mallOrder.getPayAmount();
             if (refundAmount == null || refundAmount.compareTo(BigDecimal.ZERO) <= 0) {
-                throw new ServiceException(ResponseResultCode.OPERATION_ERROR, "订单支付金额异常，无法退款");
+                throw new ServiceException(ResponseCode.OPERATION_ERROR, "订单支付金额异常，无法退款");
             }
 
             // 根据支付方式执行退款
             PayTypeEnum payType = PayTypeEnum.fromCode(mallOrder.getPayType());
             if (payType == null) {
-                throw new ServiceException(ResponseResultCode.OPERATION_ERROR, "支付方式异常");
+                throw new ServiceException(ResponseCode.OPERATION_ERROR, "支付方式异常");
             }
 
             switch (payType) {
@@ -457,16 +458,16 @@ public class MallOrderServiceImpl extends ServiceImpl<MallOrderMapper, MallOrder
                     // 钱包退款
                     Long userId = mallOrder.getUserId();
                     if (userId == null) {
-                        throw new ServiceException(ResponseResultCode.OPERATION_ERROR, "订单用户信息异常");
+                        throw new ServiceException(ResponseCode.OPERATION_ERROR, "订单用户信息异常");
                     }
                     String walletRemark = String.format("订单取消退款（订单号：%s，退款金额：%s元）",
                             mallOrder.getOrderNo(), formatAmount(refundAmount));
                     boolean success = userWalletService.rechargeWallet(userId, refundAmount, walletRemark);
                     if (!success) {
-                        throw new ServiceException(ResponseResultCode.OPERATION_ERROR, "钱包退款失败");
+                        throw new ServiceException(ResponseCode.OPERATION_ERROR, "钱包退款失败");
                     }
                 }
-                default -> throw new ServiceException(ResponseResultCode.OPERATION_ERROR, "不支持的支付方式");
+                default -> throw new ServiceException(ResponseCode.OPERATION_ERROR, "不支持的支付方式");
             }
 
             // 更新退款信息
@@ -480,15 +481,15 @@ public class MallOrderServiceImpl extends ServiceImpl<MallOrderMapper, MallOrder
         if (!StringUtils.hasText(cancelReason)) {
             cancelReason = "管理员取消订单";
         }
-        
+
         mallOrder.setOrderStatus(OrderStatusEnum.CANCELLED.getType());
         mallOrder.setCloseReason(cancelReason);
         mallOrder.setCloseTime(new Date());
         mallOrder.setUpdateTime(new Date());
-        
+
         boolean updated = updateById(mallOrder);
         if (!updated) {
-            throw new ServiceException(ResponseResultCode.OPERATION_ERROR, "取消订单失败");
+            throw new ServiceException(ResponseCode.OPERATION_ERROR, "取消订单失败");
         }
 
         // 6. 恢复库存
@@ -527,10 +528,10 @@ public class MallOrderServiceImpl extends ServiceImpl<MallOrderMapper, MallOrder
         MallOrder mallOrder = getOrderByOrderNo(request.getOrderNo());
         BigDecimal refundAmount = request.getRefundAmount();
         if (refundAmount == null) {
-            throw new ServiceException(ResponseResultCode.PARAM_ERROR, "退款金额不能为空");
+            throw new ServiceException(ResponseCode.PARAM_ERROR, "退款金额不能为空");
         }
         if (!Objects.equals(mallOrder.getPaid(), PAID_FLAG)) {
-            throw new ServiceException(ResponseResultCode.OPERATION_ERROR, "订单未支付，无法退款!");
+            throw new ServiceException(ResponseCode.OPERATION_ERROR, "订单未支付，无法退款!");
         }
 
         ensureRefundAmountAllowed(mallOrder, refundAmount);
@@ -542,16 +543,16 @@ public class MallOrderServiceImpl extends ServiceImpl<MallOrderMapper, MallOrder
      */
     private void ensureRefundAmountAllowed(MallOrder mallOrder, BigDecimal refundAmount) {
         if (refundAmount.compareTo(BigDecimal.ZERO) <= 0) {
-            throw new ServiceException(ResponseResultCode.OPERATION_ERROR, "退款金额必须大于0!");
+            throw new ServiceException(ResponseCode.OPERATION_ERROR, "退款金额必须大于0!");
         }
         BigDecimal payAmount = safeAmount(mallOrder.getPayAmount());
         if (payAmount.compareTo(BigDecimal.ZERO) <= 0) {
-            throw new ServiceException(ResponseResultCode.OPERATION_ERROR, "订单支付金额异常，无法退款!");
+            throw new ServiceException(ResponseCode.OPERATION_ERROR, "订单支付金额异常，无法退款!");
         }
         BigDecimal alreadyRefunded = safeAmount(mallOrder.getRefundPrice());
         BigDecimal remainingAmount = payAmount.subtract(alreadyRefunded);
         if (refundAmount.compareTo(remainingAmount) > 0) {
-            throw new ServiceException(ResponseResultCode.OPERATION_ERROR, "退款金额不能大于可退款金额!");
+            throw new ServiceException(ResponseCode.OPERATION_ERROR, "退款金额不能大于可退款金额!");
         }
     }
 
@@ -582,7 +583,7 @@ public class MallOrderServiceImpl extends ServiceImpl<MallOrderMapper, MallOrder
         Long userId = mallOrder.getUserId();
 
         if (userId == null) {
-            throw new ServiceException(ResponseResultCode.OPERATION_ERROR, "订单用户信息异常，无法退款");
+            throw new ServiceException(ResponseCode.OPERATION_ERROR, "订单用户信息异常，无法退款");
         }
 
         // 构建退款原因描述
@@ -595,7 +596,7 @@ public class MallOrderServiceImpl extends ServiceImpl<MallOrderMapper, MallOrder
         boolean success = userWalletService.rechargeWallet(userId, refundAmount, walletRemark);
 
         if (!success) {
-            throw new ServiceException(ResponseResultCode.OPERATION_ERROR, "钱包退款失败，请稍后重试");
+            throw new ServiceException(ResponseCode.OPERATION_ERROR, "钱包退款失败，请稍后重试");
         }
 
         log.info("钱包退款成功，订单号：{}，用户ID：{}，退款金额：{}",
@@ -716,5 +717,236 @@ public class MallOrderServiceImpl extends ServiceImpl<MallOrderMapper, MallOrder
     private String getPayTypeDesc(String payType) {
         PayTypeEnum payTypeEnum = PayTypeEnum.fromCode(payType);
         return payTypeEnum != null ? payTypeEnum.getType() : "未知";
+    }
+
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public boolean shipOrder(OrderShipRequest request) {
+        // 1. 查询订单并校验状态
+        MallOrder mallOrder = getOrderById(request.getOrderId());
+
+        // 2. 校验订单状态是否允许发货
+        OrderStatusEnum orderStatusEnum = OrderStatusEnum.fromCode(mallOrder.getOrderStatus());
+        if (orderStatusEnum == null) {
+            throw new ServiceException(ResponseCode.OPERATION_ERROR, "订单状态异常");
+        }
+
+        // 只有待发货状态可以发货
+        if (orderStatusEnum != OrderStatusEnum.PENDING_SHIPMENT) {
+            throw new ServiceException(ResponseCode.OPERATION_ERROR,
+                    String.format("当前订单状态[%s]不允许发货", orderStatusEnum.getName()));
+        }
+
+        // 3. 更新订单状态为待收货
+        Date now = new Date();
+        mallOrder.setOrderStatus(OrderStatusEnum.PENDING_RECEIPT.getType());
+        mallOrder.setDeliverTime(now);
+        mallOrder.setUpdateTime(now);
+
+        boolean updated = updateById(mallOrder);
+        if (!updated) {
+            throw new ServiceException(ResponseCode.OPERATION_ERROR, "发货失败，请重试");
+        }
+
+        // 4. 创建物流记录
+        MallOrderShipping shipping = MallOrderShipping.builder()
+                .orderId(mallOrder.getId())
+                .shippingNo(request.getTrackingNumber())
+                .shippingCompany(request.getLogisticsCompany())
+                .deliveryType(mallOrder.getDeliveryType())
+                .status(ShippingStatusEnum.IN_TRANSIT.getType())
+                .deliverTime(now)
+                .shipmentNote(request.getShipmentNote())
+                .createTime(now)
+                .updateTime(now)
+                .build();
+
+        boolean shippingCreated = mallOrderShippingService.createShipping(shipping);
+        if (!shippingCreated) {
+            throw new ServiceException(ResponseCode.OPERATION_ERROR, "创建物流记录失败");
+        }
+
+        // 5. 添加订单时间线记录
+        String description = String.format("管理员发货，物流公司：%s，物流单号：%s",
+                request.getLogisticsCompany(), request.getTrackingNumber());
+        OrderTimelineDto timelineDto = OrderTimelineDto.builder()
+                .orderId(mallOrder.getId())
+                .eventType(OrderEventTypeEnum.ORDER_SHIPPED.getType())
+                .eventStatus(OrderStatusEnum.PENDING_RECEIPT.getType())
+                .operatorType(OperatorTypeEnum.ADMIN.getType())
+                .description(description)
+                .build();
+        mallOrderTimelineService.addTimelineIfNotExists(timelineDto);
+
+        log.info("订单{}发货成功，物流公司：{}，物流单号：{}", mallOrder.getOrderNo(),
+                request.getLogisticsCompany(), request.getTrackingNumber());
+        return true;
+    }
+
+    @Override
+    public OrderShippingVo getOrderShipping(Long orderId) {
+        // 1. 查询订单基本信息
+        MallOrder mallOrder = getOrderById(orderId);
+
+        // 2. 查询物流信息
+        MallOrderShipping shipping = mallOrderShippingService.getByOrderId(orderId);
+
+        // 3. 获取订单状态名称
+        OrderStatusEnum orderStatusEnum = OrderStatusEnum.fromCode(mallOrder.getOrderStatus());
+        String orderStatusName = orderStatusEnum != null ? orderStatusEnum.getName() : "未知";
+
+        // 4. 组装收货人信息
+        DeliveryTypeEnum deliveryTypeEnum = DeliveryTypeEnum.fromCode(mallOrder.getDeliveryType());
+        OrderShippingVo.ReceiverInfo receiverInfo = OrderShippingVo.ReceiverInfo.builder()
+                .receiverName(mallOrder.getReceiverName())
+                .receiverPhone(mallOrder.getReceiverPhone())
+                .receiverDetail(mallOrder.getReceiverDetail())
+                .deliveryType(mallOrder.getDeliveryType())
+                .deliveryTypeName(deliveryTypeEnum != null ? deliveryTypeEnum.getName() : "未知")
+                .build();
+
+        // 5. 组装返回VO
+        OrderShippingVo.OrderShippingVoBuilder builder = OrderShippingVo.builder()
+                .orderId(mallOrder.getId())
+                .orderNo(mallOrder.getOrderNo())
+                .orderStatus(mallOrder.getOrderStatus())
+                .orderStatusName(orderStatusName)
+                .receiverInfo(receiverInfo);
+
+        // 6. 如果有物流信息，添加物流详情
+        if (shipping != null) {
+            ShippingStatusEnum statusEnum = ShippingStatusEnum.fromCode(shipping.getStatus());
+            builder.logisticsCompany(shipping.getShippingCompany())
+                    .trackingNumber(shipping.getShippingNo())
+                    .shipmentNote(shipping.getShipmentNote())
+                    .deliverTime(shipping.getDeliverTime())
+                    .receiveTime(shipping.getReceiveTime())
+                    .status(shipping.getStatus())
+                    .statusName(statusEnum != null ? statusEnum.getName() : "未知");
+        }
+
+        return builder.build();
+    }
+
+    @Override
+    public List<MallOrder> getOrdersForAutoConfirm(int daysAfterShipment) {
+        // 计算N天前的时间点
+        Calendar calendar = Calendar.getInstance();
+        calendar.add(Calendar.DAY_OF_MONTH, -daysAfterShipment);
+        Date targetDate = calendar.getTime();
+
+        // 查询发货时间在N天前且状态仍为待收货的订单
+        return lambdaQuery()
+                .eq(MallOrder::getOrderStatus, OrderStatusEnum.PENDING_RECEIPT.getType())
+                .le(MallOrder::getDeliverTime, targetDate)
+                .isNotNull(MallOrder::getDeliverTime)
+                .list();
+    }
+
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public boolean autoConfirmReceipt(Long orderId) {
+        // 1. 查询订单并校验状态
+        MallOrder mallOrder = getOrderById(orderId);
+
+        // 2. 校验订单状态
+        OrderStatusEnum orderStatusEnum = OrderStatusEnum.fromCode(mallOrder.getOrderStatus());
+        if (orderStatusEnum != OrderStatusEnum.PENDING_RECEIPT) {
+            log.warn("订单{}状态不是待收货，无法自动确认收货，当前状态：{}", mallOrder.getOrderNo(), orderStatusEnum);
+            return false;
+        }
+
+        // 3. 更新订单状态为已完成
+        Date now = new Date();
+        mallOrder.setOrderStatus(OrderStatusEnum.COMPLETED.getType());
+        mallOrder.setReceiveTime(now);
+        mallOrder.setFinishTime(now);
+        mallOrder.setUpdateTime(now);
+
+        boolean updated = updateById(mallOrder);
+        if (!updated) {
+            throw new ServiceException(ResponseCode.OPERATION_ERROR, "自动确认收货失败");
+        }
+
+        // 4. 更新物流状态为已签收
+        MallOrderShipping shipping = mallOrderShippingService.getByOrderId(orderId);
+        if (shipping != null) {
+            shipping.setStatus(ShippingStatusEnum.DELIVERED.getType());
+            shipping.setReceiveTime(now);
+            shipping.setUpdateTime(now);
+            mallOrderShippingService.updateById(shipping);
+        }
+
+        // 5. 添加订单时间线记录（标记为系统自动）
+        OrderTimelineDto timelineDto = OrderTimelineDto.builder()
+                .orderId(mallOrder.getId())
+                .eventType(OrderEventTypeEnum.ORDER_RECEIVED.getType())
+                .eventStatus(OrderStatusEnum.COMPLETED.getType())
+                .operatorType(OperatorTypeEnum.SYSTEM.getType())
+                .description("系统自动确认收货")
+                .build();
+        mallOrderTimelineService.addTimelineIfNotExists(timelineDto);
+
+        log.info("订单{}自动确认收货成功", mallOrder.getOrderNo());
+        return true;
+    }
+
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public boolean manualConfirmReceipt(OrderReceiveRequest request) {
+        // 1. 查询订单并校验
+        MallOrder mallOrder = getOrderById(request.getOrderId());
+
+        // 2. 校验订单状态是否允许确认收货
+        OrderStatusEnum orderStatusEnum = OrderStatusEnum.fromCode(mallOrder.getOrderStatus());
+        if (orderStatusEnum == null) {
+            throw new ServiceException(ResponseCode.OPERATION_ERROR, "订单状态异常");
+        }
+
+        // 只有待收货状态可以确认收货
+        if (orderStatusEnum != OrderStatusEnum.PENDING_RECEIPT) {
+            throw new ServiceException(ResponseCode.OPERATION_ERROR,
+                    String.format("当前订单状态[%s]不允许确认收货", orderStatusEnum.getName()));
+        }
+
+        // 3. 更新订单状态为已完成
+        Date now = new Date();
+        mallOrder.setOrderStatus(OrderStatusEnum.COMPLETED.getType());
+        mallOrder.setReceiveTime(now);
+        mallOrder.setFinishTime(now);
+        mallOrder.setUpdateTime(now);
+
+        boolean updated = updateById(mallOrder);
+        if (!updated) {
+            throw new ServiceException(ResponseCode.OPERATION_ERROR, "确认收货失败，请重试");
+        }
+
+        // 4. 更新物流状态为已签收
+        MallOrderShipping shipping = mallOrderShippingService.getByOrderId(request.getOrderId());
+        if (shipping != null) {
+            shipping.setStatus(ShippingStatusEnum.DELIVERED.getType());
+            shipping.setReceiveTime(now);
+            shipping.setUpdateTime(now);
+            mallOrderShippingService.updateById(shipping);
+        }
+
+        // 5. 添加订单时间线记录（标记为管理员操作）
+        String username = SecurityUtils.getUsername();
+        String description = String.format("管理员%s手动确认收货", username);
+        if (request.getRemark() != null && !request.getRemark().trim().isEmpty()) {
+            description += String.format("，备注：%s", request.getRemark());
+        }
+
+        OrderTimelineDto timelineDto = OrderTimelineDto.builder()
+                .orderId(mallOrder.getId())
+                .eventType(OrderEventTypeEnum.ORDER_RECEIVED.getType())
+                .eventStatus(OrderStatusEnum.COMPLETED.getType())
+                .operatorType(OperatorTypeEnum.ADMIN.getType())
+                .description(description)
+                .build();
+        mallOrderTimelineService.addTimelineIfNotExists(timelineDto);
+
+        log.info("管理员{}手动确认收货成功，订单号：{}，备注：{}", username, mallOrder.getOrderNo(), request.getRemark());
+        return true;
     }
 }

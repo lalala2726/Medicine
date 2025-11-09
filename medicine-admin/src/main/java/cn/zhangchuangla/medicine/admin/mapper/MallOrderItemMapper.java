@@ -5,9 +5,6 @@ import com.baomidou.mybatisplus.core.mapper.BaseMapper;
 
 /**
  * @author Chuang
- * @description 针对表【mall_order_item(商城订单明细表（商品项）)】的数据库操作Mapper
- * @createDate 2025-11-01 00:41:04
- * @Entity generator.domain.MallOrderItem
  */
 public interface MallOrderItemMapper extends BaseMapper<MallOrderItem> {
 

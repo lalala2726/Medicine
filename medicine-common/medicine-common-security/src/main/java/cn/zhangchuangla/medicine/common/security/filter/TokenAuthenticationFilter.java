@@ -1,7 +1,7 @@
 package cn.zhangchuangla.medicine.common.security.filter;
 
 import cn.zhangchuangla.medicine.common.core.constants.SecurityConstants;
-import cn.zhangchuangla.medicine.common.core.enums.ResponseResultCode;
+import cn.zhangchuangla.medicine.common.core.enums.ResponseCode;
 import cn.zhangchuangla.medicine.common.core.utils.ResponseUtils;
 import cn.zhangchuangla.medicine.common.security.SecurityProperties;
 import cn.zhangchuangla.medicine.common.security.token.TokenService;
@@ -27,7 +27,7 @@ import java.util.Arrays;
 /**
  * @author Chuang
  * <p>
- * created on 2025/8/28 14:14
+ * created on 2025/8/28
  */
 @Slf4j
 @Component
@@ -64,7 +64,7 @@ public class TokenAuthenticationFilter extends OncePerRequestFilter {
                 Authentication authentication = tokenService.parseAccessToken(token);
                 if (authentication == null) {
                     log.warn("解析访问令牌失败: {}", token);
-                    ResponseUtils.writeErrMsg(response, ResponseResultCode.ACCESS_TOKEN_INVALID, HttpStatus.OK);
+                    ResponseUtils.writeErrMsg(response, ResponseCode.ACCESS_TOKEN_INVALID, HttpStatus.OK);
                     return;
                 }
                 SecurityContextHolder.getContext().setAuthentication(authentication);
@@ -73,7 +73,7 @@ public class TokenAuthenticationFilter extends OncePerRequestFilter {
             // 安全上下文清除保障（防止上下文残留）
             log.warn("安全上下文清理", ex);
             SecurityContextHolder.clearContext();
-            ResponseUtils.writeErrMsg(response, ResponseResultCode.ACCESS_TOKEN_INVALID, HttpStatus.OK);
+            ResponseUtils.writeErrMsg(response, ResponseCode.ACCESS_TOKEN_INVALID, HttpStatus.OK);
             return;
         }
 

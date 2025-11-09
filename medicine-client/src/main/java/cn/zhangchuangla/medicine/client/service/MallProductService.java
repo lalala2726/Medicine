@@ -3,12 +3,23 @@ package cn.zhangchuangla.medicine.client.service;
 import cn.zhangchuangla.medicine.client.enums.ProductViewPeriod;
 import cn.zhangchuangla.medicine.model.entity.MallProduct;
 import cn.zhangchuangla.medicine.model.entity.MallProductWithImageDto;
+import cn.zhangchuangla.medicine.model.vo.mall.RecommendListVo;
 import com.baomidou.mybatisplus.extension.service.IService;
+
+import java.util.List;
 
 /**
  * @author Chuang
  */
 public interface MallProductService extends IService<MallProduct> {
+
+
+    /**
+     * 推荐商品
+     *
+     * @return 推荐结果
+     */
+    List<RecommendListVo> recommend();
 
     /**
      * 获取商品信息

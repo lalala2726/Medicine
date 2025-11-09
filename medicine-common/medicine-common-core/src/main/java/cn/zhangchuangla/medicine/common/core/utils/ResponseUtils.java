@@ -1,7 +1,7 @@
 package cn.zhangchuangla.medicine.common.core.utils;
 
 import cn.zhangchuangla.medicine.common.core.base.AjaxResult;
-import cn.zhangchuangla.medicine.common.core.enums.ResponseResultCode;
+import cn.zhangchuangla.medicine.common.core.enums.ResponseCode;
 import com.alibaba.fastjson.JSON;
 import jakarta.servlet.http.HttpServletResponse;
 import org.slf4j.Logger;
@@ -15,13 +15,10 @@ import java.nio.charset.StandardCharsets;
 
 /**
  * 响应工具类
- *
- * @author Ray.Hao
  */
 public class ResponseUtils {
 
     private static final Logger log = LoggerFactory.getLogger(ResponseUtils.class);
-
 
     /**
      * 异常消息返回(适用过滤器中处理异常响应)
@@ -29,32 +26,12 @@ public class ResponseUtils {
      * @param response   HttpServletResponse
      * @param resultCode 响应结果码
      */
-    public static void writeErrMsg(HttpServletResponse response, ResponseResultCode resultCode, HttpStatus httpStatus) {
-        response.setStatus(httpStatus.value());
-        response.setContentType(MediaType.APPLICATION_JSON_VALUE);
-        response.setCharacterEncoding(StandardCharsets.UTF_8.name());
-
-        try (PrintWriter writer = response.getWriter()) {
-            String jsonResponse = JSON.toJSONString(AjaxResult.error(resultCode));
-            writer.print(jsonResponse);
-            writer.flush(); // 确保将响应内容写入到输出流
-        } catch (IOException e) {
-            log.error("响应异常处理失败", e);
-        }
+    public static void writeErrMsg(HttpServletResponse response, ResponseCode resultCode, HttpStatus httpStatus) {
+        writeErrMsg(response, httpStatus, resultCode, null);
     }
 
     public static void writeErrMsg(HttpServletResponse response, HttpStatus httpStatus, String message) {
-        response.setStatus(httpStatus.value());
-        response.setContentType(MediaType.APPLICATION_JSON_VALUE);
-        response.setCharacterEncoding(StandardCharsets.UTF_8.name());
-
-        try (PrintWriter writer = response.getWriter()) {
-            String jsonResponse = JSON.toJSONString(AjaxResult.error(message));
-            writer.print(jsonResponse);
-            writer.flush(); // 确保将响应内容写入到输出流
-        } catch (IOException e) {
-            log.error("响应异常处理失败", e);
-        }
+        writeErrMsg(response, httpStatus, null, message);
     }
 
     /**
@@ -64,13 +41,20 @@ public class ResponseUtils {
      * @param resultCode 响应结果码
      * @param message    自定义错误消息
      */
-    public static void writeErrMsg(HttpServletResponse response, HttpStatus httpStatus, ResponseResultCode resultCode, String message) {
+    public static void writeErrMsg(HttpServletResponse response, HttpStatus httpStatus, ResponseCode resultCode, String message) {
         response.setStatus(httpStatus.value());
         response.setContentType(MediaType.APPLICATION_JSON_VALUE);
         response.setCharacterEncoding(StandardCharsets.UTF_8.name());
 
         try (PrintWriter writer = response.getWriter()) {
-            String jsonResponse = JSON.toJSONString(AjaxResult.error(resultCode, message));
+            String jsonResponse;
+            if (resultCode != null && message != null) {
+                jsonResponse = JSON.toJSONString(AjaxResult.error(resultCode, message));
+            } else if (resultCode != null) {
+                jsonResponse = JSON.toJSONString(AjaxResult.error(resultCode));
+            } else {
+                jsonResponse = JSON.toJSONString(AjaxResult.error(message));
+            }
             writer.print(jsonResponse);
             writer.flush(); // 确保将响应内容写入到输出流
         } catch (IOException e) {
@@ -85,17 +69,8 @@ public class ResponseUtils {
      * @param resultCode 响应结果码
      * @param message    自定义错误消息
      */
-    public static void writeErrMsg(HttpServletResponse response, ResponseResultCode resultCode, HttpStatus httpStatus, String message) {
-        response.setStatus(httpStatus.value());
-        response.setContentType(MediaType.APPLICATION_JSON_VALUE);
-        response.setCharacterEncoding(StandardCharsets.UTF_8.name());
-        try (PrintWriter writer = response.getWriter()) {
-            String jsonResponse = JSON.toJSONString(AjaxResult.error(resultCode, message));
-            writer.print(jsonResponse);
-            writer.flush(); // 确保将响应内容写入到输出流
-        } catch (IOException e) {
-            log.error("响应异常处理失败", e);
-        }
+    public static void writeErrMsg(HttpServletResponse response, ResponseCode resultCode, HttpStatus httpStatus, String message) {
+        writeErrMsg(response, httpStatus, resultCode, message);
     }
 
 

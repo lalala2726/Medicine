@@ -7,9 +7,9 @@ import cn.zhangchuangla.medicine.common.security.annotation.IsAdmin;
 import cn.zhangchuangla.medicine.common.security.base.BaseController;
 import cn.zhangchuangla.medicine.model.dto.MallProductDetailDto;
 import cn.zhangchuangla.medicine.model.dto.MallProductDto;
-import cn.zhangchuangla.medicine.model.request.mall.product.MallProductAddRequest;
-import cn.zhangchuangla.medicine.model.request.mall.product.MallProductListQueryRequest;
-import cn.zhangchuangla.medicine.model.request.mall.product.MallProductUpdateRequest;
+import cn.zhangchuangla.medicine.model.request.mall.MallProductAddRequest;
+import cn.zhangchuangla.medicine.model.request.mall.MallProductListQueryRequest;
+import cn.zhangchuangla.medicine.model.request.mall.MallProductUpdateRequest;
 import cn.zhangchuangla.medicine.model.vo.mall.MallProductListVo;
 import cn.zhangchuangla.medicine.model.vo.mall.MallProductVo;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
@@ -28,7 +28,7 @@ import java.util.List;
  * 商品添加、商品修改和商品删除等功能。
  *
  * @author Chuang
- * created on 2025/10/4 02:33
+ * created on 2025/10/4
  */
 @RestController
 @RequestMapping("/mall/product")

@@ -9,6 +9,7 @@ import cn.zhangchuangla.medicine.admin.model.vo.OrderRemarkVo;
 import cn.zhangchuangla.medicine.common.core.base.PageRequest;
 import cn.zhangchuangla.medicine.model.dto.OrderWithProductDto;
 import cn.zhangchuangla.medicine.model.entity.MallOrder;
+import cn.zhangchuangla.medicine.model.vo.mall.OrderShippingVo;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.IService;
 
@@ -150,4 +151,44 @@ public interface MallOrderService extends IService<MallOrder> {
      * @return 订单统计信息
      */
     UserOrderStatistics getOrderStatisticsByUserId(Long userId);
+
+    /**
+     * 订单发货
+     *
+     * @param request 发货请求参数
+     * @return 是否成功
+     */
+    boolean shipOrder(OrderShipRequest request);
+
+    /**
+     * 获取订单物流信息
+     *
+     * @param orderId 订单ID
+     * @return 物流信息
+     */
+    OrderShippingVo getOrderShipping(Long orderId);
+
+    /**
+     * 查询待自动确认收货的订单（发货N天后）
+     *
+     * @param daysAfterShipment 发货后天数
+     * @return 待自动确认收货的订单列表
+     */
+    List<MallOrder> getOrdersForAutoConfirm(int daysAfterShipment);
+
+    /**
+     * 自动确认收货
+     *
+     * @param orderId 订单ID
+     * @return 是否成功
+     */
+    boolean autoConfirmReceipt(Long orderId);
+
+    /**
+     * 管理员手动确认收货
+     *
+     * @param request 确认收货请求参数
+     * @return 是否成功
+     */
+    boolean manualConfirmReceipt(OrderReceiveRequest request);
 }

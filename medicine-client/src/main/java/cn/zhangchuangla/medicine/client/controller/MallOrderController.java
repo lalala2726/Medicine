@@ -2,12 +2,14 @@ package cn.zhangchuangla.medicine.client.controller;
 
 import cn.zhangchuangla.medicine.client.model.request.OrderConfirmRequest;
 import cn.zhangchuangla.medicine.client.model.request.OrderCreateRequest;
+import cn.zhangchuangla.medicine.client.model.request.OrderReceiveRequest;
 import cn.zhangchuangla.medicine.client.model.vo.OrderCreateVo;
 import cn.zhangchuangla.medicine.client.service.MallOrderService;
 import cn.zhangchuangla.medicine.common.core.base.AjaxResult;
 import cn.zhangchuangla.medicine.common.security.annotation.Anonymous;
 import cn.zhangchuangla.medicine.common.security.base.BaseController;
 import cn.zhangchuangla.medicine.model.dto.AlipayNotifyDTO;
+import cn.zhangchuangla.medicine.model.vo.mall.OrderShippingVo;
 import cn.zhangchuangla.medicine.payment.config.AlipayProperties;
 import cn.zhangchuangla.medicine.payment.model.AlipayQrCodeRequest;
 import cn.zhangchuangla.medicine.payment.service.AlipayPaymentService;
@@ -33,7 +35,7 @@ import java.util.Map;
  * 方便第一次接入支付宝时快速理解整条业务链路。
  * </p>
  * <p>
- * created on 2025/10/31 01:33
+ * created on 2025/10/31
  */
 @Slf4j
 @RestController
@@ -184,5 +186,37 @@ public class MallOrderController extends BaseController {
         String tradeNo = params.getOrDefault("trade_no", "未知交易号");
         log.info("用户支付完成回跳，订单号：{}，支付宝交易号：{}", outTradeNo, tradeNo);
         return "支付完成，订单号：" + outTradeNo + "，支付宝交易号：" + tradeNo;
+    }
+
+    /**
+     * 确认收货
+     * <p>
+     * 用户确认收到商品后，订单状态更新为已完成
+     * </p>
+     *
+     * @param request 确认收货请求参数
+     * @return 确认结果
+     */
+    @PostMapping("/confirm-receipt")
+    @Operation(summary = "确认收货")
+    public AjaxResult<Void> confirmReceipt(@Validated @RequestBody OrderReceiveRequest request) {
+        boolean result = mallOrderService.confirmReceipt(request);
+        return toAjax(result);
+    }
+
+    /**
+     * 查询订单物流信息
+     * <p>
+     * 用户可以查看订单的物流公司、物流单号等信息
+     * </p>
+     *
+     * @param orderId 订单ID
+     * @return 物流信息
+     */
+    @GetMapping("/shipping/{orderId}")
+    @Operation(summary = "查询订单物流信息")
+    public AjaxResult<OrderShippingVo> getOrderShipping(@PathVariable("orderId") Long orderId) {
+        OrderShippingVo orderShippingVo = mallOrderService.getOrderShipping(orderId);
+        return success(orderShippingVo);
     }
 }

@@ -9,12 +9,16 @@ import cn.zhangchuangla.medicine.common.core.utils.BeanCotyUtils;
 import cn.zhangchuangla.medicine.common.security.annotation.Anonymous;
 import cn.zhangchuangla.medicine.common.security.base.BaseController;
 import cn.zhangchuangla.medicine.model.entity.MallProduct;
+import cn.zhangchuangla.medicine.model.vo.mall.RecommendListVo;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.constraints.Min;
 import lombok.RequiredArgsConstructor;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
 
 /**
  * 商城商品前台接口
@@ -27,10 +31,24 @@ import org.springframework.web.bind.annotation.*;
 @RequestMapping("/mall/product")
 @RequiredArgsConstructor
 @Validated
+@Tag(name = "商城商品前台接口")
 public class MallProductController extends BaseController {
 
     private final MallProductService mallProductService;
     private final MallUserBrowseHistoryService mallUserBrowseHistoryService;
+
+
+    /**
+     * 商品推荐
+     *
+     * @return 商品列表
+     */
+    @GetMapping("/recommend")
+    @Operation(summary = "商品推荐")
+    public AjaxResult<List<RecommendListVo>> recommend() {
+        List<RecommendListVo> mallProducts = mallProductService.recommend();
+        return success(mallProducts);
+    }
 
     /**
      * 获取商品详情

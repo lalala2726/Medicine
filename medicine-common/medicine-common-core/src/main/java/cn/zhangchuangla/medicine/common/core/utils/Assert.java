@@ -1,7 +1,7 @@
 package cn.zhangchuangla.medicine.common.core.utils;
 
 
-import cn.zhangchuangla.medicine.common.core.enums.ResponseResultCode;
+import cn.zhangchuangla.medicine.common.core.enums.ResponseCode;
 import cn.zhangchuangla.medicine.common.core.exception.ParamException;
 import cn.zhangchuangla.medicine.common.core.exception.ServiceException;
 import jakarta.validation.constraints.NotNull;
@@ -9,7 +9,7 @@ import jakarta.validation.constraints.NotNull;
 /**
  * @author Chuang
  * <p>
- * created on 2025/7/10 07:53
+ * created on 2025/7/10
  */
 public class Assert extends org.springframework.util.Assert {
 
@@ -28,7 +28,7 @@ public class Assert extends org.springframework.util.Assert {
      */
     public static void isTrue(boolean condition, String errorMessage) {
         if (!condition) {
-            throw new ServiceException(ResponseResultCode.OPERATION_ERROR, errorMessage);
+            throw new ServiceException(ResponseCode.OPERATION_ERROR, errorMessage);
         }
     }
 
@@ -41,7 +41,7 @@ public class Assert extends org.springframework.util.Assert {
      */
     public static void isParamTrue(boolean condition, String errorMessage) {
         if (!condition) {
-            throw new ParamException(ResponseResultCode.PARAM_ERROR, errorMessage);
+            throw new ParamException(ResponseCode.PARAM_ERROR, errorMessage);
         }
     }
 

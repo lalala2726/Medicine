@@ -1,7 +1,7 @@
 package cn.zhangchuangla.medicine.admin.mapper;
 
 import cn.zhangchuangla.medicine.model.entity.LlmConfig;
-import cn.zhangchuangla.medicine.model.request.llm.LlmConfigListQueryRequest;
+import cn.zhangchuangla.medicine.model.request.LlmConfigListQueryRequest;
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import org.apache.ibatis.annotations.Mapper;

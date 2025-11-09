@@ -6,7 +6,7 @@ import lombok.Getter;
  * 医疗工作流状态键枚举
  *
  * @author Chuang
- * @since 2025/9/10
+ * created 2025/9/10
  */
 @Getter
 public enum MedicineStateKeyEnum {

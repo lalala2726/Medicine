@@ -1,15 +1,15 @@
 package cn.zhangchuangla.medicine.admin.service;
 
-import cn.zhangchuangla.medicine.model.request.assistant.HistoryRequest;
-import cn.zhangchuangla.medicine.model.vo.chat.StreamChatResponse;
-import cn.zhangchuangla.medicine.model.vo.llm.chat.ChatHistoryResponse;
-import cn.zhangchuangla.medicine.model.vo.llm.chat.UserMessageRequest;
+import cn.zhangchuangla.medicine.model.request.HistoryRequest;
+import cn.zhangchuangla.medicine.model.vo.ChatHistoryResponse;
+import cn.zhangchuangla.medicine.model.vo.StreamChatResponse;
+import cn.zhangchuangla.medicine.model.vo.UserMessageRequest;
 import reactor.core.publisher.Flux;
 
 /**
  * @author Chuang
  * <p>
- * created on 2025/9/16 10:49
+ * created on 2025/9/16
  */
 public interface AssistantService {
 

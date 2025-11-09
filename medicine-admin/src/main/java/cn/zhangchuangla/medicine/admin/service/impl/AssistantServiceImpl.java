@@ -10,10 +10,10 @@ import cn.zhangchuangla.medicine.common.core.utils.UUIDUtils;
 import cn.zhangchuangla.medicine.common.security.base.BaseService;
 import cn.zhangchuangla.medicine.model.entity.Conversation;
 import cn.zhangchuangla.medicine.model.entity.Message;
-import cn.zhangchuangla.medicine.model.request.assistant.HistoryRequest;
-import cn.zhangchuangla.medicine.model.vo.chat.StreamChatResponse;
-import cn.zhangchuangla.medicine.model.vo.llm.chat.ChatHistoryResponse;
-import cn.zhangchuangla.medicine.model.vo.llm.chat.UserMessageRequest;
+import cn.zhangchuangla.medicine.model.request.HistoryRequest;
+import cn.zhangchuangla.medicine.model.vo.ChatHistoryResponse;
+import cn.zhangchuangla.medicine.model.vo.StreamChatResponse;
+import cn.zhangchuangla.medicine.model.vo.UserMessageRequest;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -28,7 +28,7 @@ import java.util.stream.Collectors;
 /**
  * @author Chuang
  * <p>
- * created on 2025/9/16 10:49
+ * created on 2025/9/16
  */
 @Slf4j
 @Service

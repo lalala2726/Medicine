@@ -17,7 +17,7 @@ import java.util.Date;
  * 主图、详情图等。支持多图片管理和排序功能。
  *
  * @author Chuang
- * created on 2025/10/4 02:12
+ * created on 2025/10/4 
  */
 @TableName(value = "mall_product_image")
 @Data

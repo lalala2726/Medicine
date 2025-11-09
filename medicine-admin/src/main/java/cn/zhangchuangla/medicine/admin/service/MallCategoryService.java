@@ -2,9 +2,9 @@ package cn.zhangchuangla.medicine.admin.service;
 
 import cn.zhangchuangla.medicine.common.core.base.Option;
 import cn.zhangchuangla.medicine.model.entity.MallCategory;
-import cn.zhangchuangla.medicine.model.request.mall.category.MallCategoryAddRequest;
-import cn.zhangchuangla.medicine.model.request.mall.category.MallCategoryUpdateRequest;
-import cn.zhangchuangla.medicine.model.vo.mall.category.MallCategoryTree;
+import cn.zhangchuangla.medicine.model.request.mall.MallCategoryAddRequest;
+import cn.zhangchuangla.medicine.model.request.mall.MallCategoryUpdateRequest;
+import cn.zhangchuangla.medicine.model.vo.mall.MallCategoryTree;
 import com.baomidou.mybatisplus.extension.service.IService;
 
 import java.util.List;
@@ -16,7 +16,7 @@ import java.util.List;
  * 分类树构建、分类选项获取等功能。
  *
  * @author Chuang
- * created on 2025/10/4 01:45
+ * created on 2025/10/4
  */
 public interface MallCategoryService extends IService<MallCategory> {
 

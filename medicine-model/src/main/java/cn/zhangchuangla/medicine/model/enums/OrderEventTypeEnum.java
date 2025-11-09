@@ -6,7 +6,7 @@ import lombok.Getter;
  * 订单事件类型枚举
  *
  * @author Chuang
- * @since 2025/11/08
+ * created 2025/11/08
  */
 @Getter
 public enum OrderEventTypeEnum {
@@ -25,6 +25,11 @@ public enum OrderEventTypeEnum {
      * 订单发货
      */
     ORDER_SHIPPED("ORDER_SHIPPED", "订单发货", "订单已发货"),
+
+    /**
+     * 确认收货
+     */
+    ORDER_RECEIVED("ORDER_RECEIVED", "确认收货", "用户确认收货"),
 
     /**
      * 订单完成
@@ -47,19 +52,24 @@ public enum OrderEventTypeEnum {
     ORDER_EXPIRED("ORDER_EXPIRED", "订单过期", "订单支付超时已过期"),
 
     /**
-     * 管理员修改地址
+     * 申请售后
      */
-    ADMIN_UPDATE_ADDRESS("ADMIN_UPDATE_ADDRESS", "修改地址", "管理员修改了收货地址"),
+    AFTER_SALE_APPLIED("AFTER_SALE_APPLIED", "申请售后", "用户申请售后服务"),
 
     /**
-     * 管理员修改价格
+     * 售后审核通过
      */
-    ADMIN_UPDATE_PRICE("ADMIN_UPDATE_PRICE", "修改价格", "管理员修改了订单价格"),
+    AFTER_SALE_APPROVED("AFTER_SALE_APPROVED", "售后审核通过", "管理员审核通过售后申请"),
 
     /**
-     * 管理员添加备注
+     * 售后审核拒绝
      */
-    ADMIN_UPDATE_REMARK("ADMIN_UPDATE_REMARK", "添加备注", "管理员添加了订单备注"),
+    AFTER_SALE_REJECTED("AFTER_SALE_REJECTED", "售后审核拒绝", "管理员拒绝售后申请"),
+
+    /**
+     * 售后完成
+     */
+    AFTER_SALE_COMPLETED("AFTER_SALE_COMPLETED", "售后完成", "售后处理已完成"),
 
     /**
      * 其他
