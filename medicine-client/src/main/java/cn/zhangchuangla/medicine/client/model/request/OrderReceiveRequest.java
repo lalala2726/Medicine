@@ -1,7 +1,7 @@
 package cn.zhangchuangla.medicine.client.model.request;
 
 import io.swagger.v3.oas.annotations.media.Schema;
-import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.NotBlank;
 import lombok.Data;
 
 /**
@@ -14,8 +14,8 @@ import lombok.Data;
 @Schema(description = "确认收货请求参数")
 public class OrderReceiveRequest {
 
-    @Schema(description = "订单ID", example = "1")
-    @NotNull(message = "订单ID不能为空")
-    private Long orderId;
+    @Schema(description = "订单编号", example = "O20251110123456789012")
+    @NotBlank(message = "订单编号不能为空")
+    private String orderNo;
 }
 

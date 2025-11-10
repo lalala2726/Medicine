@@ -226,7 +226,7 @@ public class MallAfterSaleServiceImpl extends ServiceImpl<MallAfterSaleMapper, M
             if (afterSaleCount == 0) {
                 MallOrder order = mallOrderService.getById(afterSale.getOrderId());
                 if (order != null) {
-                    order.setAfterSaleFlag(0);
+                    order.setAfterSaleFlag(OrderItemAfterSaleStatusEnum.NONE);
                     order.setUpdateTime(now);
                     mallOrderService.updateById(order);
                 }

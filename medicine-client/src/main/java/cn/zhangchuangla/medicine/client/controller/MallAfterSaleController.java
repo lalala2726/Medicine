@@ -13,9 +13,9 @@ import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
-import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
 /**
@@ -41,7 +41,7 @@ public class MallAfterSaleController extends BaseController {
      */
     @PostMapping("/apply")
     @Operation(summary = "申请售后", description = "用户申请售后服务(仅退款/退货退款/换货)")
-    public AjaxResult<Void> applyAfterSale(@Valid @RequestBody AfterSaleApplyRequest request) {
+    public AjaxResult<Void> applyAfterSale(@Validated @RequestBody AfterSaleApplyRequest request) {
         String afterSaleNo = mallAfterSaleService.applyAfterSale(request);
         return success(afterSaleNo);
     }
@@ -54,7 +54,7 @@ public class MallAfterSaleController extends BaseController {
      */
     @PostMapping("/cancel")
     @Operation(summary = "取消售后", description = "用户取消售后申请(仅待审核状态可取消)")
-    public AjaxResult<Void> cancelAfterSale(@Valid @RequestBody AfterSaleCancelRequest request) {
+    public AjaxResult<Void> cancelAfterSale(@Validated @RequestBody AfterSaleCancelRequest request) {
         boolean result = mallAfterSaleService.cancelAfterSale(request);
         return toAjax(result);
     }
@@ -67,7 +67,7 @@ public class MallAfterSaleController extends BaseController {
      */
     @GetMapping("/list")
     @Operation(summary = "查询售后列表", description = "查询当前用户的售后申请列表")
-    public AjaxResult<TableDataResult> getAfterSaleList(@Valid AfterSaleListRequest request) {
+    public AjaxResult<TableDataResult> getAfterSaleList(@Validated AfterSaleListRequest request) {
         Page<AfterSaleListVo> page = mallAfterSaleService.getAfterSaleList(request);
         return getTableData(page);
     }

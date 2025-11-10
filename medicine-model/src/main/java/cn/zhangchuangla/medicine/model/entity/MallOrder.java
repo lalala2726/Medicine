@@ -1,5 +1,6 @@
 package cn.zhangchuangla.medicine.model.entity;
 
+import cn.zhangchuangla.medicine.model.enums.OrderItemAfterSaleStatusEnum;
 import com.baomidou.mybatisplus.annotation.IdType;
 import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableName;
@@ -109,9 +110,9 @@ public class MallOrder {
     private BigDecimal refundPrice;
 
     /**
-     * 是否存在售后（0否,1是）
+     * 是否存在售后
      */
-    private Integer afterSaleFlag;
+    private OrderItemAfterSaleStatusEnum afterSaleFlag;
 
     /**
      * 支付时间
