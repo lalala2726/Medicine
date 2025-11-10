@@ -6,7 +6,6 @@ import cn.zhangchuangla.medicine.common.core.base.TableDataResult;
 import cn.zhangchuangla.medicine.common.security.annotation.IsAdmin;
 import cn.zhangchuangla.medicine.common.security.base.BaseController;
 import cn.zhangchuangla.medicine.model.dto.MallProductDetailDto;
-import cn.zhangchuangla.medicine.model.dto.MallProductDto;
 import cn.zhangchuangla.medicine.model.request.mall.MallProductAddRequest;
 import cn.zhangchuangla.medicine.model.request.mall.MallProductListQueryRequest;
 import cn.zhangchuangla.medicine.model.request.mall.MallProductUpdateRequest;
@@ -48,7 +47,7 @@ public class MallProductController extends BaseController {
     @GetMapping("/list")
     @Operation(summary = "获取商城商品列表")
     public AjaxResult<TableDataResult> listMallProduct(MallProductListQueryRequest request) {
-        Page<MallProductDto> page = mallProductService.listMallProductWithCategory(request);
+        Page<MallProductDetailDto> page = mallProductService.listMallProductWithCategory(request);
         List<MallProductListVo> productListVos = copyListProperties(page, MallProductListVo.class);
         return getTableData(page, productListVos);
     }
@@ -63,7 +62,6 @@ public class MallProductController extends BaseController {
     @Operation(summary = "获取商城商品详情")
     public AjaxResult<MallProductVo> getProductById(@PathVariable("id") Long id) {
         MallProductDetailDto product = mallProductService.getMallProductById(id);
-        // 返回数据专注商品基本信息与图片，用于后台详情页渲染
         MallProductVo productVo = copyProperties(product, MallProductVo.class);
         return success(productVo);
     }

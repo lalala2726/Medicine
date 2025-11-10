@@ -55,6 +55,8 @@ public class MallProductAddRequest {
     @NotEmpty(message = "商品图片列表不能为空")
     private List<String> images;
 
+    @Schema(description = "药品说明信息")
+    @NotNull(message = "药品说明信息不能为空")
     private MedicineDetailDto medicineDetail;
 
 }

@@ -21,6 +21,9 @@ public class MedicineDetailDto {
     @Schema(description = "功能主治", example = "功能主治描述")
     private String function;
 
+    @Schema(description = "是否处方药", example = "true")
+    private Boolean prescription;
+
     @Schema(description = "用法用量", example = "用法用量描述")
     private String usage;
 

@@ -8,4 +8,5 @@ import com.baomidou.mybatisplus.extension.service.IService;
  */
 public interface MallMedicineDetailService extends IService<MallMedicineDetail> {
 
+    boolean addMedicineDetail(MallMedicineDetail mallMedicineDetail);
 }

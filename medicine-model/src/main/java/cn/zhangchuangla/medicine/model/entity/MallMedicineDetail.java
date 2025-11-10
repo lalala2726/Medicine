@@ -37,6 +37,11 @@ public class MallMedicineDetail {
     private String brand;
 
     /**
+     * 是否处方药
+     */
+    private Boolean prescription;
+
+    /**
      * 功能主治
      */
     private String function;

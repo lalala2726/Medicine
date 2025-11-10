@@ -13,4 +13,14 @@ import org.springframework.stereotype.Service;
 public class MallMedicineDetailServiceImpl extends ServiceImpl<MallMedicineDetailMapper, MallMedicineDetail>
         implements MallMedicineDetailService {
 
+    @Override
+    public boolean addMedicineDetail(MallMedicineDetail mallMedicineDetail) {
+        boolean exists = lambdaQuery()
+                .eq(MallMedicineDetail::getProductId, mallMedicineDetail.getProductId())
+                .count() > 0;
+        if (exists) {
+            return updateById(mallMedicineDetail);
+        }
+        return save(mallMedicineDetail);
+    }
 }

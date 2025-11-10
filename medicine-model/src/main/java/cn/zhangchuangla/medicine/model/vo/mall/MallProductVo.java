@@ -50,9 +50,6 @@ public class MallProductVo {
     @Schema(description = "配送方式", example = "快递")
     private Integer deliveryType;
 
-    @Schema(description = "运费模板ID", example = "1")
-    private Long shippingId;
-
     @Schema(description = "创建时间", example = "2025-01-01 00:00:00")
     private Date createTime;
 
@@ -64,9 +61,6 @@ public class MallProductVo {
 
     @Schema(description = "更新者", example = "admin")
     private String updateBy;
-
-    @Schema(description = "商品展示图", example = "https://example.com/image1.jpg")
-    private String image;
 
     @Schema(description = "商品图片列表", example = "[\"https://example.com/image1.jpg\", \"https://example.com/image2.jpg\"]")
     private List<String> images;

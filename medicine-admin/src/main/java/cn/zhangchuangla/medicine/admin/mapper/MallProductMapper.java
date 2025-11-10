@@ -1,7 +1,6 @@
 package cn.zhangchuangla.medicine.admin.mapper;
 
 import cn.zhangchuangla.medicine.model.dto.MallProductDetailDto;
-import cn.zhangchuangla.medicine.model.dto.MallProductDto;
 import cn.zhangchuangla.medicine.model.entity.MallProduct;
 import cn.zhangchuangla.medicine.model.request.mall.MallProductListQueryRequest;
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
@@ -29,7 +28,7 @@ public interface MallProductMapper extends BaseMapper<MallProduct> {
      * @param request 查询参数
      * @return 分页的商城商品列表（包含分类名称）
      */
-    Page<MallProductDto> listMallProductWithCategory(Page<MallProductDto> page, @Param("request") MallProductListQueryRequest request);
+    Page<MallProductDetailDto> listMallProductWithCategory(Page<MallProductDetailDto> page, @Param("request") MallProductListQueryRequest request);
 
     /**
      * 根据ID获取商城商品详情（包含图片信息）
