@@ -19,13 +19,13 @@ public class MedicineDetailDto {
     private String brand;
 
     @Schema(description = "功能主治", example = "功能主治描述")
-    private String function;
+    private String efficacy;
 
     @Schema(description = "是否处方药", example = "true")
     private Boolean prescription;
 
     @Schema(description = "用法用量", example = "用法用量描述")
-    private String usage;
+    private String usageMethod;
 
     @Schema(description = "不良反应", example = "不良反应描述")
     private String adverseReactions;

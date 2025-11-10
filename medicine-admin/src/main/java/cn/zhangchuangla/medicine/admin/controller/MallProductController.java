@@ -1,5 +1,6 @@
 package cn.zhangchuangla.medicine.admin.controller;
 
+import cn.zhangchuangla.medicine.admin.model.vo.MallProductVo;
 import cn.zhangchuangla.medicine.admin.service.MallProductService;
 import cn.zhangchuangla.medicine.common.core.base.AjaxResult;
 import cn.zhangchuangla.medicine.common.core.base.TableDataResult;
@@ -10,7 +11,6 @@ import cn.zhangchuangla.medicine.model.request.mall.MallProductAddRequest;
 import cn.zhangchuangla.medicine.model.request.mall.MallProductListQueryRequest;
 import cn.zhangchuangla.medicine.model.request.mall.MallProductUpdateRequest;
 import cn.zhangchuangla.medicine.model.vo.mall.MallProductListVo;
-import cn.zhangchuangla.medicine.model.vo.mall.MallProductVo;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -48,8 +48,16 @@ public class MallProductController extends BaseController {
     @Operation(summary = "获取商城商品列表")
     public AjaxResult<TableDataResult> listMallProduct(MallProductListQueryRequest request) {
         Page<MallProductDetailDto> page = mallProductService.listMallProductWithCategory(request);
-        List<MallProductListVo> productListVos = copyListProperties(page, MallProductListVo.class);
-        return getTableData(page, productListVos);
+        List<MallProductListVo> mallProductListVos = page.getRecords().stream()
+                .map(product -> {
+                    MallProductListVo productListVo = copyProperties(product, MallProductListVo.class);
+                    if (product.getImages() != null && !product.getImages().isEmpty()) {
+                        productListVo.setCoverImage(product.getImages().getFirst());
+                    }
+                    return productListVo;
+                })
+                .toList();
+        return getTableData(page, mallProductListVos);
     }
 
     /**

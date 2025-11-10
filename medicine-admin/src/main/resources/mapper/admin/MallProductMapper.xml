@@ -39,6 +39,15 @@
         <result property="createBy" column="create_by"/>
         <result property="updateBy" column="update_by"/>
         <result property="categoryName" column="category_name"/>
+        <association property="medicineDetail" javaType="cn.zhangchuangla.medicine.model.dto.MedicineDetailDto">
+            <result property="brand" column="med_brand"/>
+            <result property="prescription" column="med_prescription"/>
+            <result property="efficacy" column="med_efficacy"/>
+            <result property="usageMethod" column="med_usage_method"/>
+            <result property="adverseReactions" column="med_adverse_reactions"/>
+            <result property="precautions" column="med_precautions"/>
+            <result property="taboo" column="med_taboo"/>
+        </association>
         <collection property="images" ofType="java.lang.String">
             <result column="image_url"/>
         </collection>
@@ -102,9 +111,17 @@
         WHERE i.product_id = p.id
         ORDER BY i.sort , i.id
         LIMIT 1
-        ) AS image_url
+        ) AS image_url,
+        md.brand AS med_brand,
+        md.prescription AS med_prescription,
+        md.efficacy AS med_efficacy,
+        md.usage_method AS med_usage_method,
+        md.adverse_reactions AS med_adverse_reactions,
+        md.precautions AS med_precautions,
+        md.taboo AS med_taboo
         FROM mall_product p
         LEFT JOIN mall_category c ON p.category_id = c.id
+        LEFT JOIN mall_medicine_detail md ON p.id = md.product_id
         <where>
             <if test="request.id != null">
                 AND p.id = #{request.id}
@@ -145,10 +162,18 @@
                p.create_by,
                p.update_by,
                c.name AS category_name,
-               i.image_url AS image_url
+               i.image_url AS image_url,
+               md.brand AS med_brand,
+               md.prescription AS med_prescription,
+               md.efficacy AS med_efficacy,
+               md.usage_method AS med_usage_method,
+               md.adverse_reactions AS med_adverse_reactions,
+               md.precautions AS med_precautions,
+               md.taboo AS med_taboo
         FROM mall_product p
                  LEFT JOIN mall_category c ON p.category_id = c.id
                  LEFT JOIN mall_product_image i ON i.product_id = p.id
+                 LEFT JOIN mall_medicine_detail md ON p.id = md.product_id
         WHERE p.id = #{id}
         ORDER BY i.sort, i.id
     </select>

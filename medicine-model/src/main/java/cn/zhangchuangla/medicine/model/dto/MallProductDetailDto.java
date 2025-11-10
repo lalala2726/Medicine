@@ -20,4 +20,9 @@ public class MallProductDetailDto extends MallProduct {
      * 商品图片列表
      */
     private List<String> images;
+
+    /**
+     * 药品详细信息
+     */
+    private MedicineDetailDto medicineDetail;
 }

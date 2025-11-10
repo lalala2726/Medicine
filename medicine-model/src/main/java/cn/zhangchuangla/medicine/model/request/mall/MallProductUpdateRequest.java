@@ -1,5 +1,6 @@
 package cn.zhangchuangla.medicine.model.request.mall;
 
+import cn.zhangchuangla.medicine.model.dto.MedicineDetailDto;
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotEmpty;
@@ -58,4 +59,7 @@ public class MallProductUpdateRequest {
     @NotEmpty(message = "商品图片列表不能为空")
     @Schema(description = "商品图片列表", example = "[\"https://example.com/image1.jpg\", \"https://example.com/image2.jpg\"]")
     private List<String> images;
+
+    @Schema(description = "商品详情")
+    private MedicineDetailDto medicineDetail;
 }

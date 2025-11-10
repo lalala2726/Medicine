@@ -158,9 +158,17 @@ public class MallProductServiceImpl extends ServiceImpl<MallProductMapper, MallP
         BeanUtils.copyProperties(request, existingProduct);
         existingProduct.setUpdateTime(new Date());
         existingProduct.setUpdateBy(SecurityUtils.getUsername());
+
         // 更新商品主图集合，同样保障后台始终有可展示的图片
         Assert.isTrue(request.getImages() != null && !request.getImages().isEmpty(), "商品图片至少需要上传一张图片");
         mallProductImageService.updateProductImageById(request.getImages(), existingProduct.getId());
+
+        // 更新药品详情
+        if (request.getMedicineDetail() != null) {
+            MallMedicineDetail mallMedicineDetail = copyProperties(request.getMedicineDetail(), MallMedicineDetail.class);
+            mallMedicineDetail.setProductId(existingProduct.getId());
+            medicineDetailService.updateMedicineDetail(mallMedicineDetail);
+        }
 
         return updateById(existingProduct);
     }
@@ -188,6 +196,10 @@ public class MallProductServiceImpl extends ServiceImpl<MallProductMapper, MallP
 
         // 删除关联的图片
         mallProductImageService.removeImagesById(ids);
+
+        // 删除关联的药品详情
+        medicineDetailService.deleteMedicineDetailByProductIds(ids);
+
         return removeByIds(ids);
     }
 

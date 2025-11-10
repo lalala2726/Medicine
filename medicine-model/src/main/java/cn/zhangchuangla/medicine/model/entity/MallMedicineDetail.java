@@ -44,12 +44,12 @@ public class MallMedicineDetail {
     /**
      * 功能主治
      */
-    private String function;
+    private String efficacy;
 
     /**
      * 用法用量
      */
-    private String usage;
+    private String usageMethod;
 
     /**
      * 不良反应

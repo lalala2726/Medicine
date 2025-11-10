@@ -9,8 +9,8 @@
         <result property="productId" column="product_id"/>
         <result property="brand" column="brand"/>
         <result property="prescription" column="prescription"/>
-        <result property="function" column="function"/>
-        <result property="usage" column="usage"/>
+        <result property="efficacy" column="efficacy"/>
+        <result property="usageMethod" column="usage_method"/>
         <result property="adverseReactions" column="adverse_reactions"/>
         <result property="precautions" column="precautions"/>
         <result property="taboo" column="taboo"/>
@@ -20,7 +20,7 @@
     </resultMap>
 
     <sql id="Base_Column_List">
-        id,product_id,brand,prescription,function,usage,adverse_reactions,
+        id,product_id,brand,prescription,efficacy,usage_method,adverse_reactions,
         precautions,taboo,instruction,create_time,update_time
     </sql>
 </mapper>
