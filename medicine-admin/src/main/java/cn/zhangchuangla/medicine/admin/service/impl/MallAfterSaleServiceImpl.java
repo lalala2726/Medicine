@@ -307,24 +307,15 @@ public class MallAfterSaleServiceImpl extends ServiceImpl<MallAfterSaleMapper, M
         PayTypeEnum payType = PayTypeEnum.fromCode(order.getPayType());
 
         try {
-            if (payType == PayTypeEnum.ALIPAY) {
-                // 支付宝退款
-                alipayPaymentService.refund(AlipayRefundRequest.builder()
-                        .outTradeNo(order.getOrderNo())
-                        .refundAmount(formatAmount(refundAmount))
-                        .refundReason(String.format("售后退款（售后单号：%s）", afterSale.getAfterSaleNo()))
-                        .outRequestNo(buildOutRequestNo(afterSale))
-                        .build());
-            } else if (payType == PayTypeEnum.WALLET) {
-                // 钱包退款
-                String walletRemark = String.format("售后退款（售后单号：%s，退款金额：%s元）",
-                        afterSale.getAfterSaleNo(), formatAmount(refundAmount));
-                boolean success = userWalletService.rechargeWallet(afterSale.getUserId(), refundAmount, walletRemark);
-                if (!success) {
-                    throw new ServiceException(ResponseCode.OPERATION_ERROR, "钱包退款失败");
-                }
-            } else {
-                throw new ServiceException(ResponseCode.OPERATION_ERROR, "不支持的支付方式");
+            switch (payType) {
+                case ALIPAY:
+                    processAlipayRefund(order, afterSale, refundAmount);
+                    break;
+                case WALLET:
+                    processWalletRefund(afterSale, refundAmount);
+                    break;
+                default:
+                    throw new ServiceException(ResponseCode.OPERATION_ERROR, "不支持的支付方式");
             }
         } catch (Exception e) {
             // 退款失败，恢复售后状态
@@ -470,6 +461,44 @@ public class MallAfterSaleServiceImpl extends ServiceImpl<MallAfterSaleMapper, M
 
         log.info("管理员{}完成售后换货，售后单号：{}{}", adminUsername, afterSale.getAfterSaleNo(), exchangeInfo);
         return true;
+    }
+
+    /**
+     * 处理支付宝退款
+     *
+     * @param order       订单信息
+     * @param afterSale   售后申请
+     * @param refundAmount 退款金额
+     */
+    private void processAlipayRefund(MallOrder order, MallAfterSale afterSale, BigDecimal refundAmount) {
+        try {
+            alipayPaymentService.refund(AlipayRefundRequest.builder()
+                    .outTradeNo(order.getOrderNo())
+                    .refundAmount(formatAmount(refundAmount))
+                    .refundReason(String.format("售后退款（售后单号：%s）", afterSale.getAfterSaleNo()))
+                    .outRequestNo(buildOutRequestNo(afterSale))
+                    .build());
+        } catch (Exception e) {
+            // 支付宝退款失败转为钱包退
+            processWalletRefund(afterSale, refundAmount);
+        }
+        log.info("支付宝退款成功，售后单号：{}，退款金额：{}", afterSale.getAfterSaleNo(), refundAmount);
+    }
+
+    /**
+     * 处理钱包退款
+     *
+     * @param afterSale   售后申请
+     * @param refundAmount 退款金额
+     */
+    private void processWalletRefund(MallAfterSale afterSale, BigDecimal refundAmount) {
+        String walletRemark = String.format("售后退款（售后单号：%s，退款金额：%s元）",
+                afterSale.getAfterSaleNo(), formatAmount(refundAmount));
+        boolean success = userWalletService.rechargeWallet(afterSale.getUserId(), refundAmount, walletRemark);
+        if (!success) {
+            throw new ServiceException(ResponseCode.OPERATION_ERROR, "钱包退款失败");
+        }
+        log.info("钱包退款成功，售后单号：{}，退款金额：{}", afterSale.getAfterSaleNo(), refundAmount);
     }
 
     /**
