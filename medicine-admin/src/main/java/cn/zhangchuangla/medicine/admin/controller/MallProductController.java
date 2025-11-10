@@ -113,4 +113,22 @@ public class MallProductController extends BaseController {
         return toAjax(result);
     }
 
+    /**
+     * 获取售后列表
+     */
+    @GetMapping("/after-sale/list")
+    @Operation
+    public AjaxResult<TableDataResult> listAfterSale() {
+        return success();
+    }
+
+    /**
+     * 获取售后详情
+     */
+    @GetMapping("/after-sale/{id:\\d+}")
+    @Operation(summary = "获取售后详情")
+    public AjaxResult<Void> getAfterSaleById(@PathVariable("id") Long id) {
+        return success();
+    }
+
 }

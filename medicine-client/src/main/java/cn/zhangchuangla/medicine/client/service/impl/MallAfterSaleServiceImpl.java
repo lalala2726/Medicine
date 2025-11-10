@@ -122,13 +122,13 @@ public class MallAfterSaleServiceImpl extends ServiceImpl<MallAfterSaleMapper, M
                 .orderNo(order.getOrderNo())
                 .orderItemId(orderItem.getId())
                 .userId(userId)
-                .afterSaleType(request.getAfterSaleType())
-                .afterSaleStatus(AfterSaleStatusEnum.PENDING.getStatus())
+                .afterSaleType(AfterSaleTypeEnum.fromCode(request.getAfterSaleType()))
+                .afterSaleStatus(AfterSaleStatusEnum.PENDING)
                 .refundAmount(refundAmount)
-                .applyReason(request.getApplyReason())
+                .applyReason(AfterSaleReasonEnum.fromCode(request.getApplyReason()))
                 .applyDescription(request.getApplyDescription())
                 .evidenceImages(evidenceImagesJson)
-                .receiveStatus(request.getReceiveStatus())
+                .receiveStatus(ReceiveStatusEnum.fromCode(request.getReceiveStatus()))
                 .applyTime(now)
                 .createTime(now)
                 .updateTime(now)
@@ -152,7 +152,7 @@ public class MallAfterSaleServiceImpl extends ServiceImpl<MallAfterSaleMapper, M
 
         // 9. 添加售后时间线记录
         String username = getUsername();
-        AfterSaleTypeEnum afterSaleTypeEnum = AfterSaleTypeEnum.fromCode(request.getAfterSaleType());
+        AfterSaleTypeEnum afterSaleTypeEnum = afterSale.getAfterSaleType();
         String description = String.format("用户%s申请%s", username,
                 afterSaleTypeEnum != null ? afterSaleTypeEnum.getName() : "售后");
         mallAfterSaleTimelineService.addTimeline(
@@ -195,7 +195,7 @@ public class MallAfterSaleServiceImpl extends ServiceImpl<MallAfterSaleMapper, M
         }
 
         // 2. 校验售后状态
-        AfterSaleStatusEnum afterSaleStatus = AfterSaleStatusEnum.fromCode(afterSale.getAfterSaleStatus());
+        AfterSaleStatusEnum afterSaleStatus = afterSale.getAfterSaleStatus();
         if (afterSaleStatus != AfterSaleStatusEnum.PENDING) {
             throw new ServiceException(ResponseCode.OPERATION_ERROR,
                     String.format("当前售后状态[%s]不允许取消", afterSaleStatus != null ? afterSaleStatus.getName() : "未知"));
@@ -203,7 +203,7 @@ public class MallAfterSaleServiceImpl extends ServiceImpl<MallAfterSaleMapper, M
 
         // 3. 更新售后状态为已取消
         Date now = new Date();
-        afterSale.setAfterSaleStatus(AfterSaleStatusEnum.CANCELLED.getStatus());
+        afterSale.setAfterSaleStatus(AfterSaleStatusEnum.CANCELLED);
         afterSale.setCompleteTime(now);
         afterSale.setUpdateTime(now);
         afterSale.setUpdateBy(getUsername());
@@ -287,10 +287,10 @@ public class MallAfterSaleServiceImpl extends ServiceImpl<MallAfterSaleMapper, M
         MallOrderItem orderItem = mallOrderItemService.getById(afterSale.getOrderItemId());
 
         // 4. 构建售后详情
-        AfterSaleTypeEnum afterSaleTypeEnum = AfterSaleTypeEnum.fromCode(afterSale.getAfterSaleType());
-        AfterSaleStatusEnum afterSaleStatusEnum = AfterSaleStatusEnum.fromCode(afterSale.getAfterSaleStatus());
-        AfterSaleReasonEnum afterSaleReasonEnum = AfterSaleReasonEnum.fromCode(afterSale.getApplyReason());
-        ReceiveStatusEnum receiveStatusEnum = ReceiveStatusEnum.fromCode(afterSale.getReceiveStatus());
+        AfterSaleTypeEnum afterSaleTypeEnum = afterSale.getAfterSaleType();
+        AfterSaleStatusEnum afterSaleStatusEnum = afterSale.getAfterSaleStatus();
+        AfterSaleReasonEnum afterSaleReasonEnum = afterSale.getApplyReason();
+        ReceiveStatusEnum receiveStatusEnum = afterSale.getReceiveStatus();
 
         List<String> evidenceImages = null;
         if (afterSale.getEvidenceImages() != null && !afterSale.getEvidenceImages().isEmpty()) {
@@ -321,16 +321,16 @@ public class MallAfterSaleServiceImpl extends ServiceImpl<MallAfterSaleMapper, M
                 .orderItemId(afterSale.getOrderItemId())
                 .userId(afterSale.getUserId())
                 .userNickname(user != null ? user.getNickname() : "未知")
-                .afterSaleType(afterSale.getAfterSaleType())
+                .afterSaleType(afterSaleTypeEnum != null ? afterSaleTypeEnum.getType() : null)
                 .afterSaleTypeName(afterSaleTypeEnum != null ? afterSaleTypeEnum.getName() : "未知")
-                .afterSaleStatus(afterSale.getAfterSaleStatus())
+                .afterSaleStatus(afterSaleStatusEnum != null ? afterSaleStatusEnum.getStatus() : null)
                 .afterSaleStatusName(afterSaleStatusEnum != null ? afterSaleStatusEnum.getName() : "未知")
                 .refundAmount(afterSale.getRefundAmount())
-                .applyReason(afterSale.getApplyReason())
+                .applyReason(afterSaleReasonEnum != null ? afterSaleReasonEnum.getReason() : null)
                 .applyReasonName(afterSaleReasonEnum != null ? afterSaleReasonEnum.getName() : "未知")
                 .applyDescription(afterSale.getApplyDescription())
                 .evidenceImages(evidenceImages)
-                .receiveStatus(afterSale.getReceiveStatus())
+                .receiveStatus(receiveStatusEnum != null ? receiveStatusEnum.getStatus() : null)
                 .receiveStatusName(receiveStatusEnum != null ? receiveStatusEnum.getName() : "未知")
                 .rejectReason(afterSale.getRejectReason())
                 .adminRemark(afterSale.getAdminRemark())

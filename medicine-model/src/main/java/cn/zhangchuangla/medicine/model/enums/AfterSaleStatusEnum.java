@@ -1,5 +1,7 @@
 package cn.zhangchuangla.medicine.model.enums;
 
+import com.baomidou.mybatisplus.annotation.EnumValue;
+import com.fasterxml.jackson.annotation.JsonValue;
 import lombok.Getter;
 
 /**
@@ -42,8 +44,10 @@ public enum AfterSaleStatusEnum {
     CANCELLED("CANCELLED", "已取消", "用户取消售后申请");
 
     /**
-     * 枚举值
+     * 枚举值(存储到数据库的值)
      */
+    @EnumValue
+    @JsonValue
     private final String status;
 
     /**

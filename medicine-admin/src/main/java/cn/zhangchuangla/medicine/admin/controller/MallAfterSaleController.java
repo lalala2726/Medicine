@@ -41,7 +41,7 @@ public class MallAfterSaleController extends BaseController {
      */
     @GetMapping("/list")
     @Operation(summary = "查询售后列表", description = "管理员查询所有售后申请列表")
-    public AjaxResult<TableDataResult> getAfterSaleList(@Valid AfterSaleListRequest request) {
+    public AjaxResult<TableDataResult> getAfterSaleList(AfterSaleListRequest request) {
         Page<AfterSaleListVo> page = mallAfterSaleService.getAfterSaleList(request);
         return getTableData(page);
     }
