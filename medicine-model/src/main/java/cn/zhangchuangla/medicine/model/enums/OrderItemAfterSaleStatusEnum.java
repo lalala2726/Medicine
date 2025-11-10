@@ -1,5 +1,6 @@
 package cn.zhangchuangla.medicine.model.enums;
 
+import com.baomidou.mybatisplus.annotation.EnumValue;
 import lombok.Getter;
 
 /**
@@ -29,6 +30,7 @@ public enum OrderItemAfterSaleStatusEnum {
     /**
      * 枚举值
      */
+    @EnumValue
     private final String status;
 
     /**

@@ -15,13 +15,14 @@
         <result property="sort" column="sort"/>
         <result property="status" column="status"/>
         <result property="deliveryType" column="delivery_type"/>
+        <result property="version" column="version"/>
         <result property="createTime" column="create_time"/>
         <result property="updateTime" column="update_time"/>
         <result property="createBy" column="create_by"/>
         <result property="updateBy" column="update_by"/>
     </resultMap>
 
-    <resultMap id="MallProductDtoMap" type="cn.zhangchuangla.medicine.model.dto.MallProductDto">
+    <resultMap id="MallProductDtoMap" type="cn.zhangchuangla.medicine.model.dto.MallProductDetailDto">
         <id property="id" column="id"/>
         <result property="name" column="name"/>
         <result property="categoryId" column="category_id"/>
@@ -32,38 +33,29 @@
         <result property="sort" column="sort"/>
         <result property="status" column="status"/>
         <result property="deliveryType" column="delivery_type"/>
+        <result property="version" column="version"/>
         <result property="createTime" column="create_time"/>
         <result property="updateTime" column="update_time"/>
         <result property="createBy" column="create_by"/>
         <result property="updateBy" column="update_by"/>
         <result property="categoryName" column="category_name"/>
-        <result property="image" column="image_url"/>
-    </resultMap>
-
-    <resultMap id="MallProductDetailDtoMap" type="cn.zhangchuangla.medicine.model.dto.MallProductDetailDto">
-        <id property="id" column="id"/>
-        <result property="name" column="name"/>
-        <result property="categoryId" column="category_id"/>
-        <result property="unit" column="unit"/>
-        <result property="price" column="price"/>
-        <result property="salesVolume" column="sales_volume"/>
-        <result property="stock" column="stock"/>
-        <result property="sort" column="sort"/>
-        <result property="status" column="status"/>
-        <result property="deliveryType" column="delivery_type"/>
-        <result property="createTime" column="create_time"/>
-        <result property="updateTime" column="update_time"/>
-        <result property="createBy" column="create_by"/>
-        <result property="updateBy" column="update_by"/>
-        <result property="image" column="main_image_url"/>
-        <collection property="images" ofType="java.lang.String" notNullColumn="image_url">
+        <association property="medicineDetail" javaType="cn.zhangchuangla.medicine.model.dto.MedicineDetailDto">
+            <result property="brand" column="med_brand"/>
+            <result property="prescription" column="med_prescription"/>
+            <result property="efficacy" column="med_efficacy"/>
+            <result property="usageMethod" column="med_usage_method"/>
+            <result property="adverseReactions" column="med_adverse_reactions"/>
+            <result property="precautions" column="med_precautions"/>
+            <result property="taboo" column="med_taboo"/>
+        </association>
+        <collection property="images" ofType="java.lang.String">
             <result column="image_url"/>
         </collection>
     </resultMap>
 
     <sql id="Base_Column_List">
         id,name,category_id,unit,price,sales_volume,
-        stock,sort,status,delivery_type,shipping_id,
+        stock,sort,status,delivery_type,version,
         create_time,update_time,
         create_by,update_by
     </sql>
@@ -107,7 +99,7 @@
         p.sort,
         p.status,
         p.delivery_type,
-        p.shipping_id,
+        p.version,
         p.create_time,
         p.update_time,
         p.create_by,
@@ -119,9 +111,17 @@
         WHERE i.product_id = p.id
         ORDER BY i.sort , i.id
         LIMIT 1
-        ) AS image_url
+        ) AS image_url,
+        md.brand AS med_brand,
+        md.prescription AS med_prescription,
+        md.efficacy AS med_efficacy,
+        md.usage_method AS med_usage_method,
+        md.adverse_reactions AS med_adverse_reactions,
+        md.precautions AS med_precautions,
+        md.taboo AS med_taboo
         FROM mall_product p
         LEFT JOIN mall_category c ON p.category_id = c.id
+        LEFT JOIN mall_medicine_detail md ON p.id = md.product_id
         <where>
             <if test="request.id != null">
                 AND p.id = #{request.id}
@@ -142,34 +142,39 @@
                 AND p.price &lt;= #{request.maxPrice}
             </if>
         </where>
-        ORDER BY p.sort ASC, p.create_time DESC
+        ORDER BY p.sort , p.create_time DESC
     </select>
 
-    <select id="getMallProductDetailById" resultMap="MallProductDetailDtoMap">
-        SELECT product.id,
-               product.name,
-               product.category_id,
-               product.unit,
-               product.price,
-               product.sales_volume,
-               product.stock,
-               product.sort,
-               product.status,
-               product.delivery_type,
-               product.shipping_id,
-               product.create_time,
-               product.update_time,
-               product.create_by,
-               product.update_by,
-               main_image.image_url   AS main_image_url,
-               detail_image.image_url AS image_url
-        FROM mall_product product
-                 LEFT JOIN mall_product_image main_image
-                           ON main_image.product_id = product.id
-                               AND main_image.sort = 0
-                 LEFT JOIN mall_product_image detail_image
-                           ON detail_image.product_id = product.id
-        WHERE product.id = #{id}
-        ORDER BY detail_image.sort, detail_image.id
+    <select id="getMallProductDetailById" resultMap="MallProductDtoMap">
+        SELECT p.id,
+               p.name,
+               p.category_id,
+               p.unit,
+               p.price,
+               p.sales_volume,
+               p.stock,
+               p.sort,
+               p.status,
+               p.delivery_type,
+               p.version,
+               p.create_time,
+               p.update_time,
+               p.create_by,
+               p.update_by,
+               c.name AS category_name,
+               i.image_url AS image_url,
+               md.brand AS med_brand,
+               md.prescription AS med_prescription,
+               md.efficacy AS med_efficacy,
+               md.usage_method AS med_usage_method,
+               md.adverse_reactions AS med_adverse_reactions,
+               md.precautions AS med_precautions,
+               md.taboo AS med_taboo
+        FROM mall_product p
+                 LEFT JOIN mall_category c ON p.category_id = c.id
+                 LEFT JOIN mall_product_image i ON i.product_id = p.id
+                 LEFT JOIN mall_medicine_detail md ON p.id = md.product_id
+        WHERE p.id = #{id}
+        ORDER BY i.sort, i.id
     </select>
 </mapper>

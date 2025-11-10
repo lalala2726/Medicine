@@ -59,23 +59,24 @@ public class MallAfterSaleServiceImpl extends ServiceImpl<MallAfterSaleMapper, M
     public String applyAfterSale(AfterSaleApplyRequest request) {
         Long userId = getUserId();
 
-        // 1. 校验订单和订单项
-        MallOrder order = mallOrderService.getById(request.getOrderId());
+        // 1. 通过 orderItemId 查询订单项
+        MallOrderItem orderItem = mallOrderItemService.getById(request.getOrderItemId());
+        if (orderItem == null) {
+            throw new ServiceException(ResponseCode.RESULT_IS_NULL, "订单项不存在");
+        }
+
+        // 2. 通过订单项的 orderId 查询订单
+        MallOrder order = mallOrderService.getById(orderItem.getOrderId());
         if (order == null) {
             throw new ServiceException(ResponseCode.RESULT_IS_NULL, "订单不存在");
         }
 
-        // 校验订单所属用户
+        // 3. 校验订单所属用户
         if (!Objects.equals(order.getUserId(), userId)) {
             throw new ServiceException(ResponseCode.OPERATION_ERROR, "订单信息不存在");
         }
 
-        MallOrderItem orderItem = mallOrderItemService.getById(request.getOrderItemId());
-        if (orderItem == null || !Objects.equals(orderItem.getOrderId(), order.getId())) {
-            throw new ServiceException(ResponseCode.RESULT_IS_NULL, "订单项不存在");
-        }
-
-        // 2. 校验订单状态
+        // 4. 校验订单状态
         OrderStatusEnum orderStatus = OrderStatusEnum.fromCode(order.getOrderStatus());
         if (orderStatus == null) {
             throw new ServiceException(ResponseCode.OPERATION_ERROR, "订单状态异常");
@@ -87,7 +88,7 @@ public class MallAfterSaleServiceImpl extends ServiceImpl<MallAfterSaleMapper, M
                     String.format("当前订单状态[%s]不允许申请售后", orderStatus.getName()));
         }
 
-        // 3. 校验订单项售后状态
+        // 5. 校验订单项售后状态
         String itemAfterSaleStatus = orderItem.getAfterSaleStatus();
         if (itemAfterSaleStatus == null) {
             itemAfterSaleStatus = OrderItemAfterSaleStatusEnum.NONE.getStatus();
@@ -96,7 +97,7 @@ public class MallAfterSaleServiceImpl extends ServiceImpl<MallAfterSaleMapper, M
             throw new ServiceException(ResponseCode.OPERATION_ERROR, "该商品已在售后中，不能重复申请");
         }
 
-        // 4. 校验退款金额
+        // 6. 校验退款金额
         BigDecimal refundAmount = request.getRefundAmount();
         BigDecimal itemTotalPrice = orderItem.getTotalPrice();
         BigDecimal refundedAmount = orderItem.getRefundedAmount() != null ? orderItem.getRefundedAmount() : BigDecimal.ZERO;
@@ -107,10 +108,10 @@ public class MallAfterSaleServiceImpl extends ServiceImpl<MallAfterSaleMapper, M
                     String.format("退款金额不能超过可退款金额%.2f元", maxRefundAmount));
         }
 
-        // 5. 生成售后单号
+        // 7. 生成售后单号
         String afterSaleNo = generateAfterSaleNo();
 
-        // 6. 创建售后申请记录
+        // 8. 创建售后申请记录
         Date now = new Date();
         String evidenceImagesJson = request.getEvidenceImages() != null && !request.getEvidenceImages().isEmpty()
                 ? JSON.toJSONString(request.getEvidenceImages())
@@ -122,13 +123,13 @@ public class MallAfterSaleServiceImpl extends ServiceImpl<MallAfterSaleMapper, M
                 .orderNo(order.getOrderNo())
                 .orderItemId(orderItem.getId())
                 .userId(userId)
-                .afterSaleType(request.getAfterSaleType())
-                .afterSaleStatus(AfterSaleStatusEnum.PENDING.getStatus())
+                .afterSaleType(request.getAfterSaleType())  // 直接使用枚举
+                .afterSaleStatus(AfterSaleStatusEnum.PENDING)
                 .refundAmount(refundAmount)
-                .applyReason(request.getApplyReason())
+                .applyReason(request.getApplyReason())  // 直接使用枚举
                 .applyDescription(request.getApplyDescription())
                 .evidenceImages(evidenceImagesJson)
-                .receiveStatus(request.getReceiveStatus())
+                .receiveStatus(ReceiveStatusEnum.fromCode(request.getReceiveStatus()))
                 .applyTime(now)
                 .createTime(now)
                 .updateTime(now)
@@ -140,19 +141,19 @@ public class MallAfterSaleServiceImpl extends ServiceImpl<MallAfterSaleMapper, M
             throw new ServiceException(ResponseCode.OPERATION_ERROR, "申请售后失败，请稍后重试");
         }
 
-        // 7. 更新订单项售后状态
+        // 9. 更新订单项售后状态
         orderItem.setAfterSaleStatus(OrderItemAfterSaleStatusEnum.IN_PROGRESS.getStatus());
         orderItem.setUpdateTime(now);
         mallOrderItemService.updateById(orderItem);
 
-        // 8. 更新订单售后标记
-        order.setAfterSaleFlag(1);
+        // 10. 更新订单售后标记
+        order.setAfterSaleFlag(OrderItemAfterSaleStatusEnum.IN_PROGRESS);
         order.setUpdateTime(now);
         mallOrderService.updateById(order);
 
-        // 9. 添加售后时间线记录
+        // 11. 添加售后时间线记录
         String username = getUsername();
-        AfterSaleTypeEnum afterSaleTypeEnum = AfterSaleTypeEnum.fromCode(request.getAfterSaleType());
+        AfterSaleTypeEnum afterSaleTypeEnum = afterSale.getAfterSaleType();
         String description = String.format("用户%s申请%s", username,
                 afterSaleTypeEnum != null ? afterSaleTypeEnum.getName() : "售后");
         mallAfterSaleTimelineService.addTimeline(
@@ -164,7 +165,7 @@ public class MallAfterSaleServiceImpl extends ServiceImpl<MallAfterSaleMapper, M
                 description
         );
 
-        // 10. 添加订单时间线记录
+        // 12. 添加订单时间线记录
         OrderTimelineDto orderTimelineDto = OrderTimelineDto.builder()
                 .orderId(order.getId())
                 .eventType(OrderEventTypeEnum.AFTER_SALE_APPLIED.getType())
@@ -195,7 +196,7 @@ public class MallAfterSaleServiceImpl extends ServiceImpl<MallAfterSaleMapper, M
         }
 
         // 2. 校验售后状态
-        AfterSaleStatusEnum afterSaleStatus = AfterSaleStatusEnum.fromCode(afterSale.getAfterSaleStatus());
+        AfterSaleStatusEnum afterSaleStatus = afterSale.getAfterSaleStatus();
         if (afterSaleStatus != AfterSaleStatusEnum.PENDING) {
             throw new ServiceException(ResponseCode.OPERATION_ERROR,
                     String.format("当前售后状态[%s]不允许取消", afterSaleStatus != null ? afterSaleStatus.getName() : "未知"));
@@ -203,7 +204,7 @@ public class MallAfterSaleServiceImpl extends ServiceImpl<MallAfterSaleMapper, M
 
         // 3. 更新售后状态为已取消
         Date now = new Date();
-        afterSale.setAfterSaleStatus(AfterSaleStatusEnum.CANCELLED.getStatus());
+        afterSale.setAfterSaleStatus(AfterSaleStatusEnum.CANCELLED);
         afterSale.setCompleteTime(now);
         afterSale.setUpdateTime(now);
         afterSale.setUpdateBy(getUsername());
@@ -233,7 +234,7 @@ public class MallAfterSaleServiceImpl extends ServiceImpl<MallAfterSaleMapper, M
         if (afterSaleCount == 0) {
             MallOrder order = mallOrderService.getById(afterSale.getOrderId());
             if (order != null) {
-                order.setAfterSaleFlag(0);
+                order.setAfterSaleFlag(OrderItemAfterSaleStatusEnum.NONE);
                 order.setUpdateTime(now);
                 mallOrderService.updateById(order);
             }
@@ -287,10 +288,10 @@ public class MallAfterSaleServiceImpl extends ServiceImpl<MallAfterSaleMapper, M
         MallOrderItem orderItem = mallOrderItemService.getById(afterSale.getOrderItemId());
 
         // 4. 构建售后详情
-        AfterSaleTypeEnum afterSaleTypeEnum = AfterSaleTypeEnum.fromCode(afterSale.getAfterSaleType());
-        AfterSaleStatusEnum afterSaleStatusEnum = AfterSaleStatusEnum.fromCode(afterSale.getAfterSaleStatus());
-        AfterSaleReasonEnum afterSaleReasonEnum = AfterSaleReasonEnum.fromCode(afterSale.getApplyReason());
-        ReceiveStatusEnum receiveStatusEnum = ReceiveStatusEnum.fromCode(afterSale.getReceiveStatus());
+        AfterSaleTypeEnum afterSaleTypeEnum = afterSale.getAfterSaleType();
+        AfterSaleStatusEnum afterSaleStatusEnum = afterSale.getAfterSaleStatus();
+        AfterSaleReasonEnum afterSaleReasonEnum = afterSale.getApplyReason();
+        ReceiveStatusEnum receiveStatusEnum = afterSale.getReceiveStatus();
 
         List<String> evidenceImages = null;
         if (afterSale.getEvidenceImages() != null && !afterSale.getEvidenceImages().isEmpty()) {
@@ -321,16 +322,16 @@ public class MallAfterSaleServiceImpl extends ServiceImpl<MallAfterSaleMapper, M
                 .orderItemId(afterSale.getOrderItemId())
                 .userId(afterSale.getUserId())
                 .userNickname(user != null ? user.getNickname() : "未知")
-                .afterSaleType(afterSale.getAfterSaleType())
+                .afterSaleType(afterSaleTypeEnum != null ? afterSaleTypeEnum.getType() : null)
                 .afterSaleTypeName(afterSaleTypeEnum != null ? afterSaleTypeEnum.getName() : "未知")
-                .afterSaleStatus(afterSale.getAfterSaleStatus())
+                .afterSaleStatus(afterSaleStatusEnum != null ? afterSaleStatusEnum.getStatus() : null)
                 .afterSaleStatusName(afterSaleStatusEnum != null ? afterSaleStatusEnum.getName() : "未知")
                 .refundAmount(afterSale.getRefundAmount())
-                .applyReason(afterSale.getApplyReason())
+                .applyReason(afterSaleReasonEnum != null ? afterSaleReasonEnum.getReason() : null)
                 .applyReasonName(afterSaleReasonEnum != null ? afterSaleReasonEnum.getName() : "未知")
                 .applyDescription(afterSale.getApplyDescription())
                 .evidenceImages(evidenceImages)
-                .receiveStatus(afterSale.getReceiveStatus())
+                .receiveStatus(receiveStatusEnum != null ? receiveStatusEnum.getStatus() : null)
                 .receiveStatusName(receiveStatusEnum != null ? receiveStatusEnum.getName() : "未知")
                 .rejectReason(afterSale.getRejectReason())
                 .adminRemark(afterSale.getAdminRemark())

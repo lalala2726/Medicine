@@ -2,11 +2,15 @@ package cn.zhangchuangla.medicine.client.service;
 
 import cn.zhangchuangla.medicine.client.model.request.OrderConfirmRequest;
 import cn.zhangchuangla.medicine.client.model.request.OrderCreateRequest;
+import cn.zhangchuangla.medicine.client.model.request.OrderListRequest;
 import cn.zhangchuangla.medicine.client.model.request.OrderReceiveRequest;
 import cn.zhangchuangla.medicine.client.model.vo.OrderCreateVo;
+import cn.zhangchuangla.medicine.client.model.vo.OrderDetailVo;
+import cn.zhangchuangla.medicine.client.model.vo.OrderListVo;
 import cn.zhangchuangla.medicine.model.dto.AlipayNotifyDTO;
 import cn.zhangchuangla.medicine.model.entity.MallOrder;
 import cn.zhangchuangla.medicine.model.vo.mall.OrderShippingVo;
+import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.IService;
 import jakarta.servlet.http.HttpServletRequest;
 
@@ -66,8 +70,24 @@ public interface MallOrderService extends IService<MallOrder> {
     /**
      * 查询订单物流信息
      *
-     * @param orderId 订单ID
+     * @param orderNo 订单编号
      * @return 物流信息
      */
-    OrderShippingVo getOrderShipping(Long orderId);
+    OrderShippingVo getOrderShipping(String orderNo);
+
+    /**
+     * 分页查询用户订单列表
+     *
+     * @param request 查询条件
+     * @return 订单列表
+     */
+    Page<OrderListVo> getOrderList(OrderListRequest request);
+
+    /**
+     * 查询订单详情
+     *
+     * @param orderNo 订单编号
+     * @return 订单详情
+     */
+    OrderDetailVo getOrderDetail(String orderNo);
 }

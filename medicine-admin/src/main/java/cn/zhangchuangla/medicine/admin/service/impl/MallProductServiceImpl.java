@@ -2,16 +2,17 @@ package cn.zhangchuangla.medicine.admin.service.impl;
 
 import cn.zhangchuangla.medicine.admin.mapper.MallProductMapper;
 import cn.zhangchuangla.medicine.admin.service.MallCategoryService;
+import cn.zhangchuangla.medicine.admin.service.MallMedicineDetailService;
 import cn.zhangchuangla.medicine.admin.service.MallProductImageService;
 import cn.zhangchuangla.medicine.admin.service.MallProductService;
 import cn.zhangchuangla.medicine.common.core.constants.RedisConstants;
 import cn.zhangchuangla.medicine.common.core.enums.ResponseCode;
 import cn.zhangchuangla.medicine.common.core.exception.ServiceException;
 import cn.zhangchuangla.medicine.common.core.utils.Assert;
+import cn.zhangchuangla.medicine.common.security.base.BaseService;
 import cn.zhangchuangla.medicine.common.security.utils.SecurityUtils;
 import cn.zhangchuangla.medicine.model.dto.MallProductDetailDto;
-import cn.zhangchuangla.medicine.model.dto.MallProductDto;
-import cn.zhangchuangla.medicine.model.entity.MallCategory;
+import cn.zhangchuangla.medicine.model.entity.MallMedicineDetail;
 import cn.zhangchuangla.medicine.model.entity.MallProduct;
 import cn.zhangchuangla.medicine.model.enums.DeliveryTypeEnum;
 import cn.zhangchuangla.medicine.model.request.mall.MallProductAddRequest;
@@ -42,11 +43,12 @@ import java.util.List;
 @Service
 @RequiredArgsConstructor
 public class MallProductServiceImpl extends ServiceImpl<MallProductMapper, MallProduct>
-        implements MallProductService {
+        implements MallProductService, BaseService {
 
     private final MallProductMapper mallProductMapper;
     private final MallCategoryService mallCategoryService;
     private final MallProductImageService mallProductImageService;
+    private final MallMedicineDetailService medicineDetailService;
 
     @Override
     public Page<MallProduct> listMallProduct(MallProductListQueryRequest request) {
@@ -55,8 +57,8 @@ public class MallProductServiceImpl extends ServiceImpl<MallProductMapper, MallP
     }
 
     @Override
-    public Page<MallProductDto> listMallProductWithCategory(MallProductListQueryRequest request) {
-        Page<MallProductDto> page = request.toPage();
+    public Page<MallProductDetailDto> listMallProductWithCategory(MallProductListQueryRequest request) {
+        Page<MallProductDetailDto> page = request.toPage();
         return mallProductMapper.listMallProductWithCategory(page, request);
     }
 
@@ -70,19 +72,6 @@ public class MallProductServiceImpl extends ServiceImpl<MallProductMapper, MallP
         if (product == null) {
             throw new ServiceException("商品不存在");
         }
-
-        if (product.getCategoryId() != null) {
-            MallCategory category = mallCategoryService.getCategoryById(product.getCategoryId());
-            if (category != null) {
-                product.setCategoryName(category.getName());
-            }
-        }
-
-        if (product.getImages() != null && !product.getImages().isEmpty()) {
-            // 后台表单中按约定首图为列表缩略图
-            product.setImage(product.getImages().get(0));
-        }
-
         return product;
     }
 
@@ -119,7 +108,6 @@ public class MallProductServiceImpl extends ServiceImpl<MallProductMapper, MallP
 
         MallProduct product = new MallProduct();
         BeanUtils.copyProperties(request, product);
-        product.setSalesVolume(0L); // 初始销量为0
         product.setCreateTime(new Date());
         product.setCreateBy(SecurityUtils.getUsername());
 
@@ -129,9 +117,10 @@ public class MallProductServiceImpl extends ServiceImpl<MallProductMapper, MallP
         Assert.isTrue(request.getImages() != null && !request.getImages().isEmpty(), "商品图片至少需要上传一张图片");
         mallProductImageService.addProductImages(request.getImages(), product.getId());
         // 上述是通用的商城属性,下面是药品特有的属性
-
-        // todo 添加药品的属性
-        return save;
+        MallMedicineDetail mallMedicineDetail = copyProperties(request.getMedicineDetail(), MallMedicineDetail.class);
+        mallMedicineDetail.setProductId(product.getId());
+        boolean result = medicineDetailService.addMedicineDetail(mallMedicineDetail);
+        return save && result;
     }
 
     @Override
@@ -169,9 +158,17 @@ public class MallProductServiceImpl extends ServiceImpl<MallProductMapper, MallP
         BeanUtils.copyProperties(request, existingProduct);
         existingProduct.setUpdateTime(new Date());
         existingProduct.setUpdateBy(SecurityUtils.getUsername());
+
         // 更新商品主图集合，同样保障后台始终有可展示的图片
         Assert.isTrue(request.getImages() != null && !request.getImages().isEmpty(), "商品图片至少需要上传一张图片");
         mallProductImageService.updateProductImageById(request.getImages(), existingProduct.getId());
+
+        // 更新药品详情
+        if (request.getMedicineDetail() != null) {
+            MallMedicineDetail mallMedicineDetail = copyProperties(request.getMedicineDetail(), MallMedicineDetail.class);
+            mallMedicineDetail.setProductId(existingProduct.getId());
+            medicineDetailService.updateMedicineDetail(mallMedicineDetail);
+        }
 
         return updateById(existingProduct);
     }
@@ -199,6 +196,10 @@ public class MallProductServiceImpl extends ServiceImpl<MallProductMapper, MallP
 
         // 删除关联的图片
         mallProductImageService.removeImagesById(ids);
+
+        // 删除关联的药品详情
+        medicineDetailService.deleteMedicineDetailByProductIds(ids);
+
         return removeByIds(ids);
     }
 

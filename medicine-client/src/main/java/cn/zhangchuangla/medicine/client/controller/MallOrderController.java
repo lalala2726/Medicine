@@ -2,10 +2,14 @@ package cn.zhangchuangla.medicine.client.controller;
 
 import cn.zhangchuangla.medicine.client.model.request.OrderConfirmRequest;
 import cn.zhangchuangla.medicine.client.model.request.OrderCreateRequest;
+import cn.zhangchuangla.medicine.client.model.request.OrderListRequest;
 import cn.zhangchuangla.medicine.client.model.request.OrderReceiveRequest;
 import cn.zhangchuangla.medicine.client.model.vo.OrderCreateVo;
+import cn.zhangchuangla.medicine.client.model.vo.OrderDetailVo;
+import cn.zhangchuangla.medicine.client.model.vo.OrderListVo;
 import cn.zhangchuangla.medicine.client.service.MallOrderService;
 import cn.zhangchuangla.medicine.common.core.base.AjaxResult;
+import cn.zhangchuangla.medicine.common.core.base.TableDataResult;
 import cn.zhangchuangla.medicine.common.security.annotation.Anonymous;
 import cn.zhangchuangla.medicine.common.security.base.BaseController;
 import cn.zhangchuangla.medicine.model.dto.AlipayNotifyDTO;
@@ -15,6 +19,7 @@ import cn.zhangchuangla.medicine.payment.model.AlipayQrCodeRequest;
 import cn.zhangchuangla.medicine.payment.service.AlipayPaymentService;
 import com.alipay.api.AlipayApiException;
 import com.alipay.api.internal.util.AlipaySignature;
+import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.HttpServletRequest;
@@ -210,13 +215,45 @@ public class MallOrderController extends BaseController {
      * 用户可以查看订单的物流公司、物流单号等信息
      * </p>
      *
-     * @param orderId 订单ID
+     * @param orderNo 订单编号
      * @return 物流信息
      */
-    @GetMapping("/shipping/{orderId}")
+    @GetMapping("/shipping/{orderNo}")
     @Operation(summary = "查询订单物流信息")
-    public AjaxResult<OrderShippingVo> getOrderShipping(@PathVariable("orderId") Long orderId) {
-        OrderShippingVo orderShippingVo = mallOrderService.getOrderShipping(orderId);
+    public AjaxResult<OrderShippingVo> getOrderShipping(@PathVariable("orderNo") String orderNo) {
+        OrderShippingVo orderShippingVo = mallOrderService.getOrderShipping(orderNo);
         return success(orderShippingVo);
+    }
+
+    /**
+     * 分页查询用户订单列表
+     * <p>
+     * 用户可以查看自己的所有订单，支持按订单状态、订单编号、商品名称筛选
+     * </p>
+     *
+     * @param request 查询条件
+     * @return 订单列表
+     */
+    @GetMapping("/list")
+    @Operation(summary = "查询用户订单列表")
+    public AjaxResult<TableDataResult> getOrderList(OrderListRequest request) {
+        Page<OrderListVo> page = mallOrderService.getOrderList(request);
+        return getTableData(page);
+    }
+
+    /**
+     * 查询订单详情
+     * <p>
+     * 用户可以查看订单的详细信息，包括商品信息、收货地址、物流信息等
+     * </p>
+     *
+     * @param orderNo 订单编号
+     * @return 订单详情
+     */
+    @GetMapping("/detail/{orderNo}")
+    @Operation(summary = "查询订单详情")
+    public AjaxResult<OrderDetailVo> getOrderDetail(@PathVariable("orderNo") String orderNo) {
+        OrderDetailVo orderDetailVo = mallOrderService.getOrderDetail(orderNo);
+        return success(orderDetailVo);
     }
 }

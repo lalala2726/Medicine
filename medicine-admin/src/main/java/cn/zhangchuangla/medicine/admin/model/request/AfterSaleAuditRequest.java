@@ -14,6 +14,7 @@ import lombok.Data;
 @Data
 @Schema(description = "审核售后请求")
 public class AfterSaleAuditRequest {
+
     @NotNull(message = "售后申请ID不能为空")
     @Positive(message = "售后申请ID必须为正数")
     @Schema(description = "售后申请ID", example = "1")

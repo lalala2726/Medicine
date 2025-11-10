@@ -1,17 +1,16 @@
 package cn.zhangchuangla.medicine.admin.controller;
 
+import cn.zhangchuangla.medicine.admin.model.vo.MallProductVo;
 import cn.zhangchuangla.medicine.admin.service.MallProductService;
 import cn.zhangchuangla.medicine.common.core.base.AjaxResult;
 import cn.zhangchuangla.medicine.common.core.base.TableDataResult;
 import cn.zhangchuangla.medicine.common.security.annotation.IsAdmin;
 import cn.zhangchuangla.medicine.common.security.base.BaseController;
 import cn.zhangchuangla.medicine.model.dto.MallProductDetailDto;
-import cn.zhangchuangla.medicine.model.dto.MallProductDto;
 import cn.zhangchuangla.medicine.model.request.mall.MallProductAddRequest;
 import cn.zhangchuangla.medicine.model.request.mall.MallProductListQueryRequest;
 import cn.zhangchuangla.medicine.model.request.mall.MallProductUpdateRequest;
 import cn.zhangchuangla.medicine.model.vo.mall.MallProductListVo;
-import cn.zhangchuangla.medicine.model.vo.mall.MallProductVo;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -48,9 +47,17 @@ public class MallProductController extends BaseController {
     @GetMapping("/list")
     @Operation(summary = "获取商城商品列表")
     public AjaxResult<TableDataResult> listMallProduct(MallProductListQueryRequest request) {
-        Page<MallProductDto> page = mallProductService.listMallProductWithCategory(request);
-        List<MallProductListVo> productListVos = copyListProperties(page, MallProductListVo.class);
-        return getTableData(page, productListVos);
+        Page<MallProductDetailDto> page = mallProductService.listMallProductWithCategory(request);
+        List<MallProductListVo> mallProductListVos = page.getRecords().stream()
+                .map(product -> {
+                    MallProductListVo productListVo = copyProperties(product, MallProductListVo.class);
+                    if (product.getImages() != null && !product.getImages().isEmpty()) {
+                        productListVo.setCoverImage(product.getImages().getFirst());
+                    }
+                    return productListVo;
+                })
+                .toList();
+        return getTableData(page, mallProductListVos);
     }
 
     /**
@@ -63,7 +70,6 @@ public class MallProductController extends BaseController {
     @Operation(summary = "获取商城商品详情")
     public AjaxResult<MallProductVo> getProductById(@PathVariable("id") Long id) {
         MallProductDetailDto product = mallProductService.getMallProductById(id);
-        // 返回数据专注商品基本信息与图片，用于后台详情页渲染
         MallProductVo productVo = copyProperties(product, MallProductVo.class);
         return success(productVo);
     }
@@ -105,6 +111,24 @@ public class MallProductController extends BaseController {
     public AjaxResult<Void> deleteProduct(@PathVariable("ids") List<Long> ids) {
         boolean result = mallProductService.deleteMallProduct(ids);
         return toAjax(result);
+    }
+
+    /**
+     * 获取售后列表
+     */
+    @GetMapping("/after-sale/list")
+    @Operation
+    public AjaxResult<TableDataResult> listAfterSale() {
+        return success();
+    }
+
+    /**
+     * 获取售后详情
+     */
+    @GetMapping("/after-sale/{id:\\d+}")
+    @Operation(summary = "获取售后详情")
+    public AjaxResult<Void> getAfterSaleById(@PathVariable("id") Long id) {
+        return success();
     }
 
 }

@@ -10,7 +10,7 @@ import java.util.Date;
  * 商城商品列表视图对象
  *
  * @author Chuang
- * created on 2025/10/4 
+ * created on 2025/10/4
  */
 @Data
 @Schema(description = "商城商品列表视图对象")
@@ -62,6 +62,6 @@ public class MallProductListVo {
     private String updateBy;
 
     @Schema(description = "商品展示图", example = "https://example.com/image1.jpg")
-    private String image;
+    private String coverImage;
 
 }

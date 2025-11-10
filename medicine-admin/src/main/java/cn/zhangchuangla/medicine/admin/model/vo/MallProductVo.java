@@ -1,6 +1,8 @@
-package cn.zhangchuangla.medicine.model.vo.mall;
+package cn.zhangchuangla.medicine.admin.model.vo;
 
+import cn.zhangchuangla.medicine.model.dto.MedicineDetailDto;
 import io.swagger.v3.oas.annotations.media.Schema;
+import jakarta.validation.constraints.NotNull;
 import lombok.Data;
 
 import java.math.BigDecimal;
@@ -50,9 +52,6 @@ public class MallProductVo {
     @Schema(description = "配送方式", example = "快递")
     private Integer deliveryType;
 
-    @Schema(description = "运费模板ID", example = "1")
-    private Long shippingId;
-
     @Schema(description = "创建时间", example = "2025-01-01 00:00:00")
     private Date createTime;
 
@@ -65,10 +64,11 @@ public class MallProductVo {
     @Schema(description = "更新者", example = "admin")
     private String updateBy;
 
-    @Schema(description = "商品展示图", example = "https://example.com/image1.jpg")
-    private String image;
-
     @Schema(description = "商品图片列表", example = "[\"https://example.com/image1.jpg\", \"https://example.com/image2.jpg\"]")
     private List<String> images;
+
+    @Schema(description = "药品说明信息")
+    @NotNull(message = "药品说明信息不能为空")
+    private MedicineDetailDto medicineDetail;
 
 }

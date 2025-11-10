@@ -3,8 +3,11 @@ package cn.zhangchuangla.medicine.client.service.impl;
 import cn.zhangchuangla.medicine.client.mapper.MallOrderMapper;
 import cn.zhangchuangla.medicine.client.model.request.OrderConfirmRequest;
 import cn.zhangchuangla.medicine.client.model.request.OrderCreateRequest;
+import cn.zhangchuangla.medicine.client.model.request.OrderListRequest;
 import cn.zhangchuangla.medicine.client.model.request.OrderReceiveRequest;
 import cn.zhangchuangla.medicine.client.model.vo.OrderCreateVo;
+import cn.zhangchuangla.medicine.client.model.vo.OrderDetailVo;
+import cn.zhangchuangla.medicine.client.model.vo.OrderListVo;
 import cn.zhangchuangla.medicine.client.service.*;
 import cn.zhangchuangla.medicine.client.task.OrderDelayProducer;
 import cn.zhangchuangla.medicine.common.core.enums.ResponseCode;
@@ -21,6 +24,7 @@ import cn.zhangchuangla.medicine.payment.model.AlipayPagePayRequest;
 import cn.zhangchuangla.medicine.payment.service.AlipayPaymentService;
 import com.alipay.api.AlipayApiException;
 import com.alipay.api.internal.util.AlipaySignature;
+import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
@@ -51,7 +55,6 @@ public class MallOrderServiceImpl extends ServiceImpl<MallOrderMapper, MallOrder
     private static final String ORDER_STATUS_WAIT_SHIPMENT = OrderStatusEnum.PENDING_SHIPMENT.getType();
     private static final String PAY_TYPE_ALIPAY = PayTypeEnum.ALIPAY.getType();
     private static final String WAIT_PAY = PayTypeEnum.WAIT_PAY.getType();
-    private static final int FLAG_FALSE = 0;
 
     private final MallProductService mallProductService;
     private final MallOrderItemService mallOrderItemService;
@@ -100,7 +103,7 @@ public class MallOrderServiceImpl extends ServiceImpl<MallOrderMapper, MallOrder
                 .deliveryType(deliveryTypeCode)
                 .receiverDetail(request.getAddress())
                 .note(request.getRemark())
-                .afterSaleFlag(FLAG_FALSE)
+                .afterSaleFlag(OrderItemAfterSaleStatusEnum.NONE)
                 .createTime(now)
                 .updateTime(now)
                 .build();
@@ -613,7 +616,7 @@ public class MallOrderServiceImpl extends ServiceImpl<MallOrderMapper, MallOrder
     public boolean confirmReceipt(OrderReceiveRequest request) {
         // 1. 查询订单并校验所属用户
         MallOrder mallOrder = lambdaQuery()
-                .eq(MallOrder::getId, request.getOrderId())
+                .eq(MallOrder::getOrderNo, request.getOrderNo())
                 .one();
 
         if (mallOrder == null) {
@@ -652,7 +655,8 @@ public class MallOrderServiceImpl extends ServiceImpl<MallOrderMapper, MallOrder
         }
 
         // 5. 更新物流状态为已签收
-        MallOrderShipping shipping = mallOrderShippingService.getByOrderId(request.getOrderId());
+        Long orderId = mallOrder.getId();
+        MallOrderShipping shipping = mallOrderShippingService.getByOrderId(orderId);
         if (shipping != null) {
             shipping.setStatus(ShippingStatusEnum.DELIVERED.getType());
             shipping.setReceiveTime(now);
@@ -663,7 +667,7 @@ public class MallOrderServiceImpl extends ServiceImpl<MallOrderMapper, MallOrder
         // 6. 添加订单时间线记录（标记为用户操作）
         String username = getUsername();
         OrderTimelineDto timelineDto = OrderTimelineDto.builder()
-                .orderId(mallOrder.getId())
+                .orderId(orderId)
                 .eventType(OrderEventTypeEnum.ORDER_RECEIVED.getType())
                 .eventStatus(OrderStatusEnum.COMPLETED.getType())
                 .operatorType(OperatorTypeEnum.USER.getType())
@@ -676,10 +680,10 @@ public class MallOrderServiceImpl extends ServiceImpl<MallOrderMapper, MallOrder
     }
 
     @Override
-    public OrderShippingVo getOrderShipping(Long orderId) {
+    public OrderShippingVo getOrderShipping(String orderNo) {
         // 1. 查询订单基本信息并校验所属用户
         MallOrder mallOrder = lambdaQuery()
-                .eq(MallOrder::getId, orderId)
+                .eq(MallOrder::getOrderNo, orderNo)
                 .one();
 
         if (mallOrder == null) {
@@ -694,6 +698,7 @@ public class MallOrderServiceImpl extends ServiceImpl<MallOrderMapper, MallOrder
         }
 
         // 3. 查询物流信息
+        Long orderId = mallOrder.getId();
         MallOrderShipping shipping = mallOrderShippingService.getByOrderId(orderId);
 
         // 4. 获取订单状态名称
@@ -731,5 +736,125 @@ public class MallOrderServiceImpl extends ServiceImpl<MallOrderMapper, MallOrder
         }
 
         return builder.build();
+    }
+
+
+    @Override
+    public Page<OrderListVo> getOrderList(OrderListRequest request) {
+        Long userId = getUserId();
+        Page<OrderListVo> page = request.toPage();
+
+        // 查询订单列表
+        Page<OrderListVo> orderPage = baseMapper.selectOrderList(page, request, userId);
+
+        // 查询每个订单的商品项
+        for (OrderListVo orderVo : orderPage.getRecords()) {
+            // 获取订单状态名称
+            OrderStatusEnum orderStatusEnum = OrderStatusEnum.fromCode(orderVo.getOrderStatus());
+            orderVo.setOrderStatusName(orderStatusEnum != null ? orderStatusEnum.getName() : "未知");
+
+            // 查询订单项
+            List<MallOrderItem> orderItems = mallOrderItemService.lambdaQuery()
+                    .eq(MallOrderItem::getOrderId, orderVo.getId())
+                    .list();
+
+            // 转换为简化VO
+            List<OrderListVo.OrderItemSimpleVo> itemVos = new ArrayList<>();
+            for (MallOrderItem item : orderItems) {
+                OrderItemAfterSaleStatusEnum afterSaleStatusEnum =
+                        OrderItemAfterSaleStatusEnum.fromCode(item.getAfterSaleStatus());
+
+                OrderListVo.OrderItemSimpleVo itemVo = OrderListVo.OrderItemSimpleVo.builder()
+                        .id(item.getId())
+                        .productId(item.getProductId())
+                        .productName(item.getProductName())
+                        .imageUrl(item.getImageUrl())
+                        .quantity(item.getQuantity())
+                        .price(item.getPrice())
+                        .totalPrice(item.getTotalPrice())
+                        .afterSaleStatus(item.getAfterSaleStatus())
+                        .afterSaleStatusName(afterSaleStatusEnum != null ? afterSaleStatusEnum.getName() : "未知")
+                        .build();
+                itemVos.add(itemVo);
+            }
+            orderVo.setItems(itemVos);
+        }
+
+        return orderPage;
+    }
+
+    @Override
+    public OrderDetailVo getOrderDetail(String orderNo) {
+        Long userId = getUserId();
+
+        // 1. 查询订单详情
+        OrderDetailVo orderDetailVo = baseMapper.selectOrderDetail(orderNo, userId);
+        if (orderDetailVo == null) {
+            throw new ServiceException(ResponseCode.RESULT_IS_NULL, "订单不存在");
+        }
+
+        // 2. 设置订单状态名称
+        OrderStatusEnum orderStatusEnum = OrderStatusEnum.fromCode(orderDetailVo.getOrderStatus());
+        orderDetailVo.setOrderStatusName(orderStatusEnum != null ? orderStatusEnum.getName() : "未知");
+
+        // 3. 设置支付方式名称
+        PayTypeEnum payTypeEnum = PayTypeEnum.fromCode(orderDetailVo.getPayType());
+        orderDetailVo.setPayTypeName(payTypeEnum != null ? payTypeEnum.getType() : "未知");
+
+        // 4. 设置配送方式名称
+        DeliveryTypeEnum deliveryTypeEnum = DeliveryTypeEnum.fromCode(orderDetailVo.getDeliveryType());
+        orderDetailVo.setDeliveryTypeName(deliveryTypeEnum != null ? deliveryTypeEnum.getName() : "未知");
+
+        // 5. 从 SQL 查询结果中获取收货人信息并重新构建
+        OrderDetailVo.ReceiverInfo receiverInfo = OrderDetailVo.ReceiverInfo.builder()
+                .receiverName(orderDetailVo.getReceiverName())
+                .receiverPhone(orderDetailVo.getReceiverPhone())
+                .receiverDetail(orderDetailVo.getReceiverDetail())
+                .build();
+        orderDetailVo.setReceiverInfo(receiverInfo);
+
+        // 6. 查询订单项
+        Long orderId = orderDetailVo.getId();
+        List<MallOrderItem> orderItems = mallOrderItemService.lambdaQuery()
+                .eq(MallOrderItem::getOrderId, orderId)
+                .list();
+
+        List<OrderDetailVo.OrderItemDetailVo> itemDetailVos = new ArrayList<>();
+        for (MallOrderItem item : orderItems) {
+            OrderItemAfterSaleStatusEnum afterSaleStatusEnum =
+                    OrderItemAfterSaleStatusEnum.fromCode(item.getAfterSaleStatus());
+
+            OrderDetailVo.OrderItemDetailVo itemDetailVo = OrderDetailVo.OrderItemDetailVo.builder()
+                    .id(item.getId())
+                    .productId(item.getProductId())
+                    .productName(item.getProductName())
+                    .imageUrl(item.getImageUrl())
+                    .quantity(item.getQuantity())
+                    .price(item.getPrice())
+                    .totalPrice(item.getTotalPrice())
+                    .afterSaleStatus(item.getAfterSaleStatus())
+                    .afterSaleStatusName(afterSaleStatusEnum != null ? afterSaleStatusEnum.getName() : "未知")
+                    .refundedAmount(item.getRefundedAmount())
+                    .build();
+            itemDetailVos.add(itemDetailVo);
+        }
+        orderDetailVo.setItems(itemDetailVos);
+
+        // 7. 查询物流信息
+        MallOrderShipping shipping = mallOrderShippingService.getByOrderId(orderId);
+        if (shipping != null) {
+            ShippingStatusEnum shippingStatusEnum = ShippingStatusEnum.fromCode(shipping.getStatus());
+
+            OrderDetailVo.ShippingInfo shippingInfo = OrderDetailVo.ShippingInfo.builder()
+                    .logisticsCompany(shipping.getShippingCompany())
+                    .trackingNumber(shipping.getShippingNo())
+                    .shippingStatus(shipping.getStatus())
+                    .shippingStatusName(shippingStatusEnum != null ? shippingStatusEnum.getName() : "未知")
+                    .shipTime(shipping.getDeliverTime())
+                    .build();
+            orderDetailVo.setShippingInfo(shippingInfo);
+        }
+
+        return orderDetailVo;
     }
 }
