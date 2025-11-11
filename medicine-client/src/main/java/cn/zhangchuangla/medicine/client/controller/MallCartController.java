@@ -42,6 +42,16 @@ public class MallCartController extends BaseController {
         return toAjax(result);
     }
 
+    /**
+     * 获取商品在购物车中的数量
+     */
+    @GetMapping("/count")
+    @Operation(summary = "获取商品在购物车中的数量")
+    public AjaxResult<Long> getCartProductCount() {
+        Long count = cartService.getCartProductCount();
+        return success(count);
+    }
+
 
     /**
      * 更新购物车商品数量

@@ -55,4 +55,12 @@ public interface MallCartService extends IService<MallCart> {
      * @return 是否更新成功
      */
     boolean updateCartQuantity(UpdateCartQuantityRequest request);
+
+    /**
+     * 获取购物车商品数量
+     *
+     * @return 购物车商品数量
+     */
+    Long getCartProductCount();
+
 }

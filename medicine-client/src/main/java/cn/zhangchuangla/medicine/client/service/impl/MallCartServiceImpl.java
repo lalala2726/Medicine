@@ -155,6 +155,7 @@ public class MallCartServiceImpl extends ServiceImpl<MallCartMapper, MallCart>
         boolean updateResult = lambdaUpdate()
                 .eq(MallCart::getId, existingCart.getId())
                 .set(MallCart::getUpdateTime, new Date())
+                .set(MallCart::getCartNum, existingCart.getCartNum() + additionalQuantity)
                 .update();
 
         if (updateResult) {
@@ -268,6 +269,15 @@ public class MallCartServiceImpl extends ServiceImpl<MallCartMapper, MallCart>
                 .eq(MallCart::getId, request.getCartId())
                 .set(MallCart::getCartNum, request.getQuantity())
                 .update();
+    }
+
+    @Override
+    public Long getCartProductCount() {
+        Long userId = getUserId();
+        List<MallCart> mallCarts = lambdaQuery().eq(MallCart::getUserId, userId).list();
+        return mallCarts.stream()
+                .mapToLong(MallCart::getCartNum)
+                .sum();
     }
 }
 
