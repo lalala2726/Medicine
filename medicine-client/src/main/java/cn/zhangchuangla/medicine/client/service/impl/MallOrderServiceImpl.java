@@ -1,10 +1,7 @@
 package cn.zhangchuangla.medicine.client.service.impl;
 
 import cn.zhangchuangla.medicine.client.mapper.MallOrderMapper;
-import cn.zhangchuangla.medicine.client.model.request.OrderConfirmRequest;
-import cn.zhangchuangla.medicine.client.model.request.OrderCreateRequest;
-import cn.zhangchuangla.medicine.client.model.request.OrderListRequest;
-import cn.zhangchuangla.medicine.client.model.request.OrderReceiveRequest;
+import cn.zhangchuangla.medicine.client.model.request.*;
 import cn.zhangchuangla.medicine.client.model.vo.OrderCreateVo;
 import cn.zhangchuangla.medicine.client.model.vo.OrderDetailVo;
 import cn.zhangchuangla.medicine.client.model.vo.OrderListVo;
@@ -40,6 +37,7 @@ import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
+import java.util.stream.Collectors;
 
 import static cn.zhangchuangla.medicine.common.core.constants.Constants.ORDER_TIMEOUT_MINUTES;
 
@@ -64,6 +62,7 @@ public class MallOrderServiceImpl extends ServiceImpl<MallOrderMapper, MallOrder
     private final UserWalletService userWalletService;
     private final MallOrderTimelineService mallOrderTimelineService;
     private final MallOrderShippingService mallOrderShippingService;
+    private final MallCartService mallCartService;
 
 
     /**
@@ -856,5 +855,161 @@ public class MallOrderServiceImpl extends ServiceImpl<MallOrderMapper, MallOrder
         }
 
         return orderDetailVo;
+    }
+
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public OrderCreateVo createOrderFromCart(CartSettleRequest request) {
+        Long userId = SecurityUtils.getUserId();
+
+        // 1. 查询购物车商品
+        List<MallCart> cartItems = mallCartService.lambdaQuery()
+                .eq(MallCart::getUserId, userId)
+                .in(MallCart::getId, request.getCartIds())
+                .list();
+
+        if (cartItems.isEmpty()) {
+            throw new ServiceException(ResponseCode.RESULT_IS_NULL, "购物车商品不存在");
+        }
+
+        // 2. 校验商品并计算总金额
+        BigDecimal totalAmount = BigDecimal.ZERO;
+        List<MallOrderItem> orderItems = new ArrayList<>();
+        String orderDeliveryType = null; // 订单配送方式
+
+        for (MallCart cartItem : cartItems) {
+            // 查询商品详情
+            MallProductWithImageDto product = mallProductService.getProductWithImagesById(cartItem.getProductId());
+            if (product == null) {
+                throw new ServiceException(ResponseCode.RESULT_IS_NULL,
+                        String.format("商品[%s]不存在", cartItem.getProductName()));
+            }
+
+            // 校验商品状态
+            if (product.getStatus() != 1) {
+                throw new ServiceException(ResponseCode.OPERATION_ERROR,
+                        String.format("商品[%s]已下架", product.getName()));
+            }
+
+            // 校验库存
+            if (product.getStock() < cartItem.getCartNum()) {
+                throw new ServiceException(ResponseCode.OPERATION_ERROR,
+                        String.format("商品[%s]库存不足，当前库存：%d", product.getName(), product.getStock()));
+            }
+
+            // 校验并统一配送方式
+            DeliveryTypeEnum deliveryTypeEnum = DeliveryTypeEnum.fromLegacyCode(product.getDeliveryType());
+            if (deliveryTypeEnum == null) {
+                throw new ServiceException(ResponseCode.OPERATION_ERROR,
+                        String.format("商品[%s]配送方式配置异常", product.getName()));
+            }
+
+            String productDeliveryType = deliveryTypeEnum.getType();
+            if (orderDeliveryType == null) {
+                // 第一个商品，设置订单配送方式
+                orderDeliveryType = productDeliveryType;
+            } else if (!orderDeliveryType.equals(productDeliveryType)) {
+                // 配送方式不一致
+                throw new ServiceException(ResponseCode.OPERATION_ERROR,
+                        "购物车中的商品配送方式不一致，请分开下单");
+            }
+
+            // 扣减库存
+            mallProductService.deductStock(product.getId(), cartItem.getCartNum());
+
+            // 计算小计
+            BigDecimal itemTotal = product.getPrice()
+                    .multiply(new BigDecimal(cartItem.getCartNum()))
+                    .setScale(2, RoundingMode.HALF_UP);
+            totalAmount = totalAmount.add(itemTotal);
+
+            // 准备订单项数据
+            String imageUrl = null;
+            if (product.getProductImages() != null && !product.getProductImages().isEmpty()) {
+                imageUrl = product.getProductImages().getFirst().getImageUrl();
+            }
+
+            MallOrderItem orderItem = MallOrderItem.builder()
+                    .productId(product.getId())
+                    .productName(product.getName())
+                    .imageUrl(imageUrl)
+                    .price(product.getPrice())
+                    .quantity(cartItem.getCartNum())
+                    .totalPrice(itemTotal)
+                    .afterSaleStatus(OrderItemAfterSaleStatusEnum.NONE.getStatus())
+                    .build();
+
+            orderItems.add(orderItem);
+        }
+
+        // 3. 生成订单号
+        String orderNo = generateOrderNo();
+        Date now = new Date();
+
+        // 4. 创建订单
+        MallOrder order = MallOrder.builder()
+                .orderNo(orderNo)
+                .userId(userId)
+                .totalAmount(totalAmount)
+                .payAmount(BigDecimal.ZERO)
+                .freightAmount(BigDecimal.ZERO)
+                .orderStatus(ORDER_STATUS_WAIT_PAY)
+                .payType(WAIT_PAY)
+                .paid(0)
+                .deliveryType(orderDeliveryType)
+                .receiverDetail(request.getAddress())
+                .note(request.getRemark())
+                .afterSaleFlag(OrderItemAfterSaleStatusEnum.NONE)
+                .createTime(now)
+                .updateTime(now)
+                .build();
+
+        boolean orderSaved = save(order);
+        if (!orderSaved) {
+            throw new ServiceException(ResponseCode.OPERATION_ERROR, "订单创建失败");
+        }
+
+        // 5. 保存订单项
+        for (MallOrderItem item : orderItems) {
+            item.setOrderId(order.getId());
+            item.setCreateTime(now);
+            item.setUpdateTime(now);
+        }
+        boolean itemsSaved = mallOrderItemService.saveBatch(orderItems);
+        if (!itemsSaved) {
+            throw new ServiceException(ResponseCode.OPERATION_ERROR, "订单项保存失败");
+        }
+
+        // 6. 添加订单时间线
+        OrderTimelineDto timelineDto = OrderTimelineDto.builder()
+                .orderId(order.getId())
+                .eventType(OrderEventTypeEnum.ORDER_CREATED.getType())
+                .eventStatus(ORDER_STATUS_WAIT_PAY)
+                .operatorType(OperatorTypeEnum.USER.getType())
+                .description("用户创建订单")
+                .build();
+        mallOrderTimelineService.addTimeline(timelineDto);
+
+        // 7. 发送延时消息（订单超时自动取消）
+        orderDelayProducer.addOrderToDelayQueue(orderNo, ORDER_TIMEOUT_MINUTES);
+
+        // 8. 删除已结算的购物车商品
+        mallCartService.removeCartItems(request.getCartIds());
+
+        // 9. 构建返回结果
+        String productSummary = orderItems.stream()
+                .map(MallOrderItem::getProductName)
+                .collect(Collectors.joining("、"));
+
+        log.info("用户{}从购物车创建订单成功，订单号：{}，共{}件商品", userId, orderNo, orderItems.size());
+
+        return OrderCreateVo.builder()
+                .orderNo(orderNo)
+                .totalAmount(totalAmount)
+                .productSummary(productSummary)
+                .itemCount(orderItems.size())
+                .status(ORDER_STATUS_WAIT_PAY)
+                .createTime(now)
+                .build();
     }
 }

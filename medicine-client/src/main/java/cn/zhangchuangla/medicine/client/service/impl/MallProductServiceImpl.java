@@ -81,6 +81,40 @@ public class MallProductServiceImpl extends ServiceImpl<MallProductMapper, MallP
     }
 
     @Override
+    public cn.zhangchuangla.medicine.client.model.vo.MallProductVo getMallProductDetail(Long id) {
+        if (id == null) {
+            throw new ServiceException(ResponseCode.PARAM_ERROR, "商品ID不能为空");
+        }
+
+        // 查询商品详情（包含图片和药品详情）
+        MallProductWithImageDto productWithImages = mallProductMapper.getProductWithImagesById(id);
+        if (productWithImages == null) {
+            throw new ServiceException(ResponseCode.RESULT_IS_NULL, "商品不存在");
+        }
+
+        // 构建返回VO
+        cn.zhangchuangla.medicine.client.model.vo.MallProductVo productVo =
+                new cn.zhangchuangla.medicine.client.model.vo.MallProductVo();
+        productVo.setId(productWithImages.getId());
+        productVo.setName(productWithImages.getName());
+        productVo.setUnit(productWithImages.getUnit());
+        productVo.setPrice(productWithImages.getPrice());
+        productVo.setSalesVolume(productWithImages.getSalesVolume());
+        productVo.setStock(productWithImages.getStock());
+        productVo.setMedicineDetail(productWithImages.getMedicineDetail());
+
+        // 提取图片URL列表
+        if (productWithImages.getProductImages() != null && !productWithImages.getProductImages().isEmpty()) {
+            List<String> imageUrls = productWithImages.getProductImages().stream()
+                    .map(MallProductImage::getImageUrl)
+                    .toList();
+            productVo.setImages(imageUrls);
+        }
+
+        return productVo;
+    }
+
+    @Override
     public MallProductWithImageDto getProductWithImagesById(Long id) {
         return mallProductMapper.getProductWithImagesById(id);
     }
@@ -89,6 +123,7 @@ public class MallProductServiceImpl extends ServiceImpl<MallProductMapper, MallP
     @Override
     public void recordView(Long productId) {
         Objects.requireNonNull(productId);
+        // todo 添加商品浏览量
     }
 
     /**

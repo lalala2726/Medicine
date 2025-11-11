@@ -27,9 +27,7 @@ public class MallUserBrowseHistoryServiceImpl extends ServiceImpl<MallUserBrowse
         if (userId == null || productId == null) {
             return;
         }
-
         Date now = new Date();
-
         if (hasBrowsed(userId, productId)) {
             lambdaUpdate()
                     .eq(MallUserBrowseHistory::getUserId, userId)

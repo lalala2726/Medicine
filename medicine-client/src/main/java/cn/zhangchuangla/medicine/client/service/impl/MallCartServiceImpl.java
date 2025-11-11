@@ -1,6 +1,8 @@
 package cn.zhangchuangla.medicine.client.service.impl;
 
 import cn.zhangchuangla.medicine.client.mapper.MallCartMapper;
+import cn.zhangchuangla.medicine.client.model.request.UpdateCartQuantityRequest;
+import cn.zhangchuangla.medicine.client.model.vo.CartItemVo;
 import cn.zhangchuangla.medicine.client.service.MallCartService;
 import cn.zhangchuangla.medicine.client.service.MallProductImageService;
 import cn.zhangchuangla.medicine.client.service.MallProductService;
@@ -9,15 +11,18 @@ import cn.zhangchuangla.medicine.common.core.exception.ServiceException;
 import cn.zhangchuangla.medicine.common.security.base.BaseService;
 import cn.zhangchuangla.medicine.model.entity.MallCart;
 import cn.zhangchuangla.medicine.model.entity.MallProduct;
-import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.lang3.StringUtils;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.math.BigDecimal;
+import java.math.RoundingMode;
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Date;
+import java.util.List;
 
 /**
  * @author Chuang
@@ -39,7 +44,7 @@ public class MallCartServiceImpl extends ServiceImpl<MallCartMapper, MallCart>
      * @return 添加结果
      */
     @Override
-    @Transactional(rollbackFor = Exception.class)  // 事务保护：确保整个方法要么全部成功，要么全部失败回滚
+    @Transactional(rollbackFor = Exception.class)
     public boolean addProduct(Long productId, Integer quantity) {
         // 参数验证
         if (productId == null || productId <= 0) {
@@ -54,11 +59,8 @@ public class MallCartServiceImpl extends ServiceImpl<MallCartMapper, MallCart>
         log.info("用户{}开始添加商品{}到购物车，数量：{}", currentUserId, productId, quantity);
 
         try {
-            // 验证商品信息
+            // 验证商品信息（只验证商品存在和状态，不扣减库存）
             MallProduct mallProduct = validateProduct(productId);
-
-            // 检查并预留库存
-            checkAndReserveInventory(productId, quantity, mallProduct.getName());
 
             // 执行购物车操作
             boolean result = addToCartOperation(currentUserId, productId, quantity, mallProduct);
@@ -80,13 +82,14 @@ public class MallCartServiceImpl extends ServiceImpl<MallCartMapper, MallCart>
      * 验证商品信息
      */
     private MallProduct validateProduct(Long productId) {
-        MallProduct mallProduct = mallProductService.getById(productId);
+        MallProduct mallProduct = mallProductService.getMallProductById(productId);
         if (mallProduct == null) {
             log.warn("商品{}不存在", productId);
             throw new ServiceException(ResponseCode.RESULT_IS_NULL, "商品不存在");
         }
 
-        if (mallProduct.getStatus() != 1) { // 假设1表示上架状态
+        // 1代表在售
+        if (mallProduct.getStatus() != 1) {
             log.warn("商品{}已下架", productId);
             throw new ServiceException(ResponseCode.RESULT_IS_NULL, "商品已下架");
         }
@@ -95,66 +98,23 @@ public class MallCartServiceImpl extends ServiceImpl<MallCartMapper, MallCart>
     }
 
     /**
-     * 检查并预留库存（解决数据一致性问题）
-     * <p>
-     * 并发问题场景：
-     * 假设商品A库存为1，用户1和用户2同时购买
-     * 如果没有原子操作：
-     * 1. 用户1查询库存=1 → 用户2查询库存=1
-     * 2. 用户1购买成功，库存变为0
-     * 3. 用户2也能购买成功，库存变为-1（超卖！）
-     * <p>
-     * 解决方案：使用原子操作，确保检查库存和扣减库存是一个不可分割的操作
-     */
-    private void checkAndReserveInventory(Long productId, Integer quantity, String productName) {
-        // 使用原子性操作检查和扣减库存
-        // 这个SQL等价于：UPDATE mall_product SET stock = stock - ? WHERE id = ? AND stock >= ?
-        // 只有当库存足够时才会更新，且更新和检查在数据库层面是原子的
-        boolean stockUpdated = mallProductService.lambdaUpdate()
-                .eq(MallProduct::getId, productId)
-                .ge(MallProduct::getStock, quantity) // 条件：库存必须大于等于需求数量
-                .setSql("stock = stock - " + quantity)  // 原子操作：库存减去指定数量
-                .update();
-
-        if (!stockUpdated) {
-            // 查询当前库存信息用于日志
-            MallProduct currentProduct = mallProductService.getById(productId);
-            Integer currentStock = currentProduct != null ? currentProduct.getStock() : 0;
-
-            log.warn("商品{}库存不足，当前库存：{}，需求：{}", productName, currentStock, quantity);
-            throw new ServiceException(ResponseCode.RESULT_IS_NULL,
-                    String.format("商品库存不足，当前库存：%d", currentStock));
-        }
-
-        log.info("成功预留商品{}库存，数量：{}", productName, quantity);
-    }
-
-    /**
-     * 执行购物车操作（解决并发安全问题）
-     * <p>
-     * 悲观锁使用场景说明：
-     * 假设用户A连续快速点击"添加到购物车"按钮两次
-     * 如果没有悲观锁：
-     * 1. 第一次请求：查询购物车为空 → 准备创建新记录
-     * 2. 第二次请求：查询购物车为空（因为第一次还没提交）→ 也准备创建新记录
-     * 3. 结果：创建了2条相同的购物车记录（重复数据）
-     * <p>
-     * 悲观锁解决方案：
-     * - FOR UPDATE：锁定查询到的记录，直到事务提交
-     * - 其他事务必须等待锁释放才能修改这些记录
-     * - 确保同一用户对同一商品的购物车操作是串行的
+     * 添加购物车操作
+     *
+     * @param userId      用户ID
+     * @param productId   商品ID
+     * @param quantity    数量
+     * @param mallProduct 商品信息
+     * @return 添加结果
      */
     private boolean addToCartOperation(Long userId, Long productId, Integer quantity, MallProduct mallProduct) {
         // 获取商品封面图片
         String productCoverImage = getProductCoverImage(productId);
 
-        // 使用悲观锁查询现有购物车项
-        LambdaQueryWrapper<MallCart> queryWrapper = new LambdaQueryWrapper<>();
-        queryWrapper.eq(MallCart::getUserId, userId)
+        // 查询现有购物车项
+        MallCart existingCart = lambdaQuery()
+                .eq(MallCart::getUserId, userId)
                 .eq(MallCart::getProductId, productId)
-                .last("FOR UPDATE"); // 悲观锁：锁定查询到的记录，防止其他事务修改
-
-        MallCart existingCart = getOne(queryWrapper);
+                .one();
 
         if (existingCart == null) {
             // 创建新的购物车项
@@ -188,31 +148,14 @@ public class MallCartServiceImpl extends ServiceImpl<MallCartMapper, MallCart>
     }
 
     /**
-     * 更新现有购物车项
-     * <p>
-     * 原子操作说明：
-     * 传统更新方式的问题：
-     * 1. 先查询当前数量：cart_num = 5
-     * 2. 计算新数量：new_num = 5 + 2 = 7
-     * 3. 更新数据库：UPDATE SET cart_num = 7
-     * <p>
-     * 并发问题：
-     * - 两个请求同时查询到cart_num = 5
-     * - 两个请求都计算出new_num = 7
-     * - 最终数量是7，而不是正确的9（丢失了一次更新）
-     * <p>
-     * 原子操作解决方案：
-     * - 直接在数据库层面进行加法操作：cart_num = cart_num + 2
-     * - 数据库保证这个操作的原子性
-     * - 不会丢失任何一次更新
+     * 更新现有购物车项数量
      */
     private boolean updateExistingCartItem(MallCart existingCart, Integer additionalQuantity,
                                            MallProduct mallProduct) {
-        // 原子性更新数量，避免并发更新导致的数据丢失
         boolean updateResult = lambdaUpdate()
                 .eq(MallCart::getId, existingCart.getId())
-                .setSql("cart_num = cart_num + " + additionalQuantity)  // 原子操作：直接在数据库层面加法
-                .setEntity(MallCart.builder().updateTime(new Date()).build())
+                .set(MallCart::getUpdateTime, new Date())
+                .set(MallCart::getCartNum, existingCart.getCartNum() + additionalQuantity)
                 .update();
 
         if (updateResult) {
@@ -223,20 +166,118 @@ public class MallCartServiceImpl extends ServiceImpl<MallCartMapper, MallCart>
     }
 
     /**
-     * 获取商品封面图片（完善异常处理）
+     * 获取商品封面图片
      */
     private String getProductCoverImage(Long productId) {
         try {
-            String productCoverImage = mallProductImageService.getProductCoverImage(productId);
-            if (StringUtils.isBlank(productCoverImage)) {
+            String coverImage = mallProductImageService.getProductCoverImage(productId);
+            if (coverImage == null || coverImage.isEmpty()) {
                 log.warn("商品{}没有封面图片，使用默认图片", productId);
-                productCoverImage = "/images/default-product.jpg"; // 设置默认图片
+                return "/images/default-product.jpg";
             }
-            return productCoverImage;
+            return coverImage;
         } catch (Exception e) {
             log.warn("获取商品{}封面图片失败：{}，使用默认图片", productId, e.getMessage());
             return "/images/default-product.jpg";
         }
+    }
+
+    @Override
+    public List<CartItemVo> getCartList() {
+        Long userId = getUserId();
+
+        // 查询用户购物车
+        List<MallCart> cartList = lambdaQuery()
+                .eq(MallCart::getUserId, userId)
+                .orderByDesc(MallCart::getCreateTime)
+                .list();
+
+        if (cartList.isEmpty()) {
+            return Collections.emptyList();
+        }
+
+        // 转换为VO并补充商品信息
+        List<CartItemVo> cartItemVos = new ArrayList<>();
+        for (MallCart cart : cartList) {
+            MallProduct product = mallProductService.getById(cart.getProductId());
+            if (product == null || product.getStatus() != 1) {
+                // 商品不存在或已下架，跳过
+                log.warn("购物车商品{}不存在或已下架，跳过", cart.getProductId());
+                continue;
+            }
+
+            BigDecimal subtotal = product.getPrice()
+                    .multiply(new BigDecimal(cart.getCartNum()))
+                    .setScale(2, RoundingMode.HALF_UP);
+
+            CartItemVo vo = CartItemVo.builder()
+                    .id(cart.getId())
+                    .productId(cart.getProductId())
+                    .productName(cart.getProductName())
+                    .productImage(cart.getProductImage())
+                    .price(product.getPrice())
+                    .cartNum(cart.getCartNum())
+                    .subtotal(subtotal)
+                    .stock(product.getStock())
+                    .build();
+
+            cartItemVos.add(vo);
+        }
+
+        log.info("用户{}查询购物车，共{}件商品", userId, cartItemVos.size());
+        return cartItemVos;
+    }
+
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public boolean removeCartItems(List<Long> cartIds) {
+        if (cartIds == null || cartIds.isEmpty()) {
+            return true;
+        }
+
+        Long userId = getUserId();
+
+        // 只能删除自己的购物车商品
+        boolean result = lambdaUpdate()
+                .eq(MallCart::getUserId, userId)
+                .in(MallCart::getId, cartIds)
+                .remove();
+
+        if (result) {
+            log.info("用户{}删除购物车商品，ID列表：{}", userId, cartIds);
+        }
+
+        return result;
+    }
+
+    /**
+     * 更新购物车商品数量
+     *
+     * @param request 更新购物车商品数量请求
+     * @return 是否更新成功
+     */
+    @Override
+    public boolean updateCartQuantity(UpdateCartQuantityRequest request) {
+        MallCart mallCart = getById(request.getCartId());
+        if (mallCart == null) {
+            throw new ServiceException(ResponseCode.NOT_FOUND, "购物车商品不存在");
+        }
+        if (!mallCart.getUserId().equals(getUserId())) {
+            throw new ServiceException(ResponseCode.FORBIDDEN, "系统出错啦!尝试重新登录一下吧~~");
+        }
+        return lambdaUpdate()
+                .eq(MallCart::getId, request.getCartId())
+                .set(MallCart::getCartNum, request.getQuantity())
+                .update();
+    }
+
+    @Override
+    public Long getCartProductCount() {
+        Long userId = getUserId();
+        List<MallCart> mallCarts = lambdaQuery().eq(MallCart::getUserId, userId).list();
+        return mallCarts.stream()
+                .mapToLong(MallCart::getCartNum)
+                .sum();
     }
 }
 

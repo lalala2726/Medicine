@@ -1,6 +1,6 @@
 package cn.zhangchuangla.medicine.model.request.mall;
 
-import cn.zhangchuangla.medicine.model.dto.MedicineDetailDto;
+import cn.zhangchuangla.medicine.model.dto.MallMedicineDetailDto;
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.NotNull;
@@ -57,6 +57,6 @@ public class MallProductAddRequest {
 
     @Schema(description = "药品说明信息")
     @NotNull(message = "药品说明信息不能为空")
-    private MedicineDetailDto medicineDetail;
+    private MallMedicineDetailDto medicineDetail;
 
 }

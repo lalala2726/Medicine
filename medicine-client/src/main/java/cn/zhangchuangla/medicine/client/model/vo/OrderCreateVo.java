@@ -35,4 +35,7 @@ public class OrderCreateVo {
     @Schema(description = "商品摘要", example = "复方感冒灵颗粒  2盒")
     private String productSummary;
 
+    @Schema(description = "商品种类数量", example = "3")
+    private Integer itemCount;
+
 }

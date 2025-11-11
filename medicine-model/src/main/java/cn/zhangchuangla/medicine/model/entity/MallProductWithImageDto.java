@@ -1,6 +1,6 @@
 package cn.zhangchuangla.medicine.model.entity;
 
-import cn.zhangchuangla.medicine.model.dto.MedicineDetailDto;
+import cn.zhangchuangla.medicine.model.dto.MallMedicineDetailDto;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 
@@ -9,7 +9,7 @@ import java.util.List;
 /**
  * @author Chuang
  * <p>
- * created on 2025/11/1 
+ * created on 2025/11/1
  */
 @EqualsAndHashCode(callSuper = true)
 @Data
@@ -23,5 +23,5 @@ public class MallProductWithImageDto extends MallProduct {
     /**
      * 药品详细信息
      */
-    private MedicineDetailDto medicineDetail;
+    private MallMedicineDetailDto medicineDetail;
 }

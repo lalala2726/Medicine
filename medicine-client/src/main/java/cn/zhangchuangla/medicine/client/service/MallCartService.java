@@ -1,8 +1,12 @@
 package cn.zhangchuangla.medicine.client.service;
 
+import cn.zhangchuangla.medicine.client.model.request.UpdateCartQuantityRequest;
+import cn.zhangchuangla.medicine.client.model.vo.CartItemVo;
 import cn.zhangchuangla.medicine.model.entity.MallCart;
 import com.baomidou.mybatisplus.extension.service.IService;
 import org.springframework.validation.annotation.Validated;
+
+import java.util.List;
 
 /**
  * @author Chuang
@@ -28,4 +32,35 @@ public interface MallCartService extends IService<MallCart> {
     default boolean addProduct(Long productId) {
         return addProduct(productId, 1);
     }
+
+    /**
+     * 获取用户购物车列表
+     *
+     * @return 购物车商品列表
+     */
+    List<CartItemVo> getCartList();
+
+    /**
+     * 删除购物车商品
+     *
+     * @param cartIds 购物车ID列表
+     * @return 是否删除成功
+     */
+    boolean removeCartItems(List<Long> cartIds);
+
+    /**
+     * 更新购物车商品数量
+     *
+     * @param request 更新购物车商品数量请求
+     * @return 是否更新成功
+     */
+    boolean updateCartQuantity(UpdateCartQuantityRequest request);
+
+    /**
+     * 获取购物车商品数量
+     *
+     * @return 购物车商品数量
+     */
+    Long getCartProductCount();
+
 }

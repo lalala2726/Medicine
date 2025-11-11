@@ -1,5 +1,7 @@
 package cn.zhangchuangla.medicine.client.controller;
 
+import cn.zhangchuangla.medicine.client.model.request.UpdateCartQuantityRequest;
+import cn.zhangchuangla.medicine.client.model.vo.CartItemVo;
 import cn.zhangchuangla.medicine.client.service.MallCartService;
 import cn.zhangchuangla.medicine.common.core.base.AjaxResult;
 import cn.zhangchuangla.medicine.common.security.base.BaseController;
@@ -7,15 +9,15 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.validation.annotation.Validated;
+import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
 
 /**
  * @author Chuang
  * <p>
- * created on 2025/10/15 
+ * created on 2025/10/15
  */
 @RestController
 @RequestMapping("/mall/cart")
@@ -41,29 +43,51 @@ public class MallCartController extends BaseController {
     }
 
     /**
-     * 添加指定数量的商品到购物车
-     *
-     * @param productId 商品ID
-     * @param quantity  添加数量（1-999）
-     * @return 添加结果
+     * 获取商品在购物车中的数量
      */
-    @PostMapping("/{productId}/{quantity}")
-    @Operation(summary = "添加指定数量商品到购物车", description = "支持批量添加商品")
-    public AjaxResult<?> addProductWithQuantity(
-            @Parameter(description = "商品ID", required = true)
-            @PathVariable("productId") Long productId,
-            @Parameter(description = "添加数量", required = true)
-            @PathVariable("quantity") Integer quantity) {
+    @GetMapping("/count")
+    @Operation(summary = "获取商品在购物车中的数量")
+    public AjaxResult<Long> getCartProductCount() {
+        Long count = cartService.getCartProductCount();
+        return success(count);
+    }
 
-        // 参数验证
-        if (quantity == null || quantity <= 0) {
-            return error("添加数量必须大于0");
-        }
-        if (quantity > 999) {
-            return error("单次添加数量不能超过999");
-        }
 
-        boolean result = cartService.addProduct(productId, quantity);
+    /**
+     * 更新购物车商品数量
+     *
+     * @param request 请求参数
+     * @return 更新结果
+     */
+    @PutMapping("/update")
+    @Operation(summary = "更新购物车商品数量")
+    public AjaxResult<Void> updateCartQuantity(@Validated @RequestBody UpdateCartQuantityRequest request) {
+        boolean result = cartService.updateCartQuantity(request);
+        return toAjax(result);
+    }
+
+    /**
+     * 获取购物车列表
+     *
+     * @return 购物车商品列表
+     */
+    @GetMapping("/list")
+    @Operation(summary = "获取购物车列表")
+    public AjaxResult<List<CartItemVo>> getCartList() {
+        List<CartItemVo> cartList = cartService.getCartList();
+        return success(cartList);
+    }
+
+    /**
+     * 删除购物车商品
+     *
+     * @param cartIds 购物车ID列表
+     * @return 删除结果
+     */
+    @DeleteMapping("/remove")
+    @Operation(summary = "删除购物车商品")
+    public AjaxResult<?> removeCartItems(@RequestBody List<Long> cartIds) {
+        boolean result = cartService.removeCartItems(cartIds);
         return toAjax(result);
     }
 }

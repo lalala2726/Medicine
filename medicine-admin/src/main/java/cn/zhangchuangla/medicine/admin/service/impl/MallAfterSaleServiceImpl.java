@@ -307,24 +307,15 @@ public class MallAfterSaleServiceImpl extends ServiceImpl<MallAfterSaleMapper, M
         PayTypeEnum payType = PayTypeEnum.fromCode(order.getPayType());
 
         try {
-            if (payType == PayTypeEnum.ALIPAY) {
-                // 支付宝退款
-                alipayPaymentService.refund(AlipayRefundRequest.builder()
-                        .outTradeNo(order.getOrderNo())
-                        .refundAmount(formatAmount(refundAmount))
-                        .refundReason(String.format("售后退款（售后单号：%s）", afterSale.getAfterSaleNo()))
-                        .outRequestNo(buildOutRequestNo(afterSale))
-                        .build());
-            } else if (payType == PayTypeEnum.WALLET) {
-                // 钱包退款
-                String walletRemark = String.format("售后退款（售后单号：%s，退款金额：%s元）",
-                        afterSale.getAfterSaleNo(), formatAmount(refundAmount));
-                boolean success = userWalletService.rechargeWallet(afterSale.getUserId(), refundAmount, walletRemark);
-                if (!success) {
-                    throw new ServiceException(ResponseCode.OPERATION_ERROR, "钱包退款失败");
-                }
-            } else {
-                throw new ServiceException(ResponseCode.OPERATION_ERROR, "不支持的支付方式");
+            switch (payType) {
+                case ALIPAY:
+                    processAlipayRefund(order, afterSale, refundAmount);
+                    break;
+                case WALLET:
+                    processWalletRefund(afterSale, refundAmount);
+                    break;
+                default:
+                    throw new ServiceException(ResponseCode.OPERATION_ERROR, "不支持的支付方式");
             }
         } catch (Exception e) {
             // 退款失败，恢复售后状态
@@ -470,6 +461,62 @@ public class MallAfterSaleServiceImpl extends ServiceImpl<MallAfterSaleMapper, M
 
         log.info("管理员{}完成售后换货，售后单号：{}{}", adminUsername, afterSale.getAfterSaleNo(), exchangeInfo);
         return true;
+    }
+
+    /**
+     * 处理支付宝退款
+     * <p>
+     * 注意：不自动降级到钱包退款，避免双重退款风险
+     * 当支付宝退款接口异常时，可能的情况：
+     * 1. 网络超时 - 退款可能已成功但响应未收到
+     * 2. 临时错误 - 支付宝正在处理中
+     * 3. 真实失败 - 退款确实失败
+     * 
+     * 在不确定的情况下自动钱包退款会导致双重退款，因此：
+     * - 抛出异常，由上层处理
+     * - 管理员需要手动查询支付宝退款状态后再决定是否钱包退款
+     *
+     * @param order       订单信息
+     * @param afterSale   售后申请
+     * @param refundAmount 退款金额
+     */
+    private void processAlipayRefund(MallOrder order, MallAfterSale afterSale, BigDecimal refundAmount) {
+        try {
+            alipayPaymentService.refund(AlipayRefundRequest.builder()
+                    .outTradeNo(order.getOrderNo())
+                    .refundAmount(formatAmount(refundAmount))
+                    .refundReason(String.format("售后退款（售后单号：%s）", afterSale.getAfterSaleNo()))
+                    .outRequestNo(buildOutRequestNo(afterSale))
+                    .build());
+            log.info("支付宝退款成功，售后单号：{}，退款金额：{}", afterSale.getAfterSaleNo(), refundAmount);
+        } catch (Exception e) {
+            log.error("支付宝退款异常，售后单号：{}，订单号：{}，退款金额：{}，错误信息：{}", 
+                    afterSale.getAfterSaleNo(), order.getOrderNo(), refundAmount, e.getMessage(), e);
+            // 不自动降级到钱包退款，抛出异常由上层处理
+            // 管理员需要：
+            // 1. 登录支付宝商家后台查询该笔退款状态
+            // 2. 如果确认退款失败，可以手动发起钱包退款
+            // 3. 如果退款成功或处理中，等待支付宝处理完成
+            throw new ServiceException(ResponseCode.OPERATION_ERROR, 
+                    String.format("支付宝退款失败：%s。请登录支付宝商家后台查询退款状态（售后单号：%s），确认失败后可手动发起钱包退款", 
+                            e.getMessage(), afterSale.getAfterSaleNo()));
+        }
+    }
+
+    /**
+     * 处理钱包退款
+     *
+     * @param afterSale   售后申请
+     * @param refundAmount 退款金额
+     */
+    private void processWalletRefund(MallAfterSale afterSale, BigDecimal refundAmount) {
+        String walletRemark = String.format("售后退款（售后单号：%s，退款金额：%s元）",
+                afterSale.getAfterSaleNo(), formatAmount(refundAmount));
+        boolean success = userWalletService.rechargeWallet(afterSale.getUserId(), refundAmount, walletRemark);
+        if (!success) {
+            throw new ServiceException(ResponseCode.OPERATION_ERROR, "钱包退款失败");
+        }
+        log.info("钱包退款成功，售后单号：{}，退款金额：{}", afterSale.getAfterSaleNo(), refundAmount);
     }
 
     /**
