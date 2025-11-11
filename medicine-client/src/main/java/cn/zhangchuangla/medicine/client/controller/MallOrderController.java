@@ -1,9 +1,6 @@
 package cn.zhangchuangla.medicine.client.controller;
 
-import cn.zhangchuangla.medicine.client.model.request.OrderConfirmRequest;
-import cn.zhangchuangla.medicine.client.model.request.OrderCreateRequest;
-import cn.zhangchuangla.medicine.client.model.request.OrderListRequest;
-import cn.zhangchuangla.medicine.client.model.request.OrderReceiveRequest;
+import cn.zhangchuangla.medicine.client.model.request.*;
 import cn.zhangchuangla.medicine.client.model.vo.OrderCreateVo;
 import cn.zhangchuangla.medicine.client.model.vo.OrderDetailVo;
 import cn.zhangchuangla.medicine.client.model.vo.OrderListVo;
@@ -23,6 +20,7 @@ import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.HttpServletRequest;
+import jakarta.validation.Valid;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.util.StringUtils;
 import org.springframework.validation.annotation.Validated;
@@ -255,5 +253,22 @@ public class MallOrderController extends BaseController {
     public AjaxResult<OrderDetailVo> getOrderDetail(@PathVariable("orderNo") String orderNo) {
         OrderDetailVo orderDetailVo = mallOrderService.getOrderDetail(orderNo);
         return success(orderDetailVo);
+    }
+
+    /**
+     * 从购物车创建订单
+     * <p>
+     * 用户可以选择购物车中的多个商品进行结算，系统会校验商品状态和库存，
+     * 扣减库存后创建订单，并自动删除已结算的购物车商品
+     * </p>
+     *
+     * @param request 购物车结算请求
+     * @return 订单创建结果
+     */
+    @PostMapping("/create-from-cart")
+    @Operation(summary = "从购物车创建订单")
+    public AjaxResult<OrderCreateVo> createOrderFromCart(@Valid @RequestBody CartSettleRequest request) {
+        OrderCreateVo orderCreateVo = mallOrderService.createOrderFromCart(request);
+        return success(orderCreateVo);
     }
 }

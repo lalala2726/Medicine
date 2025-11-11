@@ -1,9 +1,6 @@
 package cn.zhangchuangla.medicine.client.service;
 
-import cn.zhangchuangla.medicine.client.model.request.OrderConfirmRequest;
-import cn.zhangchuangla.medicine.client.model.request.OrderCreateRequest;
-import cn.zhangchuangla.medicine.client.model.request.OrderListRequest;
-import cn.zhangchuangla.medicine.client.model.request.OrderReceiveRequest;
+import cn.zhangchuangla.medicine.client.model.request.*;
 import cn.zhangchuangla.medicine.client.model.vo.OrderCreateVo;
 import cn.zhangchuangla.medicine.client.model.vo.OrderDetailVo;
 import cn.zhangchuangla.medicine.client.model.vo.OrderListVo;
@@ -90,4 +87,12 @@ public interface MallOrderService extends IService<MallOrder> {
      * @return 订单详情
      */
     OrderDetailVo getOrderDetail(String orderNo);
+
+    /**
+     * 从购物车创建订单
+     *
+     * @param request 购物车结算请求
+     * @return 订单创建结果
+     */
+    OrderCreateVo createOrderFromCart(CartSettleRequest request);
 }

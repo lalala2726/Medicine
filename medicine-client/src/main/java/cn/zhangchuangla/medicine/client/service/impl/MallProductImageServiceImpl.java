@@ -3,7 +3,6 @@ package cn.zhangchuangla.medicine.client.service.impl;
 import cn.zhangchuangla.medicine.client.mapper.MallProductImageMapper;
 import cn.zhangchuangla.medicine.client.service.MallProductImageService;
 import cn.zhangchuangla.medicine.model.entity.MallProductImage;
-import com.baomidou.mybatisplus.extension.conditions.query.LambdaQueryChainWrapper;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import org.springframework.stereotype.Service;
 
@@ -31,8 +30,9 @@ public class MallProductImageServiceImpl extends ServiceImpl<MallProductImageMap
      */
     @Override
     public String getProductCoverImage(Long productId) {
-        LambdaQueryChainWrapper<MallProductImage> eq = lambdaQuery().eq(MallProductImage::getProductId, productId);
-        List<MallProductImage> list = list(eq);
+        List<MallProductImage> list = lambdaQuery()
+                .eq(MallProductImage::getProductId, productId)
+                .list();
         return list.stream()
                 .min(Comparator.comparingInt(MallProductImage::getSort))
                 .map(MallProductImage::getImageUrl)
