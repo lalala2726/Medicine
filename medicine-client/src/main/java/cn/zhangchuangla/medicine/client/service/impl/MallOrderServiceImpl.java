@@ -875,6 +875,7 @@ public class MallOrderServiceImpl extends ServiceImpl<MallOrderMapper, MallOrder
         // 2. 校验商品并计算总金额
         BigDecimal totalAmount = BigDecimal.ZERO;
         List<MallOrderItem> orderItems = new ArrayList<>();
+        String orderDeliveryType = null; // 订单配送方式
 
         for (MallCart cartItem : cartItems) {
             // 查询商品详情
@@ -896,6 +897,23 @@ public class MallOrderServiceImpl extends ServiceImpl<MallOrderMapper, MallOrder
                         String.format("商品[%s]库存不足，当前库存：%d", product.getName(), product.getStock()));
             }
 
+            // 校验并统一配送方式
+            DeliveryTypeEnum deliveryTypeEnum = DeliveryTypeEnum.fromLegacyCode(product.getDeliveryType());
+            if (deliveryTypeEnum == null) {
+                throw new ServiceException(ResponseCode.OPERATION_ERROR,
+                        String.format("商品[%s]配送方式配置异常", product.getName()));
+            }
+
+            String productDeliveryType = deliveryTypeEnum.getType();
+            if (orderDeliveryType == null) {
+                // 第一个商品，设置订单配送方式
+                orderDeliveryType = productDeliveryType;
+            } else if (!orderDeliveryType.equals(productDeliveryType)) {
+                // 配送方式不一致
+                throw new ServiceException(ResponseCode.OPERATION_ERROR,
+                        "购物车中的商品配送方式不一致，请分开下单");
+            }
+
             // 扣减库存
             mallProductService.deductStock(product.getId(), cartItem.getCartNum());
 
@@ -908,7 +926,7 @@ public class MallOrderServiceImpl extends ServiceImpl<MallOrderMapper, MallOrder
             // 准备订单项数据
             String imageUrl = null;
             if (product.getProductImages() != null && !product.getProductImages().isEmpty()) {
-                imageUrl = product.getProductImages().get(0).getImageUrl();
+                imageUrl = product.getProductImages().getFirst().getImageUrl();
             }
 
             MallOrderItem orderItem = MallOrderItem.builder()
@@ -938,6 +956,7 @@ public class MallOrderServiceImpl extends ServiceImpl<MallOrderMapper, MallOrder
                 .orderStatus(ORDER_STATUS_WAIT_PAY)
                 .payType(WAIT_PAY)
                 .paid(0)
+                .deliveryType(orderDeliveryType)
                 .receiverDetail(request.getAddress())
                 .note(request.getRemark())
                 .afterSaleFlag(OrderItemAfterSaleStatusEnum.NONE)
