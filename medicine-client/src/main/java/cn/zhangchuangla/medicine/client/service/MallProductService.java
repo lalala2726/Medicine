@@ -1,6 +1,7 @@
 package cn.zhangchuangla.medicine.client.service;
 
 import cn.zhangchuangla.medicine.client.enums.ProductViewPeriod;
+import cn.zhangchuangla.medicine.client.model.vo.MallProductVo;
 import cn.zhangchuangla.medicine.model.entity.MallProduct;
 import cn.zhangchuangla.medicine.model.entity.MallProductWithImageDto;
 import cn.zhangchuangla.medicine.model.vo.mall.RecommendListVo;
@@ -9,6 +10,8 @@ import com.baomidou.mybatisplus.extension.service.IService;
 import java.util.List;
 
 /**
+ * 商品服务接口（客户端）
+ *
  * @author Chuang
  */
 public interface MallProductService extends IService<MallProduct> {
@@ -29,6 +32,13 @@ public interface MallProductService extends IService<MallProduct> {
      */
     MallProduct getMallProductById(Long id);
 
+    /**
+     * 获取商品详情（包含图片和药品详情）
+     *
+     * @param id 商品ID
+     * @return 商品详情VO
+     */
+    MallProductVo getMallProductDetail(Long id);
 
     /**
      * 获取商品信息（包含图片）

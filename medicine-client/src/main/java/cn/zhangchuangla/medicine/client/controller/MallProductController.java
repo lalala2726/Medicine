@@ -5,10 +5,8 @@ import cn.zhangchuangla.medicine.client.model.vo.MallProductVo;
 import cn.zhangchuangla.medicine.client.service.MallProductService;
 import cn.zhangchuangla.medicine.client.service.MallUserBrowseHistoryService;
 import cn.zhangchuangla.medicine.common.core.base.AjaxResult;
-import cn.zhangchuangla.medicine.common.core.utils.BeanCotyUtils;
 import cn.zhangchuangla.medicine.common.security.annotation.Anonymous;
 import cn.zhangchuangla.medicine.common.security.base.BaseController;
-import cn.zhangchuangla.medicine.model.entity.MallProduct;
 import cn.zhangchuangla.medicine.model.vo.mall.RecommendListVo;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -51,7 +49,7 @@ public class MallProductController extends BaseController {
     }
 
     /**
-     * 获取商品详情
+     * 获取商品详情（包含图片和药品详情）
      *
      * @param id 商品ID
      * @return 商品信息
@@ -60,11 +58,13 @@ public class MallProductController extends BaseController {
     @Operation(summary = "获取商品详情")
     public AjaxResult<MallProductVo> getMallProductById(@Min(value = 1, message = "商品ID不能小于1")
                                                         @PathVariable("id") Long id) {
-        MallProduct mallProduct = mallProductService.getMallProductById(id);
-        MallProductVo mallProductVo = BeanCotyUtils.copyProperties(mallProduct, MallProductVo.class);
+        // 查询商品详情（包含图片和药品详情）
+        MallProductVo mallProductVo = mallProductService.getMallProductDetail(id);
+        // 记录用户浏览历史
         mallUserBrowseHistoryService.recordProductBrowse(getUserId(), id);
-        // 加一笔浏览记录，兼容用户直接查看详情的场景
+        // 记录商品浏览量
         mallProductService.recordView(id);
+
         return success(mallProductVo);
     }
 
