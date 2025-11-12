@@ -12,7 +12,9 @@ spring:
       host: 192.168.10.110
       database: medicine
       username: zhangchuang
-      password: zhangchuang2726
+      password: zhangchuang27726
+      authentication-database: admin
+      port: 27017
       # 自动创建索引
       auto-index-creation: true
       # UUID表示方式
