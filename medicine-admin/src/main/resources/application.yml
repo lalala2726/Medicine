@@ -8,6 +8,15 @@ spring:
       max-file-size: 50MB
       max-request-size: 50MB
   data:
+    mongodb:
+      host: 192.168.10.110
+      database: medicine
+      username: zhangchuang
+      password: zhangchuang2726
+      # 自动创建索引
+      auto-index-creation: true
+      # UUID表示方式
+      uuid-representation: standard
     redis:
       host: localhost
       port: 6379

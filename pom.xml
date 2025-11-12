@@ -68,6 +68,11 @@
             </dependency>
             <dependency>
                 <groupId>cn.zhangchuangla.medicine</groupId>
+                <artifactId>medicine-common-mongodb</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>cn.zhangchuangla.medicine</groupId>
                 <artifactId>medicine-common-security</artifactId>
                 <version>${project.version}</version>
             </dependency>
@@ -259,6 +264,5 @@
         <module>medicine-client</module>
         <module>medicine-ai</module>
         <module>medicine-payment</module>
-        <module>medicine-common/medicine-common-mongodb</module>
     </modules>
 </project>
