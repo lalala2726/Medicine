@@ -1,5 +1,6 @@
 package cn.zhangchuangla.medicine.client.service;
 
+import cn.zhangchuangla.medicine.client.model.vo.UserBriefVo;
 import cn.zhangchuangla.medicine.model.entity.User;
 import com.baomidou.mybatisplus.extension.service.IService;
 
@@ -49,4 +50,12 @@ public interface UserService extends IService<User> {
      * @param ip     IP地址
      */
     void updateLoginInfo(Long userId, String ip);
+
+    /**
+     * 获取当前用户界面简述信息
+     *
+     * @return 当前用户界面简述
+     */
+    UserBriefVo getUserBriefInfo();
+
 }

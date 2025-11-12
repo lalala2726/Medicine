@@ -1,20 +1,24 @@
 package cn.zhangchuangla.medicine.client.service.impl;
 
 import cn.zhangchuangla.medicine.client.mapper.UserMapper;
+import cn.zhangchuangla.medicine.client.model.vo.UserBriefVo;
+import cn.zhangchuangla.medicine.client.service.MallOrderService;
 import cn.zhangchuangla.medicine.client.service.UserService;
+import cn.zhangchuangla.medicine.client.service.UserWalletService;
 import cn.zhangchuangla.medicine.common.core.entity.IPEntity;
 import cn.zhangchuangla.medicine.common.core.utils.Assert;
 import cn.zhangchuangla.medicine.common.core.utils.IPUtils;
+import cn.zhangchuangla.medicine.common.security.base.BaseService;
+import cn.zhangchuangla.medicine.model.entity.MallOrder;
 import cn.zhangchuangla.medicine.model.entity.User;
+import cn.zhangchuangla.medicine.model.enums.OrderStatusEnum;
 import com.baomidou.mybatisplus.extension.conditions.query.LambdaQueryChainWrapper;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.stereotype.Service;
 
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.Date;
-import java.util.Set;
+import java.math.BigDecimal;
+import java.util.*;
 import java.util.stream.Collectors;
 
 /**
@@ -22,7 +26,15 @@ import java.util.stream.Collectors;
  */
 @Service
 public class UserServiceImpl extends ServiceImpl<UserMapper, User>
-        implements UserService {
+        implements UserService, BaseService {
+
+    private final UserWalletService userWalletService;
+    private final MallOrderService mallOrderService;
+
+    public UserServiceImpl(UserWalletService userWalletService, MallOrderService mallOrderService) {
+        this.userWalletService = userWalletService;
+        this.mallOrderService = mallOrderService;
+    }
 
     /**
      * 根据用户ID查询用户信息
@@ -86,6 +98,57 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User>
         updateUser.setLastLoginIp(ip);
         updateUser.setLastLoginLocation(regionEntity.getRegion());
         updateById(updateUser);
+    }
+
+    @Override
+    public UserBriefVo getUserBriefInfo() {
+        Long userId = getUserId();
+
+        // 获取当前用户信息
+        User user = getUserById(userId);
+
+        // 获取用户钱包余额
+        BigDecimal userWalletBalance = userWalletService.getUserWalletBalance();
+
+        // 获取当前用户订单的信息
+        List<MallOrder> mallOrders = mallOrderService.lambdaQuery()
+                .eq(MallOrder::getUserId, userId)
+                .list();
+
+        // 统计各种状态的订单数量
+        Map<String, Long> orderCountMap = mallOrders.stream()
+                .collect(Collectors.groupingBy(MallOrder::getOrderStatus, Collectors.counting()));
+
+        // 待支付订单数量
+        Integer payOrderCount = orderCountMap.getOrDefault(OrderStatusEnum.PENDING_PAYMENT.getType(), 0L).intValue();
+
+        // 待收货订单数量(待发货 + 待收货)
+        Integer receiveOrderCount = orderCountMap.getOrDefault(OrderStatusEnum.PENDING_SHIPMENT.getType(), 0L).intValue();
+
+        Integer deliverOrderCount = orderCountMap.getOrDefault(OrderStatusEnum.PENDING_RECEIPT.getType(), 0L).intValue();
+
+        // 已完成订单数量
+        Integer completeOrderCount = orderCountMap.getOrDefault(OrderStatusEnum.COMPLETED.getType(), 0L).intValue();
+
+        // 退货/售后订单数量(售后中 + 已退款)
+        Integer afterSaleOrderCount = orderCountMap.getOrDefault(OrderStatusEnum.AFTER_SALE.getType(), 0L).intValue()
+                + orderCountMap.getOrDefault(OrderStatusEnum.REFUNDED.getType(), 0L).intValue();
+
+        // TODO: 优惠券数量需要从优惠券服务获取，暂时设置为0
+        Integer couponCount = 0;
+
+        return UserBriefVo.builder()
+                .avatarUrl(user.getAvatar())
+                .nickName(user.getNickname())
+                .phoneNumber(user.getPhoneNumber())
+                .balance(userWalletBalance)
+                .couponCount(couponCount)
+                .payOrderCount(payOrderCount)
+                .deliverOrderCount(deliverOrderCount)
+                .receiveOrderCount(receiveOrderCount)
+                .completeOrderCount(completeOrderCount)
+                .afterSaleOrderCount(afterSaleOrderCount)
+                .build();
     }
 
     private Set<String> extractRoles(User user) {
