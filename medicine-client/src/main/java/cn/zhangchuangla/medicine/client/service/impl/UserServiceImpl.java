@@ -122,10 +122,11 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User>
         // 待支付订单数量
         Integer payOrderCount = orderCountMap.getOrDefault(OrderStatusEnum.PENDING_PAYMENT.getType(), 0L).intValue();
 
-        // 待收货订单数量(待发货 + 待收货)
-        Integer receiveOrderCount = orderCountMap.getOrDefault(OrderStatusEnum.PENDING_SHIPMENT.getType(), 0L).intValue();
+        // 待发货订单数量
+        Integer deliverOrderCount = orderCountMap.getOrDefault(OrderStatusEnum.PENDING_SHIPMENT.getType(), 0L).intValue();
 
-        Integer deliverOrderCount = orderCountMap.getOrDefault(OrderStatusEnum.PENDING_RECEIPT.getType(), 0L).intValue();
+        // 待收货订单数量
+        Integer receiveOrderCount = orderCountMap.getOrDefault(OrderStatusEnum.PENDING_RECEIPT.getType(), 0L).intValue();
 
         // 已完成订单数量
         Integer completeOrderCount = orderCountMap.getOrDefault(OrderStatusEnum.COMPLETED.getType(), 0L).intValue();
