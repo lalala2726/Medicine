@@ -1,10 +1,11 @@
-package cn.zhangchuangla.medicine.common.mongodb.controller;
+package cn.zhangchuangla.medicine.client.controller;
 
 import cn.zhangchuangla.medicine.common.core.base.AjaxResult;
 import cn.zhangchuangla.medicine.common.core.utils.BeanCotyUtils;
 import cn.zhangchuangla.medicine.common.mongodb.entity.Region;
 import cn.zhangchuangla.medicine.common.mongodb.service.RegionService;
 import cn.zhangchuangla.medicine.common.mongodb.vo.RegionVo;
+import cn.zhangchuangla.medicine.common.security.base.BaseController;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -21,7 +22,7 @@ import java.util.List;
 @Tag(name = "地址管理", description = "省市区街道地址查询接口")
 @RestController
 @RequestMapping("/common/regions")
-public class RegionController {
+public class RegionController extends BaseController {
 
     private final RegionService regionService;
 
@@ -37,7 +38,7 @@ public class RegionController {
     public AjaxResult<List<RegionVo>> getProvinces() {
         List<Region> provinces = regionService.getProvinces();
         List<RegionVo> regionVos = BeanCotyUtils.copyListProperties(provinces, RegionVo.class);
-        return AjaxResult.success(regionVos);
+        return success(regionVos);
     }
 
     /**
@@ -50,7 +51,7 @@ public class RegionController {
             @PathVariable String provinceId) {
         List<Region> cities = regionService.getCitiesByProvinceId(provinceId);
         List<RegionVo> regionVos = BeanCotyUtils.copyListProperties(cities, RegionVo.class);
-        return AjaxResult.success(regionVos);
+        return success(regionVos);
     }
 
     /**
@@ -63,7 +64,7 @@ public class RegionController {
             @PathVariable String cityId) {
         List<Region> districts = regionService.getDistrictsByCityId(cityId);
         List<RegionVo> regionVos = BeanCotyUtils.copyListProperties(districts, RegionVo.class);
-        return AjaxResult.success(regionVos);
+        return success(regionVos);
     }
 
     /**
@@ -76,7 +77,7 @@ public class RegionController {
             @PathVariable String districtId) {
         List<Region> streets = regionService.getStreetsByDistrictId(districtId);
         List<RegionVo> regionVos = BeanCotyUtils.copyListProperties(streets, RegionVo.class);
-        return AjaxResult.success(regionVos);
+        return success(regionVos);
     }
 
     /**
@@ -89,7 +90,7 @@ public class RegionController {
             @PathVariable String parentId) {
         List<Region> children = regionService.getChildrenByParentId(parentId);
         List<RegionVo> regionVos = BeanCotyUtils.copyListProperties(children, RegionVo.class);
-        return AjaxResult.success(regionVos);
+        return success(regionVos);
     }
 
     /**
@@ -102,10 +103,10 @@ public class RegionController {
             @PathVariable String id) {
         Region region = regionService.getRegionById(id);
         if (region == null) {
-            return AjaxResult.error("区域不存在");
+            return error("区域不存在");
         }
         RegionVo regionVo = BeanCotyUtils.copyProperties(region, RegionVo.class);
-        return AjaxResult.success(regionVo);
+        return success(regionVo);
     }
 
     /**
@@ -117,7 +118,7 @@ public class RegionController {
             @Parameter(description = "区域ID", required = true)
             @PathVariable String id) {
         List<String> path = regionService.getFullPath(id);
-        return AjaxResult.success(path);
+        return success(path);
     }
 
     /**
@@ -143,9 +144,9 @@ public class RegionController {
         } else if (prefix != null && !prefix.trim().isEmpty()) {
             results = regionService.searchByPinyinPrefix(prefix.trim());
         } else {
-            return AjaxResult.error("请提供搜索关键词(name/pinyin/prefix)");
+            return error("请提供搜索关键词(name/pinyin/prefix)");
         }
         List<RegionVo> regionVos = BeanCotyUtils.copyListProperties(results, RegionVo.class);
-        return AjaxResult.success(regionVos);
+        return success(regionVos);
     }
 }
