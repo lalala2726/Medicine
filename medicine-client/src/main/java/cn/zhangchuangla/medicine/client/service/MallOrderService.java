@@ -1,7 +1,10 @@
 package cn.zhangchuangla.medicine.client.service;
 
-import cn.zhangchuangla.medicine.client.model.request.*;
-import cn.zhangchuangla.medicine.client.model.vo.OrderCreateVo;
+import cn.zhangchuangla.medicine.client.model.request.CartSettleRequest;
+import cn.zhangchuangla.medicine.client.model.request.OrderCheckoutRequest;
+import cn.zhangchuangla.medicine.client.model.request.OrderListRequest;
+import cn.zhangchuangla.medicine.client.model.request.OrderReceiveRequest;
+import cn.zhangchuangla.medicine.client.model.vo.OrderCheckoutVo;
 import cn.zhangchuangla.medicine.client.model.vo.OrderDetailVo;
 import cn.zhangchuangla.medicine.client.model.vo.OrderListVo;
 import cn.zhangchuangla.medicine.model.dto.AlipayNotifyDTO;
@@ -15,31 +18,6 @@ import jakarta.servlet.http.HttpServletRequest;
  * @author Chuang
  */
 public interface MallOrderService extends IService<MallOrder> {
-
-    /**
-     * 创建订单
-     *
-     * @param request 创建订单请求参数
-     * @return 创建订单结果
-     */
-    OrderCreateVo createOrder(OrderCreateRequest request);
-
-    /**
-     * 查询订单的支付关键信息（金额、状态等），用于唤起支付宝支付。
-     *
-     * @param orderNo 订单编号
-     * @return 支付信息
-     */
-    OrderCreateVo getOrderPayInfo(String orderNo);
-
-    /**
-     * 确认订单
-     *
-     * @param request 确认订单请求参数
-     * @return 如果是第三方支付方式, 例如支付宝, 则返回第三方支付结果页面的表单信息
-     */
-    String confirmOrder(OrderConfirmRequest request);
-
 
     /**
      * 支付宝异步通知回调
@@ -89,10 +67,27 @@ public interface MallOrderService extends IService<MallOrder> {
     OrderDetailVo getOrderDetail(String orderNo);
 
     /**
-     * 从购物车创建订单
+     * 从购物车创建订单并支付
+     * <p>
+     * 用户可以选择购物车中的多个商品进行结算，系统会校验商品状态和库存，
+     * 扣减库存后创建订单，并根据支付方式直接处理支付，自动删除已结算的购物车商品
+     * </p>
      *
      * @param request 购物车结算请求
-     * @return 订单创建结果
+     * @return 订单结算结果
      */
-    OrderCreateVo createOrderFromCart(CartSettleRequest request);
+    OrderCheckoutVo createOrderFromCart(CartSettleRequest request);
+
+    /**
+     * 订单结算（创建订单并支付）
+     * <p>
+     * 整合了订单创建和支付流程，用户提交订单时直接选择支付方式：
+     * - 钱包支付：同步扣款，订单状态变为已支付
+     * - 支付宝支付：生成支付表单，订单状态为待支付
+     * </p>
+     *
+     * @param request 订单结算请求参数
+     * @return 订单结算结果
+     */
+    OrderCheckoutVo checkoutOrder(OrderCheckoutRequest request);
 }

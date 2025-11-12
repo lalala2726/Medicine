@@ -1,5 +1,6 @@
 package cn.zhangchuangla.medicine.client.model.request;
 
+import cn.zhangchuangla.medicine.model.enums.PayTypeEnum;
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotNull;
@@ -9,16 +10,20 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 /**
- * @author Chuang
+ * 订单结算请求参数
  * <p>
- * created on 2025/10/31
+ * 合并了订单创建和支付确认,用户提交订单时直接选择支付方式
+ * </p>
+ *
+ * @author Chuang
+ * created on 2025/11/12
  */
 @Data
 @Builder
 @AllArgsConstructor
 @NoArgsConstructor
-@Schema(description = "创建订单请求参数")
-public class OrderCreateRequest {
+@Schema(description = "订单结算请求参数")
+public class OrderCheckoutRequest {
 
     @NotNull(message = "商品ID不能为空")
     @Min(value = 1, message = "商品ID不能小于1")
@@ -37,4 +42,8 @@ public class OrderCreateRequest {
     @Schema(description = "订单备注", requiredMode = Schema.RequiredMode.NOT_REQUIRED, example = "请尽快发货")
     private String remark;
 
+    @NotNull(message = "支付方式不能为空")
+    @Schema(description = "支付方式", requiredMode = Schema.RequiredMode.REQUIRED, example = "WALLET")
+    private PayTypeEnum payMethod;
 }
+
