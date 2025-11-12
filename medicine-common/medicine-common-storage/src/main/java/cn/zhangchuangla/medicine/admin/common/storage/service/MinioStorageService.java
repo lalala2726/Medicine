@@ -10,7 +10,7 @@ import java.util.List;
  * MinIO存储服务接口
  *
  * @author Chuang
- * created on 2025/9/25 
+ * created on 2025/9/25
  */
 public interface MinioStorageService {
 

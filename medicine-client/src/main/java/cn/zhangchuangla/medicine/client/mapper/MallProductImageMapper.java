@@ -13,6 +13,7 @@ public interface MallProductImageMapper extends BaseMapper<MallProductImage> {
 
     /**
      * 获取商品封面图片
+     *
      * @param productIds 商品ID集合
      * @return 商品封面图片列表
      */

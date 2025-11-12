@@ -225,19 +225,29 @@ public class MallOrderServiceImpl extends ServiceImpl<MallOrderMapper, MallOrder
 
     /**
      * 支付宝支付
+     * <p>
+     * 该方法用于生成支付宝页面支付表单，供用户完成支付操作。
+     * 主要逻辑包括：校验订单金额、构造商品描述信息、设置支付参数并生成支付表单。
+     *
+     * @param order 商城订单对象，包含订单的基本信息如订单号、总金额等
+     * @return 返回支付宝页面支付表单的HTML字符串，用于前端展示支付页面
+     * @throws ServiceException 当订单金额为空时抛出业务异常
      */
     private String alipayPay(MallOrder order) {
+        // 校验订单金额是否有效
         BigDecimal amount = order.getTotalAmount();
         if (amount == null) {
             throw new ServiceException(ResponseCode.OPERATION_ERROR, "订单金额缺失，无法发起支付");
         }
 
+        // 查询订单的第一个商品项，用于构造支付主题
         MallOrderItem firstItem = mallOrderItemService.lambdaQuery()
                 .eq(MallOrderItem::getOrderId, order.getId())
                 .orderByAsc(MallOrderItem::getId)
                 .last("LIMIT 1")
                 .one();
 
+        // 构造支付主题：优先使用第一个商品名称，否则使用默认格式
         String subject;
         if (firstItem != null && StringUtils.hasText(firstItem.getProductName())) {
             subject = firstItem.getProductName();
@@ -249,12 +259,15 @@ public class MallOrderServiceImpl extends ServiceImpl<MallOrderMapper, MallOrder
             subject = "商城订单-" + order.getOrderNo();
         }
 
+        // 格式化金额为保留两位小数的字符串形式
         String totalAmount = amount.setScale(2, RoundingMode.HALF_UP).toPlainString();
 
+        // 获取回调地址配置
         String notifyUrl = alipayProperties.getNotifyUrl();
         String returnUrl = alipayProperties.getReturnUrl();
         log.info("构建支付宝页面支付表单，orderNo={}，notifyUrl={}，returnUrl={}", order.getOrderNo(), notifyUrl, returnUrl);
 
+        // 构建支付宝支付请求参数
         AlipayPagePayRequest payRequest = AlipayPagePayRequest.builder()
                 .outTradeNo(order.getOrderNo())
                 .subject(subject)
@@ -265,6 +278,7 @@ public class MallOrderServiceImpl extends ServiceImpl<MallOrderMapper, MallOrder
                 .returnUrl(returnUrl)
                 .build();
 
+        // 调用服务生成支付表单并返回
         return alipayPaymentService.generatePagePayForm(payRequest);
     }
 

@@ -4,7 +4,7 @@ package cn.zhangchuangla.medicine.common.core.constants;
 /**
  * @author Chuang
  * <p>
- * created on 2025/2/26 
+ * created on 2025/2/26
  */
 public class RolesConstant {
 

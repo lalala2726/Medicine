@@ -12,7 +12,7 @@ import java.util.Date;
 /**
  * @author Chuang
  * <p>
- * created on 2025/11/7 
+ * created on 2025/11/7
  */
 @Data
 @AllArgsConstructor

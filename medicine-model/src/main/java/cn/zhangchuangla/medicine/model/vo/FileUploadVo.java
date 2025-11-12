@@ -6,7 +6,7 @@ import lombok.Data;
 /**
  * @author Chuang
  * <p>
- * created on 2025/9/25 
+ * created on 2025/9/25
  */
 @Data
 @Schema(description = "文件上传返回参数")

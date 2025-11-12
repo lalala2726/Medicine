@@ -16,7 +16,7 @@ import static cn.zhangchuangla.medicine.common.core.constants.Constants.ORDER_TI
  *
  * @author Chuang
  * <p>
- * created on 2025/11/5 
+ * created on 2025/11/5
  */
 @Slf4j
 @Component

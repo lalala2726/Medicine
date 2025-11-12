@@ -12,7 +12,7 @@ import java.util.Date;
 /**
  * @author Chuang
  * <p>
- * created on 2025/11/6 
+ * created on 2025/11/6
  */
 @Data
 @Schema(description = "用户钱包流水信息")

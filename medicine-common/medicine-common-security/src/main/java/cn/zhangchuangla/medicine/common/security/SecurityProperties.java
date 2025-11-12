@@ -8,7 +8,7 @@ import org.springframework.context.annotation.Configuration;
 /**
  * @author Chuang
  * <p>
- * created on 2025/8/28 
+ * created on 2025/8/28
  */
 @Data
 @Configuration

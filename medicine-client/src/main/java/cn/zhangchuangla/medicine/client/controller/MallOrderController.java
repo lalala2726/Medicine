@@ -95,6 +95,88 @@ public class MallOrderController extends BaseController {
         return success(orderCheckoutVo);
     }
 
+
+    /**
+     * 从购物车创建订单并支付
+     * <p>
+     * 用户可以选择购物车中的多个商品进行结算，系统会校验商品状态和库存，
+     * 扣减库存后创建订单，并根据支付方式直接处理支付，自动删除已结算的购物车商品
+     * </p>
+     *
+     * @param request 购物车结算请求
+     * @return 订单结算结果
+     */
+    @PostMapping("/create-from-cart")
+    @Operation(summary = "从购物车创建订单并支付")
+    public AjaxResult<OrderCheckoutVo> createOrderFromCart(@Valid @RequestBody CartSettleRequest request) {
+        OrderCheckoutVo orderCheckoutVo = mallOrderService.createOrderFromCart(request);
+        return success(orderCheckoutVo);
+    }
+
+    /**
+     * 确认收货
+     * <p>
+     * 用户确认收到商品后，订单状态更新为已完成
+     * </p>
+     *
+     * @param request 确认收货请求参数
+     * @return 确认结果
+     */
+    @PostMapping("/confirm-receipt")
+    @Operation(summary = "确认收货")
+    public AjaxResult<Void> confirmReceipt(@Validated @RequestBody OrderReceiveRequest request) {
+        boolean result = mallOrderService.confirmReceipt(request);
+        return toAjax(result);
+    }
+
+    /**
+     * 查询订单物流信息
+     * <p>
+     * 用户可以查看订单的物流公司、物流单号等信息
+     * </p>
+     *
+     * @param orderNo 订单编号
+     * @return 物流信息
+     */
+    @GetMapping("/shipping/{orderNo}")
+    @Operation(summary = "查询订单物流信息")
+    public AjaxResult<OrderShippingVo> getOrderShipping(@PathVariable("orderNo") String orderNo) {
+        OrderShippingVo orderShippingVo = mallOrderService.getOrderShipping(orderNo);
+        return success(orderShippingVo);
+    }
+
+    /**
+     * 分页查询用户订单列表
+     * <p>
+     * 用户可以查看自己的所有订单，支持按订单状态、订单编号、商品名称筛选
+     * </p>
+     *
+     * @param request 查询条件
+     * @return 订单列表
+     */
+    @GetMapping("/list")
+    @Operation(summary = "查询用户订单列表")
+    public AjaxResult<TableDataResult> getOrderList(OrderListRequest request) {
+        Page<OrderListVo> page = mallOrderService.getOrderList(request);
+        return getTableData(page);
+    }
+
+    /**
+     * 查询订单详情
+     * <p>
+     * 用户可以查看订单的详细信息，包括商品信息、收货地址、物流信息等
+     * </p>
+     *
+     * @param orderNo 订单编号
+     * @return 订单详情
+     */
+    @GetMapping("/detail/{orderNo}")
+    @Operation(summary = "查询订单详情")
+    public AjaxResult<OrderDetailVo> getOrderDetail(@PathVariable("orderNo") String orderNo) {
+        OrderDetailVo orderDetailVo = mallOrderService.getOrderDetail(orderNo);
+        return success(orderDetailVo);
+    }
+
     /**
      * 生成支付宝支付二维码（Base64 图片）。
      * <p>
@@ -180,86 +262,5 @@ public class MallOrderController extends BaseController {
         String tradeNo = params.getOrDefault("trade_no", "未知交易号");
         log.info("用户支付完成回跳，订单号：{}，支付宝交易号：{}", outTradeNo, tradeNo);
         return "支付完成，订单号：" + outTradeNo + "，支付宝交易号：" + tradeNo;
-    }
-
-    /**
-     * 确认收货
-     * <p>
-     * 用户确认收到商品后，订单状态更新为已完成
-     * </p>
-     *
-     * @param request 确认收货请求参数
-     * @return 确认结果
-     */
-    @PostMapping("/confirm-receipt")
-    @Operation(summary = "确认收货")
-    public AjaxResult<Void> confirmReceipt(@Validated @RequestBody OrderReceiveRequest request) {
-        boolean result = mallOrderService.confirmReceipt(request);
-        return toAjax(result);
-    }
-
-    /**
-     * 查询订单物流信息
-     * <p>
-     * 用户可以查看订单的物流公司、物流单号等信息
-     * </p>
-     *
-     * @param orderNo 订单编号
-     * @return 物流信息
-     */
-    @GetMapping("/shipping/{orderNo}")
-    @Operation(summary = "查询订单物流信息")
-    public AjaxResult<OrderShippingVo> getOrderShipping(@PathVariable("orderNo") String orderNo) {
-        OrderShippingVo orderShippingVo = mallOrderService.getOrderShipping(orderNo);
-        return success(orderShippingVo);
-    }
-
-    /**
-     * 分页查询用户订单列表
-     * <p>
-     * 用户可以查看自己的所有订单，支持按订单状态、订单编号、商品名称筛选
-     * </p>
-     *
-     * @param request 查询条件
-     * @return 订单列表
-     */
-    @GetMapping("/list")
-    @Operation(summary = "查询用户订单列表")
-    public AjaxResult<TableDataResult> getOrderList(OrderListRequest request) {
-        Page<OrderListVo> page = mallOrderService.getOrderList(request);
-        return getTableData(page);
-    }
-
-    /**
-     * 查询订单详情
-     * <p>
-     * 用户可以查看订单的详细信息，包括商品信息、收货地址、物流信息等
-     * </p>
-     *
-     * @param orderNo 订单编号
-     * @return 订单详情
-     */
-    @GetMapping("/detail/{orderNo}")
-    @Operation(summary = "查询订单详情")
-    public AjaxResult<OrderDetailVo> getOrderDetail(@PathVariable("orderNo") String orderNo) {
-        OrderDetailVo orderDetailVo = mallOrderService.getOrderDetail(orderNo);
-        return success(orderDetailVo);
-    }
-
-    /**
-     * 从购物车创建订单并支付
-     * <p>
-     * 用户可以选择购物车中的多个商品进行结算，系统会校验商品状态和库存，
-     * 扣减库存后创建订单，并根据支付方式直接处理支付，自动删除已结算的购物车商品
-     * </p>
-     *
-     * @param request 购物车结算请求
-     * @return 订单结算结果
-     */
-    @PostMapping("/create-from-cart")
-    @Operation(summary = "从购物车创建订单并支付")
-    public AjaxResult<OrderCheckoutVo> createOrderFromCart(@Valid @RequestBody CartSettleRequest request) {
-        OrderCheckoutVo orderCheckoutVo = mallOrderService.createOrderFromCart(request);
-        return success(orderCheckoutVo);
     }
 }

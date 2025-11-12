@@ -8,7 +8,7 @@ import lombok.Data;
 /**
  * @author Chuang
  * <p>
- * created on 2025/11/1 
+ * created on 2025/11/1
  */
 @Data
 @Schema(description = "地址更新参数")
