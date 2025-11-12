@@ -1,13 +1,11 @@
 package cn.zhangchuangla.medicine.client.service.impl;
 
 import cn.zhangchuangla.medicine.client.mapper.MallOrderMapper;
-import cn.zhangchuangla.medicine.client.model.request.CartSettleRequest;
-import cn.zhangchuangla.medicine.client.model.request.OrderCheckoutRequest;
-import cn.zhangchuangla.medicine.client.model.request.OrderListRequest;
-import cn.zhangchuangla.medicine.client.model.request.OrderReceiveRequest;
+import cn.zhangchuangla.medicine.client.model.request.*;
 import cn.zhangchuangla.medicine.client.model.vo.OrderCheckoutVo;
 import cn.zhangchuangla.medicine.client.model.vo.OrderDetailVo;
 import cn.zhangchuangla.medicine.client.model.vo.OrderListVo;
+import cn.zhangchuangla.medicine.client.model.vo.OrderPreviewVo;
 import cn.zhangchuangla.medicine.client.service.*;
 import cn.zhangchuangla.medicine.client.task.OrderDelayProducer;
 import cn.zhangchuangla.medicine.common.core.enums.ResponseCode;
@@ -43,6 +41,8 @@ import java.util.*;
 import java.util.stream.Collectors;
 
 import static cn.zhangchuangla.medicine.common.core.constants.Constants.ORDER_TIMEOUT_MINUTES;
+import static cn.zhangchuangla.medicine.model.enums.PayTypeEnum.ALIPAY;
+import static cn.zhangchuangla.medicine.model.enums.PayTypeEnum.WALLET;
 
 /**
  * @author Chuang
@@ -54,7 +54,7 @@ public class MallOrderServiceImpl extends ServiceImpl<MallOrderMapper, MallOrder
 
     private static final String ORDER_STATUS_WAIT_PAY = OrderStatusEnum.PENDING_PAYMENT.getType();
     private static final String ORDER_STATUS_WAIT_SHIPMENT = OrderStatusEnum.PENDING_SHIPMENT.getType();
-    private static final String PAY_TYPE_ALIPAY = PayTypeEnum.ALIPAY.getType();
+    private static final String PAY_TYPE_ALIPAY = ALIPAY.getType();
     private static final String WAIT_PAY = PayTypeEnum.WAIT_PAY.getType();
 
     private final MallProductService mallProductService;
@@ -848,21 +848,7 @@ public class MallOrderServiceImpl extends ServiceImpl<MallOrderMapper, MallOrder
             }
 
             // 校验并统一配送方式
-            DeliveryTypeEnum deliveryTypeEnum = DeliveryTypeEnum.fromLegacyCode(product.getDeliveryType());
-            if (deliveryTypeEnum == null) {
-                throw new ServiceException(ResponseCode.OPERATION_ERROR,
-                        String.format("商品[%s]配送方式配置异常", product.getName()));
-            }
-
-            String productDeliveryType = deliveryTypeEnum.getType();
-            if (orderDeliveryType == null) {
-                // 第一个商品，设置订单配送方式
-                orderDeliveryType = productDeliveryType;
-            } else if (!orderDeliveryType.equals(productDeliveryType)) {
-                // 配送方式不一致
-                throw new ServiceException(ResponseCode.OPERATION_ERROR,
-                        "购物车中的商品配送方式不一致，请分开下单");
-            }
+            orderDeliveryType = getString(orderDeliveryType, product);
 
             // 扣减库存
             mallProductService.deductStock(product.getId(), cartItem.getCartNum());
@@ -965,7 +951,7 @@ public class MallOrderServiceImpl extends ServiceImpl<MallOrderMapper, MallOrder
                 // 钱包支付：同步扣款
                 boolean result = userWalletService.deductBalance(userId, totalAmount, String.format("订单支付-%s", orderNo));
                 if (result) {
-                    markOrderPaid(orderNo, totalAmount, PayTypeEnum.WALLET.getType());
+                    markOrderPaid(orderNo, totalAmount, WALLET.getType());
                     paymentStatus = "SUCCESS";
                     finalOrderStatus = ORDER_STATUS_WAIT_SHIPMENT;
                 } else {
@@ -995,5 +981,237 @@ public class MallOrderServiceImpl extends ServiceImpl<MallOrderMapper, MallOrder
                 .paymentStatus(paymentStatus)
                 .paymentData(paymentData)
                 .build();
+    }
+
+    @Override
+    public OrderPreviewVo previewOrder(OrderPreviewRequest request) {
+        Long userId = getUserId();
+        // 根据预览类型处理
+        if (request.getType() == OrderPreviewRequest.PreviewType.PRODUCT) {
+            // 单个商品购买预览
+            return previewSingleProduct(request, userId);
+        } else if (request.getType() == OrderPreviewRequest.PreviewType.CART) {
+            // 购物车结算预览
+            return previewCartItems(request, userId);
+        } else {
+            throw new ServiceException(ResponseCode.OPERATION_ERROR, "不支持的预览类型");
+        }
+    }
+
+    /**
+     * 预览单个商品购买
+     */
+    private OrderPreviewVo previewSingleProduct(OrderPreviewRequest request, Long userId) {
+        if (request.getProductId() == null) {
+            throw new ServiceException(ResponseCode.OPERATION_ERROR, "商品ID不能为空");
+        }
+        if (request.getQuantity() == null || request.getQuantity() < 1) {
+            throw new ServiceException(ResponseCode.OPERATION_ERROR, "购买数量必须大于0");
+        }
+
+        // 查询商品详情
+        MallProductWithImageDto product = mallProductService.getProductWithImagesById(request.getProductId());
+        if (product == null) {
+            throw new ServiceException(ResponseCode.RESULT_IS_NULL, "商品不存在");
+        }
+
+        // 校验商品状态
+        final Integer PRODUCT_STATUS_ON_SALE = 1;
+        if (!Objects.equals(product.getStatus(), PRODUCT_STATUS_ON_SALE)) {
+            throw new ServiceException(ResponseCode.OPERATION_ERROR, "商品未上架或已下架");
+        }
+
+        // 构建商品项预览
+        String imageUrl = null;
+        if (product.getProductImages() != null && !product.getProductImages().isEmpty()) {
+            imageUrl = product.getProductImages().getFirst().getImageUrl();
+        }
+
+        BigDecimal subtotal = product.getPrice().multiply(BigDecimal.valueOf(request.getQuantity()))
+                .setScale(2, RoundingMode.HALF_UP);
+
+        OrderPreviewVo.OrderItemPreview itemPreview = OrderPreviewVo.OrderItemPreview.builder()
+                .productId(product.getId())
+                .productName(product.getName())
+                .imageUrl(imageUrl)
+                .price(product.getPrice())
+                .quantity(request.getQuantity())
+                .subtotal(subtotal)
+                .stock(product.getStock())
+                .status(product.getStatus())
+                .statusDesc(product.getStatus() == 1 ? "在售" : "已下架")
+                .build();
+
+        // 计算价格
+        DeliveryTypeEnum tempDeliveryTypeEnum = DeliveryTypeEnum.fromLegacyCode(product.getDeliveryType());
+        String tempDeliveryType = tempDeliveryTypeEnum != null ? tempDeliveryTypeEnum.getType() : null;
+        BigDecimal freightAmount = calculateFreight(tempDeliveryType, subtotal);
+        BigDecimal discountAmount = BigDecimal.ZERO;
+        BigDecimal totalAmount = subtotal.add(freightAmount).subtract(discountAmount);
+
+        // 获取配送方式信息
+        DeliveryTypeEnum deliveryTypeEnum = DeliveryTypeEnum.fromLegacyCode(product.getDeliveryType());
+        String deliveryType = deliveryTypeEnum != null ? deliveryTypeEnum.getType() : "UNKNOWN";
+        String deliveryTypeName = deliveryTypeEnum != null ? deliveryTypeEnum.getName() : "未知";
+
+        return OrderPreviewVo.builder()
+                .items(List.of(itemPreview))
+                .itemsAmount(subtotal)
+                .freightAmount(freightAmount)
+                .discountAmount(discountAmount)
+                .totalAmount(totalAmount)
+                .address(request.getAddress())
+                .deliveryType(deliveryType)
+                .deliveryTypeName(deliveryTypeName)
+                .estimatedDeliveryTime(getEstimatedDeliveryTime(deliveryType))
+                .build();
+    }
+
+    /**
+     * 预览购物车商品
+     */
+    private OrderPreviewVo previewCartItems(OrderPreviewRequest request, Long userId) {
+        if (request.getCartIds() == null || request.getCartIds().isEmpty()) {
+            throw new ServiceException(ResponseCode.OPERATION_ERROR, "购物车商品ID列表不能为空");
+        }
+
+        // 查询购物车商品
+        List<MallCart> cartItems = mallCartService.lambdaQuery()
+                .eq(MallCart::getUserId, userId)
+                .in(MallCart::getId, request.getCartIds())
+                .list();
+
+        if (cartItems.isEmpty()) {
+            throw new ServiceException(ResponseCode.RESULT_IS_NULL, "购物车商品不存在");
+        }
+
+        // 构建商品项预览列表
+        List<OrderPreviewVo.OrderItemPreview> itemPreviews = new ArrayList<>();
+        BigDecimal itemsAmount = BigDecimal.ZERO;
+        String orderDeliveryType = null;
+
+        for (MallCart cartItem : cartItems) {
+            // 查询商品详情
+            MallProductWithImageDto product = mallProductService.getProductWithImagesById(cartItem.getProductId());
+            if (product == null) {
+                throw new ServiceException(ResponseCode.RESULT_IS_NULL,
+                        String.format("商品[%s]不存在", cartItem.getProductName()));
+            }
+
+            // 校验商品状态
+            if (product.getStatus() != 1) {
+                throw new ServiceException(ResponseCode.OPERATION_ERROR,
+                        String.format("商品[%s]已下架", product.getName()));
+            }
+
+            // 校验并统一配送方式
+            orderDeliveryType = getString(orderDeliveryType, product);
+
+            // 构建商品项预览
+            String imageUrl = null;
+            if (product.getProductImages() != null && !product.getProductImages().isEmpty()) {
+                imageUrl = product.getProductImages().getFirst().getImageUrl();
+            }
+
+            BigDecimal subtotal = product.getPrice()
+                    .multiply(BigDecimal.valueOf(cartItem.getCartNum()))
+                    .setScale(2, RoundingMode.HALF_UP);
+
+            OrderPreviewVo.OrderItemPreview itemPreview = OrderPreviewVo.OrderItemPreview.builder()
+                    .productId(product.getId())
+                    .productName(product.getName())
+                    .imageUrl(imageUrl)
+                    .price(product.getPrice())
+                    .quantity(cartItem.getCartNum())
+                    .subtotal(subtotal)
+                    .stock(product.getStock())
+                    .status(product.getStatus())
+                    .statusDesc(product.getStatus() == 1 ? "在售" : "已下架")
+                    .build();
+
+            itemPreviews.add(itemPreview);
+            itemsAmount = itemsAmount.add(subtotal);
+        }
+
+        // 计算价格
+        BigDecimal freightAmount = calculateFreight(orderDeliveryType, itemsAmount);
+        BigDecimal discountAmount = BigDecimal.ZERO;
+        BigDecimal totalAmount = itemsAmount.add(freightAmount).subtract(discountAmount);
+
+        // 获取配送方式信息
+        DeliveryTypeEnum deliveryTypeEnum = DeliveryTypeEnum.fromCode(orderDeliveryType);
+        String deliveryTypeName = deliveryTypeEnum != null ? deliveryTypeEnum.getName() : "未知";
+
+        return OrderPreviewVo.builder()
+                .items(itemPreviews)
+                .itemsAmount(itemsAmount)
+                .freightAmount(freightAmount)
+                .discountAmount(discountAmount)
+                .totalAmount(totalAmount)
+                .address(request.getAddress())
+                .deliveryType(orderDeliveryType)
+                .deliveryTypeName(deliveryTypeName)
+                .estimatedDeliveryTime(getEstimatedDeliveryTime(orderDeliveryType))
+                .build();
+    }
+
+    /**
+     * 获取配送方式信息
+     */
+    private String getString(String orderDeliveryType, MallProductWithImageDto product) {
+        DeliveryTypeEnum deliveryTypeEnum = DeliveryTypeEnum.fromLegacyCode(product.getDeliveryType());
+        if (deliveryTypeEnum == null) {
+            throw new ServiceException(ResponseCode.OPERATION_ERROR,
+                    String.format("商品[%s]配送方式配置异常", product.getName()));
+        }
+
+        String productDeliveryType = deliveryTypeEnum.getType();
+        if (orderDeliveryType == null) {
+            orderDeliveryType = productDeliveryType;
+        } else if (!orderDeliveryType.equals(productDeliveryType)) {
+            throw new ServiceException(ResponseCode.OPERATION_ERROR,
+                    "购物车中的商品配送方式不一致，请分开下单");
+        }
+        return orderDeliveryType;
+    }
+
+    /**
+     * 计算运费
+     */
+    private BigDecimal calculateFreight(String deliveryType, BigDecimal itemsAmount) {
+        // 这里可以根据配送方式和商品金额计算运费
+        // 示例：满100免运费，否则收取10元运费
+        DeliveryTypeEnum deliveryTypeEnum = DeliveryTypeEnum.fromCode(deliveryType);
+        if (deliveryTypeEnum == null) {
+            return BigDecimal.ZERO;
+        }
+
+        return switch (deliveryTypeEnum) {
+            case EXPRESS ->
+                // 快递配送：满100免运费
+                    itemsAmount.compareTo(new BigDecimal("100")) >= 0
+                            ? BigDecimal.ZERO
+                            : new BigDecimal("10.00");
+            case SELF_PICKUP ->
+                // 自提：免运费
+                    BigDecimal.ZERO;
+            default -> BigDecimal.ZERO;
+        };
+    }
+
+    /**
+     * 获取预计送达时间
+     */
+    private String getEstimatedDeliveryTime(String deliveryType) {
+        DeliveryTypeEnum deliveryTypeEnum = DeliveryTypeEnum.fromCode(deliveryType);
+        if (deliveryTypeEnum == null) {
+            return "未知";
+        }
+
+        return switch (deliveryTypeEnum) {
+            case EXPRESS -> "预计3-5天送达";
+            case SELF_PICKUP -> "下单后可到店自提";
+            default -> "未知";
+        };
     }
 }

@@ -259,5 +259,6 @@
         <module>medicine-client</module>
         <module>medicine-ai</module>
         <module>medicine-payment</module>
+        <module>medicine-common/medicine-common-mongodb</module>
     </modules>
 </project>

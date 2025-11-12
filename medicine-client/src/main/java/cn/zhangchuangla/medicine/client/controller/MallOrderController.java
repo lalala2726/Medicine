@@ -1,12 +1,10 @@
 package cn.zhangchuangla.medicine.client.controller;
 
-import cn.zhangchuangla.medicine.client.model.request.CartSettleRequest;
-import cn.zhangchuangla.medicine.client.model.request.OrderCheckoutRequest;
-import cn.zhangchuangla.medicine.client.model.request.OrderListRequest;
-import cn.zhangchuangla.medicine.client.model.request.OrderReceiveRequest;
+import cn.zhangchuangla.medicine.client.model.request.*;
 import cn.zhangchuangla.medicine.client.model.vo.OrderCheckoutVo;
 import cn.zhangchuangla.medicine.client.model.vo.OrderDetailVo;
 import cn.zhangchuangla.medicine.client.model.vo.OrderListVo;
+import cn.zhangchuangla.medicine.client.model.vo.OrderPreviewVo;
 import cn.zhangchuangla.medicine.client.service.MallOrderService;
 import cn.zhangchuangla.medicine.common.core.base.AjaxResult;
 import cn.zhangchuangla.medicine.common.core.base.TableDataResult;
@@ -58,6 +56,25 @@ public class MallOrderController extends BaseController {
         this.mallOrderService = mallOrderService;
         this.alipayProperties = alipayProperties;
         this.alipayPaymentService = alipayPaymentService;
+    }
+
+    /**
+     * 订单预览
+     * <p>
+     * 在用户提交订单前预览订单信息，包括商品详情、价格、运费等。
+     * 支持两种场景：
+     * - 单个商品购买：从商品详情页点击购买
+     * - 购物车结算：从购物车选择多个商品结算
+     * </p>
+     *
+     * @param request 订单预览请求
+     * @return 订单预览信息
+     */
+    @PostMapping("/preview")
+    @Operation(summary = "订单预览")
+    public AjaxResult<OrderPreviewVo> previewOrder(@Validated @RequestBody OrderPreviewRequest request) {
+        OrderPreviewVo orderPreviewVo = mallOrderService.previewOrder(request);
+        return success(orderPreviewVo);
     }
 
     /**

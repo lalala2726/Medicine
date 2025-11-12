@@ -1,12 +1,10 @@
 package cn.zhangchuangla.medicine.client.service;
 
-import cn.zhangchuangla.medicine.client.model.request.CartSettleRequest;
-import cn.zhangchuangla.medicine.client.model.request.OrderCheckoutRequest;
-import cn.zhangchuangla.medicine.client.model.request.OrderListRequest;
-import cn.zhangchuangla.medicine.client.model.request.OrderReceiveRequest;
+import cn.zhangchuangla.medicine.client.model.request.*;
 import cn.zhangchuangla.medicine.client.model.vo.OrderCheckoutVo;
 import cn.zhangchuangla.medicine.client.model.vo.OrderDetailVo;
 import cn.zhangchuangla.medicine.client.model.vo.OrderListVo;
+import cn.zhangchuangla.medicine.client.model.vo.OrderPreviewVo;
 import cn.zhangchuangla.medicine.model.dto.AlipayNotifyDTO;
 import cn.zhangchuangla.medicine.model.entity.MallOrder;
 import cn.zhangchuangla.medicine.model.vo.mall.OrderShippingVo;
@@ -90,4 +88,16 @@ public interface MallOrderService extends IService<MallOrder> {
      * @return 订单结算结果
      */
     OrderCheckoutVo checkoutOrder(OrderCheckoutRequest request);
+
+    /**
+     * 订单预览
+     * <p>
+     * 在用户提交订单前预览订单信息,包括商品详情、价格、运费等,
+     * 支持单个商品购买和购物车结算两种场景
+     * </p>
+     *
+     * @param request 订单预览请求参数
+     * @return 订单预览信息
+     */
+    OrderPreviewVo previewOrder(OrderPreviewRequest request);
 }
