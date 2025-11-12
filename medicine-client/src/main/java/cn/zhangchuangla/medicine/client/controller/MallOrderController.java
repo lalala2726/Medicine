@@ -1,9 +1,10 @@
 package cn.zhangchuangla.medicine.client.controller;
 
 import cn.zhangchuangla.medicine.client.model.request.*;
-import cn.zhangchuangla.medicine.client.model.vo.OrderCreateVo;
+import cn.zhangchuangla.medicine.client.model.vo.OrderCheckoutVo;
 import cn.zhangchuangla.medicine.client.model.vo.OrderDetailVo;
 import cn.zhangchuangla.medicine.client.model.vo.OrderListVo;
+import cn.zhangchuangla.medicine.client.model.vo.OrderPreviewVo;
 import cn.zhangchuangla.medicine.client.service.MallOrderService;
 import cn.zhangchuangla.medicine.common.core.base.AjaxResult;
 import cn.zhangchuangla.medicine.common.core.base.TableDataResult;
@@ -22,7 +23,6 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.util.StringUtils;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
@@ -59,136 +59,58 @@ public class MallOrderController extends BaseController {
     }
 
     /**
-     * 创建订单。
+     * 订单预览
      * <p>
-     * 校验前端传入的商品与数量，落库存、生成订单号后返回待支付信息。
+     * 在用户提交订单前预览订单信息，包括商品详情、价格、运费等。
+     * 支持两种场景：
+     * - 单个商品购买：从商品详情页点击购买
+     * - 购物车结算：从购物车选择多个商品结算
      * </p>
      *
-     * @param request 创建订单请求
-     * @return 创建订单结果
+     * @param request 订单预览请求
+     * @return 订单预览信息
      */
-    @PostMapping("/create")
-    @Operation(summary = "创建订单")
-    public AjaxResult<OrderCreateVo> createOrder(@Validated @RequestBody OrderCreateRequest request) {
-        OrderCreateVo orderCreateVo = mallOrderService.createOrder(request);
-        return success(orderCreateVo);
+    @PostMapping("/preview")
+    @Operation(summary = "订单预览")
+    public AjaxResult<OrderPreviewVo> previewOrder(@Validated @RequestBody OrderPreviewRequest request) {
+        OrderPreviewVo orderPreviewVo = mallOrderService.previewOrder(request);
+        return success(orderPreviewVo);
     }
 
     /**
-     * 确认订单时，需要传入订单编号，服务端会校验订单状态并返回确认信息。
-     *
-     * @param request 确认订单请求
-     * @return 如果是支付宝等第三方支付方式这边将返回对应的支付表单信息
-     */
-    @PostMapping("/confirm")
-    @Operation(summary = "确认订单")
-    public AjaxResult<?> confirmOrder(@Validated @RequestBody OrderConfirmRequest request) {
-        String data = mallOrderService.confirmOrder(request);
-        return success(data);
-    }
-
-    /**
-     * 查询订单支付信息。
+     * 订单结算
      * <p>
-     * 前端在下单成功后、真正唤起支付宝前可以再次确认金额与状态，避免重复支付。
+     * 整合了订单创建和支付流程，用户提交订单时直接选择支付方式，减少操作步骤：
+     * - 钱包支付：同步扣款，订单状态变为已支付
+     * - 支付宝支付：生成支付表单，订单状态为待支付
      * </p>
      *
-     * @param orderNo 订单编号
-     * @return 支付信息
+     * @param request 订单结算请求
+     * @return 订单结算结果
      */
-    @GetMapping("/pay-info/{orderNo}")
-    @Operation(summary = "查询订单支付信息")
-    public AjaxResult<OrderCreateVo> getOrderPayInfo(@PathVariable String orderNo) {
-        OrderCreateVo payInfo = mallOrderService.getOrderPayInfo(orderNo);
-        return success(payInfo);
+    @PostMapping("/checkout")
+    @Operation(summary = "订单结算（创建订单并支付）")
+    public AjaxResult<OrderCheckoutVo> checkoutOrder(@Validated @RequestBody OrderCheckoutRequest request) {
+        OrderCheckoutVo orderCheckoutVo = mallOrderService.checkoutOrder(request);
+        return success(orderCheckoutVo);
     }
 
-    /**
-     * 生成支付宝支付二维码（Base64 图片）。
-     * <p>
-     * 前端传入订单号后，服务端校验订单状态并调用支付宝当面付生成二维码，
-     * 以 Base64 字符串形式返回，前端可直接渲染为图片。
-     * </p>
-     *
-     * @param orderNo 订单编号
-     * @return Base64 编码的 PNG 图片
-     */
-    @GetMapping("/alipay/pay-code")
-    @Operation(summary = "生成支付宝支付二维码")
-    public AjaxResult<String> generatePayQrCode(@RequestParam String orderNo) {
-        OrderCreateVo payInfo = mallOrderService.getOrderPayInfo(orderNo);
-        BigDecimal amount = payInfo.getTotalAmount();
-        if (amount == null) {
-            return error("订单金额缺失，无法发起支付");
-        }
-
-        String totalAmount = amount.setScale(2, RoundingMode.HALF_UP).toPlainString();
-        String subject = payInfo.getProductSummary();
-        if (!StringUtils.hasText(subject)) {
-            subject = "商城订单支付-" + orderNo;
-        }
-        String notifyUrl = alipayProperties.getNotifyUrl();
-        AlipayQrCodeRequest qrCodeRequest = AlipayQrCodeRequest.builder()
-                .outTradeNo(orderNo)
-                .subject(subject)
-                .totalAmount(totalAmount)
-                .body("商城订单支付")
-                .notifyUrl(notifyUrl)
-                .build();
-        String base64 = alipayPaymentService.generateQrCodeBase64(qrCodeRequest);
-        String dataUri = "data:image/png;base64," + base64;
-        return success(dataUri);
-    }
 
     /**
-     * 支付宝异步通知回调。
+     * 从购物车创建订单并支付
      * <p>
-     * 支付宝以 POST form 的方式推送支付结果，需要先验签再更新业务订单状态。
-     * 验签通过后必须返回字符串 {@code success}，否则支付宝会不断重试通知。
+     * 用户可以选择购物车中的多个商品进行结算，系统会校验商品状态和库存，
+     * 扣减库存后创建订单，并根据支付方式直接处理支付，自动删除已结算的购物车商品
      * </p>
      *
-     * @param request 支付宝通知请求
-     * @return 响应字符串
+     * @param request 购物车结算请求
+     * @return 订单结算结果
      */
-    @PostMapping("/alipay/notify")
-    @Operation(summary = "支付宝异步通知回调")
-    @Anonymous
-    public String handleAlipayNotify(AlipayNotifyDTO alipayNotifyDTO, HttpServletRequest request) {
-        return mallOrderService.alipayNotify(alipayNotifyDTO, request);
-    }
-
-    /**
-     * 支付宝同步回调（前端回跳）。
-     * <p>
-     * 用户从支付宝返回时走此接口，同样需要进行验签并给出友好提示。
-     * </p>
-     *
-     * @param params 回调参数
-     * @return 页面提示信息
-     */
-    @GetMapping("/alipay/return")
-    @Operation(summary = "支付宝同步回调")
-    public String handleAlipayReturn(@RequestParam Map<String, String> params) {
-        try {
-            boolean signVerified = AlipaySignature.rsaCheckV1(
-                    params,
-                    alipayProperties.getAlipayPublicKey(),
-                    alipayProperties.getCharset(),
-                    alipayProperties.getSignType()
-            );
-            if (!signVerified) {
-                log.warn("支付宝同步回跳验签失败，参数：{}", params);
-                return "验签失败，请检查支付结果";
-            }
-        } catch (AlipayApiException ex) {
-            log.error("支付宝同步回跳验签异常", ex);
-            return "验签出现异常，请稍后重试";
-        }
-
-        String outTradeNo = params.getOrDefault("out_trade_no", "未知订单");
-        String tradeNo = params.getOrDefault("trade_no", "未知交易号");
-        log.info("用户支付完成回跳，订单号：{}，支付宝交易号：{}", outTradeNo, tradeNo);
-        return "支付完成，订单号：" + outTradeNo + "，支付宝交易号：" + tradeNo;
+    @PostMapping("/create-from-cart")
+    @Operation(summary = "从购物车创建订单并支付")
+    public AjaxResult<OrderCheckoutVo> createOrderFromCart(@Valid @RequestBody CartSettleRequest request) {
+        OrderCheckoutVo orderCheckoutVo = mallOrderService.createOrderFromCart(request);
+        return success(orderCheckoutVo);
     }
 
     /**
@@ -256,19 +178,89 @@ public class MallOrderController extends BaseController {
     }
 
     /**
-     * 从购物车创建订单
+     * 生成支付宝支付二维码（Base64 图片）。
      * <p>
-     * 用户可以选择购物车中的多个商品进行结算，系统会校验商品状态和库存，
-     * 扣减库存后创建订单，并自动删除已结算的购物车商品
+     * 前端传入订单号后，服务端校验订单状态并调用支付宝当面付生成二维码，
+     * 以 Base64 字符串形式返回，前端可直接渲染为图片。
      * </p>
      *
-     * @param request 购物车结算请求
-     * @return 订单创建结果
+     * @param orderNo 订单编号
+     * @return Base64 编码的 PNG 图片
      */
-    @PostMapping("/create-from-cart")
-    @Operation(summary = "从购物车创建订单")
-    public AjaxResult<OrderCreateVo> createOrderFromCart(@Valid @RequestBody CartSettleRequest request) {
-        OrderCreateVo orderCreateVo = mallOrderService.createOrderFromCart(request);
-        return success(orderCreateVo);
+    @GetMapping("/alipay/pay-code")
+    @Operation(summary = "生成支付宝支付二维码")
+    public AjaxResult<String> generatePayQrCode(@RequestParam String orderNo) {
+        // 查询订单详情
+        OrderDetailVo orderDetail = mallOrderService.getOrderDetail(orderNo);
+        BigDecimal amount = orderDetail.getTotalAmount();
+        if (amount == null) {
+            return error("订单金额缺失，无法发起支付");
+        }
+
+        String totalAmount = amount.setScale(2, RoundingMode.HALF_UP).toPlainString();
+        String subject = "商城订单支付-" + orderNo;
+
+        String notifyUrl = alipayProperties.getNotifyUrl();
+        AlipayQrCodeRequest qrCodeRequest = AlipayQrCodeRequest.builder()
+                .outTradeNo(orderNo)
+                .subject(subject)
+                .totalAmount(totalAmount)
+                .body("商城订单支付")
+                .notifyUrl(notifyUrl)
+                .build();
+        String base64 = alipayPaymentService.generateQrCodeBase64(qrCodeRequest);
+        String dataUri = "data:image/png;base64," + base64;
+        return success(dataUri);
+    }
+
+    /**
+     * 支付宝异步通知回调。
+     * <p>
+     * 支付宝以 POST form 的方式推送支付结果，需要先验签再更新业务订单状态。
+     * 验签通过后必须返回字符串 {@code success}，否则支付宝会不断重试通知。
+     * </p>
+     *
+     * @param request 支付宝通知请求
+     * @return 响应字符串
+     */
+    @PostMapping("/alipay/notify")
+    @Operation(summary = "支付宝异步通知回调")
+    @Anonymous
+    public String handleAlipayNotify(AlipayNotifyDTO alipayNotifyDTO, HttpServletRequest request) {
+        return mallOrderService.alipayNotify(alipayNotifyDTO, request);
+    }
+
+    /**
+     * 支付宝同步回调（前端回跳）。
+     * <p>
+     * 用户从支付宝返回时走此接口，同样需要进行验签并给出友好提示。
+     * </p>
+     *
+     * @param params 回调参数
+     * @return 页面提示信息
+     */
+    @GetMapping("/alipay/return")
+    @Operation(summary = "支付宝同步回调")
+    public String handleAlipayReturn(@RequestParam Map<String, String> params) {
+        try {
+            boolean signVerified = AlipaySignature.rsaCheckV1(
+                    params,
+                    alipayProperties.getAlipayPublicKey(),
+                    alipayProperties.getCharset(),
+                    alipayProperties.getSignType()
+            );
+            if (!signVerified) {
+                log.warn("支付宝同步回跳验签失败，参数：{}", params);
+                return "验签失败，请检查支付结果";
+            }
+        } catch (AlipayApiException ex) {
+            log.error("支付宝同步回跳验签异常", ex);
+            return "验签出现异常，请稍后重试";
+        }
+
+        String outTradeNo = params.getOrDefault("out_trade_no", "未知订单");
+        String tradeNo = params.getOrDefault("trade_no", "未知交易号");
+        log.info("用户支付完成回跳，订单号：{}，支付宝交易号：{}", outTradeNo, tradeNo);
+        return "支付完成，订单号：" + outTradeNo + "，支付宝交易号：" + tradeNo;
     }
 }

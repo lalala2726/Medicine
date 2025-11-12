@@ -9,7 +9,7 @@ import java.util.List;
 /**
  * @author Chuang
  * <p>
- * created on 2025/7/7 
+ * created on 2025/7/7
  */
 public class BeanCotyUtils {
 

@@ -23,7 +23,7 @@ import java.util.TimeZone;
 /**
  * @author Chuang
  * <p>
- * created on 2025/9/7 
+ * created on 2025/9/7
  */
 @Configuration
 public class WebMvcConfig implements WebMvcConfigurer {

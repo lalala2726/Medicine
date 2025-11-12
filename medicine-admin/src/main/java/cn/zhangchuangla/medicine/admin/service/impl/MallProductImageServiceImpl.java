@@ -19,7 +19,7 @@ import java.util.stream.IntStream;
  * 图片排序、商品关联等功能。
  *
  * @author Chuang
- * created on 2025/10/4 
+ * created on 2025/10/4
  */
 @Service
 public class MallProductImageServiceImpl extends ServiceImpl<MallProductImageMapper, MallProductImage>

@@ -5,7 +5,7 @@ package cn.zhangchuangla.medicine.ai.workflow.node.expert;
  *
  * @author Chuang
  * <p>
- * created on 2025/10/25 
+ * created on 2025/10/25
  */
 public class InternalExpertNode {
 }

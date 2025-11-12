@@ -7,7 +7,7 @@ import lombok.Data;
 /**
  * @author Chuang
  * <p>
- * created on 2025/11/1 
+ * created on 2025/11/1
  */
 @Data
 @Schema(description = "订单备注更新参数")

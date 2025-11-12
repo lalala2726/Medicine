@@ -5,15 +5,15 @@
     <!-- 订单列表查询 -->
     <select id="selectOrderList" resultType="cn.zhangchuangla.medicine.client.model.vo.OrderListVo">
         SELECT
-            o.id,
-            o.order_no AS orderNo,
-            o.order_status AS orderStatus,
-            o.total_amount AS totalAmount,
-            o.pay_amount AS payAmount,
-            o.paid,
-            o.after_sale_flag AS afterSaleFlag,
-            o.create_time AS createTime,
-            o.pay_time AS payTime
+        o.id,
+        o.order_no AS orderNo,
+        o.order_status AS orderStatus,
+        o.total_amount AS totalAmount,
+        o.pay_amount AS payAmount,
+        o.paid,
+        o.after_sale_flag AS afterSaleFlag,
+        o.create_time AS createTime,
+        o.pay_time AS payTime
         FROM mall_order o
         WHERE o.user_id = #{userId}
         <if test="request.orderStatus != null and request.orderStatus != ''">
@@ -24,9 +24,9 @@
         </if>
         <if test="request.productName != null and request.productName != ''">
             AND EXISTS (
-                SELECT 1 FROM mall_order_item oi
-                WHERE oi.order_id = o.id
-                AND oi.product_name LIKE CONCAT('%', #{request.productName}, '%')
+            SELECT 1 FROM mall_order_item oi
+            WHERE oi.order_id = o.id
+            AND oi.product_name LIKE CONCAT('%', #{request.productName}, '%')
             )
         </if>
         ORDER BY o.create_time DESC
@@ -34,32 +34,31 @@
 
     <!-- 订单详情查询 -->
     <select id="selectOrderDetail" resultType="cn.zhangchuangla.medicine.client.model.vo.OrderDetailVo">
-        SELECT
-            o.id,
-            o.order_no AS orderNo,
-            o.order_status AS orderStatus,
-            o.total_amount AS totalAmount,
-            o.pay_amount AS payAmount,
-            o.freight_amount AS freightAmount,
-            o.pay_type AS payType,
-            o.delivery_type AS deliveryType,
-            o.paid,
-            o.pay_time AS payTime,
-            o.deliver_time AS deliverTime,
-            o.receive_time AS receiveTime,
-            o.finish_time AS finishTime,
-            o.create_time AS createTime,
-            o.note,
-            o.after_sale_flag AS afterSaleFlag,
-            o.refund_status AS refundStatus,
-            o.refund_price AS refundPrice,
-            o.refund_time AS refundTime,
-            o.receiver_name AS receiverName,
-            o.receiver_phone AS receiverPhone,
-            o.receiver_detail AS receiverDetail
+        SELECT o.id,
+               o.order_no        AS orderNo,
+               o.order_status    AS orderStatus,
+               o.total_amount    AS totalAmount,
+               o.pay_amount      AS payAmount,
+               o.freight_amount  AS freightAmount,
+               o.pay_type        AS payType,
+               o.delivery_type   AS deliveryType,
+               o.paid,
+               o.pay_time        AS payTime,
+               o.deliver_time    AS deliverTime,
+               o.receive_time    AS receiveTime,
+               o.finish_time     AS finishTime,
+               o.create_time     AS createTime,
+               o.note,
+               o.after_sale_flag AS afterSaleFlag,
+               o.refund_status   AS refundStatus,
+               o.refund_price    AS refundPrice,
+               o.refund_time     AS refundTime,
+               o.receiver_name   AS receiverName,
+               o.receiver_phone  AS receiverPhone,
+               o.receiver_detail AS receiverDetail
         FROM mall_order o
         WHERE o.order_no = #{orderNo}
-        AND o.user_id = #{userId}
+          AND o.user_id = #{userId}
     </select>
 
 </mapper>

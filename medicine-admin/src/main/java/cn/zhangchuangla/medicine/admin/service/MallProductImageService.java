@@ -15,7 +15,7 @@ import java.util.List;
  * 图片排序、商品关联等功能。
  *
  * @author Chuang
- * created on 2025/10/4 
+ * created on 2025/10/4
  */
 @Validated
 public interface MallProductImageService extends IService<MallProductImage> {

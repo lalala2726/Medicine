@@ -6,7 +6,7 @@ import org.springframework.web.multipart.MultipartFile;
 /**
  * @author Chuang
  * <p>
- * created on 2025/9/25 
+ * created on 2025/9/25
  */
 public interface FileUploadService {
 

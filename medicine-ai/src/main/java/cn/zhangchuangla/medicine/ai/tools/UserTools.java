@@ -17,7 +17,7 @@ import org.springframework.stereotype.Component;
  *
  * @author Chuang
  * <p>
- * created on 2025/9/18 
+ * created on 2025/9/18
  */
 @Slf4j
 @Component

@@ -11,7 +11,7 @@ import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
  * 该类用于配置 Spring Boot 的静态资源映射，支持本地存储文件访问和 API 文档访问
  *
  * @author Chuang
- * created 2025/2/19 
+ * created 2025/2/19
  */
 @Configuration
 public class ResourcesConfig implements WebMvcConfigurer {

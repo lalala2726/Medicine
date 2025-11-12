@@ -12,7 +12,7 @@ import java.util.Date;
 /**
  * @author Chuang
  * <p>
- * created on 2025/10/31 
+ * created on 2025/10/31
  */
 @Data
 @Schema(description = "订单列表视图对象")

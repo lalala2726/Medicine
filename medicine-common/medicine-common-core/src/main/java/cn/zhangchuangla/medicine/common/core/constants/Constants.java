@@ -3,7 +3,7 @@ package cn.zhangchuangla.medicine.common.core.constants;
 /**
  * @author Chuang
  * <p>
- * created on 2025/8/28 
+ * created on 2025/8/28
  */
 public class Constants {
 

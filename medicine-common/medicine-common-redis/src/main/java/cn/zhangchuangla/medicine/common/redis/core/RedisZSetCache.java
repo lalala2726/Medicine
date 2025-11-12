@@ -18,7 +18,7 @@ import java.util.concurrent.TimeUnit;
  *
  * @author Chuang
  * <p>
- * created on 2025/7/25 
+ * created on 2025/7/25
  */
 @Slf4j
 @Component

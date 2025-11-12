@@ -1,5 +1,6 @@
 package cn.zhangchuangla.medicine.client.model.request;
 
+import cn.zhangchuangla.medicine.model.enums.PayTypeEnum;
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.NotNull;
@@ -32,5 +33,9 @@ public class CartSettleRequest {
 
     @Schema(description = "订单备注", example = "请尽快发货")
     private String remark;
+
+    @NotNull(message = "支付方式不能为空")
+    @Schema(description = "支付方式", requiredMode = Schema.RequiredMode.REQUIRED, example = "WALLET")
+    private PayTypeEnum payMethod;
 }
 

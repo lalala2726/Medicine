@@ -66,7 +66,7 @@ public class AjaxResult<T> implements Serializable {
      * 通过 ResponseCode 枚举和数据构造
      *
      * @param responseCode ResponseCode 枚举实例
-     * @param data               数据
+     * @param data         数据
      */
     private AjaxResult(ResponseCode responseCode, T data) {
         this(responseCode.getCode(), responseCode.getMessage(), data);
@@ -152,7 +152,7 @@ public class AjaxResult<T> implements Serializable {
      * 失败返回 (使用指定的 ResponseCode 和自定义消息，无数据)
      *
      * @param responseCode 响应码枚举
-     * @param message            自定义错误消息 (将覆盖枚举中的默认消息)
+     * @param message      自定义错误消息 (将覆盖枚举中的默认消息)
      */
     public static <T> AjaxResult<T> error(ResponseCode responseCode, String message) {
         return new AjaxResult<>(responseCode.getCode(), message, null);

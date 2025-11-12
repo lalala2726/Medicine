@@ -10,7 +10,7 @@ import org.springframework.context.annotation.Configuration;
  * MinIO配置类
  *
  * @author Chuang
- * created on 2025/9/25 
+ * created on 2025/9/25
  */
 @Configuration
 @ConfigurationProperties(prefix = "minio")

@@ -9,7 +9,7 @@ import java.io.Serializable;
 /**
  * @author Chuang
  * <p>
- * created on 2025/9/9 
+ * created on 2025/9/9
  */
 @Data
 public class ModelConfig implements Serializable {

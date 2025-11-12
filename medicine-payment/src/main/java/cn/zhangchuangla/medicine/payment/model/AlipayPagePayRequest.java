@@ -37,6 +37,7 @@ public class AlipayPagePayRequest {
     /**
      * 产品码，电脑网站支付固定为 FAST_INSTANT_TRADE_PAY。
      */
+    @Builder.Default
     private String productCode = "FAST_INSTANT_TRADE_PAY";
 
     /**
