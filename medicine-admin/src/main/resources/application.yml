@@ -16,7 +16,7 @@ spring:
       auto-index-creation: true
       # UUID表示方式
       uuid-representation: standard
-      
+
       # 方式2: 如果方式1不行,注释掉上面的uri,取消下面的注释
       # host: 192.168.10.110
       # port: 27017
@@ -25,7 +25,7 @@ spring:
       # password: zhangchuang2726
       # authentication-database: admin  # 指定认证数据库
     redis:
-      host: localhost
+      host: 192.168.10.110
       port: 6379
       database: 0
       password: zhangchuang2726
@@ -56,9 +56,9 @@ security:
 
 # MinIO文件存储配置
 minio:
-  endpoint: http://localhost:8000
-  access-key: ZnwU3MZazhoNOURhhqIQ
-  secret-key: U2rDa2AwMcGPJiwtj2gnzY7rFwgzTQifOgI6Tnud
+  endpoint: http://192.168.10.110:9000
+  access-key: L8lIE0S3gkc0L5imKvNd
+  secret-key: wERm9ywqhjsflwIsyF98HlnhY8CxXuEJWJjaNVj8
   bucket-name: medicine
 
 # 文件上传配置
