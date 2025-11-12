@@ -2,7 +2,6 @@ package cn.zhangchuangla.medicine.client.service.impl;
 
 import cn.zhangchuangla.medicine.client.mapper.UserWalletMapper;
 import cn.zhangchuangla.medicine.client.model.request.UserWalletBillRequest;
-import cn.zhangchuangla.medicine.client.model.vo.UserWalletBillVo;
 import cn.zhangchuangla.medicine.client.service.UserWalletLogService;
 import cn.zhangchuangla.medicine.client.service.UserWalletService;
 import cn.zhangchuangla.medicine.common.core.enums.ResponseCode;
@@ -17,8 +16,6 @@ import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
-import java.util.List;
-import java.util.concurrent.atomic.AtomicLong;
 
 /**
  * @author Chuang
@@ -49,20 +46,10 @@ public class UserWalletServiceImpl extends ServiceImpl<UserWalletMapper, UserWal
     }
 
     @Override
-    public List<UserWalletBillVo> getBillList(UserWalletBillRequest request) {
+    public Page<UserWalletLog> getBillList(UserWalletBillRequest request) {
         Page<UserWalletLog> walletLogPage = request.toPage();
         Long userId = getUserId();
-        Page<UserWalletLog> page = userWalletLogService.getBillPageByUserId(userId, request, walletLogPage);
-        AtomicLong counter = new AtomicLong(1);
-        return page.getRecords().stream()
-                .map(bill -> UserWalletBillVo.builder()
-                        .index(counter.getAndIncrement())
-                        .title(bill.getReason())
-                        .time(bill.getCreatedAt())
-                        .amount(bill.getAmount())
-                        .build())
-                .toList();
-
+        return userWalletLogService.getBillPageByUserId(userId, request, walletLogPage);
     }
 
     @Override

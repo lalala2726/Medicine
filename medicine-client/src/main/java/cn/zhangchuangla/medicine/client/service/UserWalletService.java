@@ -1,12 +1,12 @@
 package cn.zhangchuangla.medicine.client.service;
 
 import cn.zhangchuangla.medicine.client.model.request.UserWalletBillRequest;
-import cn.zhangchuangla.medicine.client.model.vo.UserWalletBillVo;
 import cn.zhangchuangla.medicine.model.entity.UserWallet;
+import cn.zhangchuangla.medicine.model.entity.UserWalletLog;
+import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.IService;
 
 import java.math.BigDecimal;
-import java.util.List;
 
 /**
  * @author Chuang
@@ -26,7 +26,7 @@ public interface UserWalletService extends IService<UserWallet> {
      * @param request 查询参数
      * @return 流水列表
      */
-    List<UserWalletBillVo> getBillList(UserWalletBillRequest request);
+    Page<UserWalletLog> getBillList(UserWalletBillRequest request);
 
     /**
      * 扣除用户钱包余额

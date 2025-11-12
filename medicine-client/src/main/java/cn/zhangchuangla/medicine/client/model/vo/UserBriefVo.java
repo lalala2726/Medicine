@@ -1,5 +1,7 @@
 package cn.zhangchuangla.medicine.client.model.vo;
 
+import cn.zhangchuangla.medicine.common.core.annotation.DataMasking;
+import cn.zhangchuangla.medicine.common.core.enums.MaskingType;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -27,6 +29,7 @@ public class UserBriefVo {
     private String nickName;
 
     @Schema(description = "手机号", example = "13800000000")
+    @DataMasking(type = MaskingType.MOBILE_PHONE)
     private String phoneNumber;
 
     @Schema(description = "账户余额", example = "100.00")

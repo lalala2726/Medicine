@@ -32,4 +32,7 @@ public class UserWalletBillVo {
 
     @Schema(description = "流水金额", example = "100.00")
     private BigDecimal amount;
+
+    @Schema(description = "是否充值", example = "true")
+    private Boolean isRecharge;
 }
