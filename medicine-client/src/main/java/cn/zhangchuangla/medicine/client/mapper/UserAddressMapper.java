@@ -1,4 +1,4 @@
-package cn.zhangchuangla.medicine.admin.mapper;
+package cn.zhangchuangla.medicine.client.mapper;
 
 import cn.zhangchuangla.medicine.model.entity.UserAddress;
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
