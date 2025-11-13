@@ -1,10 +1,7 @@
 package cn.zhangchuangla.medicine.client.service;
 
 import cn.zhangchuangla.medicine.client.model.request.*;
-import cn.zhangchuangla.medicine.client.model.vo.OrderCheckoutVo;
-import cn.zhangchuangla.medicine.client.model.vo.OrderDetailVo;
-import cn.zhangchuangla.medicine.client.model.vo.OrderListVo;
-import cn.zhangchuangla.medicine.client.model.vo.OrderPreviewVo;
+import cn.zhangchuangla.medicine.client.model.vo.*;
 import cn.zhangchuangla.medicine.model.dto.AlipayNotifyDTO;
 import cn.zhangchuangla.medicine.model.entity.MallOrder;
 import cn.zhangchuangla.medicine.model.vo.mall.OrderShippingVo;
@@ -31,6 +28,18 @@ public interface MallOrderService extends IService<MallOrder> {
      * @param orderNo 订单编号
      */
     void closeOrderIfUnpaid(String orderNo);
+
+    /**
+     * 用户取消订单
+     * <p>
+     * 用户主动取消订单，需要提供取消原因。
+     * 只有待支付状态的订单可以取消，取消后会恢复库存。
+     * </p>
+     *
+     * @param request 订单取消请求参数
+     * @return 是否成功
+     */
+    boolean cancelOrder(OrderCancelRequest request);
 
     /**
      * 用户确认收货
@@ -65,29 +74,42 @@ public interface MallOrderService extends IService<MallOrder> {
     OrderDetailVo getOrderDetail(String orderNo);
 
     /**
-     * 从购物车创建订单并支付
+     * 从购物车提交订单（创建订单并锁定库存）
      * <p>
      * 用户可以选择购物车中的多个商品进行结算，系统会校验商品状态和库存，
-     * 扣减库存后创建订单，并根据支付方式直接处理支付，自动删除已结算的购物车商品
+     * 扣减库存后创建订单，订单状态为待支付，自动删除已结算的购物车商品。
+     * 订单创建后需要在30分钟内完成支付，否则订单将自动取消并恢复库存。
      * </p>
      *
-     * @param request 购物车结算请求
-     * @return 订单结算结果
+     * @param request 购物车提交订单请求
+     * @return 订单提交结果
      */
     OrderCheckoutVo createOrderFromCart(CartSettleRequest request);
 
     /**
-     * 订单结算（创建订单并支付）
+     * 提交订单（创建订单并锁定库存）
      * <p>
-     * 整合了订单创建和支付流程，用户提交订单时直接选择支付方式：
-     * - 钱包支付：同步扣款，订单状态变为已支付
-     * - 支付宝支付：生成支付表单，订单状态为待支付
+     * 用户提交订单时创建订单并扣减库存，订单状态为待支付。
+     * 订单创建后需要在30分钟内完成支付，否则订单将自动取消并恢复库存。
      * </p>
      *
-     * @param request 订单结算请求参数
-     * @return 订单结算结果
+     * @param request 订单提交请求参数
+     * @return 订单提交结果
      */
     OrderCheckoutVo checkoutOrder(OrderCheckoutRequest request);
+
+    /**
+     * 订单支付
+     * <p>
+     * 对已创建的待支付订单进行支付操作，支持钱包支付和支付宝支付：
+     * - 钱包支付：同步扣款，订单状态变为待发货
+     * - 支付宝支付：生成支付表单，订单状态保持待支付，等待异步回调
+     * </p>
+     *
+     * @param request 订单支付请求参数
+     * @return 订单支付结果
+     */
+    OrderPayVo payOrder(OrderPayRequest request);
 
     /**
      * 订单预览

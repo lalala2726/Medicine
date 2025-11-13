@@ -1,6 +1,6 @@
 package cn.zhangchuangla.medicine.client.model.request;
 
-import cn.zhangchuangla.medicine.model.enums.PayTypeEnum;
+import cn.zhangchuangla.medicine.model.enums.DeliveryTypeEnum;
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.NotNull;
@@ -12,7 +12,10 @@ import lombok.NoArgsConstructor;
 import java.util.List;
 
 /**
- * 购物车结算请求
+ * 购物车提交订单请求
+ * <p>
+ * 用于从购物车创建订单并锁定库存，订单创建后需要在30分钟内完成支付
+ * </p>
  *
  * @author Chuang
  */
@@ -20,7 +23,7 @@ import java.util.List;
 @Builder
 @AllArgsConstructor
 @NoArgsConstructor
-@Schema(description = "购物车结算请求参数")
+@Schema(description = "购物车提交订单请求参数")
 public class CartSettleRequest {
 
     @NotEmpty(message = "购物车商品ID列表不能为空")
@@ -31,11 +34,11 @@ public class CartSettleRequest {
     @Schema(description = "收货地址", requiredMode = Schema.RequiredMode.REQUIRED, example = "中国广东省深圳市南山区XX路XX号")
     private String address;
 
+    @NotNull(message = "配送方式不能为空")
+    @Schema(description = "配送方式", requiredMode = Schema.RequiredMode.REQUIRED, example = "EXPRESS")
+    private DeliveryTypeEnum deliveryType;
+
     @Schema(description = "订单备注", example = "请尽快发货")
     private String remark;
-
-    @NotNull(message = "支付方式不能为空")
-    @Schema(description = "支付方式", requiredMode = Schema.RequiredMode.REQUIRED, example = "WALLET")
-    private PayTypeEnum payMethod;
 }
 
