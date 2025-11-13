@@ -20,7 +20,7 @@ spring:
       # UUID表示方式
       uuid-representation: standard
     redis:
-      host: localhost
+      host: 192.168.10.110
       port: 6379
       database: 0
       password: zhangchuang2726

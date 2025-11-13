@@ -9,9 +9,13 @@ import cn.zhangchuangla.medicine.common.security.base.BaseController;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import org.springframework.util.StringUtils;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 /**
  * Admin端地址管理Controller
@@ -82,6 +86,29 @@ public class RegionController extends BaseController {
 
     /**
      * 根据父ID获取子级区域(通用接口)
+     * parentId为"0"时返回所有省份
+     */
+    @Operation(summary = "获取子级区域", description = "根据父级ID获取下一级所有区域，parentId为\"0\"时返回所有省份")
+    @GetMapping("/children")
+    public AjaxResult<List<RegionVo>> getChildrenByParentId(
+            @Parameter(description = "父级ID，\"0\"表示获取省份", required = true)
+            @RequestParam String parentId) {
+
+        List<Region> regions;
+        if ("0".equals(parentId)) {
+            // 获取所有省份
+            regions = regionService.getProvinces();
+        } else {
+            // 获取子级地区
+            regions = regionService.getChildrenByParentId(parentId);
+        }
+
+        List<RegionVo> regionVos = BeanCotyUtils.copyListProperties(regions, RegionVo.class);
+        return success(regionVos);
+    }
+
+    /**
+     * 根据父ID获取子级区域(路径参数版本，保持兼容)
      */
     @Operation(summary = "获取子级区域", description = "根据父级ID获取下一级所有区域")
     @GetMapping("/children/{parentId}")
@@ -122,12 +149,62 @@ public class RegionController extends BaseController {
     }
 
     /**
-     * 搜索地址
-     * 支持按名称、拼音、拼音首字母搜索
+     * 搜索地址（合并搜索版本）
+     * 支持地名和拼音搜索，自动合并结果去重
      */
-    @Operation(summary = "搜索地址", description = "支持按名称、拼音、拼音首字母搜索地址")
+    @Operation(summary = "搜索地址", description = "支持地名和拼音搜索，自动合并结果去重")
     @GetMapping("/search")
     public AjaxResult<List<RegionVo>> search(
+            @Parameter(description = "搜索关键词，支持地名或拼音", required = true)
+            @RequestParam String keyword) {
+
+        if (!StringUtils.hasText(keyword)) {
+            return error("搜索关键词不能为空");
+        }
+
+        keyword = keyword.trim();
+
+        // 使用Set去重
+        Set<String> regionIds = new HashSet<>();
+        List<Region> results = new ArrayList<>();
+
+        // 1. 按地名搜索
+        List<Region> nameResults = regionService.searchByName(keyword);
+        for (Region region : nameResults) {
+            if (regionIds.add(region.getId())) {
+                results.add(region);
+            }
+        }
+
+        // 2. 按拼音搜索
+        List<Region> pinyinResults = regionService.searchByPinyin(keyword);
+        for (Region region : pinyinResults) {
+            if (regionIds.add(region.getId())) {
+                results.add(region);
+            }
+        }
+
+        // 3. 如果是单个字母，尝试按拼音首字母搜索
+        if (keyword.length() == 1 && keyword.matches("[a-zA-Z]")) {
+            List<Region> prefixResults = regionService.searchByPinyinPrefix(keyword);
+            for (Region region : prefixResults) {
+                if (regionIds.add(region.getId())) {
+                    results.add(region);
+                }
+            }
+        }
+
+        List<RegionVo> regionVos = BeanCotyUtils.copyListProperties(results, RegionVo.class);
+        return success(regionVos);
+    }
+
+    /**
+     * 搜索地址（分开搜索版本，保持兼容）
+     * 支持按名称、拼音、拼音首字母分别搜索
+     */
+    @Operation(summary = "搜索地址（分开搜索）", description = "支持按名称、拼音、拼音首字母分别搜索地址")
+    @GetMapping("/search/separate")
+    public AjaxResult<List<RegionVo>> searchSeparate(
             @Parameter(description = "名称关键词")
             @RequestParam(required = false) String name,
             @Parameter(description = "拼音关键词")
