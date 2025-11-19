@@ -1,12 +1,14 @@
 package cn.zhangchuangla.medicine.client.service.impl;
 
 import cn.zhangchuangla.medicine.client.mapper.MallOrderMapper;
+import cn.zhangchuangla.medicine.client.model.dto.MallOrderDto;
 import cn.zhangchuangla.medicine.client.model.request.*;
 import cn.zhangchuangla.medicine.client.model.vo.*;
 import cn.zhangchuangla.medicine.client.service.*;
 import cn.zhangchuangla.medicine.client.task.OrderDelayProducer;
 import cn.zhangchuangla.medicine.common.core.enums.ResponseCode;
 import cn.zhangchuangla.medicine.common.core.exception.ServiceException;
+import cn.zhangchuangla.medicine.common.core.utils.BeanCotyUtils;
 import cn.zhangchuangla.medicine.common.security.base.BaseService;
 import cn.zhangchuangla.medicine.common.security.utils.SecurityUtils;
 import cn.zhangchuangla.medicine.model.dto.AlipayNotifyDTO;
@@ -24,6 +26,7 @@ import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.time.DateUtils;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
@@ -79,6 +82,7 @@ public class MallOrderServiceImpl extends ServiceImpl<MallOrderMapper, MallOrder
     public OrderCheckoutVo checkoutOrder(OrderCheckoutRequest request) {
         // 1. 查询商品详情并校验上架状态
         MallProductWithImageDto mallProductWithImageDto = mallProductService.getProductWithImagesById(request.getProductId());
+
         if (mallProductWithImageDto == null) {
             throw new ServiceException(ResponseCode.RESULT_IS_NULL, "商品不存在");
         }
@@ -124,6 +128,7 @@ public class MallOrderServiceImpl extends ServiceImpl<MallOrderMapper, MallOrder
                 .deliveryType(deliveryTypeCode)
                 .receiverDetail(request.getAddress())
                 .note(request.getRemark())
+                .payExpireTime(DateUtils.addMinutes(now, ORDER_TIMEOUT_MINUTES))
                 .afterSaleFlag(OrderItemAfterSaleStatusEnum.NONE)
                 .createTime(now)
                 .updateTime(now)
@@ -180,7 +185,7 @@ public class MallOrderServiceImpl extends ServiceImpl<MallOrderMapper, MallOrder
                 .totalAmount(totalAmount)
                 .orderStatus(ORDER_STATUS_WAIT_PAY)
                 .createTime(now)
-                .expireTime(expireTime)
+                .payExpireTime(expireTime)
                 .productSummary(buildProductSummary(mallProductWithImageDto, request.getQuantity()))
                 .itemCount(1)
                 .build();
@@ -818,13 +823,16 @@ public class MallOrderServiceImpl extends ServiceImpl<MallOrderMapper, MallOrder
     @Override
     public Page<OrderListVo> getOrderList(OrderListRequest request) {
         Long userId = getUserId();
-        Page<OrderListVo> page = request.toPage();
+        Page<MallOrderDto> page = request.toPage();
 
-        // 查询订单列表
-        Page<OrderListVo> orderPage = baseMapper.selectOrderList(page, request, userId);
+        // 查询订单列表DTO
+        Page<MallOrderDto> orderDtoPage = baseMapper.selectOrderList(page, request, userId);
+
+        // 将DTO转换为VO
+        List<OrderListVo> orderVoList = BeanCotyUtils.copyListProperties(orderDtoPage.getRecords(), OrderListVo.class);
 
         // 查询每个订单的商品项
-        for (OrderListVo orderVo : orderPage.getRecords()) {
+        for (OrderListVo orderVo : orderVoList) {
             // 获取订单状态名称
             OrderStatusEnum orderStatusEnum = OrderStatusEnum.fromCode(orderVo.getOrderStatus());
             orderVo.setOrderStatusName(orderStatusEnum != null ? orderStatusEnum.getName() : "未知");
@@ -856,7 +864,11 @@ public class MallOrderServiceImpl extends ServiceImpl<MallOrderMapper, MallOrder
             orderVo.setItems(itemVos);
         }
 
-        return orderPage;
+        // 构建返回的Page对象
+        Page<OrderListVo> resultPage = new Page<>(orderDtoPage.getCurrent(), orderDtoPage.getSize(), orderDtoPage.getTotal());
+        resultPage.setRecords(orderVoList);
+
+        return resultPage;
     }
 
     @Override
@@ -1076,7 +1088,7 @@ public class MallOrderServiceImpl extends ServiceImpl<MallOrderMapper, MallOrder
                 .itemCount(orderItems.size())
                 .orderStatus(ORDER_STATUS_WAIT_PAY)
                 .createTime(now)
-                .expireTime(expireTime)
+                .payExpireTime(expireTime)
                 .build();
     }
 

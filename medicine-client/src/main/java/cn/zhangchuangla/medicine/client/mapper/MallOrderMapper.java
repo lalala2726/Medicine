@@ -1,8 +1,8 @@
 package cn.zhangchuangla.medicine.client.mapper;
 
+import cn.zhangchuangla.medicine.client.model.dto.MallOrderDto;
 import cn.zhangchuangla.medicine.client.model.request.OrderListRequest;
 import cn.zhangchuangla.medicine.client.model.vo.OrderDetailVo;
-import cn.zhangchuangla.medicine.client.model.vo.OrderListVo;
 import cn.zhangchuangla.medicine.model.entity.MallOrder;
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
@@ -19,11 +19,11 @@ public interface MallOrderMapper extends BaseMapper<MallOrder> {
      * @param page    分页对象
      * @param request 查询条件
      * @param userId  用户ID
-     * @return 订单列表
+     * @return 订单列表DTO
      */
-    Page<OrderListVo> selectOrderList(@Param("page") Page<OrderListVo> page,
-                                      @Param("request") OrderListRequest request,
-                                      @Param("userId") Long userId);
+    Page<MallOrderDto> selectOrderList(@Param("page") Page<MallOrderDto> page,
+                                       @Param("request") OrderListRequest request,
+                                       @Param("userId") Long userId);
 
     /**
      * 查询订单详情

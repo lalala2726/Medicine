@@ -19,6 +19,7 @@
         <result property="receiverPhone" column="receiver_phone"/>
         <result property="receiverDetail" column="receiver_detail"/>
         <result property="note" column="note"/>
+        <result property="payExpireTime" column="pay_expire_time"/>
         <result property="refundStatus" column="refund_status"/>
         <result property="refundTime" column="refund_time"/>
         <result property="refundPrice" column="refund_price"/>
@@ -47,7 +48,7 @@
     <sql id="Base_Column_List">
         id,order_no,user_id,total_amount,pay_amount,freight_amount,
         pay_type,order_status,delivery_type,address_id,receiver_name,
-        receiver_phone,receiver_detail,note,refund_status,refund_time,refund_price,after_sale_flag,
+        receiver_phone,receiver_detail,note,pay_expire_time,refund_status,refund_time,refund_price,after_sale_flag,
         pay_time,paid,deliver_time,receive_time,finish_time,close_reason,close_time,remark,
         create_by,update_by,create_time,update_time
     </sql>
@@ -92,6 +93,7 @@
         o.receiver_phone,
         o.receiver_detail,
         o.note,
+        o.pay_expire_time,
         o.refund_status,
         o.refund_time,
         o.refund_price,

@@ -34,7 +34,7 @@ public class OrderCheckoutVo {
     private Date createTime;
 
     @Schema(description = "过期时间", example = "2025-10-30 13:37:33")
-    private Date expireTime;
+    private Date payExpireTime;
 
     @Schema(description = "商品摘要", example = "复方感冒灵颗粒 x2")
     private String productSummary;
