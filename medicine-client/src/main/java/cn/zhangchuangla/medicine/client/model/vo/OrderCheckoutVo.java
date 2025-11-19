@@ -8,11 +8,9 @@ import java.math.BigDecimal;
 import java.util.Date;
 
 /**
- * 订单结算响应对象
+ * 订单提交响应对象
  * <p>
- * 根据支付方式返回不同的数据结构:
- * - 钱包支付: 返回订单信息 + 支付成功标识
- * - 支付宝支付: 返回订单信息 + HTML表单字符串
+ * 返回订单创建成功的基本信息，订单状态为待支付，需要在30分钟内完成支付
  * </p>
  *
  * @author Chuang
@@ -20,7 +18,7 @@ import java.util.Date;
  */
 @Data
 @Builder
-@Schema(description = "订单结算响应对象")
+@Schema(description = "订单提交响应对象")
 public class OrderCheckoutVo {
 
     @Schema(description = "订单号", example = "O2025103011223344")
@@ -29,7 +27,7 @@ public class OrderCheckoutVo {
     @Schema(description = "订单金额", example = "128.50")
     private BigDecimal totalAmount;
 
-    @Schema(description = "订单状态", example = "WaitPay")
+    @Schema(description = "订单状态", example = "PENDING_PAYMENT")
     private String orderStatus;
 
     @Schema(description = "创建时间", example = "2025-10-30 13:22:33")
@@ -43,14 +41,5 @@ public class OrderCheckoutVo {
 
     @Schema(description = "商品种类数量", example = "3")
     private Integer itemCount;
-
-    @Schema(description = "支付方式", example = "WALLET")
-    private String paymentMethod;
-
-    @Schema(description = "支付状态: SUCCESS-支付成功, PENDING-待支付", example = "SUCCESS")
-    private String paymentStatus;
-
-    @Schema(description = "支付数据: 钱包支付为null, 支付宝支付为HTML表单字符串", example = "<form>...</form>")
-    private String paymentData;
 }
 

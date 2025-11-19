@@ -8,60 +8,45 @@ import lombok.Data;
 import java.util.Date;
 
 /**
- * 用户收货地址表
+ * 用户地址表
  */
 @TableName(value = "user_address")
 @Data
 public class UserAddress {
 
     /**
-     * 主键ID
+     * 地址ID
      */
     @TableId(type = IdType.AUTO)
     private Long id;
 
     /**
-     * 用户ID，关联user表
+     * 用户ID
      */
     private Long userId;
 
     /**
-     * 收件人姓名
+     * 收货人姓名
      */
-    private String consignee;
+    private String receiverName;
 
     /**
-     * 收件人手机号
+     * 收货人手机号
      */
-    private String phone;
+    private String receiverPhone;
 
     /**
-     * 省份
+     * 地址(省市区县街道等)
      */
-    private String province;
+    private String address;
 
     /**
-     * 城市
+     * 详细地址(如小区名、栋号、门牌)
      */
-    private String city;
+    private String detailAddress;
 
     /**
-     * 区/县
-     */
-    private String district;
-
-    /**
-     * 详细地址（街道/门牌号）
-     */
-    private String detail;
-
-    /**
-     * 邮政编码
-     */
-    private String postalCode;
-
-    /**
-     * 是否为默认地址（0-否，1-是）
+     * 是否默认地址 1是 0否
      */
     private Integer isDefault;
 
@@ -74,14 +59,4 @@ public class UserAddress {
      * 更新时间
      */
     private Date updateTime;
-
-    /**
-     * 删除时间（逻辑删除用）
-     */
-    private Date deleteTime;
-
-    /**
-     * 是否删除（0-未删除，1-已删除）
-     */
-    private Integer isDelete;
 }

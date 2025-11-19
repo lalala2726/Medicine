@@ -1,6 +1,6 @@
 package cn.zhangchuangla.medicine.client.model.request;
 
-import cn.zhangchuangla.medicine.model.enums.PayTypeEnum;
+import cn.zhangchuangla.medicine.model.enums.DeliveryTypeEnum;
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
@@ -11,9 +11,9 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 /**
- * 订单结算请求参数
+ * 订单提交请求参数
  * <p>
- * 合并了订单创建和支付确认,用户提交订单时直接选择支付方式
+ * 用于创建订单并锁定库存，订单创建后需要在30分钟内完成支付
  * </p>
  *
  * @author Chuang
@@ -23,7 +23,7 @@ import lombok.NoArgsConstructor;
 @Builder
 @AllArgsConstructor
 @NoArgsConstructor
-@Schema(description = "订单结算请求参数")
+@Schema(description = "订单提交请求参数")
 public class OrderCheckoutRequest {
 
     @NotNull(message = "商品ID不能为空")
@@ -40,11 +40,11 @@ public class OrderCheckoutRequest {
     @Schema(description = "收货地址", requiredMode = Schema.RequiredMode.REQUIRED, example = "中国")
     private String address;
 
+    @NotNull(message = "配送方式不能为空")
+    @Schema(description = "配送方式", requiredMode = Schema.RequiredMode.REQUIRED, example = "EXPRESS")
+    private DeliveryTypeEnum deliveryType;
+
     @Schema(description = "订单备注", requiredMode = Schema.RequiredMode.NOT_REQUIRED, example = "请尽快发货")
     private String remark;
-
-    @NotNull(message = "支付方式不能为空")
-    @Schema(description = "支付方式", requiredMode = Schema.RequiredMode.REQUIRED, example = "WALLET")
-    private PayTypeEnum payMethod;
 }
 

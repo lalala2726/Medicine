@@ -40,4 +40,3 @@ public class MongoConfig {
         return new MongoTemplate(mongoDatabaseFactory, converter);
     }
 }
-
