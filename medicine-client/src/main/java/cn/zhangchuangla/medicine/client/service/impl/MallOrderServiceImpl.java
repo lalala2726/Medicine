@@ -379,15 +379,12 @@ public class MallOrderServiceImpl extends ServiceImpl<MallOrderMapper, MallOrder
 
         // 添加订单支付时间线记录
         if (updated) {
-            String username = getUsername();
-            PayTypeEnum payTypeEnum = PayTypeEnum.fromCode(payType);
-            String payTypeName = payTypeEnum != null ? payTypeEnum.getDescription() : "未知支付方式";
+            // todo 这边需要从订单信息拿到用户的信息
             OrderTimelineDto timelineDto = OrderTimelineDto.builder()
                     .orderId(order.getId())
                     .eventType(OrderEventTypeEnum.ORDER_PAID.getType())
                     .eventStatus(ORDER_STATUS_WAIT_SHIPMENT)
                     .operatorType(OperatorTypeEnum.USER.getType())
-                    .description(String.format("用户%s使用%s完成了订单支付", username, payTypeName))
                     .build();
             mallOrderTimelineService.addTimelineIfNotExists(timelineDto);
         }
