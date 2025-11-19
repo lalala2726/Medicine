@@ -65,6 +65,7 @@ public class MallOrderServiceImpl extends ServiceImpl<MallOrderMapper, MallOrder
     private final MallOrderTimelineService mallOrderTimelineService;
     private final MallOrderShippingService mallOrderShippingService;
     private final MallCartService mallCartService;
+    private final UserAddressService userAddressService;
 
 
     /**
@@ -116,17 +117,23 @@ public class MallOrderServiceImpl extends ServiceImpl<MallOrderMapper, MallOrder
 
         // 使用用户选择的配送方式
         String deliveryTypeCode = request.getDeliveryType().getType();
+        Long userId = SecurityUtils.getUserId();
+        UserAddress userAddress = getUserAddressOrThrow(userId, request.getAddressId());
+        String receiverDetail = buildReceiverDetail(userAddress);
 
         MallOrder order = MallOrder.builder()
                 .orderNo(orderNo)
-                .userId(SecurityUtils.getUserId())
+                .userId(userId)
                 .totalAmount(totalAmount)
                 .payAmount(BigDecimal.ZERO)
                 .freightAmount(BigDecimal.ZERO)
                 .payType(WAIT_PAY)
                 .orderStatus(ORDER_STATUS_WAIT_PAY)
                 .deliveryType(deliveryTypeCode)
-                .receiverDetail(request.getAddress())
+                .addressId(userAddress.getId())
+                .receiverName(userAddress.getReceiverName())
+                .receiverPhone(userAddress.getReceiverPhone())
+                .receiverDetail(receiverDetail)
                 .note(request.getRemark())
                 .payExpireTime(DateUtils.addMinutes(now, ORDER_TIMEOUT_MINUTES))
                 .afterSaleFlag(OrderItemAfterSaleStatusEnum.NONE)
@@ -831,18 +838,36 @@ public class MallOrderServiceImpl extends ServiceImpl<MallOrderMapper, MallOrder
         // 将DTO转换为VO
         List<OrderListVo> orderVoList = BeanCotyUtils.copyListProperties(orderDtoPage.getRecords(), OrderListVo.class);
 
+
+
         // 查询每个订单的商品项
         for (OrderListVo orderVo : orderVoList) {
+            // 获取对应的DTO
+            MallOrderDto orderDto = orderDtoPage.getRecords().stream()
+                    .filter(dto -> dto.getId().equals(orderVo.getId()))
+                    .findFirst()
+                    .orElse(null);
+
             // 获取订单状态名称
             OrderStatusEnum orderStatusEnum = OrderStatusEnum.fromCode(orderVo.getOrderStatus());
             orderVo.setOrderStatusName(orderStatusEnum != null ? orderStatusEnum.getName() : "未知");
+
+            // 设置收货人信息
+            if (orderDto != null && (orderDto.getReceiverName() != null || orderDto.getReceiverPhone() != null || orderDto.getReceiverDetail() != null)) {
+                OrderListVo.ReceiverInfo receiverInfo = OrderListVo.ReceiverInfo.builder()
+                        .name(orderDto.getReceiverName())
+                        .phone(orderDto.getReceiverPhone())
+                        .address(orderDto.getReceiverDetail())
+                        .build();
+                orderVo.setReceiverInfo(receiverInfo);
+            }
 
             // 查询订单项
             List<MallOrderItem> orderItems = mallOrderItemService.lambdaQuery()
                     .eq(MallOrderItem::getOrderId, orderVo.getId())
                     .list();
 
-            // 转换为简化VO
+            // 一个订单可能有多个商品项,需要遍历处理 需要转换成VO
             List<OrderListVo.OrderItemSimpleVo> itemVos = new ArrayList<>();
             for (MallOrderItem item : orderItems) {
                 OrderItemAfterSaleStatusEnum afterSaleStatusEnum =
@@ -1016,6 +1041,8 @@ public class MallOrderServiceImpl extends ServiceImpl<MallOrderMapper, MallOrder
         // 3. 生成订单号
         String orderNo = generateOrderNo();
         Date now = new Date();
+        UserAddress userAddress = getUserAddressOrThrow(userId, request.getAddressId());
+        String receiverDetail = buildReceiverDetail(userAddress);
 
         // 4. 创建订单，使用用户选择的配送方式
         MallOrder order = MallOrder.builder()
@@ -1028,7 +1055,10 @@ public class MallOrderServiceImpl extends ServiceImpl<MallOrderMapper, MallOrder
                 .payType(WAIT_PAY)
                 .paid(0)
                 .deliveryType(request.getDeliveryType().getType())
-                .receiverDetail(request.getAddress())
+                .addressId(userAddress.getId())
+                .receiverName(userAddress.getReceiverName())
+                .receiverPhone(userAddress.getReceiverPhone())
+                .receiverDetail(receiverDetail)
                 .note(request.getRemark())
                 .afterSaleFlag(OrderItemAfterSaleStatusEnum.NONE)
                 .createTime(now)
@@ -1095,13 +1125,14 @@ public class MallOrderServiceImpl extends ServiceImpl<MallOrderMapper, MallOrder
     @Override
     public OrderPreviewVo previewOrder(OrderPreviewRequest request) {
         Long userId = getUserId();
+        UserAddress userAddress = getUserAddressOrThrow(userId, request.getAddressId());
         // 根据预览类型处理
         if (request.getType() == OrderPreviewRequest.PreviewType.PRODUCT) {
             // 单个商品购买预览
-            return previewSingleProduct(request, userId);
+            return previewSingleProduct(request, userAddress);
         } else if (request.getType() == OrderPreviewRequest.PreviewType.CART) {
             // 购物车结算预览
-            return previewCartItems(request, userId);
+            return previewCartItems(request, userId, userAddress);
         } else {
             throw new ServiceException(ResponseCode.OPERATION_ERROR, "不支持的预览类型");
         }
@@ -1110,7 +1141,7 @@ public class MallOrderServiceImpl extends ServiceImpl<MallOrderMapper, MallOrder
     /**
      * 预览单个商品购买
      */
-    private OrderPreviewVo previewSingleProduct(OrderPreviewRequest request, Long userId) {
+    private OrderPreviewVo previewSingleProduct(OrderPreviewRequest request, UserAddress userAddress) {
         if (request.getProductId() == null) {
             throw new ServiceException(ResponseCode.OPERATION_ERROR, "商品ID不能为空");
         }
@@ -1169,7 +1200,7 @@ public class MallOrderServiceImpl extends ServiceImpl<MallOrderMapper, MallOrder
                 .freightAmount(freightAmount)
                 .discountAmount(discountAmount)
                 .totalAmount(totalAmount)
-                .address(request.getAddress())
+                .address(buildReceiverDetail(userAddress))
                 .deliveryType(deliveryType)
                 .deliveryTypeName(deliveryTypeName)
                 .estimatedDeliveryTime(getEstimatedDeliveryTime(deliveryType))
@@ -1179,7 +1210,7 @@ public class MallOrderServiceImpl extends ServiceImpl<MallOrderMapper, MallOrder
     /**
      * 预览购物车商品
      */
-    private OrderPreviewVo previewCartItems(OrderPreviewRequest request, Long userId) {
+    private OrderPreviewVo previewCartItems(OrderPreviewRequest request, Long userId, UserAddress userAddress) {
         if (request.getCartIds() == null || request.getCartIds().isEmpty()) {
             throw new ServiceException(ResponseCode.OPERATION_ERROR, "购物车商品ID列表不能为空");
         }
@@ -1257,11 +1288,52 @@ public class MallOrderServiceImpl extends ServiceImpl<MallOrderMapper, MallOrder
                 .freightAmount(freightAmount)
                 .discountAmount(discountAmount)
                 .totalAmount(totalAmount)
-                .address(request.getAddress())
+                .address(buildReceiverDetail(userAddress))
                 .deliveryType(orderDeliveryType)
                 .deliveryTypeName(deliveryTypeName)
                 .estimatedDeliveryTime(getEstimatedDeliveryTime(orderDeliveryType))
                 .build();
+    }
+
+    /**
+     * 根据ID获取并校验用户收货地址
+     *
+     * @param userId    当前用户ID
+     * @param addressId 地址ID
+     * @return 收货地址
+     */
+    private UserAddress getUserAddressOrThrow(Long userId, Long addressId) {
+        if (addressId == null) {
+            throw new ServiceException(ResponseCode.PARAM_ERROR, "请选择收货地址");
+        }
+        UserAddress address = userAddressService.getById(addressId);
+        if (address == null || !Objects.equals(address.getUserId(), userId)) {
+            throw new ServiceException(ResponseCode.RESULT_IS_NULL, "收货地址不存在");
+        }
+        return address;
+    }
+
+    /**
+     * 构建完整收货地址
+     *
+     * @param address 收货地址
+     * @return 完整地址
+     */
+    private String buildReceiverDetail(UserAddress address) {
+        if (address == null) {
+            return null;
+        }
+        StringBuilder detailBuilder = new StringBuilder();
+        if (StringUtils.hasText(address.getAddress())) {
+            detailBuilder.append(address.getAddress());
+        }
+        if (StringUtils.hasText(address.getDetailAddress())) {
+            if (detailBuilder.length() > 0) {
+                detailBuilder.append(" ");
+            }
+            detailBuilder.append(address.getDetailAddress());
+        }
+        return detailBuilder.toString();
     }
 
     /**

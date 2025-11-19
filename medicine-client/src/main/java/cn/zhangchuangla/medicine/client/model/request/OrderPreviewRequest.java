@@ -40,9 +40,9 @@ public class OrderPreviewRequest {
     @Schema(description = "购物车商品ID列表(购物车结算时必填)", example = "[1, 2, 3]")
     private List<Long> cartIds;
 
-    @Schema(description = "收货地址ID或地址详情", requiredMode = Schema.RequiredMode.REQUIRED, example = "中国广东省深圳市南山区XX路XX号")
-    @NotNull(message = "收货地址不能为空")
-    private String address;
+    @Schema(description = "收货地址ID", requiredMode = Schema.RequiredMode.REQUIRED, example = "1001")
+    @NotNull(message = "收货地址ID不能为空")
+    private Long addressId;
 
     /**
      * 预览类型枚举
@@ -58,4 +58,3 @@ public class OrderPreviewRequest {
         CART
     }
 }
-

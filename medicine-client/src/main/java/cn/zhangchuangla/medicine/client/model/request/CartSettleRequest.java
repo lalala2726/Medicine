@@ -30,9 +30,9 @@ public class CartSettleRequest {
     @Schema(description = "购物车商品ID列表", requiredMode = Schema.RequiredMode.REQUIRED, example = "[1, 2, 3]")
     private List<Long> cartIds;
 
-    @NotNull(message = "收货地址不能为空")
-    @Schema(description = "收货地址", requiredMode = Schema.RequiredMode.REQUIRED, example = "中国广东省深圳市南山区XX路XX号")
-    private String address;
+    @NotNull(message = "收货地址ID不能为空")
+    @Schema(description = "收货地址ID", requiredMode = Schema.RequiredMode.REQUIRED, example = "1001")
+    private Long addressId;
 
     @NotNull(message = "配送方式不能为空")
     @Schema(description = "配送方式", requiredMode = Schema.RequiredMode.REQUIRED, example = "EXPRESS")
@@ -41,4 +41,3 @@ public class CartSettleRequest {
     @Schema(description = "订单备注", example = "请尽快发货")
     private String remark;
 }
-

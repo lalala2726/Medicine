@@ -60,6 +60,9 @@ public class OrderListVo {
     @Schema(description = "订单商品列表(只包含必要信息)")
     private List<OrderItemSimpleVo> items;
 
+    @Schema(description = "收货信息")
+    private ReceiverInfo receiverInfo;
+
     /**
      * 订单项简化信息
      */
@@ -96,6 +99,26 @@ public class OrderListVo {
 
         @Schema(description = "售后状态名称", example = "无售后")
         private String afterSaleStatusName;
+    }
+
+    /**
+     * 收货信息
+     */
+    @Data
+    @Builder
+    @NoArgsConstructor
+    @AllArgsConstructor
+    @Schema(description = "收货信息")
+    public static class ReceiverInfo {
+
+        @Schema(description = "收货人姓名", example = "张三")
+        private String name;
+
+        @Schema(description = "收货人电话", example = "13800000000")
+        private String phone;
+
+        @Schema(description = "收货人地址", example = "北京市海淀区中关村")
+        private String address;
     }
 }
 
