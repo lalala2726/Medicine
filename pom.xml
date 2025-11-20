@@ -88,7 +88,7 @@
             </dependency>
             <dependency>
                 <groupId>cn.zhangchuangla.medicine</groupId>
-                <artifactId>medicine-ai</artifactId>
+                <artifactId>medicine-llm</artifactId>
                 <version>${project.version}</version>
             </dependency>
             <!-- MyBatis-Plus JSqlParser，提供分页插件支持 -->
@@ -262,7 +262,7 @@
         <module>medicine-model</module>
         <module>medicine-admin</module>
         <module>medicine-client</module>
-        <module>medicine-ai</module>
         <module>medicine-payment</module>
+        <module>medicine-llm</module>
     </modules>
 </project>
