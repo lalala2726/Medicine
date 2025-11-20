@@ -177,6 +177,11 @@ public class MallOrderDto {
     private String updateBy;
 
     /**
+     * 是否删除
+     */
+    private Integer isDeleted;
+
+    /**
      * 备注
      */
     private String remark;

@@ -1,7 +1,9 @@
 package cn.zhangchuangla.medicine.client.model.dto;
 
+import com.fasterxml.jackson.annotation.JsonFormat;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
+import org.springframework.format.annotation.DateTimeFormat;
 
 import java.time.LocalDate;
 
@@ -27,5 +29,7 @@ public class UserProfileDto {
     private String phoneNumber;
 
     @Schema(description = "生日", example = "2025-11-20")
+    @JsonFormat(pattern = "yyyy-MM-dd")
+    @DateTimeFormat(pattern = "yyyy-MM-dd")
     private LocalDate birthday;
 }

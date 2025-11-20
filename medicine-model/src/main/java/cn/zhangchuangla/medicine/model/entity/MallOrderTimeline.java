@@ -52,7 +52,7 @@ public class MallOrderTimeline {
     private Date createdTime;
 
     /**
-     * 是否删除(0否,1是)
+     * 逻辑删除(0否,1是)
      */
     @TableLogic
     private Integer isDeleted;
