@@ -2,20 +2,60 @@
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="cn.zhangchuangla.medicine.client.mapper.MallOrderMapper">
 
+    <!-- 订单DTO结果映射 -->
+    <resultMap id="MallOrderDtoMap" type="cn.zhangchuangla.medicine.client.model.dto.MallOrderDto">
+        <id property="id" column="id"/>
+        <result property="orderNo" column="order_no"/>
+        <result property="userId" column="user_id"/>
+        <result property="totalAmount" column="total_amount"/>
+        <result property="payAmount" column="pay_amount"/>
+        <result property="freightAmount" column="freight_amount"/>
+        <result property="payType" column="pay_type"/>
+        <result property="orderStatus" column="order_status"/>
+        <result property="deliveryType" column="delivery_type"/>
+        <result property="addressId" column="address_id"/>
+        <result property="receiverName" column="receiver_name"/>
+        <result property="receiverPhone" column="receiver_phone"/>
+        <result property="receiverDetail" column="receiver_detail"/>
+        <result property="note" column="note"/>
+        <result property="payExpireTime" column="pay_expire_time"/>
+        <result property="refundStatus" column="refund_status"/>
+        <result property="refundTime" column="refund_time"/>
+        <result property="refundPrice" column="refund_price"/>
+        <result property="afterSaleFlag" column="after_sale_flag"/>
+        <result property="payTime" column="pay_time"/>
+        <result property="paid" column="paid"/>
+        <result property="deliverTime" column="deliver_time"/>
+        <result property="receiveTime" column="receive_time"/>
+        <result property="finishTime" column="finish_time"/>
+        <result property="closeReason" column="close_reason"/>
+        <result property="closeTime" column="close_time"/>
+        <result property="createTime" column="create_time"/>
+        <result property="updateTime" column="update_time"/>
+        <result property="createBy" column="create_by"/>
+        <result property="updateBy" column="update_by"/>
+        <result property="remark" column="remark"/>
+        <result property="version" column="version"/>
+        <result property="isDeleted" column="is_deleted"/>
+    </resultMap>
+
+    <!-- 订单DTO字段列表 -->
+    <sql id="MallOrderDto_Column_List">
+        id, order_no, user_id, total_amount, pay_amount, freight_amount,
+        pay_type, order_status, delivery_type, address_id, receiver_name,
+        receiver_phone, receiver_detail, note, pay_expire_time, refund_status,
+        refund_time, refund_price, after_sale_flag, pay_time, paid, deliver_time,
+        receive_time, finish_time, close_reason, close_time, create_time,
+        update_time, create_by, update_by, remark, version, is_deleted
+    </sql>
+
     <!-- 订单列表查询 -->
-    <select id="selectOrderList" resultType="cn.zhangchuangla.medicine.client.model.vo.OrderListVo">
+    <select id="selectOrderList" resultMap="MallOrderDtoMap">
         SELECT
-        o.id,
-        o.order_no AS orderNo,
-        o.order_status AS orderStatus,
-        o.total_amount AS totalAmount,
-        o.pay_amount AS payAmount,
-        o.paid,
-        o.after_sale_flag AS afterSaleFlag,
-        o.create_time AS createTime,
-        o.pay_time AS payTime
+        <include refid="MallOrderDto_Column_List"/>
         FROM mall_order o
-        WHERE o.user_id = #{userId}
+        WHERE (o.is_deleted IS NULL OR o.is_deleted = 0)
+        AND o.user_id = #{userId}
         <if test="request.orderStatus != null and request.orderStatus != ''">
             AND o.order_status = #{request.orderStatus}
         </if>
@@ -25,7 +65,8 @@
         <if test="request.productName != null and request.productName != ''">
             AND EXISTS (
             SELECT 1 FROM mall_order_item oi
-            WHERE oi.order_id = o.id
+            WHERE (oi.is_deleted IS NULL OR oi.is_deleted = 0)
+            AND oi.order_id = o.id
             AND oi.product_name LIKE CONCAT('%', #{request.productName}, '%')
             )
         </if>
@@ -43,6 +84,7 @@
                o.pay_type        AS payType,
                o.delivery_type   AS deliveryType,
                o.paid,
+               o.pay_expire_time AS payExpireTime,
                o.pay_time        AS payTime,
                o.deliver_time    AS deliverTime,
                o.receive_time    AS receiveTime,
@@ -57,8 +99,9 @@
                o.receiver_phone  AS receiverPhone,
                o.receiver_detail AS receiverDetail
         FROM mall_order o
-        WHERE o.order_no = #{orderNo}
-          AND o.user_id = #{userId}
+        WHERE (o.is_deleted IS NULL OR o.is_deleted = 0)
+        AND o.order_no = #{orderNo}
+        AND o.user_id = #{userId}
     </select>
 
 </mapper>

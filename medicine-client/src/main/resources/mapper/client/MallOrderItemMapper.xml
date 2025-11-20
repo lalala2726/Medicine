@@ -15,10 +15,11 @@
         <result property="imageUrl" column="image_url"/>
         <result property="createTime" column="create_time"/>
         <result property="updateTime" column="update_time"/>
+        <result property="isDeleted" column="is_deleted"/>
     </resultMap>
 
     <sql id="Base_Column_List">
         id,order_id,product_id,product_name,quantity,price,
-        total_price,image_url,create_time,update_time
+        total_price,image_url,create_time,update_time,is_deleted
     </sql>
 </mapper>

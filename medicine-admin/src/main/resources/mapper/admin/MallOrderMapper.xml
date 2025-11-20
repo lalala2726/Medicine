@@ -19,6 +19,7 @@
         <result property="receiverPhone" column="receiver_phone"/>
         <result property="receiverDetail" column="receiver_detail"/>
         <result property="note" column="note"/>
+        <result property="payExpireTime" column="pay_expire_time"/>
         <result property="refundStatus" column="refund_status"/>
         <result property="refundTime" column="refund_time"/>
         <result property="refundPrice" column="refund_price"/>
@@ -35,6 +36,7 @@
         <result property="createBy" column="create_by"/>
         <result property="updateBy" column="update_by"/>
         <result property="remark" column="remark"/>
+        <result property="isDeleted" column="is_deleted"/>
     </resultMap>
 
     <resultMap id="OrderWithProductResultMap" type="cn.zhangchuangla.medicine.model.dto.OrderWithProductDto"
@@ -47,14 +49,15 @@
     <sql id="Base_Column_List">
         id,order_no,user_id,total_amount,pay_amount,freight_amount,
         pay_type,order_status,delivery_type,address_id,receiver_name,
-        receiver_phone,receiver_detail,note,refund_status,refund_time,refund_price,after_sale_flag,
+        receiver_phone,receiver_detail,note,pay_expire_time,refund_status,refund_time,refund_price,after_sale_flag,
         pay_time,paid,deliver_time,receive_time,finish_time,close_reason,close_time,remark,
-        create_by,update_by,create_time,update_time
+        create_by,update_by,create_time,update_time,is_deleted
     </sql>
     <select id="orderList" resultMap="BaseResultMap">
         SELECT
         <include refid="Base_Column_List"/>
         FROM mall_order
+        WHERE is_deleted = 0
         <if test="request.orderNo != null and request.orderNo != ''">
             AND order_no = #{request.orderNo}
         </if>
@@ -92,6 +95,7 @@
         o.receiver_phone,
         o.receiver_detail,
         o.note,
+        o.pay_expire_time,
         o.refund_status,
         o.refund_time,
         o.refund_price,
@@ -115,14 +119,17 @@
         LEFT JOIN (
         SELECT oi.order_id, oi.product_id, oi.quantity, oi.product_name
         FROM mall_order_item oi
-        WHERE oi.id = (
+        WHERE (oi.is_deleted IS NULL OR oi.is_deleted = 0)
+        AND oi.id = (
         SELECT MIN(id)
         FROM mall_order_item moi
         WHERE moi.order_id = oi.order_id
+        AND (moi.is_deleted IS NULL OR moi.is_deleted = 0)
         )
         ) first_item ON o.id = first_item.order_id
-        LEFT JOIN mall_product p ON first_item.product_id = p.id
+        LEFT JOIN mall_product p ON first_item.product_id = p.id AND (p.is_deleted IS NULL OR p.is_deleted = 0)
         <where>
+            (o.is_deleted IS NULL OR o.is_deleted = 0)
             <if test="request.orderNo != null and request.orderNo != ''">
                 AND o.order_no = #{request.orderNo}
             </if>
@@ -149,7 +156,8 @@
         SELECT
         <include refid="Base_Column_List"/>
         FROM mall_order
-        WHERE order_status = 'PENDING_PAYMENT'
+        WHERE (is_deleted IS NULL OR is_deleted = 0)
+        AND order_status = 'PENDING_PAYMENT'
         AND create_time &lt; FROM_UNIXTIME(#{expiredTime} / 1000)
     </select>
 
@@ -157,8 +165,9 @@
         SELECT
         <include refid="Base_Column_List"/>
         FROM mall_order
-        WHERE user_id = #{userId}
-        and paid = 1
+        WHERE (is_deleted IS NULL OR is_deleted = 0)
+        AND user_id = #{userId}
+        AND paid = 1
     </select>
 
 </mapper>

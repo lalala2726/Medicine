@@ -19,9 +19,10 @@
         <result property="updateTime" column="update_time"/>
         <result property="createBy" column="create_by"/>
         <result property="updateBy" column="update_by"/>
+        <result property="isDeleted" column="is_deleted"/>
     </resultMap>
 
-    <resultMap id="ProductWithImagesResultMap" type="cn.zhangchuangla.medicine.model.entity.MallProductWithImageDto"
+    <resultMap id="ProductWithImagesResultMap" type="cn.zhangchuangla.medicine.model.dto.MallProductWithImageDto"
                extends="BaseResultMap">
         <association property="medicineDetail" javaType="cn.zhangchuangla.medicine.model.dto.MallMedicineDetailDto">
             <result property="commonName" column="med_common_name"/>
@@ -112,9 +113,10 @@
                md.taboo                  AS med_taboo,
                md.instruction            AS med_instruction
         FROM mall_product p
-                 LEFT JOIN mall_product_image img ON p.id = img.product_id
-                 LEFT JOIN mall_medicine_detail md ON p.id = md.product_id
-        WHERE p.id = #{productId}
+                 LEFT JOIN mall_product_image img ON p.id = img.product_id AND (img.is_deleted IS NULL OR img.is_deleted = 0)
+                 LEFT JOIN mall_medicine_detail md ON p.id = md.product_id AND (md.is_deleted IS NULL OR md.is_deleted = 0)
+        WHERE (p.is_deleted IS NULL OR p.is_deleted = 0)
+        AND p.id = #{productId}
         ORDER BY img.sort, img.create_time
     </select>
 </mapper>

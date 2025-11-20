@@ -1,7 +1,6 @@
-package cn.zhangchuangla.medicine.model.entity;
+package cn.zhangchuangla.medicine.client.model.dto;
 
 import cn.zhangchuangla.medicine.model.enums.OrderItemAfterSaleStatusEnum;
-import com.baomidou.mybatisplus.annotation.*;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -11,23 +10,24 @@ import java.math.BigDecimal;
 import java.util.Date;
 
 /**
- * 商城订单表（主订单）
+ * 商城订单DTO（用于数据库查询结果映射）
+ *
+ * @author Chuang
+ * created 2025/11/19
  */
-@TableName(value = "mall_order")
 @Data
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class MallOrder {
+public class MallOrderDto {
 
     /**
      * 订单ID
      */
-    @TableId(type = IdType.AUTO)
     private Long id;
 
     /**
-     * 订单编号（业务唯一标识）
+     * 订单编号
      */
     private String orderNo;
 
@@ -37,7 +37,7 @@ public class MallOrder {
     private Long userId;
 
     /**
-     * 订单总金额（含运费）
+     * 订单总金额
      */
     private BigDecimal totalAmount;
 
@@ -122,7 +122,7 @@ public class MallOrder {
     private Date payTime;
 
     /**
-     * 是否支付（0否,1是）
+     * 是否支付
      */
     private Integer paid;
 
@@ -157,9 +157,8 @@ public class MallOrder {
     private Date createTime;
 
     /**
-     * 乐观锁版本号(更新时自增)
+     * 乐观锁版本号
      */
-    @Version
     private Integer version;
 
     /**
@@ -178,13 +177,12 @@ public class MallOrder {
     private String updateBy;
 
     /**
+     * 是否删除
+     */
+    private Integer isDeleted;
+
+    /**
      * 备注
      */
     private String remark;
-
-    /**
-     * 逻辑删除(0否,1是)
-     */
-    @TableLogic
-    private Integer isDeleted;
 }

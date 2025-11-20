@@ -17,16 +17,17 @@
         <result property="afterBalance" column="after_balance"/>
         <result property="remark" column="remark"/>
         <result property="createdAt" column="created_at"/>
+        <result property="isDeleted" column="is_deleted"/>
     </resultMap>
 
     <sql id="Base_Column_List">
         id,wallet_id,user_id,flow_no,reason,biz_id,
         change_type,amount,before_balance,after_balance,remark,
-        created_at
+        created_at,is_deleted
     </sql>
     <select id="getBillPageByUserId" resultMap="BaseResultMap">
         SELECT
         <include refid="Base_Column_List"/>
-        FROM user_wallet_log WHERE user_id = #{userId}
+        FROM user_wallet_log WHERE (is_deleted IS NULL OR is_deleted = 0) AND user_id = #{userId}
     </select>
 </mapper>

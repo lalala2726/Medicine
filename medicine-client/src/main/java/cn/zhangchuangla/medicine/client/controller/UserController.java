@@ -1,5 +1,6 @@
 package cn.zhangchuangla.medicine.client.controller;
 
+import cn.zhangchuangla.medicine.client.model.dto.UserProfileDto;
 import cn.zhangchuangla.medicine.client.model.request.UserWalletBillRequest;
 import cn.zhangchuangla.medicine.client.model.vo.UserBriefVo;
 import cn.zhangchuangla.medicine.client.model.vo.UserWalletBillVo;
@@ -18,9 +19,7 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import java.math.BigDecimal;
 import java.util.ArrayList;
@@ -42,6 +41,31 @@ public class UserController extends BaseController {
     private final UserService userService;
     private final UserWalletService userWalletService;
 
+
+    /**
+     * 获取用户信息
+     *
+     * @return 用户信息
+     */
+    @GetMapping("/profile")
+    @Operation(summary = "获取用户信息")
+    public AjaxResult<UserProfileDto> getUserProfile() {
+        UserProfileDto userProfileDto = userService.getUserProfile();
+        return success(userProfileDto);
+    }
+
+    /**
+     * 更新用户信息
+     *
+     * @param userProfileDto 用户信息
+     * @return 更新结果
+     */
+    @PutMapping("/profile")
+    @Operation(summary = "更新用户信息")
+    public AjaxResult<Void> updateUserProfile(@RequestBody UserProfileDto userProfileDto) {
+        boolean result = userService.updateUserProfile(userProfileDto);
+        return toAjax(result);
+    }
 
     /**
      * 获取当前用户信息

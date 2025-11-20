@@ -60,6 +60,9 @@ public class OrderDetailVo {
     @Schema(description = "是否已支付(0-否, 1-是)")
     private Integer paid;
 
+    @Schema(description = "支付过期时间")
+    private Date payExpireTime;
+
     @Schema(description = "支付时间")
     private Date payTime;
 

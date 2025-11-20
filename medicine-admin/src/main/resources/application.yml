@@ -9,21 +9,11 @@ spring:
       max-request-size: 50MB
   data:
     mongodb:
-      # 方式1: 使用URI连接字符串(推荐,更灵活)
-      # 如果用户在admin数据库中,使用authSource=admin
       uri: mongodb://zhangchuang:zhangchuang2726@192.168.10.110:27017/medicine?authSource=admin&authMechanism=SCRAM-SHA-256
       # 自动创建索引
       auto-index-creation: true
       # UUID表示方式
       uuid-representation: standard
-
-      # 方式2: 如果方式1不行,注释掉上面的uri,取消下面的注释
-      # host: 192.168.10.110
-      # port: 27017
-      # database: medicine
-      # username: zhangchuang
-      # password: zhangchuang2726
-      # authentication-database: admin  # 指定认证数据库
     redis:
       host: 192.168.10.110
       port: 6379

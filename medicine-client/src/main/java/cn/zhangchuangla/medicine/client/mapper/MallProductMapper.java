@@ -1,7 +1,7 @@
 package cn.zhangchuangla.medicine.client.mapper;
 
+import cn.zhangchuangla.medicine.model.dto.MallProductWithImageDto;
 import cn.zhangchuangla.medicine.model.entity.MallProduct;
-import cn.zhangchuangla.medicine.model.entity.MallProductWithImageDto;
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
 import org.apache.ibatis.annotations.Param;
 

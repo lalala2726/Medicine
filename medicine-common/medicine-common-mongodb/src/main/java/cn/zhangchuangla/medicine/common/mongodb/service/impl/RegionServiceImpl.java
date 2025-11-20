@@ -102,7 +102,8 @@ public class RegionServiceImpl implements RegionService {
 
         // 从当前节点向上遍历到根节点
         while (current != null) {
-            path.addFirst(current.getName()); // 添加到列表开头
+            // 添加到列表开头
+            path.addFirst(current.getName());
 
             // 如果是省级(parent_id为"0")或没有父节点,停止遍历
             if ("0".equals(current.getParentId()) || !StringUtils.hasText(current.getParentId())) {

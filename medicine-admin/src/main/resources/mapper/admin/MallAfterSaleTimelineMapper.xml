@@ -13,10 +13,11 @@
         <result property="operatorId" column="operator_id"/>
         <result property="description" column="description"/>
         <result property="createTime" column="create_time"/>
+        <result property="isDeleted" column="is_deleted"/>
     </resultMap>
 
     <sql id="Base_Column_List">
         id,after_sale_id,event_type,event_status,operator_type,operator_id,description,
-        create_time
+        create_time,is_deleted
     </sql>
 </mapper>

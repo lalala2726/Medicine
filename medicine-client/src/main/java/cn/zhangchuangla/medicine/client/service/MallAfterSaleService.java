@@ -1,13 +1,13 @@
 package cn.zhangchuangla.medicine.client.service;
 
-import cn.zhangchuangla.medicine.client.model.request.AfterSaleApplyRequest;
-import cn.zhangchuangla.medicine.client.model.request.AfterSaleCancelRequest;
-import cn.zhangchuangla.medicine.client.model.request.AfterSaleListRequest;
+import cn.zhangchuangla.medicine.client.model.request.*;
 import cn.zhangchuangla.medicine.model.entity.MallAfterSale;
 import cn.zhangchuangla.medicine.model.vo.mall.AfterSaleDetailVo;
 import cn.zhangchuangla.medicine.model.vo.mall.AfterSaleListVo;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.IService;
+
+import java.util.List;
 
 /**
  * 售后申请Service
@@ -48,5 +48,20 @@ public interface MallAfterSaleService extends IService<MallAfterSale> {
      * @return 售后详情
      */
     AfterSaleDetailVo getAfterSaleDetail(Long afterSaleId);
-}
 
+    /**
+     * 申请整单退款
+     *
+     * @param request 退款请求
+     * @return 创建的售后单号列表
+     */
+    List<String> applyOrderRefund(OrderRefundApplyRequest request);
+
+    /**
+     * 再次发起售后
+     *
+     * @param request 重新申请请求
+     * @return 售后单号
+     */
+    String reapplyAfterSale(AfterSaleReapplyRequest request);
+}

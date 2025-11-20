@@ -20,6 +20,7 @@
         <result property="updateTime" column="update_time"/>
         <result property="createBy" column="create_by"/>
         <result property="updateBy" column="update_by"/>
+        <result property="isDeleted" column="is_deleted"/>
     </resultMap>
 
     <resultMap id="MallProductDtoMap" type="cn.zhangchuangla.medicine.model.dto.MallProductDetailDto">
@@ -38,6 +39,7 @@
         <result property="updateTime" column="update_time"/>
         <result property="createBy" column="create_by"/>
         <result property="updateBy" column="update_by"/>
+        <result property="isDeleted" column="is_deleted"/>
         <result property="categoryName" column="category_name"/>
         <association property="medicineDetail" javaType="cn.zhangchuangla.medicine.model.dto.MallMedicineDetailDto">
             <result property="commonName" column="med_common_name"/>
@@ -77,6 +79,7 @@
         <include refid="Base_Column_List"/>
         FROM mall_product
         <where>
+            (is_deleted IS NULL OR is_deleted = 0)
             <if test="request.id != null">
                 AND id = #{request.id}
             </if>
@@ -121,7 +124,8 @@
         (
         SELECT i.image_url
         FROM mall_product_image i
-        WHERE i.product_id = p.id
+        WHERE (i.is_deleted IS NULL OR i.is_deleted = 0)
+        AND i.product_id = p.id
         ORDER BY i.sort , i.id
         LIMIT 1
         ) AS image_url,
@@ -147,8 +151,9 @@
         md.instruction AS med_instruction
         FROM mall_product p
         LEFT JOIN mall_category c ON p.category_id = c.id
-        LEFT JOIN mall_medicine_detail md ON p.id = md.product_id
+        LEFT JOIN mall_medicine_detail md ON p.id = md.product_id AND (md.is_deleted IS NULL OR md.is_deleted = 0)
         <where>
+            (p.is_deleted IS NULL OR p.is_deleted = 0)
             <if test="request.id != null">
                 AND p.id = #{request.id}
             </if>
@@ -211,9 +216,10 @@
                md.instruction            AS med_instruction
         FROM mall_product p
                  LEFT JOIN mall_category c ON p.category_id = c.id
-                 LEFT JOIN mall_product_image i ON i.product_id = p.id
-                 LEFT JOIN mall_medicine_detail md ON p.id = md.product_id
-        WHERE p.id = #{id}
+                 LEFT JOIN mall_product_image i ON i.product_id = p.id AND (i.is_deleted IS NULL OR i.is_deleted = 0)
+                 LEFT JOIN mall_medicine_detail md ON p.id = md.product_id AND (md.is_deleted IS NULL OR md.is_deleted = 0)
+        WHERE (p.is_deleted IS NULL OR p.is_deleted = 0)
+        AND p.id = #{id}
         ORDER BY i.sort, i.id
     </select>
 </mapper>

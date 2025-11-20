@@ -2,6 +2,7 @@ package cn.zhangchuangla.medicine.model.entity;
 
 import com.baomidou.mybatisplus.annotation.IdType;
 import com.baomidou.mybatisplus.annotation.TableId;
+import com.baomidou.mybatisplus.annotation.TableLogic;
 import com.baomidou.mybatisplus.annotation.TableName;
 import lombok.Data;
 
@@ -49,4 +50,10 @@ public class MallOrderTimeline {
      * 事件时间
      */
     private Date createdTime;
+
+    /**
+     * 逻辑删除(0否,1是)
+     */
+    @TableLogic
+    private Integer isDeleted;
 }

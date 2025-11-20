@@ -3,7 +3,6 @@ package cn.zhangchuangla.medicine.client.model.request;
 import cn.zhangchuangla.medicine.model.enums.DeliveryTypeEnum;
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.Min;
-import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -36,9 +35,9 @@ public class OrderCheckoutRequest {
     @Schema(description = "购买数量", requiredMode = Schema.RequiredMode.REQUIRED, example = "1")
     private Integer quantity;
 
-    @NotBlank(message = "收货地址不能为空")
-    @Schema(description = "收货地址", requiredMode = Schema.RequiredMode.REQUIRED, example = "中国")
-    private String address;
+    @NotNull(message = "收货地址ID不能为空")
+    @Schema(description = "收货地址ID", requiredMode = Schema.RequiredMode.REQUIRED, example = "1001")
+    private Long addressId;
 
     @NotNull(message = "配送方式不能为空")
     @Schema(description = "配送方式", requiredMode = Schema.RequiredMode.REQUIRED, example = "EXPRESS")
@@ -47,4 +46,3 @@ public class OrderCheckoutRequest {
     @Schema(description = "订单备注", requiredMode = Schema.RequiredMode.NOT_REQUIRED, example = "请尽快发货")
     private String remark;
 }
-

@@ -1,12 +1,14 @@
 package cn.zhangchuangla.medicine.client.service.impl;
 
 import cn.zhangchuangla.medicine.client.mapper.UserMapper;
+import cn.zhangchuangla.medicine.client.model.dto.UserProfileDto;
 import cn.zhangchuangla.medicine.client.model.vo.UserBriefVo;
 import cn.zhangchuangla.medicine.client.service.MallOrderService;
 import cn.zhangchuangla.medicine.client.service.UserService;
 import cn.zhangchuangla.medicine.client.service.UserWalletService;
 import cn.zhangchuangla.medicine.common.core.entity.IPEntity;
 import cn.zhangchuangla.medicine.common.core.utils.Assert;
+import cn.zhangchuangla.medicine.common.core.utils.BeanCotyUtils;
 import cn.zhangchuangla.medicine.common.core.utils.IPUtils;
 import cn.zhangchuangla.medicine.common.security.base.BaseService;
 import cn.zhangchuangla.medicine.model.entity.MallOrder;
@@ -131,9 +133,8 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User>
         // 已完成订单数量
         Integer completeOrderCount = orderCountMap.getOrDefault(OrderStatusEnum.COMPLETED.getType(), 0L).intValue();
 
-        // 退货/售后订单数量(售后中 + 已退款)
-        Integer afterSaleOrderCount = orderCountMap.getOrDefault(OrderStatusEnum.AFTER_SALE.getType(), 0L).intValue()
-                + orderCountMap.getOrDefault(OrderStatusEnum.REFUNDED.getType(), 0L).intValue();
+        // 退货/售后订单数量(售后中)
+        Integer afterSaleOrderCount = orderCountMap.getOrDefault(OrderStatusEnum.AFTER_SALE.getType(), 0L).intValue();
 
         // TODO: 优惠券数量需要从优惠券服务获取，暂时设置为0
         Integer couponCount = 0;
@@ -150,6 +151,21 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User>
                 .completeOrderCount(completeOrderCount)
                 .afterSaleOrderCount(afterSaleOrderCount)
                 .build();
+    }
+
+    @Override
+    public UserProfileDto getUserProfile() {
+        Long userId = getUserId();
+        User user = getUserById(userId);
+        return BeanCotyUtils.copyProperties(user, UserProfileDto.class);
+    }
+
+    @Override
+    public boolean updateUserProfile(UserProfileDto userProfileDto) {
+        Long userId = getUserId();
+        User user = BeanCotyUtils.copyProperties(userProfileDto, User.class);
+        user.setId(userId);
+        return updateById(user);
     }
 
     private Set<String> extractRoles(User user) {
