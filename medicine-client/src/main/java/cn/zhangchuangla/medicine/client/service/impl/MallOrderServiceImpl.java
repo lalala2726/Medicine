@@ -839,7 +839,6 @@ public class MallOrderServiceImpl extends ServiceImpl<MallOrderMapper, MallOrder
         List<OrderListVo> orderVoList = BeanCotyUtils.copyListProperties(orderDtoPage.getRecords(), OrderListVo.class);
 
 
-
         // 查询每个订单的商品项
         for (OrderListVo orderVo : orderVoList) {
             // 获取对应的DTO
