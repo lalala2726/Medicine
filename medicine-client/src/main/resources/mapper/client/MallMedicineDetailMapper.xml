@@ -17,10 +17,11 @@
         <result property="instruction" column="instruction"/>
         <result property="createTime" column="create_time"/>
         <result property="updateTime" column="update_time"/>
+        <result property="isDeleted" column="is_deleted"/>
     </resultMap>
 
     <sql id="Base_Column_List">
         id,product_id,brand,prescription,efficacy,usage_method,adverse_reactions,
-        precautions,taboo,instruction,create_time,update_time
+        precautions,taboo,instruction,create_time,update_time,is_deleted
     </sql>
 </mapper>

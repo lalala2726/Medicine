@@ -36,6 +36,7 @@
         <result property="updateBy" column="update_by"/>
         <result property="remark" column="remark"/>
         <result property="version" column="version"/>
+        <result property="isDeleted" column="is_deleted"/>
     </resultMap>
 
     <!-- 订单DTO字段列表 -->
@@ -45,7 +46,7 @@
         receiver_phone, receiver_detail, note, pay_expire_time, refund_status,
         refund_time, refund_price, after_sale_flag, pay_time, paid, deliver_time,
         receive_time, finish_time, close_reason, close_time, create_time,
-        update_time, create_by, update_by, remark, version
+        update_time, create_by, update_by, remark, version, is_deleted
     </sql>
 
     <!-- 订单列表查询 -->
@@ -53,7 +54,8 @@
         SELECT
         <include refid="MallOrderDto_Column_List"/>
         FROM mall_order o
-        WHERE o.user_id = #{userId}
+        WHERE (o.is_deleted IS NULL OR o.is_deleted = 0)
+        AND o.user_id = #{userId}
         <if test="request.orderStatus != null and request.orderStatus != ''">
             AND o.order_status = #{request.orderStatus}
         </if>
@@ -63,7 +65,8 @@
         <if test="request.productName != null and request.productName != ''">
             AND EXISTS (
             SELECT 1 FROM mall_order_item oi
-            WHERE oi.order_id = o.id
+            WHERE (oi.is_deleted IS NULL OR oi.is_deleted = 0)
+            AND oi.order_id = o.id
             AND oi.product_name LIKE CONCAT('%', #{request.productName}, '%')
             )
         </if>
@@ -96,8 +99,9 @@
                o.receiver_phone  AS receiverPhone,
                o.receiver_detail AS receiverDetail
         FROM mall_order o
-        WHERE o.order_no = #{orderNo}
-          AND o.user_id = #{userId}
+        WHERE (o.is_deleted IS NULL OR o.is_deleted = 0)
+        AND o.order_no = #{orderNo}
+        AND o.user_id = #{userId}
     </select>
 
 </mapper>

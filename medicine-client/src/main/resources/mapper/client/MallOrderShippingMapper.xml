@@ -18,12 +18,13 @@
         <result column="shipment_note" property="shipmentNote"/>
         <result column="create_time" property="createTime"/>
         <result column="update_time" property="updateTime"/>
+        <result column="is_deleted" property="isDeleted"/>
     </resultMap>
 
     <!-- 通用查询结果列 -->
     <sql id="Base_Column_List">
         id, order_id, shipping_no, shipping_company, delivery_type, sender_name, sender_phone,
-        status, shipping_info, deliver_time, receive_time, shipment_note, create_time, update_time
+        status, shipping_info, deliver_time, receive_time, shipment_note, create_time, update_time, is_deleted
     </sql>
 
 </mapper>

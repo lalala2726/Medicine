@@ -10,11 +10,12 @@
         <result property="imageUrl" column="image_url"/>
         <result property="sort" column="sort"/>
         <result property="createTime" column="create_time"/>
+        <result property="isDeleted" column="is_deleted"/>
     </resultMap>
 
     <sql id="Base_Column_List">
         id
-        ,product_id,image_url,sort,create_time
+        ,product_id,image_url,sort,create_time,is_deleted
     </sql>
     <select id="getProductCoverImage" resultMap="BaseResultMap">
         SELECT product_id, image_url
@@ -24,7 +25,8 @@
         image_url,
         ROW_NUMBER() OVER (PARTITION BY product_id ORDER BY sort , id) AS rn
         FROM mall_product_image
-        WHERE product_id IN
+        WHERE (is_deleted IS NULL OR is_deleted = 0)
+        AND product_id IN
         <foreach collection="productIds" item="id" open="(" separator="," close=")">
             #{id}
         </foreach>
