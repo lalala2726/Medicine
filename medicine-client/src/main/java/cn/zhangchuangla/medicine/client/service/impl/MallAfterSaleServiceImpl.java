@@ -81,8 +81,9 @@ public class MallAfterSaleServiceImpl extends ServiceImpl<MallAfterSaleMapper, M
             throw new ServiceException(ResponseCode.OPERATION_ERROR, "订单状态异常");
         }
 
-        // 只有已完成或待收货状态可以申请售后
-        if (orderStatus != OrderStatusEnum.COMPLETED && orderStatus != OrderStatusEnum.PENDING_RECEIPT) {
+        // 只有已完成或待收货、待发货状态可以申请售后
+        if (orderStatus != OrderStatusEnum.COMPLETED && orderStatus != OrderStatusEnum.PENDING_RECEIPT
+                && orderStatus != OrderStatusEnum.PENDING_SHIPMENT) {
             throw new ServiceException(ResponseCode.OPERATION_ERROR,
                     String.format("当前订单状态[%s]不允许申请售后", orderStatus.getName()));
         }
