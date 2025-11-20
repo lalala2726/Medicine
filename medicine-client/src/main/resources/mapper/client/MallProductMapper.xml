@@ -21,7 +21,7 @@
         <result property="updateBy" column="update_by"/>
     </resultMap>
 
-    <resultMap id="ProductWithImagesResultMap" type="cn.zhangchuangla.medicine.model.entity.MallProductWithImageDto"
+    <resultMap id="ProductWithImagesResultMap" type="cn.zhangchuangla.medicine.model.dto.MallProductWithImageDto"
                extends="BaseResultMap">
         <association property="medicineDetail" javaType="cn.zhangchuangla.medicine.model.dto.MallMedicineDetailDto">
             <result property="commonName" column="med_common_name"/>

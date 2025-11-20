@@ -1,6 +1,7 @@
-package cn.zhangchuangla.medicine.model.entity;
+package cn.zhangchuangla.medicine.model.dto;
 
-import cn.zhangchuangla.medicine.model.dto.MallMedicineDetailDto;
+import cn.zhangchuangla.medicine.model.entity.MallProduct;
+import cn.zhangchuangla.medicine.model.entity.MallProductImage;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 
