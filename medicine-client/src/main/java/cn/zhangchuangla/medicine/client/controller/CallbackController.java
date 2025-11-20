@@ -106,6 +106,7 @@ public class CallbackController extends BaseController {
      */
     @GetMapping("/alipay/return")
     @Operation(summary = "支付宝同步回调")
+    @Anonymous
     public String handleAlipayReturn(@RequestParam Map<String, String> params) {
         try {
             boolean signVerified = AlipaySignature.rsaCheckV1(
