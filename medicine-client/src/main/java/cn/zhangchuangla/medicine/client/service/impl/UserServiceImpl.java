@@ -1,12 +1,14 @@
 package cn.zhangchuangla.medicine.client.service.impl;
 
 import cn.zhangchuangla.medicine.client.mapper.UserMapper;
+import cn.zhangchuangla.medicine.client.model.dto.UserProfileDto;
 import cn.zhangchuangla.medicine.client.model.vo.UserBriefVo;
 import cn.zhangchuangla.medicine.client.service.MallOrderService;
 import cn.zhangchuangla.medicine.client.service.UserService;
 import cn.zhangchuangla.medicine.client.service.UserWalletService;
 import cn.zhangchuangla.medicine.common.core.entity.IPEntity;
 import cn.zhangchuangla.medicine.common.core.utils.Assert;
+import cn.zhangchuangla.medicine.common.core.utils.BeanCotyUtils;
 import cn.zhangchuangla.medicine.common.core.utils.IPUtils;
 import cn.zhangchuangla.medicine.common.security.base.BaseService;
 import cn.zhangchuangla.medicine.model.entity.MallOrder;
@@ -150,6 +152,21 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User>
                 .completeOrderCount(completeOrderCount)
                 .afterSaleOrderCount(afterSaleOrderCount)
                 .build();
+    }
+
+    @Override
+    public UserProfileDto getUserProfile() {
+        Long userId = getUserId();
+        User user = getUserById(userId);
+        return BeanCotyUtils.copyProperties(user, UserProfileDto.class);
+    }
+
+    @Override
+    public boolean updateUserProfile(UserProfileDto userProfileDto) {
+        Long userId = getUserId();
+        User user = BeanCotyUtils.copyProperties(userProfileDto, User.class);
+        user.setId(userId);
+        return updateById(user);
     }
 
     private Set<String> extractRoles(User user) {

@@ -1,5 +1,6 @@
 package cn.zhangchuangla.medicine.client.service;
 
+import cn.zhangchuangla.medicine.client.model.dto.UserProfileDto;
 import cn.zhangchuangla.medicine.client.model.vo.UserBriefVo;
 import cn.zhangchuangla.medicine.model.entity.User;
 import com.baomidou.mybatisplus.extension.service.IService;
@@ -58,4 +59,18 @@ public interface UserService extends IService<User> {
      */
     UserBriefVo getUserBriefInfo();
 
+    /**
+     * 获取当前用户信息
+     *
+     * @return 当前用户信息
+     */
+    UserProfileDto getUserProfile();
+
+    /**
+     * 更新当前用户信息
+     *
+     * @param userProfileDto 用户信息
+     * @return 是否更新成功
+     */
+    boolean updateUserProfile(UserProfileDto userProfileDto);
 }
