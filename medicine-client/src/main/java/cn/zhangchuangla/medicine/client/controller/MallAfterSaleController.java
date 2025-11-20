@@ -1,8 +1,6 @@
 package cn.zhangchuangla.medicine.client.controller;
 
-import cn.zhangchuangla.medicine.client.model.request.AfterSaleApplyRequest;
-import cn.zhangchuangla.medicine.client.model.request.AfterSaleCancelRequest;
-import cn.zhangchuangla.medicine.client.model.request.AfterSaleListRequest;
+import cn.zhangchuangla.medicine.client.model.request.*;
 import cn.zhangchuangla.medicine.client.service.MallAfterSaleService;
 import cn.zhangchuangla.medicine.common.core.base.AjaxResult;
 import cn.zhangchuangla.medicine.common.core.base.TableDataResult;
@@ -18,17 +16,19 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
+
 /**
- * 售后管理Controller(用户端)
+ * 售后管理
  *
  * @author Chuang
  * created 2025/11/08
  */
 @Slf4j
 @RestController
-@RequestMapping("/mall/after-sale")
+@RequestMapping("/mall/order/after_sale")
 @RequiredArgsConstructor
-@Tag(name = "售后管理(用户端)", description = "用户端售后申请、取消、查询接口")
+@Tag(name = "售后管理", description = "用户端售后申请、取消、查询接口")
 public class MallAfterSaleController extends BaseController {
 
     private final MallAfterSaleService mallAfterSaleService;
@@ -47,6 +47,16 @@ public class MallAfterSaleController extends BaseController {
     }
 
     /**
+     * 申请整单退款
+     */
+    @PostMapping("/refund/order")
+    @Operation(summary = "申请整单退款", description = "用户对整笔订单发起退款申请，系统自动拆分至订单所有商品")
+    public AjaxResult<List<String>> applyOrderRefund(@Validated @RequestBody OrderRefundApplyRequest request) {
+        List<String> afterSaleNos = mallAfterSaleService.applyOrderRefund(request);
+        return success(afterSaleNos);
+    }
+
+    /**
      * 取消售后
      *
      * @param request 取消售后参数
@@ -57,6 +67,16 @@ public class MallAfterSaleController extends BaseController {
     public AjaxResult<Void> cancelAfterSale(@Validated @RequestBody AfterSaleCancelRequest request) {
         boolean result = mallAfterSaleService.cancelAfterSale(request);
         return toAjax(result);
+    }
+
+    /**
+     * 再次申请售后
+     */
+    @PostMapping("/reapply")
+    @Operation(summary = "再次申请售后", description = "售后被拒绝后，用户重新发起申请")
+    public AjaxResult<Void> reapplyAfterSale(@Validated @RequestBody AfterSaleReapplyRequest request) {
+        String afterSaleNo = mallAfterSaleService.reapplyAfterSale(request);
+        return success(afterSaleNo);
     }
 
     /**
@@ -87,4 +107,3 @@ public class MallAfterSaleController extends BaseController {
         return success(detail);
     }
 }
-

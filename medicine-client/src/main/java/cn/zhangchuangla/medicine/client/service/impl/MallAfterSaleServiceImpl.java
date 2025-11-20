@@ -1,9 +1,7 @@
 package cn.zhangchuangla.medicine.client.service.impl;
 
 import cn.zhangchuangla.medicine.client.mapper.MallAfterSaleMapper;
-import cn.zhangchuangla.medicine.client.model.request.AfterSaleApplyRequest;
-import cn.zhangchuangla.medicine.client.model.request.AfterSaleCancelRequest;
-import cn.zhangchuangla.medicine.client.model.request.AfterSaleListRequest;
+import cn.zhangchuangla.medicine.client.model.request.*;
 import cn.zhangchuangla.medicine.client.service.MallAfterSaleService;
 import cn.zhangchuangla.medicine.client.service.MallAfterSaleTimelineService;
 import cn.zhangchuangla.medicine.client.service.MallOrderItemService;
@@ -31,6 +29,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import java.util.Objects;
@@ -108,37 +107,70 @@ public class MallAfterSaleServiceImpl extends ServiceImpl<MallAfterSaleMapper, M
                     String.format("退款金额不能超过可退款金额%.2f元", maxRefundAmount));
         }
 
-        // 7. 生成售后单号
-        String afterSaleNo = generateAfterSaleNo();
-
-        // 8. 创建售后申请记录
+        // 7. 组装通用字段
         Date now = new Date();
         String evidenceImagesJson = request.getEvidenceImages() != null && !request.getEvidenceImages().isEmpty()
                 ? JSON.toJSONString(request.getEvidenceImages())
                 : null;
+        ReceiveStatusEnum receiveStatusEnum = ReceiveStatusEnum.fromCode(request.getReceiveStatus());
+        if (receiveStatusEnum == null) {
+            throw new ServiceException(ResponseCode.OPERATION_ERROR, "收货状态异常");
+        }
 
-        MallAfterSale afterSale = MallAfterSale.builder()
-                .afterSaleNo(afterSaleNo)
-                .orderId(order.getId())
-                .orderNo(order.getOrderNo())
-                .orderItemId(orderItem.getId())
-                .userId(userId)
-                .afterSaleType(request.getAfterSaleType())  // 直接使用枚举
-                .afterSaleStatus(AfterSaleStatusEnum.PENDING)
-                .refundAmount(refundAmount)
-                .applyReason(request.getApplyReason())  // 直接使用枚举
-                .applyDescription(request.getApplyDescription())
-                .evidenceImages(evidenceImagesJson)
-                .receiveStatus(ReceiveStatusEnum.fromCode(request.getReceiveStatus()))
-                .applyTime(now)
-                .createTime(now)
-                .updateTime(now)
-                .createBy(getUsername())
-                .build();
+        // 8. 如果存在历史售后记录则复用售后单号与时间线
+        MallAfterSale existingAfterSale = lambdaQuery()
+                .eq(MallAfterSale::getOrderId, order.getId())
+                .eq(MallAfterSale::getOrderItemId, orderItem.getId())
+                .eq(MallAfterSale::getUserId, userId)
+                .orderByDesc(MallAfterSale::getId)
+                .last("limit 1")
+                .one();
 
-        boolean saved = save(afterSale);
-        if (!saved) {
-            throw new ServiceException(ResponseCode.OPERATION_ERROR, "申请售后失败，请稍后重试");
+        MallAfterSale afterSale;
+        String afterSaleNo;
+        if (existingAfterSale != null) {
+            afterSale = existingAfterSale;
+            afterSaleNo = existingAfterSale.getAfterSaleNo();
+            afterSale.setAfterSaleType(request.getAfterSaleType());
+            afterSale.setAfterSaleStatus(AfterSaleStatusEnum.PENDING);
+            afterSale.setRefundAmount(refundAmount);
+            afterSale.setApplyReason(request.getApplyReason());
+            afterSale.setApplyDescription(request.getApplyDescription());
+            afterSale.setEvidenceImages(evidenceImagesJson);
+            afterSale.setReceiveStatus(receiveStatusEnum);
+            afterSale.setApplyTime(now);
+            afterSale.setUpdateTime(now);
+            afterSale.setUpdateBy(getUsername());
+
+            boolean updated = updateById(afterSale);
+            if (!updated) {
+                throw new ServiceException(ResponseCode.OPERATION_ERROR, "申请售后失败，请稍后重试");
+            }
+        } else {
+            afterSaleNo = generateAfterSaleNo();
+            afterSale = MallAfterSale.builder()
+                    .afterSaleNo(afterSaleNo)
+                    .orderId(order.getId())
+                    .orderNo(order.getOrderNo())
+                    .orderItemId(orderItem.getId())
+                    .userId(userId)
+                    .afterSaleType(request.getAfterSaleType())  // 直接使用枚举
+                    .afterSaleStatus(AfterSaleStatusEnum.PENDING)
+                    .refundAmount(refundAmount)
+                    .applyReason(request.getApplyReason())  // 直接使用枚举
+                    .applyDescription(request.getApplyDescription())
+                    .evidenceImages(evidenceImagesJson)
+                    .receiveStatus(receiveStatusEnum)
+                    .applyTime(now)
+                    .createTime(now)
+                    .updateTime(now)
+                    .createBy(getUsername())
+                    .build();
+
+            boolean saved = save(afterSale);
+            if (!saved) {
+                throw new ServiceException(ResponseCode.OPERATION_ERROR, "申请售后失败，请稍后重试");
+            }
         }
 
         // 9. 更新订单项售后状态
@@ -177,6 +209,195 @@ public class MallAfterSaleServiceImpl extends ServiceImpl<MallAfterSaleMapper, M
 
         log.info("用户{}申请售后成功，售后单号：{}", username, afterSaleNo);
         return afterSaleNo;
+    }
+
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public List<String> applyOrderRefund(OrderRefundApplyRequest request) {
+        Long userId = getUserId();
+
+        MallOrder order = mallOrderService.lambdaQuery()
+                .eq(MallOrder::getOrderNo, request.getOrderNo())
+                .one();
+        if (order == null) {
+            throw new ServiceException(ResponseCode.RESULT_IS_NULL, "订单不存在");
+        }
+        if (!Objects.equals(order.getUserId(), userId)) {
+            throw new ServiceException(ResponseCode.OPERATION_ERROR, "订单信息不存在");
+        }
+
+        if (!Objects.equals(order.getPaid(), 1)) {
+            throw new ServiceException(ResponseCode.OPERATION_ERROR, "订单未支付，无法申请退款");
+        }
+
+        OrderStatusEnum orderStatusEnum = OrderStatusEnum.fromCode(order.getOrderStatus());
+        if (orderStatusEnum == null) {
+            throw new ServiceException(ResponseCode.OPERATION_ERROR, "订单状态异常");
+        }
+        if (orderStatusEnum != OrderStatusEnum.PENDING_RECEIPT && orderStatusEnum != OrderStatusEnum.COMPLETED
+                && orderStatusEnum != OrderStatusEnum.PENDING_SHIPMENT) {
+            throw new ServiceException(ResponseCode.OPERATION_ERROR,
+                    String.format("当前订单状态[%s]不允许整单退款", orderStatusEnum.getName()));
+        }
+
+        long activeAfterSale = lambdaQuery()
+                .eq(MallAfterSale::getOrderId, order.getId())
+                .in(MallAfterSale::getAfterSaleStatus,
+                        AfterSaleStatusEnum.PENDING.getStatus(),
+                        AfterSaleStatusEnum.APPROVED.getStatus(),
+                        AfterSaleStatusEnum.PROCESSING.getStatus())
+                .count();
+        if (activeAfterSale > 0) {
+            throw new ServiceException(ResponseCode.OPERATION_ERROR, "订单存在售后处理中，无法再次申请");
+        }
+
+        BigDecimal payAmount = order.getPayAmount() != null ? order.getPayAmount() : BigDecimal.ZERO;
+        BigDecimal refundedAmount = order.getRefundPrice() != null ? order.getRefundPrice() : BigDecimal.ZERO;
+        BigDecimal refundableAmount = payAmount.subtract(refundedAmount);
+        if (refundableAmount.compareTo(BigDecimal.ZERO) <= 0) {
+            throw new ServiceException(ResponseCode.OPERATION_ERROR, "订单已无可退款金额");
+        }
+
+        List<MallOrderItem> orderItems = mallOrderItemService.lambdaQuery()
+                .eq(MallOrderItem::getOrderId, order.getId())
+                .list();
+        if (orderItems == null || orderItems.isEmpty()) {
+            throw new ServiceException(ResponseCode.RESULT_IS_NULL, "订单商品不存在");
+        }
+
+        ReceiveStatusEnum receiveStatusEnum = orderStatusEnum == OrderStatusEnum.COMPLETED
+                ? ReceiveStatusEnum.RECEIVED
+                : ReceiveStatusEnum.NOT_RECEIVED;
+
+        List<String> afterSaleNos = new ArrayList<>();
+        for (MallOrderItem orderItem : orderItems) {
+            String itemAfterSaleStatus = orderItem.getAfterSaleStatus();
+            if (itemAfterSaleStatus == null) {
+                itemAfterSaleStatus = OrderItemAfterSaleStatusEnum.NONE.getStatus();
+            }
+            if (!Objects.equals(itemAfterSaleStatus, OrderItemAfterSaleStatusEnum.NONE.getStatus())) {
+                throw new ServiceException(ResponseCode.OPERATION_ERROR, "订单存在售后中的商品，无法整单退款");
+            }
+
+            BigDecimal itemRefunded = orderItem.getRefundedAmount() != null ? orderItem.getRefundedAmount() : BigDecimal.ZERO;
+            BigDecimal maxRefundAmount = orderItem.getTotalPrice().subtract(itemRefunded);
+            if (maxRefundAmount.compareTo(BigDecimal.ZERO) <= 0) {
+                continue;
+            }
+
+            AfterSaleApplyRequest applyRequest = new AfterSaleApplyRequest();
+            applyRequest.setOrderItemId(orderItem.getId());
+            applyRequest.setAfterSaleType(AfterSaleTypeEnum.REFUND_ONLY);
+            applyRequest.setRefundAmount(maxRefundAmount);
+            applyRequest.setApplyReason(request.getApplyReason());
+            applyRequest.setApplyDescription(request.getApplyDescription());
+            applyRequest.setEvidenceImages(request.getEvidenceImages());
+            applyRequest.setReceiveStatus(receiveStatusEnum.getStatus());
+
+            String afterSaleNo = applyAfterSale(applyRequest);
+            afterSaleNos.add(afterSaleNo);
+        }
+
+        if (afterSaleNos.isEmpty()) {
+            throw new ServiceException(ResponseCode.OPERATION_ERROR, "订单已无可退款金额");
+        }
+
+        return afterSaleNos;
+    }
+
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public String reapplyAfterSale(AfterSaleReapplyRequest request) {
+        Long userId = getUserId();
+
+        MallAfterSale afterSale = lambdaQuery()
+                .eq(MallAfterSale::getAfterSaleNo, request.getAfterSaleNo())
+                .one();
+        if (afterSale == null) {
+            throw new ServiceException(ResponseCode.RESULT_IS_NULL, "售后申请不存在");
+        }
+
+        if (!Objects.equals(afterSale.getUserId(), userId)) {
+            throw new ServiceException(ResponseCode.OPERATION_ERROR, "售后申请不存在");
+        }
+
+        AfterSaleStatusEnum afterSaleStatusEnum = afterSale.getAfterSaleStatus();
+        if (afterSaleStatusEnum != AfterSaleStatusEnum.REJECTED) {
+            throw new ServiceException(ResponseCode.OPERATION_ERROR,
+                    String.format("当前售后状态[%s]不允许再次申请", afterSaleStatusEnum != null ? afterSaleStatusEnum.getName() : "未知"));
+        }
+
+        long approvedCount = lambdaQuery()
+                .eq(MallAfterSale::getOrderItemId, afterSale.getOrderItemId())
+                .eq(MallAfterSale::getUserId, userId)
+                .ne(MallAfterSale::getId, afterSale.getId())
+                .in(MallAfterSale::getAfterSaleStatus,
+                        AfterSaleStatusEnum.APPROVED.getStatus(),
+                        AfterSaleStatusEnum.PROCESSING.getStatus(),
+                        AfterSaleStatusEnum.COMPLETED.getStatus())
+                .count();
+        if (approvedCount > 0) {
+            throw new ServiceException(ResponseCode.OPERATION_ERROR, "该商品已存在通过的售后记录，禁止重复申请");
+        }
+
+        String evidenceImagesJson = request.getEvidenceImages() != null && !request.getEvidenceImages().isEmpty()
+                ? JSON.toJSONString(request.getEvidenceImages())
+                : null;
+
+        Date now = new Date();
+        afterSale.setAfterSaleStatus(AfterSaleStatusEnum.PENDING);
+        afterSale.setApplyReason(request.getApplyReason());
+        afterSale.setApplyDescription(request.getApplyDescription());
+        afterSale.setEvidenceImages(evidenceImagesJson);
+        afterSale.setApplyTime(now);
+        afterSale.setUpdateTime(now);
+        afterSale.setUpdateBy(getUsername());
+        afterSale.setRejectReason(null);
+        afterSale.setAdminRemark(null);
+        afterSale.setAuditTime(null);
+        afterSale.setCompleteTime(null);
+
+        boolean updated = updateById(afterSale);
+        if (!updated) {
+            throw new ServiceException(ResponseCode.OPERATION_ERROR, "重新申请售后失败，请稍后重试");
+        }
+
+        MallOrderItem orderItem = mallOrderItemService.getById(afterSale.getOrderItemId());
+        if (orderItem != null) {
+            orderItem.setAfterSaleStatus(OrderItemAfterSaleStatusEnum.IN_PROGRESS.getStatus());
+            orderItem.setUpdateTime(now);
+            mallOrderItemService.updateById(orderItem);
+        }
+
+        MallOrder order = mallOrderService.getById(afterSale.getOrderId());
+        if (order != null) {
+            order.setAfterSaleFlag(OrderItemAfterSaleStatusEnum.IN_PROGRESS);
+            order.setUpdateTime(now);
+            mallOrderService.updateById(order);
+        }
+
+        String username = getUsername();
+        String description = String.format("用户%s重新提交售后申请", username);
+        mallAfterSaleTimelineService.addTimeline(
+                afterSale.getId(),
+                OrderEventTypeEnum.AFTER_SALE_APPLIED.getType(),
+                AfterSaleStatusEnum.PENDING.getStatus(),
+                OperatorTypeEnum.USER.getType(),
+                userId,
+                description
+        );
+
+        OrderTimelineDto orderTimelineDto = OrderTimelineDto.builder()
+                .orderId(afterSale.getOrderId())
+                .eventType(OrderEventTypeEnum.AFTER_SALE_APPLIED.getType())
+                .eventStatus(order != null ? order.getOrderStatus() : null)
+                .operatorType(OperatorTypeEnum.USER.getType())
+                .description(description)
+                .build();
+        mallOrderTimelineService.addTimelineIfNotExists(orderTimelineDto);
+
+        log.info("用户{}重新申请售后成功，售后单号：{}", username, afterSale.getAfterSaleNo());
+        return afterSale.getAfterSaleNo();
     }
 
     @Override
@@ -355,4 +576,3 @@ public class MallAfterSaleServiceImpl extends ServiceImpl<MallAfterSaleMapper, M
         return prefix + datePart + randomPart;
     }
 }
-
