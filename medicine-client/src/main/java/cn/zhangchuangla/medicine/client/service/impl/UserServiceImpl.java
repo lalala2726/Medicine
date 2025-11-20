@@ -133,9 +133,8 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User>
         // 已完成订单数量
         Integer completeOrderCount = orderCountMap.getOrDefault(OrderStatusEnum.COMPLETED.getType(), 0L).intValue();
 
-        // 退货/售后订单数量(售后中 + 已退款)
-        Integer afterSaleOrderCount = orderCountMap.getOrDefault(OrderStatusEnum.AFTER_SALE.getType(), 0L).intValue()
-                + orderCountMap.getOrDefault(OrderStatusEnum.REFUNDED.getType(), 0L).intValue();
+        // 退货/售后订单数量(售后中)
+        Integer afterSaleOrderCount = orderCountMap.getOrDefault(OrderStatusEnum.AFTER_SALE.getType(), 0L).intValue();
 
         // TODO: 优惠券数量需要从优惠券服务获取，暂时设置为0
         Integer couponCount = 0;
