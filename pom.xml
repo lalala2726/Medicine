@@ -30,7 +30,7 @@
     <properties>
         <java.version>21</java.version>
         <spring-ai.version>1.0.1</spring-ai.version>
-        <spring-ai-alibaba.version>1.0.0.3</spring-ai-alibaba.version>
+        <langgraph4j.version>1.7.4</langgraph4j.version>
         <mybatis-plus.version>3.5.12</mybatis-plus.version>
         <druid.version>1.2.24</druid.version>
         <mysql.version>8.3.0</mysql.version>
@@ -55,6 +55,17 @@
                 <version>${spring-ai.version}</version>
                 <type>pom</type>
                 <scope>import</scope>
+            </dependency>
+            <dependency>
+                <groupId>org.bsc.langgraph4j</groupId>
+                <artifactId>langgraph4j-bom</artifactId>
+                <version>${langgraph4j.version}</version>
+                <type>pom</type>
+                <scope>import</scope>
+            </dependency>
+            <dependency>
+                <groupId>org.bsc.langgraph4j</groupId>
+                <artifactId>langgraph4j-core</artifactId>
             </dependency>
             <dependency>
                 <groupId>cn.zhangchuangla.medicine</groupId>
@@ -166,11 +177,6 @@
                 <groupId>io.swagger.core.v3</groupId>
                 <artifactId>swagger-annotations</artifactId>
                 <version>${swagger-annotations.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>com.alibaba.cloud.ai</groupId>
-                <artifactId>spring-ai-alibaba-graph-core</artifactId>
-                <version>${spring-ai-alibaba.version}</version>
             </dependency>
             <dependency>
                 <groupId>cn.zhangchuangla.medicine</groupId>
