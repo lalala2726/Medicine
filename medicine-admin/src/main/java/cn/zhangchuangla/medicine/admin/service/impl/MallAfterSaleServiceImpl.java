@@ -214,23 +214,7 @@ public class MallAfterSaleServiceImpl extends ServiceImpl<MallAfterSaleMapper, M
                 mallOrderItemService.updateById(orderItem);
             }
 
-            // 检查订单是否还有其他售后
-            long afterSaleCount = lambdaQuery()
-                    .eq(MallAfterSale::getOrderId, afterSale.getOrderId())
-                    .in(MallAfterSale::getAfterSaleStatus,
-                            AfterSaleStatusEnum.PENDING.getStatus(),
-                            AfterSaleStatusEnum.APPROVED.getStatus(),
-                            AfterSaleStatusEnum.PROCESSING.getStatus())
-                    .count();
-
-            if (afterSaleCount == 0) {
-                MallOrder order = mallOrderService.getById(afterSale.getOrderId());
-                if (order != null) {
-                    order.setAfterSaleFlag(OrderItemAfterSaleStatusEnum.NONE);
-                    order.setUpdateTime(now);
-                    mallOrderService.updateById(order);
-                }
-            }
+            refreshOrderAfterSaleFlag(afterSale.getOrderId());
 
             // 添加售后时间线记录
             String description = String.format("管理员%s拒绝了售后申请，原因：%s", adminUsername, request.getRejectReason());
@@ -380,6 +364,8 @@ public class MallAfterSaleServiceImpl extends ServiceImpl<MallAfterSaleMapper, M
                 .build();
         mallOrderTimelineService.addTimelineIfNotExists(orderTimelineDto);
 
+        refreshOrderAfterSaleFlag(afterSale.getOrderId());
+
         log.info("管理员{}完成售后退款，售后单号：{}，退款金额：{}", adminUsername, afterSale.getAfterSaleNo(), refundAmount);
         return true;
     }
@@ -459,8 +445,37 @@ public class MallAfterSaleServiceImpl extends ServiceImpl<MallAfterSaleMapper, M
                 .build();
         mallOrderTimelineService.addTimelineIfNotExists(orderTimelineDto);
 
+        refreshOrderAfterSaleFlag(afterSale.getOrderId());
+
         log.info("管理员{}完成售后换货，售后单号：{}{}", adminUsername, afterSale.getAfterSaleNo(), exchangeInfo);
         return true;
+    }
+
+    /**
+     * 根据订单项售后状态刷新订单售后标记
+     */
+    private void refreshOrderAfterSaleFlag(Long orderId) {
+        if (orderId == null) {
+            return;
+        }
+        long inProgressCount = mallOrderItemService.lambdaQuery()
+                .eq(MallOrderItem::getOrderId, orderId)
+                .eq(MallOrderItem::getAfterSaleStatus, OrderItemAfterSaleStatusEnum.IN_PROGRESS.getStatus())
+                .count();
+
+        MallOrder order = mallOrderService.getById(orderId);
+        if (order == null) {
+            return;
+        }
+
+        OrderItemAfterSaleStatusEnum newFlag = inProgressCount > 0
+                ? OrderItemAfterSaleStatusEnum.IN_PROGRESS
+                : OrderItemAfterSaleStatusEnum.NONE;
+        if (!Objects.equals(order.getAfterSaleFlag(), newFlag)) {
+            order.setAfterSaleFlag(newFlag);
+            order.setUpdateTime(new Date());
+            mallOrderService.updateById(order);
+        }
     }
 
     /**
@@ -534,4 +549,3 @@ public class MallAfterSaleServiceImpl extends ServiceImpl<MallAfterSaleMapper, M
         return amount.setScale(2, RoundingMode.HALF_UP).toPlainString();
     }
 }
-

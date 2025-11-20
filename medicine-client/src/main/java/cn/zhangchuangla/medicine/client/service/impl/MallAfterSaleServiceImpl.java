@@ -444,23 +444,8 @@ public class MallAfterSaleServiceImpl extends ServiceImpl<MallAfterSaleMapper, M
             mallOrderItemService.updateById(orderItem);
         }
 
-        // 5. 检查订单是否还有其他售后
-        long afterSaleCount = lambdaQuery()
-                .eq(MallAfterSale::getOrderId, afterSale.getOrderId())
-                .in(MallAfterSale::getAfterSaleStatus,
-                        AfterSaleStatusEnum.PENDING.getStatus(),
-                        AfterSaleStatusEnum.APPROVED.getStatus(),
-                        AfterSaleStatusEnum.PROCESSING.getStatus())
-                .count();
-
-        if (afterSaleCount == 0) {
-            MallOrder order = mallOrderService.getById(afterSale.getOrderId());
-            if (order != null) {
-                order.setAfterSaleFlag(OrderItemAfterSaleStatusEnum.NONE);
-                order.setUpdateTime(now);
-                mallOrderService.updateById(order);
-            }
-        }
+        // 5. 刷新订单售后标记
+        refreshOrderAfterSaleFlag(afterSale.getOrderId());
 
         // 6. 添加售后时间线记录
         String username = getUsername();
@@ -575,5 +560,32 @@ public class MallAfterSaleServiceImpl extends ServiceImpl<MallAfterSaleMapper, M
         String datePart = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyyMMddHHmmss"));
         String randomPart = String.format("%06d", (int) (Math.random() * 1000000));
         return prefix + datePart + randomPart;
+    }
+
+    /**
+     * 基于订单项售后状态刷新订单售后标记
+     */
+    private void refreshOrderAfterSaleFlag(Long orderId) {
+        if (orderId == null) {
+            return;
+        }
+        long inProgressCount = mallOrderItemService.lambdaQuery()
+                .eq(MallOrderItem::getOrderId, orderId)
+                .eq(MallOrderItem::getAfterSaleStatus, OrderItemAfterSaleStatusEnum.IN_PROGRESS.getStatus())
+                .count();
+
+        MallOrder order = mallOrderService.getById(orderId);
+        if (order == null) {
+            return;
+        }
+
+        OrderItemAfterSaleStatusEnum newFlag = inProgressCount > 0
+                ? OrderItemAfterSaleStatusEnum.IN_PROGRESS
+                : OrderItemAfterSaleStatusEnum.NONE;
+        if (!Objects.equals(order.getAfterSaleFlag(), newFlag)) {
+            order.setAfterSaleFlag(newFlag);
+            order.setUpdateTime(new Date());
+            mallOrderService.updateById(order);
+        }
     }
 }
