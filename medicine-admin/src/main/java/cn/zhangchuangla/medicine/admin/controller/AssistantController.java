@@ -2,6 +2,7 @@ package cn.zhangchuangla.medicine.admin.controller;
 
 import cn.zhangchuangla.medicine.admin.service.AssistantService;
 import cn.zhangchuangla.medicine.common.core.base.AjaxResult;
+import cn.zhangchuangla.medicine.common.security.annotation.IsAdmin;
 import cn.zhangchuangla.medicine.common.security.base.BaseController;
 import cn.zhangchuangla.medicine.llm.model.dto.DrugInfoDto;
 import cn.zhangchuangla.medicine.llm.model.response.AssistantChatResponse;
@@ -23,6 +24,7 @@ import java.util.List;
 @RestController
 @RequestMapping("/assistant")
 @Tag(name = "AI助手")
+@IsAdmin
 public class AssistantController extends BaseController {
 
     private final AssistantService assistantService;

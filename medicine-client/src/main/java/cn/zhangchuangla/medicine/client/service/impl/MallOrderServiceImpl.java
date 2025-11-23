@@ -623,11 +623,6 @@ public class MallOrderServiceImpl extends ServiceImpl<MallOrderMapper, MallOrder
     }
 
     /**
-     * 下单过程中累计销量增量，批量刷新到数据库（防止多次写库）。
-     */
-    private final Map<Long, Integer> salesDeltaCache = new HashMap<>();
-
-    /**
      * 用户取消订单
      * <p>
      * 用户主动取消订单，需要提供取消原因。
@@ -749,25 +744,25 @@ public class MallOrderServiceImpl extends ServiceImpl<MallOrderMapper, MallOrder
         }
     }
 
-    private void accumulateSalesDelta(Long productId, Integer qty) {
-        if (productId == null || qty == null || qty <= 0) {
+    private void accumulateSalesDelta(Map<Long, Integer> cache, Long productId, Integer qty) {
+        if (cache == null || productId == null || qty == null || qty <= 0) {
             return;
         }
-        salesDeltaCache.merge(productId, qty, Integer::sum);
+        cache.merge(productId, qty, Integer::sum);
     }
 
-    private void flushSalesDelta(boolean increase) {
-        if (salesDeltaCache.isEmpty()) {
+    private void flushSalesDelta(Map<Long, Integer> cache, boolean increase) {
+        if (cache == null || cache.isEmpty()) {
             return;
         }
-        List<MallOrderItem> temp = salesDeltaCache.entrySet().stream()
+        List<MallOrderItem> temp = cache.entrySet().stream()
                 .map(e -> MallOrderItem.builder()
                         .productId(e.getKey())
                         .quantity(e.getValue())
                         .build())
                 .toList();
         adjustSalesVolume(temp, increase);
-        salesDeltaCache.clear();
+        cache.clear();
     }
 
     @Override
@@ -1063,6 +1058,7 @@ public class MallOrderServiceImpl extends ServiceImpl<MallOrderMapper, MallOrder
         // 2. 校验商品并计算总金额
         BigDecimal totalAmount = BigDecimal.ZERO;
         List<MallOrderItem> orderItems = new ArrayList<>();
+        Map<Long, Integer> salesDeltaCache = new HashMap<>();
 
         for (MallCart cartItem : cartItems) {
             // 查询商品详情
@@ -1086,6 +1082,9 @@ public class MallOrderServiceImpl extends ServiceImpl<MallOrderMapper, MallOrder
 
             // 扣减库存
             mallProductService.deductStock(product.getId(), cartItem.getCartNum());
+
+            // 记录销量增量（下单即累加，取消会回滚）
+            accumulateSalesDelta(salesDeltaCache, product.getId(), cartItem.getCartNum());
 
             // 计算小计
             BigDecimal itemTotal = product.getPrice()
@@ -1156,7 +1155,7 @@ public class MallOrderServiceImpl extends ServiceImpl<MallOrderMapper, MallOrder
         }
 
         // 6. 批量更新销量
-        flushSalesDelta(true);
+        flushSalesDelta(salesDeltaCache, true);
 
         // 7. 添加订单时间线
         OrderTimelineDto timelineDto = OrderTimelineDto.builder()
