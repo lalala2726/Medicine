@@ -86,6 +86,10 @@
             <artifactId>h2</artifactId>
             <scope>test</scope>
         </dependency>
+        <dependency>
+            <groupId>cn.zhangchuangla.medicine</groupId>
+            <artifactId>medicine-llm</artifactId>
+        </dependency>
     </dependencies>
 
     <build>

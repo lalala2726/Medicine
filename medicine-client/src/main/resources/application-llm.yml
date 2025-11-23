@@ -1,8 +1,11 @@
 spring:
   ai:
     openai:
-      # 这边不要删除，这是占位符,数据库模型信息会从数据库进行读取,如果删除了会导致系统启动失败
-      api-key: _
+      api-key: ${DEEPSEEK_API_KEY}
+      base-url: https://api.deepseek.com/
+      chat:
+        options:
+          model: deepseek-chat
 logging:
   level:
     root: INFO
