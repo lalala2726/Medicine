@@ -32,7 +32,7 @@ public class AssistantController extends BaseController {
     @PostMapping("/parse/drug")
     @Operation(summary = "解析药品图片信息")
     public AjaxResult<DrugInfoDto> parseDrugInfoByImage(@RequestBody parseDrugInfoByImageRequest request) {
-        DrugInfoDto drugInfoDto = assistantService.parseDrugInfoByImage(request.imageUrl);
+        DrugInfoDto drugInfoDto = assistantService.parseDrugInfoByImage(request.imageUrl());
         return success(drugInfoDto);
     }
 

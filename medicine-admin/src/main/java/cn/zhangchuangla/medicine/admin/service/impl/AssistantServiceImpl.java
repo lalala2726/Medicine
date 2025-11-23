@@ -36,13 +36,13 @@ public class AssistantServiceImpl implements AssistantService {
 
     @Override
     public DrugInfoDto parseDrugInfoByImage(List<String> imageUrls) {
-        if (imageUrls == null || imageUrls.isEmpty()) { // 无图片输入直接报参数错误
+        if (imageUrls == null || imageUrls.isEmpty()) {
             throw new ServiceException(ResponseCode.PARAM_ERROR, "图片地址不能为空");
         }
 
-        List<String> base64Images = new ArrayList<>(imageUrls.size()); // 按数量预分配返回列表
-        for (String imageUrl : imageUrls) { // 逐个处理传入的 URL
-            if (imageUrl == null || imageUrl.isBlank()) { // 单个 URL 为空时提示参数错误
+        List<String> base64Images = new ArrayList<>(imageUrls.size());
+        for (String imageUrl : imageUrls) {
+            if (imageUrl == null || imageUrl.isBlank()) {
                 throw new ServiceException(ResponseCode.PARAM_ERROR, "图片地址不能为空");
             }
 
@@ -81,27 +81,34 @@ public class AssistantServiceImpl implements AssistantService {
 
 
     private MinioLocation parseMinioLocation(String imageUrl) {
-        try { // 使用 URI 解析保证地址合法
-            URI uri = new URI(imageUrl); // 构造 URI 对象
-            String path = uri.getPath(); // 仅取路径部分
-            if (path == null || path.isBlank()) { // 路径缺失视为格式错误
+        try {
+            // 构造 URI 对象
+            URI uri = new URI(imageUrl);
+            // 仅取路径部分
+            String path = uri.getPath();
+            if (path == null || path.isBlank()) {
+                throw new ServiceException(ResponseCode.PARAM_ERROR, "图片路径格式不正确");
+            }
+            // 去掉前导斜杠
+            String normalizedPath = path.startsWith("/") ? path.substring(1) : path;
+            // 找到 bucket 与 object 的分隔符
+            int firstSlash = normalizedPath.indexOf('/');
+            // 分隔符位置非法
+            if (firstSlash <= 0 || firstSlash == normalizedPath.length() - 1) {
                 throw new ServiceException(ResponseCode.PARAM_ERROR, "图片路径格式不正确");
             }
 
-            String normalizedPath = path.startsWith("/") ? path.substring(1) : path; // 去掉前导斜杠
-            int firstSlash = normalizedPath.indexOf('/'); // 找到 bucket 与 object 的分隔符
-            if (firstSlash <= 0 || firstSlash == normalizedPath.length() - 1) { // 分隔符位置非法
+            // 提取 bucket 名
+            String bucket = normalizedPath.substring(0, firstSlash);
+            // 提取对象路径
+            String object = normalizedPath.substring(firstSlash + 1);
+            // 任意为空则格式错误
+            if (bucket.isBlank() || object.isBlank()) {
                 throw new ServiceException(ResponseCode.PARAM_ERROR, "图片路径格式不正确");
             }
-
-            String bucket = normalizedPath.substring(0, firstSlash); // 提取 bucket 名
-            String object = normalizedPath.substring(firstSlash + 1); // 提取对象路径
-            if (bucket.isBlank() || object.isBlank()) { // 任意为空则格式错误
-                throw new ServiceException(ResponseCode.PARAM_ERROR, "图片路径格式不正确");
-            }
-
-            return new MinioLocation(bucket, object); // 返回解析结果
-        } catch (URISyntaxException ex) { // URI 解析失败直接提示地址不合法
+            // 返回解析结果
+            return new MinioLocation(bucket, object);
+        } catch (URISyntaxException ex) {
             throw new ServiceException(ResponseCode.PARAM_ERROR, "图片地址格式不正确");
         }
     }

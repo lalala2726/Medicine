@@ -32,8 +32,9 @@ public class LLMParseImageService {
         Assert.notEmpty(imageBase64List, "图片不能为空");
 
         OpenAiApi qwenClient = baseOpenAiApi.mutate()
+                // todo 这边后续统一进行配置
                 .baseUrl("https://dashscope.aliyuncs.com/compatible-mode")
-                .apiKey("sk-4e049723f89c4f018b6cc0f482332f8d")
+                .apiKey(System.getenv("DEEPSEEK_API_KEY"))
                 .build();
 
         // 构造多模态消息：多张图片 + 文本指令
