@@ -16,6 +16,7 @@ import cn.zhangchuangla.medicine.model.vo.mall.OrderShippingVo;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import org.springframework.util.CollectionUtils;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
@@ -55,7 +56,7 @@ public class MallOrderController extends BaseController {
         List<MallOrderListVo> mallOrderListVos = mallOrderPage.getRecords().stream()
                 .map(this::buildOrderListVo)
                 .toList();
-        return getTableData(mallOrderPage,mallOrderListVos);
+        return getTableData(mallOrderPage, mallOrderListVos);
     }
 
     /**
@@ -229,6 +230,23 @@ public class MallOrderController extends BaseController {
     @Operation(summary = "管理员手动确认收货", description = "管理员手动确认订单收货，适用于特殊场景（如客户电话确认等）")
     public AjaxResult<Void> manualConfirmReceipt(@Validated @RequestBody OrderReceiveRequest request) {
         boolean result = mallOrderService.manualConfirmReceipt(request);
+        return toAjax(result);
+    }
+
+
+    /**
+     * 删除订单 订单状态为已完成、已取消或已过期才能被删除
+     *
+     * @param ids 订单ID
+     * @return 删除结果
+     */
+    @DeleteMapping("/{ids}")
+    @Operation(summary = "删除订单")
+    public AjaxResult<Void> deleteOrders(@PathVariable("ids") List<Long> ids) {
+        if (CollectionUtils.isEmpty(ids)) {
+            return error("请选择要删除的订单");
+        }
+        boolean result = mallOrderService.deleteOrders(ids);
         return toAjax(result);
     }
 

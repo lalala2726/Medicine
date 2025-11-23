@@ -26,6 +26,7 @@ import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.util.CollectionUtils;
 import org.springframework.util.StringUtils;
 
 import java.math.BigDecimal;
@@ -948,6 +949,39 @@ public class MallOrderServiceImpl extends ServiceImpl<MallOrderMapper, MallOrder
         mallOrderTimelineService.addTimelineIfNotExists(timelineDto);
 
         log.info("管理员{}手动确认收货成功，订单号：{}，备注：{}", username, mallOrder.getOrderNo(), request.getRemark());
+        return true;
+    }
+
+
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public boolean deleteOrders(List<Long> ids) {
+        if (CollectionUtils.isEmpty(ids)) {
+            throw new ServiceException(ResponseCode.OPERATION_ERROR, "请选择要删除的订单");
+        }
+
+        List<MallOrder> orders = listByIds(ids);
+        if (orders.size() != ids.size()) {
+            throw new ServiceException(ResponseCode.OPERATION_ERROR, "存在无效订单ID，无法删除");
+        }
+
+        // 当订单状态为 已完成、已取消或已过期时，才允许删除
+        for (MallOrder order : orders) {
+            String orderStatus = order.getOrderStatus();
+            boolean deletable = OrderStatusEnum.COMPLETED.getType().equals(orderStatus)
+                    || OrderStatusEnum.CANCELLED.getType().equals(orderStatus)
+                    || OrderStatusEnum.EXPIRED.getType().equals(orderStatus);
+            if (!deletable) {
+                throw new ServiceException(ResponseCode.OPERATION_ERROR, "只有订单状态为已完成、已取消或已过期才能被删除!");
+            }
+        }
+
+        boolean deleted = removeByIds(ids);
+        if (!deleted) {
+            throw new ServiceException(ResponseCode.OPERATION_ERROR, "删除订单失败");
+        }
+
+        orders.forEach(order -> log.info("订单{}删除成功", order.getOrderNo()));
         return true;
     }
 }
