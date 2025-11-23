@@ -3,6 +3,7 @@ package cn.zhangchuangla.medicine.admin.service.impl;
 import cn.zhangchuangla.medicine.admin.service.AssistantService;
 import cn.zhangchuangla.medicine.common.core.enums.ResponseCode;
 import cn.zhangchuangla.medicine.common.core.exception.ServiceException;
+import cn.zhangchuangla.medicine.common.core.utils.ImageUtils;
 import cn.zhangchuangla.medicine.llm.model.dto.DrugInfoDto;
 import cn.zhangchuangla.medicine.llm.service.LLMParseImageService;
 import io.minio.GetObjectArgs;
@@ -52,8 +53,9 @@ public class AssistantServiceImpl implements AssistantService {
                     .build())) {
                 // 一次性读取对象内容
                 byte[] fileBytes = objectStream.readAllBytes();
-                String mimeType = guessMimeType(location.object());
-                String base64WithPrefix = "data:" + mimeType + ";base64," + Base64.getEncoder().encodeToString(fileBytes);
+                String originalMimeType = guessMimeType(location.object());
+                ImageUtils.EncodedImage encoded = ImageUtils.ensureUnder1MB(fileBytes, originalMimeType);
+                String base64WithPrefix = "data:" + encoded.mimeType() + ";base64," + Base64.getEncoder().encodeToString(encoded.data());
                 base64Images.add(base64WithPrefix);
             } catch (Exception ex) {
                 throw new ServiceException(ResponseCode.OPERATION_ERROR, "读取图片失败，请稍后重试");
