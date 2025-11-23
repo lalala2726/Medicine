@@ -1,4 +1,4 @@
-package cn.zhangchuangla.medicine.llm;
+package cn.zhangchuangla.medicine.llm.prompt;
 
 /**
  * 医疗专家节点提示词常量类
@@ -10,7 +10,7 @@ package cn.zhangchuangla.medicine.llm;
  * @author Chuang
  * created on 2025/11/20
  */
-public class PromptConstant {
+public class ExpertPrompt {
 
     public static final String BASE_CONSTRAINT = """
             【重要约束】
