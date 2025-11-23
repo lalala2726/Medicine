@@ -3,6 +3,7 @@ package cn.zhangchuangla.medicine.admin.task;
 import cn.zhangchuangla.medicine.admin.service.MallOrderService;
 import cn.zhangchuangla.medicine.model.entity.MallOrder;
 import cn.zhangchuangla.medicine.model.enums.OrderStatusEnum;
+import cn.zhangchuangla.medicine.model.enums.PayTypeEnum;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
@@ -44,6 +45,7 @@ public class ExpiredOrderClean {
         List<MallOrder> expiredOrders = mallOrderService.getExpiredOrderClean(expiredTime);
         expiredOrders.forEach(order -> {
             order.setOrderStatus(OrderStatusEnum.EXPIRED.getType());
+            order.setPayType(PayTypeEnum.CANCELLED.getType());
             boolean result = mallOrderService.updateById(order);
             if (result) {
                 log.info("订单{}已过期，已更新状态为{}", order.getOrderNo(), OrderStatusEnum.EXPIRED.getType());

@@ -483,6 +483,7 @@ public class MallOrderServiceImpl extends ServiceImpl<MallOrderMapper, MallOrder
         }
 
         mallOrder.setOrderStatus(OrderStatusEnum.CANCELLED.getType());
+        mallOrder.setPayType(PayTypeEnum.CANCELLED.getType());
         mallOrder.setCloseReason(cancelReason);
         mallOrder.setCloseTime(new Date());
         mallOrder.setUpdateTime(new Date());
