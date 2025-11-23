@@ -45,6 +45,10 @@
             <artifactId>lombok</artifactId>
             <scope>provided</scope>
         </dependency>
+        <dependency>
+            <groupId>cn.zhangchuangla.medicine</groupId>
+            <artifactId>medicine-model</artifactId>
+        </dependency>
     </dependencies>
 
     <properties>
