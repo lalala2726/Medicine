@@ -57,7 +57,6 @@ public class MallProductAddRequest {
 
     @Schema(description = "药品说明信息")
     @NotNull(message = "药品说明信息不能为空")
-
     private DrugDetailDto drugDetail;
 
 }

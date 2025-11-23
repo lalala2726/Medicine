@@ -61,6 +61,5 @@ public class MallProductUpdateRequest {
     private List<String> images;
 
     @Schema(description = "商品详情")
-
     private DrugDetailDto drugDetail;
 }
