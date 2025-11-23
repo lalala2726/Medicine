@@ -1,6 +1,6 @@
 package cn.zhangchuangla.medicine.client.model.vo;
 
-import cn.zhangchuangla.medicine.model.dto.MallMedicineDetailDto;
+import cn.zhangchuangla.medicine.model.dto.DrugDetailDto;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 
@@ -41,6 +41,6 @@ public class MallProductVo {
     private List<String> images;
 
     @Schema(description = "药品说明信息")
-    private MallMedicineDetailDto medicineDetail;
+    private DrugDetailDto drugDetail;
 
 }

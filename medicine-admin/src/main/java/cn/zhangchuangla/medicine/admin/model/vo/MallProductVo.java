@@ -1,6 +1,6 @@
 package cn.zhangchuangla.medicine.admin.model.vo;
 
-import cn.zhangchuangla.medicine.model.dto.MallMedicineDetailDto;
+import cn.zhangchuangla.medicine.model.dto.DrugDetailDto;
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.NotNull;
 import lombok.Data;
@@ -69,6 +69,6 @@ public class MallProductVo {
 
     @Schema(description = "药品说明信息")
     @NotNull(message = "药品说明信息不能为空")
-    private MallMedicineDetailDto medicineDetail;
+    private DrugDetailDto drugDetail;
 
 }

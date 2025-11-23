@@ -101,7 +101,7 @@ public class MallProductServiceImpl extends ServiceImpl<MallProductMapper, MallP
         productVo.setPrice(productWithImages.getPrice());
         productVo.setSalesVolume(productWithImages.getSalesVolume());
         productVo.setStock(productWithImages.getStock());
-        productVo.setMedicineDetail(productWithImages.getMedicineDetail());
+        productVo.setDrugDetail(productWithImages.getDrugDetail());
 
         // 提取图片URL列表
         if (productWithImages.getProductImages() != null && !productWithImages.getProductImages().isEmpty()) {

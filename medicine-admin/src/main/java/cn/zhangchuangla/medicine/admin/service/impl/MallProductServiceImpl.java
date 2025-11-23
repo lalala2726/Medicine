@@ -12,7 +12,7 @@ import cn.zhangchuangla.medicine.common.core.utils.Assert;
 import cn.zhangchuangla.medicine.common.security.base.BaseService;
 import cn.zhangchuangla.medicine.common.security.utils.SecurityUtils;
 import cn.zhangchuangla.medicine.model.dto.MallProductDetailDto;
-import cn.zhangchuangla.medicine.model.entity.MallMedicineDetail;
+import cn.zhangchuangla.medicine.model.entity.DrugDetail;
 import cn.zhangchuangla.medicine.model.entity.MallProduct;
 import cn.zhangchuangla.medicine.model.enums.DeliveryTypeEnum;
 import cn.zhangchuangla.medicine.model.request.mall.MallProductAddRequest;
@@ -117,9 +117,9 @@ public class MallProductServiceImpl extends ServiceImpl<MallProductMapper, MallP
         Assert.isTrue(request.getImages() != null && !request.getImages().isEmpty(), "商品图片至少需要上传一张图片");
         mallProductImageService.addProductImages(request.getImages(), product.getId());
         // 上述是通用的商城属性,下面是药品特有的属性
-        MallMedicineDetail mallMedicineDetail = copyProperties(request.getMedicineDetail(), MallMedicineDetail.class);
-        mallMedicineDetail.setProductId(product.getId());
-        boolean result = medicineDetailService.addMedicineDetail(mallMedicineDetail);
+        DrugDetail drugDetail = copyProperties(request.getDrugDetail(), DrugDetail.class);
+        drugDetail.setProductId(product.getId());
+        boolean result = medicineDetailService.addMedicineDetail(drugDetail);
         return save && result;
     }
 
@@ -164,10 +164,10 @@ public class MallProductServiceImpl extends ServiceImpl<MallProductMapper, MallP
         mallProductImageService.updateProductImageById(request.getImages(), existingProduct.getId());
 
         // 更新药品详情
-        if (request.getMedicineDetail() != null) {
-            MallMedicineDetail mallMedicineDetail = copyProperties(request.getMedicineDetail(), MallMedicineDetail.class);
-            mallMedicineDetail.setProductId(existingProduct.getId());
-            medicineDetailService.updateMedicineDetail(mallMedicineDetail);
+        if (request.getDrugDetail() != null) {
+            DrugDetail drugDetail = copyProperties(request.getDrugDetail(), DrugDetail.class);
+            drugDetail.setProductId(existingProduct.getId());
+            medicineDetailService.updateMedicineDetail(drugDetail);
         }
 
         return updateById(existingProduct);

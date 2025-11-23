@@ -24,7 +24,7 @@
 
     <resultMap id="ProductWithImagesResultMap" type="cn.zhangchuangla.medicine.model.dto.MallProductWithImageDto"
                extends="BaseResultMap">
-        <association property="medicineDetail" javaType="cn.zhangchuangla.medicine.model.dto.MallMedicineDetailDto">
+        <association property="drugDetail" javaType="cn.zhangchuangla.medicine.model.dto.DrugDetailDto">
             <result property="commonName" column="med_common_name"/>
             <result property="composition" column="med_composition"/>
             <result property="characteristics" column="med_characteristics"/>
@@ -114,7 +114,7 @@
                md.instruction            AS med_instruction
         FROM mall_product p
                  LEFT JOIN mall_product_image img ON p.id = img.product_id AND (img.is_deleted IS NULL OR img.is_deleted = 0)
-                 LEFT JOIN mall_medicine_detail md ON p.id = md.product_id AND (md.is_deleted IS NULL OR md.is_deleted = 0)
+                 LEFT JOIN drug_detail md ON p.id = md.product_id AND (md.is_deleted IS NULL OR md.is_deleted = 0)
         WHERE (p.is_deleted IS NULL OR p.is_deleted = 0)
         AND p.id = #{productId}
         ORDER BY img.sort, img.create_time

@@ -41,7 +41,7 @@
         <result property="updateBy" column="update_by"/>
         <result property="isDeleted" column="is_deleted"/>
         <result property="categoryName" column="category_name"/>
-        <association property="medicineDetail" javaType="cn.zhangchuangla.medicine.model.dto.MallMedicineDetailDto">
+        <association property="drugDetail" javaType="cn.zhangchuangla.medicine.model.dto.DrugDetailDto">
             <result property="commonName" column="med_common_name"/>
             <result property="composition" column="med_composition"/>
             <result property="characteristics" column="med_characteristics"/>
@@ -151,7 +151,7 @@
         md.instruction AS med_instruction
         FROM mall_product p
         LEFT JOIN mall_category c ON p.category_id = c.id
-        LEFT JOIN mall_medicine_detail md ON p.id = md.product_id AND (md.is_deleted IS NULL OR md.is_deleted = 0)
+        LEFT JOIN drug_detail md ON p.id = md.product_id AND (md.is_deleted IS NULL OR md.is_deleted = 0)
         <where>
             (p.is_deleted IS NULL OR p.is_deleted = 0)
             <if test="request.id != null">
@@ -217,9 +217,9 @@
         FROM mall_product p
                  LEFT JOIN mall_category c ON p.category_id = c.id
                  LEFT JOIN mall_product_image i ON i.product_id = p.id AND (i.is_deleted IS NULL OR i.is_deleted = 0)
-                 LEFT JOIN mall_medicine_detail md ON p.id = md.product_id AND (md.is_deleted IS NULL OR md.is_deleted = 0)
+                 LEFT JOIN drug_detail md ON p.id = md.product_id AND (md.is_deleted IS NULL OR md.is_deleted = 0)
         WHERE (p.is_deleted IS NULL OR p.is_deleted = 0)
-        AND p.id = #{id}
+          AND p.id = #{id}
         ORDER BY i.sort, i.id
     </select>
 </mapper>
