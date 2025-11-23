@@ -3,7 +3,7 @@ package cn.zhangchuangla.medicine.admin.service.impl;
 import cn.zhangchuangla.medicine.admin.mapper.MallMedicineDetailMapper;
 import cn.zhangchuangla.medicine.admin.service.MallMedicineDetailService;
 import cn.zhangchuangla.medicine.common.core.exception.ServiceException;
-import cn.zhangchuangla.medicine.model.entity.MallMedicineDetail;
+import cn.zhangchuangla.medicine.model.entity.DrugDetail;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -19,60 +19,60 @@ import java.util.List;
  */
 @Service
 @RequiredArgsConstructor
-public class MallMedicineDetailServiceImpl extends ServiceImpl<MallMedicineDetailMapper, MallMedicineDetail>
+public class MallMedicineDetailServiceImpl extends ServiceImpl<MallMedicineDetailMapper, DrugDetail>
         implements MallMedicineDetailService {
 
     @Override
     @Transactional(rollbackFor = Exception.class)
-    public boolean addMedicineDetail(MallMedicineDetail mallMedicineDetail) {
-        if (mallMedicineDetail == null) {
+    public boolean addMedicineDetail(DrugDetail drugDetail) {
+        if (drugDetail == null) {
             throw new ServiceException("药品详情不能为空");
         }
-        if (mallMedicineDetail.getProductId() == null) {
+        if (drugDetail.getProductId() == null) {
             throw new ServiceException("商品ID不能为空");
         }
 
         // 检查是否已存在该商品的药品详情
-        MallMedicineDetail existingDetail = lambdaQuery()
-                .eq(MallMedicineDetail::getProductId, mallMedicineDetail.getProductId())
+        DrugDetail existingDetail = lambdaQuery()
+                .eq(DrugDetail::getProductId, drugDetail.getProductId())
                 .one();
 
         if (existingDetail != null) {
             // 如果已存在，更新现有记录
-            mallMedicineDetail.setId(existingDetail.getId());
-            mallMedicineDetail.setUpdateTime(new Date());
-            return updateById(mallMedicineDetail);
+            drugDetail.setId(existingDetail.getId());
+            drugDetail.setUpdateTime(new Date());
+            return updateById(drugDetail);
         }
 
         // 不存在则新增
-        mallMedicineDetail.setCreateTime(new Date());
-        return save(mallMedicineDetail);
+        drugDetail.setCreateTime(new Date());
+        return save(drugDetail);
     }
 
     @Override
     @Transactional(rollbackFor = Exception.class)
-    public boolean updateMedicineDetail(MallMedicineDetail mallMedicineDetail) {
-        if (mallMedicineDetail == null) {
+    public boolean updateMedicineDetail(DrugDetail drugDetail) {
+        if (drugDetail == null) {
             throw new ServiceException("药品详情不能为空");
         }
-        if (mallMedicineDetail.getProductId() == null) {
+        if (drugDetail.getProductId() == null) {
             throw new ServiceException("商品ID不能为空");
         }
 
         // 查询现有的药品详情
-        MallMedicineDetail existingDetail = lambdaQuery()
-                .eq(MallMedicineDetail::getProductId, mallMedicineDetail.getProductId())
+        DrugDetail existingDetail = lambdaQuery()
+                .eq(DrugDetail::getProductId, drugDetail.getProductId())
                 .one();
 
         if (existingDetail == null) {
             // 不存在则新增
-            return addMedicineDetail(mallMedicineDetail);
+            return addMedicineDetail(drugDetail);
         }
 
         // 更新记录
-        mallMedicineDetail.setId(existingDetail.getId());
-        mallMedicineDetail.setUpdateTime(new Date());
-        return updateById(mallMedicineDetail);
+        drugDetail.setId(existingDetail.getId());
+        drugDetail.setUpdateTime(new Date());
+        return updateById(drugDetail);
     }
 
     @Override
@@ -83,7 +83,7 @@ public class MallMedicineDetailServiceImpl extends ServiceImpl<MallMedicineDetai
         }
 
         return lambdaUpdate()
-                .eq(MallMedicineDetail::getProductId, productId)
+                .eq(DrugDetail::getProductId, productId)
                 .remove();
     }
 
@@ -95,7 +95,7 @@ public class MallMedicineDetailServiceImpl extends ServiceImpl<MallMedicineDetai
         }
 
         return lambdaUpdate()
-                .in(MallMedicineDetail::getProductId, productIds)
+                .in(DrugDetail::getProductId, productIds)
                 .remove();
     }
 }

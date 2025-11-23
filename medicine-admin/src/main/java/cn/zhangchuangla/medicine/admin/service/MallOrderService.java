@@ -191,4 +191,12 @@ public interface MallOrderService extends IService<MallOrder> {
      * @return 是否成功
      */
     boolean manualConfirmReceipt(OrderReceiveRequest request);
+
+    /**
+     * 删除订单
+     *
+     * @param ids 订单ID列表
+     * @return 是否成功
+     */
+    boolean deleteOrders(List<Long> ids);
 }

@@ -14,12 +14,12 @@ import java.util.Date;
 /**
  * 药品详细信息表
  */
-@TableName(value = "mall_medicine_detail")
+@TableName(value = "drug_detail")
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
 @Builder
-public class MallMedicineDetail {
+public class DrugDetail {
 
     /**
      * 主键ID

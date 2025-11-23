@@ -34,7 +34,12 @@ public enum PayTypeEnum {
     /**
      * 待支付
      */
-    WAIT_PAY("WAIT_PAY", "待支付");
+    WAIT_PAY("WAIT_PAY", "待支付"),
+
+    /**
+     * 订单已取消
+     */
+    CANCELLED("CANCELLED", "订单已取消");
 
     /**
      * 枚举值

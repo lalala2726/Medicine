@@ -24,5 +24,5 @@ public class MallProductDetailDto extends MallProduct {
     /**
      * 药品详细信息
      */
-    private MallMedicineDetailDto medicineDetail;
+    private DrugDetailDto drugDetail;
 }

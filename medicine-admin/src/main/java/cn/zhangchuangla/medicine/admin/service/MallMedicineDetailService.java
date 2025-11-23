@@ -1,6 +1,6 @@
 package cn.zhangchuangla.medicine.admin.service;
 
-import cn.zhangchuangla.medicine.model.entity.MallMedicineDetail;
+import cn.zhangchuangla.medicine.model.entity.DrugDetail;
 import com.baomidou.mybatisplus.extension.service.IService;
 
 import java.util.List;
@@ -10,23 +10,23 @@ import java.util.List;
  *
  * @author Chuang
  */
-public interface MallMedicineDetailService extends IService<MallMedicineDetail> {
+public interface MallMedicineDetailService extends IService<DrugDetail> {
 
     /**
      * 添加药品详情
      *
-     * @param mallMedicineDetail 药品详情
+     * @param drugDetail 药品详情
      * @return 添加结果
      */
-    boolean addMedicineDetail(MallMedicineDetail mallMedicineDetail);
+    boolean addMedicineDetail(DrugDetail drugDetail);
 
     /**
      * 更新药品详情
      *
-     * @param mallMedicineDetail 药品详情
+     * @param drugDetail 药品详情
      * @return 更新结果
      */
-    boolean updateMedicineDetail(MallMedicineDetail mallMedicineDetail);
+    boolean updateMedicineDetail(DrugDetail drugDetail);
 
     /**
      * 根据商品ID删除药品详情

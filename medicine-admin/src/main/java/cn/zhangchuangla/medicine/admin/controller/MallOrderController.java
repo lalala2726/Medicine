@@ -5,6 +5,7 @@ import cn.zhangchuangla.medicine.admin.model.vo.*;
 import cn.zhangchuangla.medicine.admin.service.MallOrderService;
 import cn.zhangchuangla.medicine.admin.service.MallOrderTimelineService;
 import cn.zhangchuangla.medicine.common.core.base.AjaxResult;
+import cn.zhangchuangla.medicine.common.core.base.TableDataResult;
 import cn.zhangchuangla.medicine.common.core.utils.BeanCotyUtils;
 import cn.zhangchuangla.medicine.common.security.annotation.IsAdmin;
 import cn.zhangchuangla.medicine.common.security.base.BaseController;
@@ -15,6 +16,7 @@ import cn.zhangchuangla.medicine.model.vo.mall.OrderShippingVo;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import org.springframework.util.CollectionUtils;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
@@ -49,12 +51,12 @@ public class MallOrderController extends BaseController {
      */
     @GetMapping("/list")
     @Operation(summary = "订单列表")
-    public AjaxResult<List<MallOrderListVo>> orderList(MallOrderListRequest request) {
+    public AjaxResult<TableDataResult> orderList(MallOrderListRequest request) {
         Page<OrderWithProductDto> mallOrderPage = mallOrderService.orderWithProduct(request);
         List<MallOrderListVo> mallOrderListVos = mallOrderPage.getRecords().stream()
                 .map(this::buildOrderListVo)
                 .toList();
-        return success(mallOrderListVos);
+        return getTableData(mallOrderPage, mallOrderListVos);
     }
 
     /**
@@ -228,6 +230,23 @@ public class MallOrderController extends BaseController {
     @Operation(summary = "管理员手动确认收货", description = "管理员手动确认订单收货，适用于特殊场景（如客户电话确认等）")
     public AjaxResult<Void> manualConfirmReceipt(@Validated @RequestBody OrderReceiveRequest request) {
         boolean result = mallOrderService.manualConfirmReceipt(request);
+        return toAjax(result);
+    }
+
+
+    /**
+     * 删除订单 订单状态为已完成、已取消或已过期才能被删除
+     *
+     * @param ids 订单ID
+     * @return 删除结果
+     */
+    @DeleteMapping("/{ids}")
+    @Operation(summary = "删除订单")
+    public AjaxResult<Void> deleteOrders(@PathVariable("ids") List<Long> ids) {
+        if (CollectionUtils.isEmpty(ids)) {
+            return error("请选择要删除的订单");
+        }
+        boolean result = mallOrderService.deleteOrders(ids);
         return toAjax(result);
     }
 

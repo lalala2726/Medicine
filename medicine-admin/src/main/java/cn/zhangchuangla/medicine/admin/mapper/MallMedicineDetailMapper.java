@@ -1,12 +1,12 @@
 package cn.zhangchuangla.medicine.admin.mapper;
 
-import cn.zhangchuangla.medicine.model.entity.MallMedicineDetail;
+import cn.zhangchuangla.medicine.model.entity.DrugDetail;
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
 
 /**
  * @author Chuang
  */
-public interface MallMedicineDetailMapper extends BaseMapper<MallMedicineDetail> {
+public interface MallMedicineDetailMapper extends BaseMapper<DrugDetail> {
 
 }
 

@@ -15,7 +15,7 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 @NoArgsConstructor
 @Builder
-public class MallMedicineDetailDto {
+public class DrugDetailDto {
 
     @Schema(description = "药品通用名", example = "喉咙清颗粒")
     private String commonName;

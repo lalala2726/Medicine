@@ -1,6 +1,6 @@
 package cn.zhangchuangla.medicine.model.request.mall;
 
-import cn.zhangchuangla.medicine.model.dto.MallMedicineDetailDto;
+import cn.zhangchuangla.medicine.model.dto.DrugDetailDto;
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotEmpty;
@@ -61,5 +61,5 @@ public class MallProductUpdateRequest {
     private List<String> images;
 
     @Schema(description = "商品详情")
-    private MallMedicineDetailDto medicineDetail;
+    private DrugDetailDto drugDetail;
 }

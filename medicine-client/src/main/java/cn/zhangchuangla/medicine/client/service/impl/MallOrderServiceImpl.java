@@ -662,6 +662,7 @@ public class MallOrderServiceImpl extends ServiceImpl<MallOrderMapper, MallOrder
         // 4. 更新订单状态为已取消
         Date now = new Date();
         mallOrder.setOrderStatus(OrderStatusEnum.CANCELLED.getType());
+        mallOrder.setPayType(PayTypeEnum.CANCELLED.getType());
         mallOrder.setCloseReason(request.getCancelReason());
         mallOrder.setCloseTime(now);
         mallOrder.setUpdateTime(now);
