@@ -22,12 +22,6 @@ public class AdminAssistantTools {
         this.providerLoader = providerLoader;
     }
 
-    @Tool(name = "get_current_admin_user", description = "获取当前登录管理员的基础信息（含昵称、手机号、登录时间、累计订单等）")
-    public AdminUserSnapshot currentUser() {
-        return requireProvider().currentUser()
-                .orElseThrow(() -> new IllegalStateException("未获取到当前管理员信息"));
-    }
-
     @Tool(name = "count_total_users", description = "统计当前平台注册用户总数")
     public long totalUsers() {
         return requireProvider().totalUserCount();
@@ -71,6 +65,42 @@ public class AdminAssistantTools {
     public ProductSnapshot getProductById(@ToolParam(description = "商品ID") Long productId) {
         return requireProvider().findProductById(productId)
                 .orElseThrow(() -> new IllegalArgumentException("未找到对应的商品"));
+    }
+
+    @Tool(name = "get_analytics_overview", description = "获取运营分析总览数据：用户、订单、退款金额等")
+    public AnalyticsOverviewSnapshot analyticsOverview() {
+        return requireProvider().analyticsOverview();
+    }
+
+    @Tool(name = "get_order_trend", description = "按日/周/月获取订单趋势数据，便于绘制折线图")
+    public List<OrderTrendPointSnapshot> orderTrend(
+            @ToolParam(description = "周期：DAY/WEEK/MONTH，默认 DAY") String period) {
+        String safePeriod = period == null || period.isBlank() ? "DAY" : period.trim().toUpperCase();
+        return requireProvider().orderTrend(safePeriod);
+    }
+
+    @Tool(name = "get_order_status_distribution", description = "获取订单状态分布，用于饼图/柱状图")
+    public List<StatusDistributionSnapshot> orderStatusDistribution() {
+        return requireProvider().orderStatusDistribution();
+    }
+
+    @Tool(name = "get_payment_distribution", description = "获取支付方式分布，用于饼图/柱状图")
+    public List<PaymentDistributionSnapshot> paymentDistribution() {
+        return requireProvider().paymentDistribution();
+    }
+
+    @Tool(name = "get_hot_products", description = "获取热销商品排行榜，按销量和销售额排序")
+    public List<HotProductRankSnapshot> hotProducts(
+            @ToolParam(description = "返回的商品条数，默认 10") Integer limit) {
+        int safeLimit = limit == null || limit <= 0 ? 10 : Math.min(limit, 50);
+        return requireProvider().hotProducts(safeLimit);
+    }
+
+    @Tool(name = "get_product_return_rates", description = "获取商品退货率排行，含售出数和退货率")
+    public List<ReturnRateStatSnapshot> productReturnRates(
+            @ToolParam(description = "返回的商品条数，默认 10") Integer limit) {
+        int safeLimit = limit == null || limit <= 0 ? 10 : Math.min(limit, 50);
+        return requireProvider().productReturnRates(safeLimit);
     }
 
     @Tool(name = "current_datetime", description = "获取当前系统时间（UTC+8），用于回答时间相关问题")
