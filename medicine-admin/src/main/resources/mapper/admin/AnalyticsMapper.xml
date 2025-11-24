@@ -73,15 +73,14 @@
             moi.product_id     AS productId,
             mp.name            AS productName,
             SUM(moi.quantity)  AS quantity,
-            IFNULL(SUM(moi.total_price), 0) AS amount,
-            IFNULL(mp.sales_volume, 0) AS salesVolume
+            IFNULL(SUM(moi.total_price), 0) AS amount
         FROM mall_order_item moi
                  INNER JOIN mall_order mo ON moi.order_id = mo.id
                  INNER JOIN mall_product mp ON moi.product_id = mp.id
         WHERE mo.is_deleted = 0
           AND mp.is_deleted = 0
           AND mo.paid = 1
-        GROUP BY moi.product_id, mp.name, mp.sales_volume
+        GROUP BY moi.product_id, mp.name
         ORDER BY quantity DESC
         LIMIT #{limit}
     </select>

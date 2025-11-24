@@ -100,7 +100,6 @@ public class AnalyticsServiceImpl implements AnalyticsService {
         list.forEach(item -> {
             item.setQuantity(defaultLong(item.getQuantity()));
             item.setAmount(defaultBigDecimal(item.getAmount()));
-            item.setSalesVolume(defaultLong(item.getSalesVolume()));
         });
         return list;
     }

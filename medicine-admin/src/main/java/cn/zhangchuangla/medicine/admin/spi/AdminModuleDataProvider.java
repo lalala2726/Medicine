@@ -196,7 +196,7 @@ public class AdminModuleDataProvider implements AdminDataProvider {
             String like = keyword == null ? "" : keyword.trim();
             List<MallProduct> products = mallProductService().lambdaQuery()
                     .like(!like.isEmpty(), MallProduct::getName, like)
-                    .orderByDesc(MallProduct::getSalesVolume)
+                    .orderByDesc(MallProduct::getUpdateTime)
                     .last("LIMIT " + limit)
                     .list();
             if (products == null || products.isEmpty()) {
@@ -310,7 +310,6 @@ public class AdminModuleDataProvider implements AdminDataProvider {
             snapshot.setName(p.getName());
             snapshot.setPrice(p.getPrice());
             snapshot.setStock(p.getStock());
-            snapshot.setSalesVolume(p.getSalesVolume());
             snapshot.setStatus(p.getStatus());
             snapshot.setDeliveryType(p.getDeliveryType());
             return snapshot;

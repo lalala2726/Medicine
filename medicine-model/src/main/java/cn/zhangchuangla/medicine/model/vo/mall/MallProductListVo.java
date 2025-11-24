@@ -34,9 +34,6 @@ public class MallProductListVo {
     @Schema(description = "基础售价", example = "29.90")
     private BigDecimal price;
 
-    @Schema(description = "销量", example = "100")
-    private Long salesVolume;
-
     @Schema(description = "商品库存数量", example = "50")
     private Integer stock;
 

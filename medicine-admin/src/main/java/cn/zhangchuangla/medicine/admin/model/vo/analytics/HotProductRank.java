@@ -20,7 +20,4 @@ public class HotProductRank {
 
     @Schema(description = "销售额")
     private BigDecimal amount;
-
-    @Schema(description = "累计销量（存量字段）")
-    private Long salesVolume;
 }

@@ -67,7 +67,6 @@ public class MallProductServiceImpl extends ServiceImpl<MallProductMapper, MallP
                         .productName(product.getName())
                         .cover(imageMap.get(product.getId()))
                         .price(product.getPrice())
-                        .salesVolume(product.getSalesVolume() != null ? product.getSalesVolume() : 0)
                         .build()
         ).toList();
     }
@@ -100,7 +99,6 @@ public class MallProductServiceImpl extends ServiceImpl<MallProductMapper, MallP
         productVo.setName(productWithImages.getName());
         productVo.setUnit(productWithImages.getUnit());
         productVo.setPrice(productWithImages.getPrice());
-        productVo.setSalesVolume(productWithImages.getSalesVolume());
         productVo.setStock(productWithImages.getStock());
         productVo.setDrugDetail(productWithImages.getDrugDetail());
 

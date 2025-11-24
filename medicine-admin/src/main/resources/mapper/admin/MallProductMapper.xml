@@ -10,7 +10,6 @@
         <result property="categoryId" column="category_id"/>
         <result property="unit" column="unit"/>
         <result property="price" column="price"/>
-        <result property="salesVolume" column="sales_volume"/>
         <result property="stock" column="stock"/>
         <result property="sort" column="sort"/>
         <result property="status" column="status"/>
@@ -29,7 +28,6 @@
         <result property="categoryId" column="category_id"/>
         <result property="unit" column="unit"/>
         <result property="price" column="price"/>
-        <result property="salesVolume" column="sales_volume"/>
         <result property="stock" column="stock"/>
         <result property="sort" column="sort"/>
         <result property="status" column="status"/>
@@ -69,7 +67,7 @@
     </resultMap>
 
     <sql id="Base_Column_List">
-        id,name,category_id,unit,price,sales_volume,
+        id,name,category_id,unit,price,
         stock,sort,status,delivery_type,version,
         create_time,update_time,
         create_by,update_by
@@ -110,7 +108,6 @@
         p.category_id,
         p.unit,
         p.price,
-        p.sales_volume,
         p.stock,
         p.sort,
         p.status,
@@ -182,7 +179,6 @@
                p.category_id,
                p.unit,
                p.price,
-               p.sales_volume,
                p.stock,
                p.sort,
                p.status,
