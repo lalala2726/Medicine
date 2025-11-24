@@ -1,6 +1,7 @@
 package cn.zhangchuangla.medicine.llm.tool;
 
 import cn.zhangchuangla.medicine.llm.model.tool.*;
+import cn.zhangchuangla.medicine.llm.model.tool.analysis.LineAnalysis;
 import cn.zhangchuangla.medicine.llm.spi.AdminDataProvider;
 import cn.zhangchuangla.medicine.llm.spi.AdminDataProviderLoader;
 import org.springframework.ai.tool.annotation.Tool;
@@ -73,10 +74,25 @@ public class AdminAssistantTools {
     }
 
     @Tool(name = "get_order_trend", description = "按日/周/月获取订单趋势数据，便于绘制折线图")
-    public List<OrderTrendPointSnapshot> orderTrend(
+    public List<LineAnalysis> orderTrend(
             @ToolParam(description = "周期：DAY/WEEK/MONTH，默认 DAY") String period) {
         String safePeriod = period == null || period.isBlank() ? "DAY" : period.trim().toUpperCase();
-        return requireProvider().orderTrend(safePeriod);
+        List<OrderTrendPointSnapshot> orderTrendPointSnapshots = requireProvider().orderTrend(safePeriod);
+
+        return orderTrendPointSnapshots.stream()
+                .flatMap(orderTrendPointSnapshot -> {
+                    LineAnalysis orderCountAnalysis = new LineAnalysis();
+                    orderCountAnalysis.setValue(Math.toIntExact(orderTrendPointSnapshot.getOrderCount()));
+                    orderCountAnalysis.setTime(orderTrendPointSnapshot.getLabel());
+                    orderCountAnalysis.setGroup("订单数量");
+
+                    LineAnalysis orderAmountAnalysis = new LineAnalysis();
+                    orderAmountAnalysis.setValue(orderTrendPointSnapshot.getOrderAmount().intValue());
+                    orderAmountAnalysis.setTime(orderTrendPointSnapshot.getLabel());
+                    orderAmountAnalysis.setGroup("订单金额");
+
+                    return java.util.stream.Stream.of(orderCountAnalysis, orderAmountAnalysis);
+                }).toList();
     }
 
     @Tool(name = "get_order_status_distribution", description = "获取订单状态分布，用于饼图/柱状图")
@@ -103,6 +119,21 @@ public class AdminAssistantTools {
         return requireProvider().productReturnRates(safeLimit);
     }
 
+    @Tool(name = "list_supported_chart_types", description = "获取聊天中支持的图表类型及适用场景，返回名称、消息语言标识(type)和推荐场景")
+    public List<ChartTemplateRegistry.ChartDescriptor> listSupportedCharts() {
+        return ChartTemplateRegistry.descriptors();
+    }
+
+    @Tool(name = "get_chart_sample_by_name", description = "根据图表名称或类型获取演示数据与字段注释，便于前端按需渲染，不会一次性返回全部图表配置")
+    public ChartTemplateRegistry.ChartSample getChartSample(
+            @ToolParam(description = "图表名称或语言标识，例如 折线图/line/柱状图/column") String nameOrType) {
+        if (nameOrType == null || nameOrType.isBlank()) {
+            throw new IllegalArgumentException("图表名称/标识不能为空");
+        }
+        return ChartTemplateRegistry.sampleByNameOrType(nameOrType)
+                .orElseThrow(() -> new IllegalArgumentException("未找到对应的图表类型"));
+    }
+
     @Tool(name = "current_datetime", description = "获取当前系统时间（UTC+8），用于回答时间相关问题")
     public Map<String, String> currentDateTime() {
         java.time.ZonedDateTime now = java.time.ZonedDateTime.now(java.time.ZoneId.of("Asia/Shanghai"));
@@ -117,4 +148,5 @@ public class AdminAssistantTools {
         return providerLoader.getProvider()
                 .orElseThrow(() -> new IllegalStateException("未发现 admin SPI 提供者，请检查 admin 模块是否正确注册"));
     }
+
 }

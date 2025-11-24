@@ -75,10 +75,10 @@ public class LLMParseImageService {
     }
 
     public Flux<AssistantChatResponse> chat(String userMessage) {
-        String message = SystemPrompt.ADMIN_ASSISTANT_PROMPT.replace("{{userInput}}", userMessage);
         return chatClient.prompt()
                 .tools(adminAssistantTools)
-                .system(message)
+                .system(SystemPrompt.ADMIN_ASSISTANT_PROMPT)
+                .user(userMessage)
                 .stream()
                 .content()
                 .map(content -> {
