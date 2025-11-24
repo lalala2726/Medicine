@@ -5,10 +5,12 @@ import cn.zhangchuangla.medicine.common.core.enums.ResponseCode;
 import cn.zhangchuangla.medicine.common.core.exception.ServiceException;
 import cn.zhangchuangla.medicine.common.core.utils.ImageUtils;
 import cn.zhangchuangla.medicine.llm.model.dto.DrugInfoDto;
+import cn.zhangchuangla.medicine.llm.model.response.AssistantChatResponse;
 import cn.zhangchuangla.medicine.llm.service.LLMParseImageService;
 import io.minio.GetObjectArgs;
 import io.minio.MinioClient;
 import org.springframework.stereotype.Service;
+import reactor.core.publisher.Flux;
 
 import java.io.InputStream;
 import java.net.URI;
@@ -63,6 +65,11 @@ public class AssistantServiceImpl implements AssistantService {
         }
         // 将带 data URI 前缀的 Base64 列表传给大模型
         return llmParseImageService.parseImage(base64Images);
+    }
+
+    @Override
+    public Flux<AssistantChatResponse> chat(String message) {
+        return llmParseImageService.chat(message);
     }
 
     private String guessMimeType(String objectName) {

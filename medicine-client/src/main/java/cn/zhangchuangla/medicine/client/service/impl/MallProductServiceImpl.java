@@ -2,6 +2,7 @@ package cn.zhangchuangla.medicine.client.service.impl;
 
 import cn.zhangchuangla.medicine.client.enums.ProductViewPeriod;
 import cn.zhangchuangla.medicine.client.mapper.MallProductMapper;
+import cn.zhangchuangla.medicine.client.model.vo.MallProductVo;
 import cn.zhangchuangla.medicine.client.service.MallProductImageService;
 import cn.zhangchuangla.medicine.client.service.MallProductService;
 import cn.zhangchuangla.medicine.common.core.enums.ResponseCode;
@@ -81,7 +82,7 @@ public class MallProductServiceImpl extends ServiceImpl<MallProductMapper, MallP
     }
 
     @Override
-    public cn.zhangchuangla.medicine.client.model.vo.MallProductVo getMallProductDetail(Long id) {
+    public MallProductVo getMallProductDetail(Long id) {
         if (id == null) {
             throw new ServiceException(ResponseCode.PARAM_ERROR, "商品ID不能为空");
         }

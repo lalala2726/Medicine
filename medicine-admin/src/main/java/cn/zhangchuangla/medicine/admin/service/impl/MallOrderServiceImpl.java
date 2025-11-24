@@ -502,6 +502,8 @@ public class MallOrderServiceImpl extends ServiceImpl<MallOrderMapper, MallOrder
                     log.info("恢复商品库存，商品ID：{}，数量：{}", orderItem.getProductId(), orderItem.getQuantity());
                 }
             }
+            // 取消订单时回滚销量（按商品数量）
+            adjustSalesVolume(orderItems, false);
         }
 
         // 7. 添加订单时间线记录
@@ -879,7 +881,11 @@ public class MallOrderServiceImpl extends ServiceImpl<MallOrderMapper, MallOrder
             mallOrderShippingService.updateById(shipping);
         }
 
-        // 5. 添加订单时间线记录（标记为系统自动）
+        // 5. 累加销量（按商品数量）
+        List<MallOrderItem> orderItems = mallOrderItemService.getOrderItemByOrderId(orderId);
+        adjustSalesVolume(orderItems, true);
+
+        // 6. 添加订单时间线记录（标记为系统自动）
         OrderTimelineDto timelineDto = OrderTimelineDto.builder()
                 .orderId(mallOrder.getId())
                 .eventType(OrderEventTypeEnum.ORDER_RECEIVED.getType())
@@ -932,7 +938,11 @@ public class MallOrderServiceImpl extends ServiceImpl<MallOrderMapper, MallOrder
             mallOrderShippingService.updateById(shipping);
         }
 
-        // 5. 添加订单时间线记录（标记为管理员操作）
+        // 5. 累加销量（按商品数量）
+        List<MallOrderItem> orderItems = mallOrderItemService.getOrderItemByOrderId(request.getOrderId());
+        adjustSalesVolume(orderItems, true);
+
+        // 6. 添加订单时间线记录（标记为管理员操作）
         String username = SecurityUtils.getUsername();
         String description = String.format("管理员%s手动确认收货", username);
         if (request.getRemark() != null && !request.getRemark().trim().isEmpty()) {
@@ -983,5 +993,46 @@ public class MallOrderServiceImpl extends ServiceImpl<MallOrderMapper, MallOrder
 
         orders.forEach(order -> log.info("订单{}删除成功", order.getOrderNo()));
         return true;
+    }
+
+    /**
+     * 按订单项调整销量；increase=true 增加销量，false 回滚销量。
+     */
+    private void adjustSalesVolume(List<MallOrderItem> orderItems, boolean increase) {
+        if (orderItems == null || orderItems.isEmpty()) {
+            return;
+        }
+
+        Map<Long, Integer> qtyByProduct = orderItems.stream()
+                .filter(Objects::nonNull)
+                .filter(item -> item.getProductId() != null && item.getQuantity() != null)
+                .collect(Collectors.toMap(MallOrderItem::getProductId, MallOrderItem::getQuantity, Integer::sum));
+
+        if (qtyByProduct.isEmpty()) {
+            return;
+        }
+
+        List<MallProduct> products = mallProductService.listByIds(qtyByProduct.keySet());
+        if (products == null || products.isEmpty()) {
+            return;
+        }
+
+        for (MallProduct product : products) {
+            if (product == null || product.getId() == null) {
+                continue;
+            }
+            int delta = qtyByProduct.getOrDefault(product.getId(), 0);
+            if (delta <= 0) {
+                continue;
+            }
+            long current = product.getSalesVolume() == null ? 0L : product.getSalesVolume();
+            long newVolume = increase ? current + delta : Math.max(0L, current - delta);
+
+            MallProduct update = new MallProduct();
+            update.setId(product.getId());
+            update.setSalesVolume(newVolume);
+            mallProductService.updateById(update);
+            log.info("调整商品销量 productId={}, delta={}, increase={}, newVolume={}", product.getId(), delta, increase, newVolume);
+        }
     }
 }
