@@ -271,5 +271,6 @@
         <module>medicine-client</module>
         <module>medicine-payment</module>
         <module>medicine-llm</module>
+        <module>medicine-common/medicine-common-es</module>
     </modules>
 </project>

@@ -124,6 +124,7 @@ public class AdminModuleDataProvider implements AdminDataProvider {
 
             List<MallOrder> paidOrders = orderService.lambdaQuery()
                     .eq(MallOrder::getPaid, PAID_FLAG)
+                    .notIn(MallOrder::getOrderStatus, OrderStatusEnum.CANCELLED.getType(), OrderStatusEnum.REFUNDED.getType())
                     .select(MallOrder::getPayAmount)
                     .list();
             snapshot.setTotalSales(sumAmounts(paidOrders.stream()
