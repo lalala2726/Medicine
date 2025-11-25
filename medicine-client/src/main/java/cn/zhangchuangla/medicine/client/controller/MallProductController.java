@@ -41,6 +41,7 @@ public class MallProductController extends BaseController {
      */
     @GetMapping("/recommend")
     @Operation(summary = "商品推荐")
+    @Anonymous
     public AjaxResult<List<RecommendListVo>> recommend() {
         List<RecommendListVo> mallProducts = mallProductService.recommend();
         return success(mallProducts);
