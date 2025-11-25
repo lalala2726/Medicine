@@ -659,6 +659,9 @@ public class MallOrderServiceImpl extends ServiceImpl<MallOrderMapper, MallOrder
                     String.format("当前订单状态[%s]不允许取消", statusName));
         }
 
+        // 记录取消前的状态，避免发货后误恢复库存
+        String originalStatus = mallOrder.getOrderStatus();
+
         // 4. 更新订单状态为已取消
         Date now = new Date();
         mallOrder.setOrderStatus(OrderStatusEnum.CANCELLED.getType());

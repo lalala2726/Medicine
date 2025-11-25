@@ -14,7 +14,7 @@ public interface MallInventoryService {
     /**
      * 恢复商品库存
      * <p>
-     * 用于订单取消或退款时恢复商品库存数量
+     * 用于订单取消或未支付超时关闭时恢复商品库存数量
      *
      * @param productId 商品ID
      * @param quantity  恢复数量

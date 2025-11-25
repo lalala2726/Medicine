@@ -411,9 +411,8 @@ public class MallOrderServiceImpl extends ServiceImpl<MallOrderMapper, MallOrder
     public boolean cancelOrder(OrderCancelRequest request) {
         // 1. 查询订单并校验状态
         MallOrder mallOrder = getOrderById(request.getOrderId());
-
-        // 2. 校验订单状态是否允许取消
         OrderStatusEnum orderStatusEnum = OrderStatusEnum.fromCode(mallOrder.getOrderStatus());
+
         if (orderStatusEnum == null) {
             throw new ServiceException(ResponseCode.OPERATION_ERROR, "订单状态异常");
         }
@@ -425,12 +424,7 @@ public class MallOrderServiceImpl extends ServiceImpl<MallOrderMapper, MallOrder
                     String.format("当前订单状态[%s]不允许取消", orderStatusEnum.getName()));
         }
 
-        // 3. 查询订单项，用于恢复库存
-        List<MallOrderItem> orderItems = mallOrderItemService.lambdaQuery()
-                .eq(MallOrderItem::getOrderId, mallOrder.getId())
-                .list();
-
-        // 4. 如果订单已支付，需要先退款
+        // 3. 如果订单已支付，需要先退款
         if (Objects.equals(mallOrder.getPaid(), PAID_FLAG)) {
             log.info("订单{}已支付，执行全额退款", mallOrder.getOrderNo());
 
@@ -477,7 +471,7 @@ public class MallOrderServiceImpl extends ServiceImpl<MallOrderMapper, MallOrder
             mallOrder.setRefundStatus(REFUND_STATUS_SUCCESS);
         }
 
-        // 5. 更新订单状态为已取消
+        // 4. 更新订单状态为已取消
         String cancelReason = request.getCancelReason();
         if (!StringUtils.hasText(cancelReason)) {
             cancelReason = "管理员取消订单";
@@ -494,17 +488,27 @@ public class MallOrderServiceImpl extends ServiceImpl<MallOrderMapper, MallOrder
             throw new ServiceException(ResponseCode.OPERATION_ERROR, "取消订单失败");
         }
 
-        // 6. 恢复库存
-        if (orderItems != null && !orderItems.isEmpty()) {
-            for (MallOrderItem orderItem : orderItems) {
-                if (orderItem != null && orderItem.getProductId() != null && orderItem.getQuantity() != null) {
-                    mallInventoryService.restoreStock(orderItem.getProductId(), orderItem.getQuantity());
-                    log.info("恢复商品库存，商品ID：{}，数量：{}", orderItem.getProductId(), orderItem.getQuantity());
+        // 5. 恢复库存
+        boolean restoreStockAllowed = orderStatusEnum == OrderStatusEnum.PENDING_PAYMENT
+                || orderStatusEnum == OrderStatusEnum.PENDING_SHIPMENT;
+        if (restoreStockAllowed) {
+            List<MallOrderItem> orderItems = mallOrderItemService.lambdaQuery()
+                    .eq(MallOrderItem::getOrderId, mallOrder.getId())
+                    .list();
+
+            if (!CollectionUtils.isEmpty(orderItems)) {
+                for (MallOrderItem orderItem : orderItems) {
+                    if (orderItem != null && orderItem.getProductId() != null && orderItem.getQuantity() != null) {
+                        mallInventoryService.restoreStock(orderItem.getProductId(), orderItem.getQuantity());
+                        log.info("恢复商品库存，商品ID：{}，数量：{}", orderItem.getProductId(), orderItem.getQuantity());
+                    }
                 }
             }
+        } else {
+            log.info("订单{}已进入发货或售后流程，取消时不恢复库存", mallOrder.getOrderNo());
         }
 
-        // 7. 添加订单时间线记录
+        // 6. 添加订单时间线记录
         OrderTimelineDto timelineDto = OrderTimelineDto.builder()
                 .orderId(mallOrder.getId())
                 .eventType(OrderEventTypeEnum.ORDER_CANCELLED.getType())
