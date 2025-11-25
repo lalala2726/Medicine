@@ -3,7 +3,6 @@ package cn.zhangchuangla.medicine.client.controller;
 import cn.zhangchuangla.medicine.client.enums.ProductViewPeriod;
 import cn.zhangchuangla.medicine.client.model.vo.MallProductVo;
 import cn.zhangchuangla.medicine.client.service.MallProductService;
-import cn.zhangchuangla.medicine.client.service.MallUserBrowseHistoryService;
 import cn.zhangchuangla.medicine.common.core.base.AjaxResult;
 import cn.zhangchuangla.medicine.common.security.annotation.Anonymous;
 import cn.zhangchuangla.medicine.common.security.base.BaseController;
@@ -33,7 +32,6 @@ import java.util.List;
 public class MallProductController extends BaseController {
 
     private final MallProductService mallProductService;
-    private final MallUserBrowseHistoryService mallUserBrowseHistoryService;
 
 
     /**
@@ -60,8 +58,6 @@ public class MallProductController extends BaseController {
                                                         @PathVariable("id") Long id) {
         // 查询商品详情（包含图片和药品详情）
         MallProductVo mallProductVo = mallProductService.getMallProductDetail(id);
-        // 记录用户浏览历史
-        mallUserBrowseHistoryService.recordProductBrowse(getUserId(), id);
         // 记录商品浏览量
         mallProductService.recordView(id);
 

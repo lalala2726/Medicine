@@ -168,6 +168,7 @@
         WHERE (is_deleted IS NULL OR is_deleted = 0)
         AND user_id = #{userId}
         AND paid = 1
+        ORDER BY create_time DESC
     </select>
 
 </mapper>
