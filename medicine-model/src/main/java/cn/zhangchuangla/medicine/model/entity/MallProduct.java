@@ -49,11 +49,6 @@ public class MallProduct {
     private BigDecimal price;
 
     /**
-     * 销量
-     */
-    private Long salesVolume;
-
-    /**
      * 库存数量
      */
     private Integer stock;

@@ -29,9 +29,6 @@ public class ProductSnapshot {
     @Schema(description = "库存")
     private Integer stock;
 
-    @Schema(description = "销量")
-    private Long salesVolume;
-
     @Schema(description = "状态，1-上架，0-下架")
     private Integer status;
 

@@ -1,12 +1,9 @@
 package cn.zhangchuangla.medicine.admin.service.impl;
 
 import cn.zhangchuangla.medicine.admin.mapper.MallProductMapper;
-import cn.zhangchuangla.medicine.admin.service.MallCategoryService;
-import cn.zhangchuangla.medicine.admin.service.MallMedicineDetailService;
-import cn.zhangchuangla.medicine.admin.service.MallProductImageService;
-import cn.zhangchuangla.medicine.admin.service.MallProductService;
+import cn.zhangchuangla.medicine.admin.model.dto.ProductSalesDto;
+import cn.zhangchuangla.medicine.admin.service.*;
 import cn.zhangchuangla.medicine.common.core.constants.RedisConstants;
-import cn.zhangchuangla.medicine.common.core.enums.ResponseCode;
 import cn.zhangchuangla.medicine.common.core.exception.ServiceException;
 import cn.zhangchuangla.medicine.common.core.utils.Assert;
 import cn.zhangchuangla.medicine.common.security.base.BaseService;
@@ -29,6 +26,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.List;
 
 /**
@@ -49,6 +47,7 @@ public class MallProductServiceImpl extends ServiceImpl<MallProductMapper, MallP
     private final MallCategoryService mallCategoryService;
     private final MallProductImageService mallProductImageService;
     private final MallMedicineDetailService medicineDetailService;
+    private final MallProductStatsService mallProductStatsService;
 
     @Override
     public Page<MallProduct> listMallProduct(MallProductListQueryRequest request) {
@@ -58,8 +57,29 @@ public class MallProductServiceImpl extends ServiceImpl<MallProductMapper, MallP
 
     @Override
     public Page<MallProductDetailDto> listMallProductWithCategory(MallProductListQueryRequest request) {
-        Page<MallProductDetailDto> page = request.toPage();
-        return mallProductMapper.listMallProductWithCategory(page, request);
+        // 先查询商品列表
+        Page<MallProductDetailDto> page = mallProductMapper.listMallProductWithCategory(request.toPage(), request);
+
+        if (page.getRecords().isEmpty()) {
+            return page;
+        }
+
+        // 查询商品的销量
+        List<ProductSalesDto> productSales = mallProductStatsService.getProductSales();
+
+        // 将销量数据转换为Map，方便快速查找
+        HashMap<Long, Integer> salesMap = new HashMap<>();
+        if (productSales != null && !productSales.isEmpty()) {
+            productSales.forEach(sales -> salesMap.put(sales.getProductId(), sales.getSales()));
+        }
+
+        // 为每个商品设置销量
+        page.getRecords().forEach(product -> {
+            Long productId = product.getId();
+            Integer sales = salesMap.get(productId);
+            product.setSales(sales != null ? sales : 0);
+        });
+        return page;
     }
 
     @Override
@@ -202,36 +222,4 @@ public class MallProductServiceImpl extends ServiceImpl<MallProductMapper, MallP
 
         return removeByIds(ids);
     }
-
-    @Override
-    @Transactional(rollbackFor = Exception.class)
-    public void restoreStock(Long productId, Integer quantity) {
-        Assert.isPositive(quantity, "商品数量不能小于0");
-        Assert.isPositive(productId, "商品ID不能小于0");
-
-        MallProduct mallProduct = lambdaQuery()
-                .eq(MallProduct::getId, productId)
-                .select(MallProduct::getStock, MallProduct::getVersion)
-                .one();
-
-        if (mallProduct == null) {
-            throw new ServiceException(ResponseCode.OPERATION_ERROR, "商品不存在");
-        }
-
-        Integer currentStock = mallProduct.getStock();
-        int newStock = (currentStock == null ? 0 : currentStock) + quantity;
-        int currentVersion = mallProduct.getVersion() == null ? 0 : mallProduct.getVersion();
-
-        boolean updated = lambdaUpdate()
-                .eq(MallProduct::getId, productId)
-                .eq(MallProduct::getVersion, currentVersion)
-                .set(MallProduct::getStock, newStock)
-                .set(MallProduct::getVersion, currentVersion + 1)
-                .update();
-
-        if (!updated) {
-            throw new ServiceException(ResponseCode.OPERATION_ERROR, "库存更新失败，请重试");
-        }
-    }
-
 }

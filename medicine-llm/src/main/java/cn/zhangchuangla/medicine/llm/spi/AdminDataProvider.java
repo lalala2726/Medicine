@@ -49,4 +49,34 @@ public interface AdminDataProvider {
      * 根据 ID 获取商品详情。
      */
     Optional<ProductSnapshot> findProductById(Long productId);
+
+    /**
+     * 获取运营分析总览。
+     */
+    AnalyticsOverviewSnapshot analyticsOverview();
+
+    /**
+     * 获取订单趋势数据。
+     */
+    List<OrderTrendPointSnapshot> orderTrend(String period);
+
+    /**
+     * 获取订单状态分布。
+     */
+    List<StatusDistributionSnapshot> orderStatusDistribution();
+
+    /**
+     * 获取支付方式分布。
+     */
+    List<PaymentDistributionSnapshot> paymentDistribution();
+
+    /**
+     * 获取热销商品排行榜。
+     */
+    List<HotProductRankSnapshot> hotProducts(int limit);
+
+    /**
+     * 获取商品退货率排行。
+     */
+    List<ReturnRateStatSnapshot> productReturnRates(int limit);
 }

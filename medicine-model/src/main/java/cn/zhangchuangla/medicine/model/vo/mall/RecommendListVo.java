@@ -32,7 +32,4 @@ public class RecommendListVo {
     @Schema(description = "商品价格", example = "9.99")
     private BigDecimal price;
 
-    @Schema(description = "商品销量", example = "10")
-    private Long salesVolume;
-
 }

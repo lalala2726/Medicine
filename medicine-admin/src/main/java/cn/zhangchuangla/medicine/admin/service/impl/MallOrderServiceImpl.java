@@ -66,11 +66,11 @@ public class MallOrderServiceImpl extends ServiceImpl<MallOrderMapper, MallOrder
     private final AlipayPaymentService alipayPaymentService;
     private final MallOrderTimelineService mallOrderTimelineService;
     private final UserWalletService userWalletService;
-    private final MallProductService mallProductService;
     private final MallOrderShippingService mallOrderShippingService;
+    private final MallInventoryService mallInventoryService;
 
 
-    public MallOrderServiceImpl(MallOrderMapper mallOrderMapper, UserMapper userMapper, MallOrderItemService mallOrderItemService, MallProductImageService mallProductImageService, AlipayPaymentService alipayPaymentService, MallOrderTimelineService mallOrderTimelineService, UserWalletService userWalletService, MallProductService mallProductService, MallOrderShippingService mallOrderShippingService) {
+    public MallOrderServiceImpl(MallOrderMapper mallOrderMapper, UserMapper userMapper, MallOrderItemService mallOrderItemService, MallProductImageService mallProductImageService, AlipayPaymentService alipayPaymentService, MallOrderTimelineService mallOrderTimelineService, UserWalletService userWalletService, MallOrderShippingService mallOrderShippingService, MallInventoryService mallInventoryService) {
         this.mallOrderMapper = mallOrderMapper;
         this.userMapper = userMapper;
         this.mallOrderItemService = mallOrderItemService;
@@ -78,8 +78,8 @@ public class MallOrderServiceImpl extends ServiceImpl<MallOrderMapper, MallOrder
         this.alipayPaymentService = alipayPaymentService;
         this.mallOrderTimelineService = mallOrderTimelineService;
         this.userWalletService = userWalletService;
-        this.mallProductService = mallProductService;
         this.mallOrderShippingService = mallOrderShippingService;
+        this.mallInventoryService = mallInventoryService;
     }
 
 
@@ -411,9 +411,8 @@ public class MallOrderServiceImpl extends ServiceImpl<MallOrderMapper, MallOrder
     public boolean cancelOrder(OrderCancelRequest request) {
         // 1. 查询订单并校验状态
         MallOrder mallOrder = getOrderById(request.getOrderId());
-
-        // 2. 校验订单状态是否允许取消
         OrderStatusEnum orderStatusEnum = OrderStatusEnum.fromCode(mallOrder.getOrderStatus());
+
         if (orderStatusEnum == null) {
             throw new ServiceException(ResponseCode.OPERATION_ERROR, "订单状态异常");
         }
@@ -425,12 +424,7 @@ public class MallOrderServiceImpl extends ServiceImpl<MallOrderMapper, MallOrder
                     String.format("当前订单状态[%s]不允许取消", orderStatusEnum.getName()));
         }
 
-        // 3. 查询订单项，用于恢复库存
-        List<MallOrderItem> orderItems = mallOrderItemService.lambdaQuery()
-                .eq(MallOrderItem::getOrderId, mallOrder.getId())
-                .list();
-
-        // 4. 如果订单已支付，需要先退款
+        // 3. 如果订单已支付，需要先退款
         if (Objects.equals(mallOrder.getPaid(), PAID_FLAG)) {
             log.info("订单{}已支付，执行全额退款", mallOrder.getOrderNo());
 
@@ -477,7 +471,7 @@ public class MallOrderServiceImpl extends ServiceImpl<MallOrderMapper, MallOrder
             mallOrder.setRefundStatus(REFUND_STATUS_SUCCESS);
         }
 
-        // 5. 更新订单状态为已取消
+        // 4. 更新订单状态为已取消
         String cancelReason = request.getCancelReason();
         if (!StringUtils.hasText(cancelReason)) {
             cancelReason = "管理员取消订单";
@@ -494,19 +488,27 @@ public class MallOrderServiceImpl extends ServiceImpl<MallOrderMapper, MallOrder
             throw new ServiceException(ResponseCode.OPERATION_ERROR, "取消订单失败");
         }
 
-        // 6. 恢复库存
-        if (orderItems != null && !orderItems.isEmpty()) {
-            for (MallOrderItem orderItem : orderItems) {
-                if (orderItem != null && orderItem.getProductId() != null && orderItem.getQuantity() != null) {
-                    mallProductService.restoreStock(orderItem.getProductId(), orderItem.getQuantity());
-                    log.info("恢复商品库存，商品ID：{}，数量：{}", orderItem.getProductId(), orderItem.getQuantity());
+        // 5. 恢复库存
+        boolean restoreStockAllowed = orderStatusEnum == OrderStatusEnum.PENDING_PAYMENT
+                || orderStatusEnum == OrderStatusEnum.PENDING_SHIPMENT;
+        if (restoreStockAllowed) {
+            List<MallOrderItem> orderItems = mallOrderItemService.lambdaQuery()
+                    .eq(MallOrderItem::getOrderId, mallOrder.getId())
+                    .list();
+
+            if (!CollectionUtils.isEmpty(orderItems)) {
+                for (MallOrderItem orderItem : orderItems) {
+                    if (orderItem != null && orderItem.getProductId() != null && orderItem.getQuantity() != null) {
+                        mallInventoryService.restoreStock(orderItem.getProductId(), orderItem.getQuantity());
+                        log.info("恢复商品库存，商品ID：{}，数量：{}", orderItem.getProductId(), orderItem.getQuantity());
+                    }
                 }
             }
-            // 取消订单时回滚销量（按商品数量）
-            adjustSalesVolume(orderItems, false);
+        } else {
+            log.info("订单{}已进入发货或售后流程，取消时不恢复库存", mallOrder.getOrderNo());
         }
 
-        // 7. 添加订单时间线记录
+        // 6. 添加订单时间线记录
         OrderTimelineDto timelineDto = OrderTimelineDto.builder()
                 .orderId(mallOrder.getId())
                 .eventType(OrderEventTypeEnum.ORDER_CANCELLED.getType())
@@ -881,11 +883,7 @@ public class MallOrderServiceImpl extends ServiceImpl<MallOrderMapper, MallOrder
             mallOrderShippingService.updateById(shipping);
         }
 
-        // 5. 累加销量（按商品数量）
-        List<MallOrderItem> orderItems = mallOrderItemService.getOrderItemByOrderId(orderId);
-        adjustSalesVolume(orderItems, true);
-
-        // 6. 添加订单时间线记录（标记为系统自动）
+        // 5. 添加订单时间线记录（标记为系统自动）
         OrderTimelineDto timelineDto = OrderTimelineDto.builder()
                 .orderId(mallOrder.getId())
                 .eventType(OrderEventTypeEnum.ORDER_RECEIVED.getType())
@@ -938,11 +936,7 @@ public class MallOrderServiceImpl extends ServiceImpl<MallOrderMapper, MallOrder
             mallOrderShippingService.updateById(shipping);
         }
 
-        // 5. 累加销量（按商品数量）
-        List<MallOrderItem> orderItems = mallOrderItemService.getOrderItemByOrderId(request.getOrderId());
-        adjustSalesVolume(orderItems, true);
-
-        // 6. 添加订单时间线记录（标记为管理员操作）
+        // 5. 添加订单时间线记录（标记为管理员操作）
         String username = SecurityUtils.getUsername();
         String description = String.format("管理员%s手动确认收货", username);
         if (request.getRemark() != null && !request.getRemark().trim().isEmpty()) {
@@ -961,7 +955,6 @@ public class MallOrderServiceImpl extends ServiceImpl<MallOrderMapper, MallOrder
         log.info("管理员{}手动确认收货成功，订单号：{}，备注：{}", username, mallOrder.getOrderNo(), request.getRemark());
         return true;
     }
-
 
     @Override
     @Transactional(rollbackFor = Exception.class)
@@ -993,46 +986,5 @@ public class MallOrderServiceImpl extends ServiceImpl<MallOrderMapper, MallOrder
 
         orders.forEach(order -> log.info("订单{}删除成功", order.getOrderNo()));
         return true;
-    }
-
-    /**
-     * 按订单项调整销量；increase=true 增加销量，false 回滚销量。
-     */
-    private void adjustSalesVolume(List<MallOrderItem> orderItems, boolean increase) {
-        if (orderItems == null || orderItems.isEmpty()) {
-            return;
-        }
-
-        Map<Long, Integer> qtyByProduct = orderItems.stream()
-                .filter(Objects::nonNull)
-                .filter(item -> item.getProductId() != null && item.getQuantity() != null)
-                .collect(Collectors.toMap(MallOrderItem::getProductId, MallOrderItem::getQuantity, Integer::sum));
-
-        if (qtyByProduct.isEmpty()) {
-            return;
-        }
-
-        List<MallProduct> products = mallProductService.listByIds(qtyByProduct.keySet());
-        if (products == null || products.isEmpty()) {
-            return;
-        }
-
-        for (MallProduct product : products) {
-            if (product == null || product.getId() == null) {
-                continue;
-            }
-            int delta = qtyByProduct.getOrDefault(product.getId(), 0);
-            if (delta <= 0) {
-                continue;
-            }
-            long current = product.getSalesVolume() == null ? 0L : product.getSalesVolume();
-            long newVolume = increase ? current + delta : Math.max(0L, current - delta);
-
-            MallProduct update = new MallProduct();
-            update.setId(product.getId());
-            update.setSalesVolume(newVolume);
-            mallProductService.updateById(update);
-            log.info("调整商品销量 productId={}, delta={}, increase={}, newVolume={}", product.getId(), delta, increase, newVolume);
-        }
     }
 }

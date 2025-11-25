@@ -1,0 +1,86 @@
+package cn.zhangchuangla.medicine.client.service.impl;
+
+import cn.zhangchuangla.medicine.client.mapper.MallProductViewHistoryMapper;
+import cn.zhangchuangla.medicine.client.model.request.ViewHistoryRequest;
+import cn.zhangchuangla.medicine.client.model.vo.ViewHistoryVo;
+import cn.zhangchuangla.medicine.client.service.MallProductViewHistoryService;
+import cn.zhangchuangla.medicine.common.core.utils.Assert;
+import cn.zhangchuangla.medicine.model.entity.MallProductViewHistory;
+import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
+import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
+import org.springframework.stereotype.Service;
+
+import java.util.Date;
+
+/**
+ * @author Chuang
+ */
+@Service
+public class MallProductViewHistoryServiceImpl extends ServiceImpl<MallProductViewHistoryMapper, MallProductViewHistory>
+        implements MallProductViewHistoryService {
+
+    @Override
+    public Page<ViewHistoryVo> listViewHistory(Long userId, ViewHistoryRequest request) {
+        Assert.isPositive(userId, "用户ID不能为空");
+        ViewHistoryRequest pageRequest = request == null ? new ViewHistoryRequest() : request;
+        Page<ViewHistoryVo> page = pageRequest.toPage();
+        return baseMapper.listViewHistory(page, userId);
+    }
+
+    @Override
+    public void recordViewHistory(Long userId, Long productId) {
+        Assert.isPositive(userId, "用户ID不能为空");
+        Assert.isPositive(productId, "商品ID不能为空");
+
+        MallProductViewHistory history = getViewHistory(userId, productId);
+        Date now = new Date();
+
+        if (history == null) {
+            MallProductViewHistory newHistory = new MallProductViewHistory();
+            newHistory.setUserId(userId);
+            newHistory.setProductId(productId);
+            newHistory.setViewCount(1);
+            newHistory.setFirstViewTime(now);
+            newHistory.setLastViewTime(now);
+            save(newHistory);
+            return;
+        }
+
+        int nextCount = history.getViewCount() == null ? 1 : history.getViewCount() + 1;
+        lambdaUpdate()
+                .eq(MallProductViewHistory::getUserId, userId)
+                .eq(MallProductViewHistory::getProductId, productId)
+                .set(MallProductViewHistory::getViewCount, nextCount)
+                .set(MallProductViewHistory::getLastViewTime, now)
+                .update();
+    }
+
+    @Override
+    public void deleteViewHistory(Long userId, Long productId) {
+        Assert.isPositive(userId, "用户ID不能为空");
+        Assert.isPositive(productId, "商品ID不能为空");
+        lambdaUpdate()
+                .eq(MallProductViewHistory::getUserId, userId)
+                .eq(MallProductViewHistory::getProductId, productId)
+                .remove();
+    }
+
+    @Override
+    public void deleteAllViewHistory(Long userId) {
+        Assert.isPositive(userId, "用户ID不能为空");
+        lambdaUpdate()
+                .eq(MallProductViewHistory::getUserId, userId)
+                .remove();
+    }
+
+    @Override
+    public MallProductViewHistory getViewHistory(Long userId, Long productId) {
+        Assert.isPositive(userId, "用户ID不能为空");
+        Assert.isPositive(productId, "商品ID不能为空");
+        return lambdaQuery()
+                .eq(MallProductViewHistory::getUserId, userId)
+                .eq(MallProductViewHistory::getProductId, productId)
+                .one();
+    }
+}
+

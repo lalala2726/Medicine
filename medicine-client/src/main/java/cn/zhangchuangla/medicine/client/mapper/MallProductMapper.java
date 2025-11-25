@@ -1,9 +1,12 @@
 package cn.zhangchuangla.medicine.client.mapper;
 
+import cn.zhangchuangla.medicine.client.model.dto.RecommendProductDto;
 import cn.zhangchuangla.medicine.model.dto.MallProductWithImageDto;
 import cn.zhangchuangla.medicine.model.entity.MallProduct;
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
 import org.apache.ibatis.annotations.Param;
+
+import java.util.List;
 
 /**
  * @author Chuang
@@ -27,6 +30,11 @@ public interface MallProductMapper extends BaseMapper<MallProduct> {
      * @return 商品详情
      */
     MallProductWithImageDto getProductWithImagesById(@Param("productId") Long productId);
+
+    /**
+     * 根据销量与浏览量推荐商品
+     */
+    List<RecommendProductDto> listRecommendProducts();
 }
 
 

@@ -1,6 +1,7 @@
 package cn.zhangchuangla.medicine.admin.spi;
 
 import cn.zhangchuangla.medicine.admin.model.vo.UserDetailVo;
+import cn.zhangchuangla.medicine.admin.model.vo.analytics.*;
 import cn.zhangchuangla.medicine.admin.service.*;
 import cn.zhangchuangla.medicine.common.core.utils.SpringUtils;
 import cn.zhangchuangla.medicine.common.security.entity.SysUserDetails;
@@ -123,6 +124,7 @@ public class AdminModuleDataProvider implements AdminDataProvider {
 
             List<MallOrder> paidOrders = orderService.lambdaQuery()
                     .eq(MallOrder::getPaid, PAID_FLAG)
+                    .notIn(MallOrder::getOrderStatus, OrderStatusEnum.CANCELLED.getType(), OrderStatusEnum.REFUNDED.getType())
                     .select(MallOrder::getPayAmount)
                     .list();
             snapshot.setTotalSales(sumAmounts(paidOrders.stream()
@@ -196,7 +198,7 @@ public class AdminModuleDataProvider implements AdminDataProvider {
             String like = keyword == null ? "" : keyword.trim();
             List<MallProduct> products = mallProductService().lambdaQuery()
                     .like(!like.isEmpty(), MallProduct::getName, like)
-                    .orderByDesc(MallProduct::getSalesVolume)
+                    .orderByDesc(MallProduct::getUpdateTime)
                     .last("LIMIT " + limit)
                     .list();
             if (products == null || products.isEmpty()) {
@@ -223,6 +225,131 @@ public class AdminModuleDataProvider implements AdminDataProvider {
         } catch (Exception ex) {
             log.warn("Failed to load product {} for LLM tool", productId, ex);
             return Optional.empty();
+        }
+    }
+
+    @Override
+    public AnalyticsOverviewSnapshot analyticsOverview() {
+        try {
+            OverviewVo vo = analyticsService().overview();
+            AnalyticsOverviewSnapshot snapshot = new AnalyticsOverviewSnapshot();
+            snapshot.setTotalUsers(defaultLong(vo.getTotalUsers()));
+            snapshot.setTotalOrders(defaultLong(vo.getTotalOrders()));
+            snapshot.setPaidOrders(defaultLong(vo.getPaidOrders()));
+            snapshot.setRefundCount(defaultLong(vo.getRefundCount()));
+            snapshot.setTotalAmount(defaultBigDecimal(vo.getTotalAmount()));
+            snapshot.setAverageAmount(defaultBigDecimal(vo.getAverageAmount()));
+            snapshot.setRefundAmount(defaultBigDecimal(vo.getRefundAmount()));
+            return snapshot;
+        } catch (Exception ex) {
+            log.warn("Failed to load analytics overview for LLM tool", ex);
+            return new AnalyticsOverviewSnapshot();
+        }
+    }
+
+    @Override
+    public List<OrderTrendPointSnapshot> orderTrend(String period) {
+        try {
+            List<OrderTrendPoint> points = analyticsService().orderTrend(period);
+            if (points == null) {
+                return Collections.emptyList();
+            }
+            return points.stream().map(p -> {
+                OrderTrendPointSnapshot snap = new OrderTrendPointSnapshot();
+                snap.setLabel(p.getLabel());
+                snap.setOrderCount(defaultLong(p.getOrderCount()));
+                snap.setOrderAmount(defaultBigDecimal(p.getOrderAmount()));
+                return snap;
+            }).toList();
+        } catch (Exception ex) {
+            log.warn("Failed to load order trend for LLM tool", ex);
+            return Collections.emptyList();
+        }
+    }
+
+    @Override
+    public List<StatusDistributionSnapshot> orderStatusDistribution() {
+        try {
+            List<StatusDistribution> list = analyticsService().orderStatusDistribution();
+            if (list == null) {
+                return Collections.emptyList();
+            }
+            return list.stream().map(item -> {
+                StatusDistributionSnapshot snap = new StatusDistributionSnapshot();
+                snap.setStatus(item.getStatus());
+                snap.setStatusName(item.getStatusName());
+                snap.setCount(defaultLong(item.getCount()));
+                return snap;
+            }).toList();
+        } catch (Exception ex) {
+            log.warn("Failed to load order status distribution for LLM tool", ex);
+            return Collections.emptyList();
+        }
+    }
+
+    @Override
+    public List<PaymentDistributionSnapshot> paymentDistribution() {
+        try {
+            List<PaymentDistribution> list = analyticsService().paymentDistribution();
+            if (list == null) {
+                return Collections.emptyList();
+            }
+            return list.stream().map(item -> {
+                PaymentDistributionSnapshot snap = new PaymentDistributionSnapshot();
+                snap.setPayType(item.getPayType());
+                snap.setPayTypeName(item.getPayTypeName());
+                snap.setCount(defaultLong(item.getCount()));
+                snap.setAmount(defaultBigDecimal(item.getAmount()));
+                return snap;
+            }).toList();
+        } catch (Exception ex) {
+            log.warn("Failed to load payment distribution for LLM tool", ex);
+            return Collections.emptyList();
+        }
+    }
+
+    @Override
+    public List<HotProductRankSnapshot> hotProducts(int limit) {
+        try {
+            int safeLimit = normalizeLimit(limit);
+            List<HotProductRank> list = analyticsService().hotProducts(safeLimit);
+            if (list == null) {
+                return Collections.emptyList();
+            }
+            return list.stream().map(item -> {
+                HotProductRankSnapshot snap = new HotProductRankSnapshot();
+                snap.setProductId(item.getProductId());
+                snap.setProductName(item.getProductName());
+                snap.setQuantity(defaultLong(item.getQuantity()));
+                snap.setAmount(defaultBigDecimal(item.getAmount()));
+                return snap;
+            }).toList();
+        } catch (Exception ex) {
+            log.warn("Failed to load hot products for LLM tool", ex);
+            return Collections.emptyList();
+        }
+    }
+
+    @Override
+    public List<ReturnRateStatSnapshot> productReturnRates(int limit) {
+        try {
+            int safeLimit = normalizeLimit(limit);
+            List<ReturnRateStat> list = analyticsService().productReturnRates(safeLimit);
+            if (list == null) {
+                return Collections.emptyList();
+            }
+            return list.stream().map(item -> {
+                ReturnRateStatSnapshot snap = new ReturnRateStatSnapshot();
+                snap.setProductId(item.getProductId());
+                snap.setProductName(item.getProductName());
+                snap.setSoldQuantity(defaultLong(item.getSoldQuantity()));
+                snap.setReturnQuantity(defaultLong(item.getReturnQuantity()));
+                snap.setReturnRate(item.getReturnRate() == null ? BigDecimal.ZERO : item.getReturnRate());
+                return snap;
+            }).toList();
+        } catch (Exception ex) {
+            log.warn("Failed to load product return rates for LLM tool", ex);
+            return Collections.emptyList();
         }
     }
 
@@ -295,6 +422,14 @@ public class AdminModuleDataProvider implements AdminDataProvider {
         return source == null ? BigDecimal.ZERO : source;
     }
 
+    private long defaultLong(Long source) {
+        return source == null ? 0L : source;
+    }
+
+    private int normalizeLimit(int limit) {
+        return limit <= 0 ? 10 : Math.min(limit, 50);
+    }
+
     private List<ProductSnapshot> enrichProducts(List<MallProduct> products) {
         if (products == null || products.isEmpty()) {
             return Collections.emptyList();
@@ -310,7 +445,6 @@ public class AdminModuleDataProvider implements AdminDataProvider {
             snapshot.setName(p.getName());
             snapshot.setPrice(p.getPrice());
             snapshot.setStock(p.getStock());
-            snapshot.setSalesVolume(p.getSalesVolume());
             snapshot.setStatus(p.getStatus());
             snapshot.setDeliveryType(p.getDeliveryType());
             return snapshot;
@@ -366,6 +500,10 @@ public class AdminModuleDataProvider implements AdminDataProvider {
 
     private MallMedicineDetailService mallMedicineDetailService() {
         return SpringUtils.getBean(MallMedicineDetailService.class);
+    }
+
+    private AnalyticsService analyticsService() {
+        return SpringUtils.getBean(AnalyticsService.class);
     }
 
     private DrugDetailDto toDrugDetailDto(DrugDetail detail) {

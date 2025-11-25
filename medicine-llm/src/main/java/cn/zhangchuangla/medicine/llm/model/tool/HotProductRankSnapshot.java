@@ -1,4 +1,4 @@
-package cn.zhangchuangla.medicine.admin.model.vo.analytics;
+package cn.zhangchuangla.medicine.llm.model.tool;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
@@ -6,8 +6,8 @@ import lombok.Data;
 import java.math.BigDecimal;
 
 @Data
-@Schema(description = "热销商品排行")
-public class HotProductRank {
+@Schema(description = "热销商品排行条目")
+public class HotProductRankSnapshot {
 
     @Schema(description = "商品ID")
     private Long productId;

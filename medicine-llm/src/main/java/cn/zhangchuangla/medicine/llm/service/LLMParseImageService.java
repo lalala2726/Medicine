@@ -74,11 +74,11 @@ public class LLMParseImageService {
         return JSON.parseObject(content, DrugInfoDto.class);
     }
 
-    public Flux<AssistantChatResponse> chat(String message) {
+    public Flux<AssistantChatResponse> chat(String userMessage) {
         return chatClient.prompt()
-                .system(SystemPrompt.ADMIN_ASSISTANT_PROMPT)
                 .tools(adminAssistantTools)
-                .user(message)
+                .system(SystemPrompt.ADMIN_ASSISTANT_PROMPT)
+                .user(userMessage)
                 .stream()
                 .content()
                 .map(content -> {

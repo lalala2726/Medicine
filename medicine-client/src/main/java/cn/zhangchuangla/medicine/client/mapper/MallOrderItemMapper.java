@@ -10,6 +10,3 @@ public interface MallOrderItemMapper extends BaseMapper<MallOrderItem> {
 
 }
 
-
-
-

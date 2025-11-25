@@ -3,24 +3,19 @@ package cn.zhangchuangla.medicine.model.entity;
 import com.baomidou.mybatisplus.annotation.IdType;
 import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableName;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
 import lombok.Data;
-import lombok.NoArgsConstructor;
 
 import java.util.Date;
 
 /**
- * 用户商品浏览历史表
+ * 商品浏览历史与浏览量统计
  */
-@TableName(value = "mall_user_browse_history")
+@TableName(value = "mall_product_view_history")
 @Data
-@AllArgsConstructor
-@NoArgsConstructor
-@Builder
-public class MallUserBrowseHistory {
+public class MallProductViewHistory {
+
     /**
-     * 主键ID
+     * 自增主键
      */
     @TableId(type = IdType.AUTO)
     private Long id;
@@ -36,12 +31,17 @@ public class MallUserBrowseHistory {
     private Long productId;
 
     /**
-     * 创建时间
+     * 该用户对该商品的累计浏览次数
      */
-    private Date createTime;
+    private Integer viewCount;
 
     /**
-     * 更新时间
+     * 该用户最后一次浏览该商品的时间
      */
-    private Date updateTime;
+    private Date lastViewTime;
+
+    /**
+     * 第一次浏览时间
+     */
+    private Date firstViewTime;
 }

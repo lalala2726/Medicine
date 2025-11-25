@@ -659,6 +659,9 @@ public class MallOrderServiceImpl extends ServiceImpl<MallOrderMapper, MallOrder
                     String.format("当前订单状态[%s]不允许取消", statusName));
         }
 
+        // 记录取消前的状态，避免发货后误恢复库存
+        String originalStatus = mallOrder.getOrderStatus();
+
         // 4. 更新订单状态为已取消
         Date now = new Date();
         mallOrder.setOrderStatus(OrderStatusEnum.CANCELLED.getType());
@@ -684,8 +687,6 @@ public class MallOrderServiceImpl extends ServiceImpl<MallOrderMapper, MallOrder
                     mallProductService.restoreStock(orderItem.getProductId(), orderItem.getQuantity());
                 }
             }
-            // 取消订单时回滚销量（按商品数量）
-            adjustSalesVolume(orderItems, false);
         }
 
         // 6. 添加订单时间线记录
@@ -701,68 +702,6 @@ public class MallOrderServiceImpl extends ServiceImpl<MallOrderMapper, MallOrder
 
         log.info("用户{}取消订单成功，订单号：{}，原因：{}", username, mallOrder.getOrderNo(), request.getCancelReason());
         return true;
-    }
-
-    /**
-     * 按订单项调整销量；increase=true 增加销量，false 回滚销量。
-     */
-    private void adjustSalesVolume(List<MallOrderItem> orderItems, boolean increase) {
-        if (orderItems == null || orderItems.isEmpty()) {
-            return;
-        }
-
-        Map<Long, Integer> qtyByProduct = orderItems.stream()
-                .filter(Objects::nonNull)
-                .filter(item -> item.getProductId() != null && item.getQuantity() != null)
-                .collect(Collectors.toMap(MallOrderItem::getProductId, MallOrderItem::getQuantity, Integer::sum));
-
-        if (qtyByProduct.isEmpty()) {
-            return;
-        }
-
-        List<MallProduct> products = mallProductService.listByIds(qtyByProduct.keySet());
-        if (products == null || products.isEmpty()) {
-            return;
-        }
-
-        for (MallProduct product : products) {
-            if (product == null || product.getId() == null) {
-                continue;
-            }
-            int delta = qtyByProduct.getOrDefault(product.getId(), 0);
-            if (delta <= 0) {
-                continue;
-            }
-            long current = product.getSalesVolume() == null ? 0L : product.getSalesVolume();
-            long newVolume = increase ? current + delta : Math.max(0L, current - delta);
-
-            MallProduct update = new MallProduct();
-            update.setId(product.getId());
-            update.setSalesVolume(newVolume);
-            mallProductService.updateById(update);
-            log.info("[client] 调整商品销量 productId={}, delta={}, increase={}, newVolume={}", product.getId(), delta, increase, newVolume);
-        }
-    }
-
-    private void accumulateSalesDelta(Map<Long, Integer> cache, Long productId, Integer qty) {
-        if (cache == null || productId == null || qty == null || qty <= 0) {
-            return;
-        }
-        cache.merge(productId, qty, Integer::sum);
-    }
-
-    private void flushSalesDelta(Map<Long, Integer> cache, boolean increase) {
-        if (cache == null || cache.isEmpty()) {
-            return;
-        }
-        List<MallOrderItem> temp = cache.entrySet().stream()
-                .map(e -> MallOrderItem.builder()
-                        .productId(e.getKey())
-                        .quantity(e.getValue())
-                        .build())
-                .toList();
-        adjustSalesVolume(temp, increase);
-        cache.clear();
     }
 
     @Override
@@ -818,11 +757,7 @@ public class MallOrderServiceImpl extends ServiceImpl<MallOrderMapper, MallOrder
             mallOrderShippingService.updateById(shipping);
         }
 
-        // 6. 累加销量（按商品数量）
-        List<MallOrderItem> orderItems = mallOrderItemService.getOrderItemByOrderId(orderId);
-        adjustSalesVolume(orderItems, true);
-
-        // 7. 添加订单时间线记录（标记为用户操作）
+        // 6. 添加订单时间线记录（标记为用户操作）
         String username = getUsername();
         OrderTimelineDto timelineDto = OrderTimelineDto.builder()
                 .orderId(orderId)
@@ -1058,7 +993,6 @@ public class MallOrderServiceImpl extends ServiceImpl<MallOrderMapper, MallOrder
         // 2. 校验商品并计算总金额
         BigDecimal totalAmount = BigDecimal.ZERO;
         List<MallOrderItem> orderItems = new ArrayList<>();
-        Map<Long, Integer> salesDeltaCache = new HashMap<>();
 
         for (MallCart cartItem : cartItems) {
             // 查询商品详情
@@ -1082,9 +1016,6 @@ public class MallOrderServiceImpl extends ServiceImpl<MallOrderMapper, MallOrder
 
             // 扣减库存
             mallProductService.deductStock(product.getId(), cartItem.getCartNum());
-
-            // 记录销量增量（下单即累加，取消会回滚）
-            accumulateSalesDelta(salesDeltaCache, product.getId(), cartItem.getCartNum());
 
             // 计算小计
             BigDecimal itemTotal = product.getPrice()
@@ -1154,10 +1085,7 @@ public class MallOrderServiceImpl extends ServiceImpl<MallOrderMapper, MallOrder
             throw new ServiceException(ResponseCode.OPERATION_ERROR, "订单项保存失败");
         }
 
-        // 6. 批量更新销量
-        flushSalesDelta(salesDeltaCache, true);
-
-        // 7. 添加订单时间线
+        // 6. 添加订单时间线
         OrderTimelineDto timelineDto = OrderTimelineDto.builder()
                 .orderId(order.getId())
                 .eventType(OrderEventTypeEnum.ORDER_CREATED.getType())
@@ -1167,7 +1095,7 @@ public class MallOrderServiceImpl extends ServiceImpl<MallOrderMapper, MallOrder
                 .build();
         mallOrderTimelineService.addTimeline(timelineDto);
 
-        // 8. 发送延时消息（订单超时自动取消）
+        // 7. 发送延时消息（订单超时自动取消）
         orderDelayProducer.addOrderToDelayQueue(orderNo, ORDER_TIMEOUT_MINUTES);
 
         // 9. 删除已结算的购物车商品

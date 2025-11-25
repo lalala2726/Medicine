@@ -31,9 +31,6 @@ public class MallProductVo {
     @Schema(description = "展示价/兜底价：单规格=唯一SKU价，多规格=最小SKU价；结算以SKU价为准", example = "10.00")
     private BigDecimal price;
 
-    @Schema(description = "销量", example = "1")
-    private Long salesVolume;
-
     @Schema(description = "库存", example = "100")
     private Integer stock;
 
