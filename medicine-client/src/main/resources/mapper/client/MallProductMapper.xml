@@ -111,10 +111,49 @@
                md.taboo                  AS med_taboo,
                md.instruction            AS med_instruction
         FROM mall_product p
-                 LEFT JOIN mall_product_image img ON p.id = img.product_id AND (img.is_deleted IS NULL OR img.is_deleted = 0)
-                 LEFT JOIN drug_detail md ON p.id = md.product_id AND (md.is_deleted IS NULL OR md.is_deleted = 0)
-        WHERE (p.is_deleted IS NULL OR p.is_deleted = 0)
+                 LEFT JOIN mall_product_image img ON p.id = img.product_id AND (img.is_deleted = 0)
+                 LEFT JOIN drug_detail md ON p.id = md.product_id AND (md.is_deleted = 0)
+        WHERE (p.is_deleted = 0)
         AND p.id = #{productId}
         ORDER BY img.sort, img.create_time
+    </select>
+
+    <select id="listRecommendProducts" resultType="cn.zhangchuangla.medicine.client.model.dto.RecommendProductDto">
+        SELECT
+            p.id,
+            p.name,
+            p.category_id,
+            p.unit,
+            p.price,
+            p.stock,
+            p.sort,
+            p.status,
+            p.delivery_type,
+            p.shipping_id,
+            p.create_time,
+            p.update_time,
+            p.create_by,
+            p.update_by,
+            p.is_deleted,
+            COALESCE(s.sales, 0) AS sales,
+            COALESCE(v.views, 0) AS views
+        FROM mall_product p
+                 LEFT JOIN (SELECT moi.product_id, SUM(moi.quantity) AS sales
+                            FROM mall_order_item moi
+                                     INNER JOIN mall_order mo ON moi.order_id = mo.id
+                            WHERE moi.is_deleted = 0
+                              AND mo.is_deleted = 0
+                             AND mo.order_status = 'COMPLETED'
+                            GROUP BY moi.product_id) s ON s.product_id = p.id
+                 LEFT JOIN (SELECT product_id, SUM(view_count) AS views
+                            FROM mall_product_view_history
+                            GROUP BY product_id) v ON v.product_id = p.id
+        WHERE p.status = 1
+          AND (p.is_deleted = 0)
+        ORDER BY COALESCE(s.sales, 0) DESC,
+                 COALESCE(v.views, 0) DESC,
+                 p.sort,
+                 p.id DESC
+        LIMIT 100
     </select>
 </mapper>

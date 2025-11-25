@@ -2,6 +2,7 @@ package cn.zhangchuangla.medicine.client.service.impl;
 
 import cn.zhangchuangla.medicine.client.enums.ProductViewPeriod;
 import cn.zhangchuangla.medicine.client.mapper.MallProductMapper;
+import cn.zhangchuangla.medicine.client.model.dto.RecommendProductDto;
 import cn.zhangchuangla.medicine.client.model.vo.MallProductVo;
 import cn.zhangchuangla.medicine.client.service.MallProductImageService;
 import cn.zhangchuangla.medicine.client.service.MallProductService;
@@ -19,10 +20,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Objects;
+import java.util.*;
 
 /**
  * @author Chuang
@@ -35,23 +33,27 @@ public class MallProductServiceImpl extends ServiceImpl<MallProductMapper, MallP
     private final MallProductMapper mallProductMapper;
     private final MallProductImageService mallProductImageService;
     private final MallProductViewHistoryService mallProductViewHistoryService;
+    private static final int RECOMMEND_LIMIT = 20;
 
     @Override
     public List<RecommendListVo> recommend() {
 
-        // todo 这边是一个简单推荐,后续推荐的话需要根据销量,商品排序进行推荐
-        // 获取状态为启用的商品列表
-        List<MallProduct> mallProducts = lambdaQuery()
-                .eq(MallProduct::getStatus, 1)
-                .list();
+        // 获取候选集（销量/浏览量靠前），随后在代码层加入权重+随机
+        List<RecommendProductDto> candidates = mallProductMapper.listRecommendProducts();
 
         // 如果没有商品，直接返回空列表
-        if (mallProducts.isEmpty()) {
+        if (candidates.isEmpty()) {
             return Collections.emptyList();
         }
 
+        // 计算权重，加入适度随机，排序后截取
+        List<RecommendProductDto> picked = candidates.stream()
+                .sorted((a, b) -> Double.compare(weight(b), weight(a)))
+                .limit(RECOMMEND_LIMIT)
+                .toList();
+
         // 提取商品ID列表
-        List<Long> productIds = mallProducts.stream()
+        List<Long> productIds = picked.stream()
                 .map(MallProduct::getId)
                 .toList();
 
@@ -64,7 +66,7 @@ public class MallProductServiceImpl extends ServiceImpl<MallProductMapper, MallP
                 imageMap.put(productImage.getProductId(), productImage.getImageUrl()));
 
         // 转换为推荐列表VO
-        return mallProducts.stream().map(product ->
+        return picked.stream().map(product ->
                 RecommendListVo.builder()
                         .productId(product.getId())
                         .productName(product.getName())
@@ -72,6 +74,18 @@ public class MallProductServiceImpl extends ServiceImpl<MallProductMapper, MallP
                         .price(product.getPrice())
                         .build()
         ).toList();
+    }
+
+    /**
+     * 权重 = 销量/浏览量/排序号权重 * 随机系数，保证热门优先且保留一定随机性。
+     */
+    private double weight(RecommendProductDto product) {
+        double sales = Optional.ofNullable(product.getSales()).orElse(0);
+        double views = Optional.ofNullable(product.getViews()).orElse(0L);
+        int sort = Optional.ofNullable(product.getSort()).orElse(100);
+        double base = sales * 0.6 + views * 0.25 + (100 - Math.min(sort, 100)) * 0.15;
+        double randomFactor = 0.8 + Math.random() * 0.4; // 0.8~1.2
+        return base * randomFactor;
     }
 
     @Override
