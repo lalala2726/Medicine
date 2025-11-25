@@ -22,4 +22,21 @@
         id,order_id,product_id,product_name,quantity,price,
         total_price,image_url,create_time,update_time,is_deleted
     </sql>
+    <select id="getProductSales" resultType="cn.zhangchuangla.medicine.admin.model.dto.ProductSalesDto">
+        select product_id as productId, SUM(quantity) as sales
+        from mall_order_item
+        WHERE is_deleted = 0
+        GROUP BY product_id;
+    </select>
+
+    <select id="getProductSalesByIds" resultType="cn.zhangchuangla.medicine.admin.model.dto.ProductSalesDto">
+        select product_id as productId, SUM(quantity) as sales
+        from mall_order_item
+        WHERE is_deleted = 0
+        AND product_id IN
+        <foreach collection="productIds" item="productId" open="(" separator="," close=")">
+            #{productId}
+        </foreach>
+        GROUP BY product_id;
+    </select>
 </mapper>

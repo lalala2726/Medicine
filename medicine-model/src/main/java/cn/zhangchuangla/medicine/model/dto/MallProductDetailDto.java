@@ -17,6 +17,11 @@ public class MallProductDetailDto extends MallProduct {
     private String categoryName;
 
     /**
+     * 商品销量
+     */
+    private Integer sales;
+
+    /**
      * 商品图片列表
      */
     private List<String> images;

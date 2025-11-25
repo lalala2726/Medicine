@@ -66,11 +66,11 @@ public class MallOrderServiceImpl extends ServiceImpl<MallOrderMapper, MallOrder
     private final AlipayPaymentService alipayPaymentService;
     private final MallOrderTimelineService mallOrderTimelineService;
     private final UserWalletService userWalletService;
-    private final MallProductService mallProductService;
     private final MallOrderShippingService mallOrderShippingService;
+    private final MallInventoryService mallInventoryService;
 
 
-    public MallOrderServiceImpl(MallOrderMapper mallOrderMapper, UserMapper userMapper, MallOrderItemService mallOrderItemService, MallProductImageService mallProductImageService, AlipayPaymentService alipayPaymentService, MallOrderTimelineService mallOrderTimelineService, UserWalletService userWalletService, MallProductService mallProductService, MallOrderShippingService mallOrderShippingService) {
+    public MallOrderServiceImpl(MallOrderMapper mallOrderMapper, UserMapper userMapper, MallOrderItemService mallOrderItemService, MallProductImageService mallProductImageService, AlipayPaymentService alipayPaymentService, MallOrderTimelineService mallOrderTimelineService, UserWalletService userWalletService, MallOrderShippingService mallOrderShippingService, MallInventoryService mallInventoryService) {
         this.mallOrderMapper = mallOrderMapper;
         this.userMapper = userMapper;
         this.mallOrderItemService = mallOrderItemService;
@@ -78,8 +78,8 @@ public class MallOrderServiceImpl extends ServiceImpl<MallOrderMapper, MallOrder
         this.alipayPaymentService = alipayPaymentService;
         this.mallOrderTimelineService = mallOrderTimelineService;
         this.userWalletService = userWalletService;
-        this.mallProductService = mallProductService;
         this.mallOrderShippingService = mallOrderShippingService;
+        this.mallInventoryService = mallInventoryService;
     }
 
 
@@ -498,7 +498,7 @@ public class MallOrderServiceImpl extends ServiceImpl<MallOrderMapper, MallOrder
         if (orderItems != null && !orderItems.isEmpty()) {
             for (MallOrderItem orderItem : orderItems) {
                 if (orderItem != null && orderItem.getProductId() != null && orderItem.getQuantity() != null) {
-                    mallProductService.restoreStock(orderItem.getProductId(), orderItem.getQuantity());
+                    mallInventoryService.restoreStock(orderItem.getProductId(), orderItem.getQuantity());
                     log.info("恢复商品库存，商品ID：{}，数量：{}", orderItem.getProductId(), orderItem.getQuantity());
                 }
             }

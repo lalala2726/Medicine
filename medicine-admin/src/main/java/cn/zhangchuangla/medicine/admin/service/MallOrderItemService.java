@@ -1,5 +1,6 @@
 package cn.zhangchuangla.medicine.admin.service;
 
+import cn.zhangchuangla.medicine.admin.model.dto.ProductSalesDto;
 import cn.zhangchuangla.medicine.model.entity.MallOrderItem;
 import com.baomidou.mybatisplus.extension.service.IService;
 
@@ -18,4 +19,11 @@ public interface MallOrderItemService extends IService<MallOrderItem> {
      * @return 订单项列表
      */
     List<MallOrderItem> getOrderItemByOrderId(Long orderId);
+
+    /**
+     * 查询商品销售信息
+     *
+     * @return 商品销售信息列表
+     */
+    List<ProductSalesDto> getProductSales();
 }
