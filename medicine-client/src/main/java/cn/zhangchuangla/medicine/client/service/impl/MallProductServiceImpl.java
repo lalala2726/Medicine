@@ -5,9 +5,11 @@ import cn.zhangchuangla.medicine.client.mapper.MallProductMapper;
 import cn.zhangchuangla.medicine.client.model.vo.MallProductVo;
 import cn.zhangchuangla.medicine.client.service.MallProductImageService;
 import cn.zhangchuangla.medicine.client.service.MallProductService;
+import cn.zhangchuangla.medicine.client.service.MallProductViewHistoryService;
 import cn.zhangchuangla.medicine.common.core.enums.ResponseCode;
 import cn.zhangchuangla.medicine.common.core.exception.ServiceException;
 import cn.zhangchuangla.medicine.common.core.utils.Assert;
+import cn.zhangchuangla.medicine.common.security.base.BaseService;
 import cn.zhangchuangla.medicine.model.dto.MallProductWithImageDto;
 import cn.zhangchuangla.medicine.model.entity.MallProduct;
 import cn.zhangchuangla.medicine.model.entity.MallProductImage;
@@ -28,10 +30,11 @@ import java.util.Objects;
 @Service
 @RequiredArgsConstructor
 public class MallProductServiceImpl extends ServiceImpl<MallProductMapper, MallProduct>
-        implements MallProductService {
+        implements MallProductService, BaseService {
 
     private final MallProductMapper mallProductMapper;
     private final MallProductImageService mallProductImageService;
+    private final MallProductViewHistoryService mallProductViewHistoryService;
 
     @Override
     public List<RecommendListVo> recommend() {
@@ -122,7 +125,11 @@ public class MallProductServiceImpl extends ServiceImpl<MallProductMapper, MallP
     @Override
     public void recordView(Long productId) {
         Objects.requireNonNull(productId);
-        // todo 添加商品浏览量
+        Long userId = getUserId();
+        if (userId == null) {
+            return;
+        }
+        mallProductViewHistoryService.recordViewHistory(userId, productId);
     }
 
     /**
