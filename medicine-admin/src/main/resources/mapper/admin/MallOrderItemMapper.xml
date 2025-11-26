@@ -45,4 +45,20 @@
         </foreach>
         GROUP BY moi.product_id;
     </select>
+
+    <select id="findProductIdsWithOrderStatuses" resultType="java.lang.Long">
+        SELECT DISTINCT moi.product_id
+        FROM mall_order_item moi
+                 INNER JOIN mall_order mo ON moi.order_id = mo.id
+        WHERE moi.is_deleted = 0
+          AND mo.is_deleted = 0
+          AND moi.product_id IN
+        <foreach collection="productIds" item="productId" open="(" separator="," close=")">
+            #{productId}
+        </foreach>
+          AND mo.order_status IN
+        <foreach collection="orderStatuses" item="status" open="(" separator="," close=")">
+            #{status}
+        </foreach>
+    </select>
 </mapper>

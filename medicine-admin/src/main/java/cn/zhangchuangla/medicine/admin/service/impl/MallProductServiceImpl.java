@@ -1,5 +1,6 @@
 package cn.zhangchuangla.medicine.admin.service.impl;
 
+import cn.zhangchuangla.medicine.admin.mapper.MallOrderItemMapper;
 import cn.zhangchuangla.medicine.admin.mapper.MallProductMapper;
 import cn.zhangchuangla.medicine.admin.model.dto.ProductSalesDto;
 import cn.zhangchuangla.medicine.admin.service.*;
@@ -13,6 +14,7 @@ import cn.zhangchuangla.medicine.model.dto.MallProductDetailDto;
 import cn.zhangchuangla.medicine.model.entity.DrugDetail;
 import cn.zhangchuangla.medicine.model.entity.MallProduct;
 import cn.zhangchuangla.medicine.model.enums.DeliveryTypeEnum;
+import cn.zhangchuangla.medicine.model.enums.OrderStatusEnum;
 import cn.zhangchuangla.medicine.model.request.mall.MallProductAddRequest;
 import cn.zhangchuangla.medicine.model.request.mall.MallProductListQueryRequest;
 import cn.zhangchuangla.medicine.model.request.mall.MallProductUpdateRequest;
@@ -51,6 +53,7 @@ public class MallProductServiceImpl extends ServiceImpl<MallProductMapper, MallP
     private final MallProductImageService mallProductImageService;
     private final MallMedicineDetailService medicineDetailService;
     private final MallProductStatsService mallProductStatsService;
+    private final MallOrderItemMapper mallOrderItemMapper;
     private final MallProductSearchIndexer mallProductSearchIndexer;
 
     @Override
@@ -225,6 +228,16 @@ public class MallProductServiceImpl extends ServiceImpl<MallProductMapper, MallP
                     .filter(id -> !existIds.contains(id))
                     .toList();
             throw new ServiceException("商品不存在: " + notExistIds);
+        }
+
+        List<String> limitedOrderStatuses = List.of(
+                OrderStatusEnum.PENDING_SHIPMENT.getType(),
+                OrderStatusEnum.PENDING_RECEIPT.getType(),
+                OrderStatusEnum.AFTER_SALE.getType()
+        );
+        List<Long> blockedProductIds = mallOrderItemMapper.findProductIdsWithOrderStatuses(ids, limitedOrderStatuses);
+        if (!blockedProductIds.isEmpty()) {
+            throw new ServiceException("商品存在待发货/待收货/售后中的订单，无法删除: " + blockedProductIds);
         }
 
         // 删除关联的图片

@@ -27,8 +27,17 @@ public interface MallOrderItemMapper extends BaseMapper<MallOrderItem> {
      * @return 商品销售信息
      */
     List<ProductSalesDto> getProductSalesByIds(@Param("productIds") List<Long> productIds);
-}
 
+    /**
+     * 查询存在指定订单状态的商品ID
+     *
+     * @param productIds    商品ID列表
+     * @param orderStatuses 订单状态列表
+     * @return 存在指定状态订单的商品ID列表
+     */
+    List<Long> findProductIdsWithOrderStatuses(@Param("productIds") List<Long> productIds,
+                                               @Param("orderStatuses") List<String> orderStatuses);
+}
 
 
 

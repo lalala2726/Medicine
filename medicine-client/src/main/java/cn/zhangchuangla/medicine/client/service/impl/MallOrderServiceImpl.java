@@ -199,6 +199,49 @@ public class MallOrderServiceImpl extends ServiceImpl<MallOrderMapper, MallOrder
                 .build();
     }
 
+    @Override
+    public OrderPayInfoVo getOrderPayInfo(OrderPayInfoRequest request) {
+        MallOrder order = lambdaQuery()
+                .eq(MallOrder::getOrderNo, request.getOrderNo())
+                .one();
+
+        if (order == null) {
+            throw new ServiceException(ResponseCode.RESULT_IS_NULL, "订单不存在");
+        }
+
+        Long userId = getUserId();
+        if (!Objects.equals(order.getUserId(), userId)) {
+            throw new ServiceException(ResponseCode.OPERATION_ERROR, "订单信息不存在!");
+        }
+
+        if (!Objects.equals(order.getOrderStatus(), ORDER_STATUS_WAIT_PAY)) {
+            OrderStatusEnum orderStatusEnum = OrderStatusEnum.fromCode(order.getOrderStatus());
+            String statusName = orderStatusEnum != null ? orderStatusEnum.getName() : "未知";
+            throw new ServiceException(ResponseCode.OPERATION_ERROR,
+                    String.format("当前订单状态[%s]不支持支付", statusName));
+        }
+
+        List<MallOrderItem> orderItems = mallOrderItemService.lambdaQuery()
+                .eq(MallOrderItem::getOrderId, order.getId())
+                .orderByAsc(MallOrderItem::getId)
+                .list();
+
+        Date payExpireTime = order.getPayExpireTime();
+        if (payExpireTime == null && order.getCreateTime() != null) {
+            payExpireTime = DateUtils.addMinutes(order.getCreateTime(), ORDER_TIMEOUT_MINUTES);
+        }
+
+        return OrderPayInfoVo.builder()
+                .orderNo(order.getOrderNo())
+                .totalAmount(order.getTotalAmount())
+                .orderStatus(order.getOrderStatus())
+                .createTime(order.getCreateTime())
+                .payExpireTime(payExpireTime)
+                .productSummary(buildProductSummary(orderItems))
+                .itemCount(orderItems == null ? 0 : orderItems.size())
+                .build();
+    }
+
     /**
      * 订单支付
      * <p>
@@ -552,6 +595,23 @@ public class MallOrderServiceImpl extends ServiceImpl<MallOrderMapper, MallOrder
             return product.getName() + " " + quantity + unit;
         }
         return product.getName() + " x" + quantity;
+    }
+
+    /**
+     * 根据订单项构建商品摘要。
+     */
+    private String buildProductSummary(List<MallOrderItem> items) {
+        if (items == null || items.isEmpty()) {
+            return "订单商品";
+        }
+        MallOrderItem first = items.getFirst();
+        String name = StringUtils.hasText(first.getProductName()) ? first.getProductName() : "商品";
+        Integer quantity = first.getQuantity();
+        String base = quantity != null && quantity > 0 ? name + " x" + quantity : name;
+        if (items.size() > 1) {
+            base = base + " 等" + items.size() + "件";
+        }
+        return base;
     }
 
 
