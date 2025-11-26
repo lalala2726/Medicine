@@ -77,25 +77,34 @@ public class MallProductSearchServiceImpl implements MallProductSearchService {
      * 构建检索条件：名称、品牌、药品功效等字段均可命中。
      */
     private Criteria buildKeywordCriteria(String keyword) {
+        String normalizedKeyword = keyword.trim();
+        boolean hasWhitespace = normalizedKeyword.chars().anyMatch(Character::isWhitespace);
+
         // 使用 match 查询让中文分词命中，例如“感冒药”可以匹配拆分后的词条
         Criteria[] matchFields = {
-                new Criteria("name").matches(keyword),
-                new Criteria("commonName").matches(keyword),
-                new Criteria("brand").matches(keyword),
-                new Criteria("efficacy").matches(keyword),
-                new Criteria("composition").matches(keyword),
-                new Criteria("usageMethod").matches(keyword),
-                new Criteria("warmTips").matches(keyword),
-                new Criteria("instruction").matches(keyword)
+                new Criteria("name").matches(normalizedKeyword),
+                new Criteria("commonName").matches(normalizedKeyword),
+                new Criteria("brand").matches(normalizedKeyword),
+                new Criteria("efficacy").matches(normalizedKeyword),
+                new Criteria("composition").matches(normalizedKeyword),
+                new Criteria("usageMethod").matches(normalizedKeyword),
+                new Criteria("warmTips").matches(normalizedKeyword),
+                new Criteria("instruction").matches(normalizedKeyword)
         };
         // 同时兼容 keyword 子字段的前缀匹配，适配“快克”这类短品牌词
         Criteria[] keywordPrefixFields = {
-                new Criteria("name.keyword").startsWith(keyword),
-                new Criteria("commonName.keyword").startsWith(keyword),
-                new Criteria("brand.keyword").startsWith(keyword)
+                new Criteria("name.keyword").startsWith(normalizedKeyword),
+                new Criteria("commonName.keyword").startsWith(normalizedKeyword),
+                new Criteria("brand.keyword").startsWith(normalizedKeyword)
         };
+        Criteria keywordCriteria = combineWithOr(matchFields);
 
-        return combineWithOr(matchFields).or(combineWithOr(keywordPrefixFields));
+        // startsWith 不允许带空格的词，存在空格时仅使用分词匹配以避免 InvalidDataAccessApiUsageException
+        if (!hasWhitespace) {
+            keywordCriteria = keywordCriteria.or(combineWithOr(keywordPrefixFields));
+        }
+
+        return keywordCriteria;
     }
 
     private Criteria combineWithOr(Criteria[] matchFields) {

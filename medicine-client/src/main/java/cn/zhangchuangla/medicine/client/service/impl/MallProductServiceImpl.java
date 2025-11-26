@@ -82,6 +82,7 @@ public class MallProductServiceImpl extends ServiceImpl<MallProductMapper, MallP
                         .productName(product.getName())
                         .cover(imageMap.get(product.getId()))
                         .price(product.getPrice())
+                        .sales(product.getSales())
                         .build()
         ).toList();
     }
@@ -127,6 +128,7 @@ public class MallProductServiceImpl extends ServiceImpl<MallProductMapper, MallP
         productVo.setUnit(productWithImages.getUnit());
         productVo.setPrice(productWithImages.getPrice());
         productVo.setStock(productWithImages.getStock());
+        productVo.setSales(productWithImages.getSales());
         productVo.setDrugDetail(productWithImages.getDrugDetail());
 
         // 提取图片URL列表

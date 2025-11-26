@@ -57,6 +57,7 @@ public class MallProductController extends BaseController {
     @GetMapping("/search")
     @Operation(summary = "搜索商品")
     public AjaxResult<TableDataResult> search(@Validated SearchRequest request) {
+        request.setKeyword(request.getKeyword().trim());
         PageResult<MallProductSearchVo> result = mallProductService.search(request);
         return TableDataResult.build(result);
     }

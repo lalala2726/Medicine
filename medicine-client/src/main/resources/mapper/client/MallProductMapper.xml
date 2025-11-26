@@ -23,6 +23,7 @@
 
     <resultMap id="ProductWithImagesResultMap" type="cn.zhangchuangla.medicine.model.dto.MallProductWithImageDto"
                extends="BaseResultMap">
+        <result property="sales" column="sales"/>
         <association property="drugDetail" javaType="cn.zhangchuangla.medicine.model.dto.DrugDetailDto">
             <result property="commonName" column="med_common_name"/>
             <result property="composition" column="med_composition"/>
@@ -85,6 +86,7 @@
                p.update_time,
                p.create_by,
                p.update_by,
+               COALESCE(s.sales, 0)       AS sales,
                img.id                    as img_id,
                img.product_id            as img_product_id,
                img.image_url,
@@ -111,6 +113,13 @@
                md.taboo                  AS med_taboo,
                md.instruction            AS med_instruction
         FROM mall_product p
+                 LEFT JOIN (SELECT moi.product_id, SUM(moi.quantity) AS sales
+                            FROM mall_order_item moi
+                                     INNER JOIN mall_order mo ON moi.order_id = mo.id
+                            WHERE moi.is_deleted = 0
+                              AND mo.is_deleted = 0
+                              AND mo.order_status = 'COMPLETED'
+                            GROUP BY moi.product_id) s ON s.product_id = p.id
                  LEFT JOIN mall_product_image img ON p.id = img.product_id AND (img.is_deleted = 0)
                  LEFT JOIN drug_detail md ON p.id = md.product_id AND (md.is_deleted = 0)
         WHERE (p.is_deleted = 0)

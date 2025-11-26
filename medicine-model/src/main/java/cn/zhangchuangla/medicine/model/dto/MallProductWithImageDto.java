@@ -25,4 +25,9 @@ public class MallProductWithImageDto extends MallProduct {
      * 药品详细信息
      */
     private DrugDetailDto drugDetail;
+
+    /**
+     * 商品销量（已完成订单数量汇总）
+     */
+    private Integer sales;
 }
