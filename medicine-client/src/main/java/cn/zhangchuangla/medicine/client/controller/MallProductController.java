@@ -1,9 +1,13 @@
 package cn.zhangchuangla.medicine.client.controller;
 
 import cn.zhangchuangla.medicine.client.enums.ProductViewPeriod;
+import cn.zhangchuangla.medicine.client.model.request.SearchRequest;
+import cn.zhangchuangla.medicine.client.model.vo.MallProductSearchVo;
 import cn.zhangchuangla.medicine.client.model.vo.MallProductVo;
 import cn.zhangchuangla.medicine.client.service.MallProductService;
 import cn.zhangchuangla.medicine.common.core.base.AjaxResult;
+import cn.zhangchuangla.medicine.common.core.base.PageResult;
+import cn.zhangchuangla.medicine.common.core.base.TableDataResult;
 import cn.zhangchuangla.medicine.common.security.annotation.Anonymous;
 import cn.zhangchuangla.medicine.common.security.base.BaseController;
 import cn.zhangchuangla.medicine.model.vo.mall.RecommendListVo;
@@ -48,12 +52,22 @@ public class MallProductController extends BaseController {
     }
 
     /**
+     * 商品搜索
+     */
+    @GetMapping("/search")
+    @Operation(summary = "搜索商品")
+    public AjaxResult<TableDataResult> search(@Validated SearchRequest request) {
+        PageResult<MallProductSearchVo> result = mallProductService.search(request);
+        return TableDataResult.build(result);
+    }
+
+    /**
      * 获取商品详情（包含图片和药品详情）
      *
      * @param id 商品ID
      * @return 商品信息
      */
-    @GetMapping("/{id}")
+    @GetMapping("/{id:\\d+}")
     @Operation(summary = "获取商品详情")
     public AjaxResult<MallProductVo> getMallProductById(@Min(value = 1, message = "商品ID不能小于1")
                                                         @PathVariable("id") Long id) {

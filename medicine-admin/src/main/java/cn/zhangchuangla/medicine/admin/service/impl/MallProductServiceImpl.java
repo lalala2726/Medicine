@@ -3,6 +3,7 @@ package cn.zhangchuangla.medicine.admin.service.impl;
 import cn.zhangchuangla.medicine.admin.mapper.MallProductMapper;
 import cn.zhangchuangla.medicine.admin.model.dto.ProductSalesDto;
 import cn.zhangchuangla.medicine.admin.service.*;
+import cn.zhangchuangla.medicine.admin.task.MallProductSearchIndexer;
 import cn.zhangchuangla.medicine.common.core.constants.RedisConstants;
 import cn.zhangchuangla.medicine.common.core.exception.ServiceException;
 import cn.zhangchuangla.medicine.common.core.utils.Assert;
@@ -23,6 +24,8 @@ import org.springframework.beans.BeanUtils;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.support.TransactionSynchronization;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
 
 import java.math.BigDecimal;
 import java.util.Date;
@@ -48,6 +51,7 @@ public class MallProductServiceImpl extends ServiceImpl<MallProductMapper, MallP
     private final MallProductImageService mallProductImageService;
     private final MallMedicineDetailService medicineDetailService;
     private final MallProductStatsService mallProductStatsService;
+    private final MallProductSearchIndexer mallProductSearchIndexer;
 
     @Override
     public Page<MallProduct> listMallProduct(MallProductListQueryRequest request) {
@@ -140,7 +144,12 @@ public class MallProductServiceImpl extends ServiceImpl<MallProductMapper, MallP
         DrugDetail drugDetail = copyProperties(request.getDrugDetail(), DrugDetail.class);
         drugDetail.setProductId(product.getId());
         boolean result = medicineDetailService.addMedicineDetail(drugDetail);
-        return save && result;
+
+        boolean success = save && result;
+        if (success) {
+            runAfterCommit(() -> mallProductSearchIndexer.reindexAsync(product.getId()));
+        }
+        return success;
     }
 
     @Override
@@ -190,7 +199,11 @@ public class MallProductServiceImpl extends ServiceImpl<MallProductMapper, MallP
             medicineDetailService.updateMedicineDetail(drugDetail);
         }
 
-        return updateById(existingProduct);
+        boolean updated = updateById(existingProduct);
+        if (updated) {
+            runAfterCommit(() -> mallProductSearchIndexer.reindexAsync(existingProduct.getId()));
+        }
+        return updated;
     }
 
     @Override
@@ -220,6 +233,26 @@ public class MallProductServiceImpl extends ServiceImpl<MallProductMapper, MallP
         // 删除关联的药品详情
         medicineDetailService.deleteMedicineDetailByProductIds(ids);
 
-        return removeByIds(ids);
+        boolean removed = removeByIds(ids);
+        if (removed) {
+            runAfterCommit(() -> mallProductSearchIndexer.removeAsync(ids));
+        }
+        return removed;
+    }
+
+    /**
+     * 在事务提交后触发异步同步，避免读取到未提交数据。
+     */
+    private void runAfterCommit(Runnable task) {
+        if (TransactionSynchronizationManager.isActualTransactionActive()) {
+            TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
+                @Override
+                public void afterCommit() {
+                    task.run();
+                }
+            });
+        } else {
+            task.run();
+        }
     }
 }

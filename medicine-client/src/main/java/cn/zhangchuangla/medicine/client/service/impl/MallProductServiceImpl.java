@@ -3,13 +3,18 @@ package cn.zhangchuangla.medicine.client.service.impl;
 import cn.zhangchuangla.medicine.client.enums.ProductViewPeriod;
 import cn.zhangchuangla.medicine.client.mapper.MallProductMapper;
 import cn.zhangchuangla.medicine.client.model.dto.RecommendProductDto;
+import cn.zhangchuangla.medicine.client.model.request.SearchRequest;
+import cn.zhangchuangla.medicine.client.model.vo.MallProductSearchVo;
 import cn.zhangchuangla.medicine.client.model.vo.MallProductVo;
 import cn.zhangchuangla.medicine.client.service.MallProductImageService;
 import cn.zhangchuangla.medicine.client.service.MallProductService;
 import cn.zhangchuangla.medicine.client.service.MallProductViewHistoryService;
+import cn.zhangchuangla.medicine.common.core.base.PageResult;
 import cn.zhangchuangla.medicine.common.core.enums.ResponseCode;
 import cn.zhangchuangla.medicine.common.core.exception.ServiceException;
 import cn.zhangchuangla.medicine.common.core.utils.Assert;
+import cn.zhangchuangla.medicine.common.elasticsearch.document.MallProductDocument;
+import cn.zhangchuangla.medicine.common.elasticsearch.service.MallProductSearchService;
 import cn.zhangchuangla.medicine.common.security.base.BaseService;
 import cn.zhangchuangla.medicine.model.dto.MallProductWithImageDto;
 import cn.zhangchuangla.medicine.model.entity.MallProduct;
@@ -17,9 +22,13 @@ import cn.zhangchuangla.medicine.model.entity.MallProductImage;
 import cn.zhangchuangla.medicine.model.vo.mall.RecommendListVo;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.elasticsearch.core.SearchHit;
+import org.springframework.data.elasticsearch.core.SearchHits;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.util.StringUtils;
 
+import java.math.BigDecimal;
 import java.util.*;
 
 /**
@@ -33,6 +42,7 @@ public class MallProductServiceImpl extends ServiceImpl<MallProductMapper, MallP
     private final MallProductMapper mallProductMapper;
     private final MallProductImageService mallProductImageService;
     private final MallProductViewHistoryService mallProductViewHistoryService;
+    private final MallProductSearchService mallProductSearchService;
     private static final int RECOMMEND_LIMIT = 20;
 
     @Override
@@ -135,6 +145,82 @@ public class MallProductServiceImpl extends ServiceImpl<MallProductMapper, MallP
         return mallProductMapper.getProductWithImagesById(id);
     }
 
+    @Override
+    public PageResult<MallProductSearchVo> search(SearchRequest request) {
+        int safePageNum = Math.max(request.getPageNum(), 1);
+        int safePageSize = Math.max(request.getPageSize(), 1);
+        if (!StringUtils.hasText(request.getKeyword())) {
+            return new PageResult<>((long) safePageNum, (long) safePageSize, 0L, Collections.emptyList());
+        }
+        // 1) 在 ES 中搜索，先拿到匹配的商品 ID 顺序列表
+        SearchHits<MallProductDocument> hits = mallProductSearchService.search(request.getKeyword(), safePageNum - 1, safePageSize);
+        List<Long> productIds = hits.getSearchHits().stream()
+                .map(SearchHit::getContent)
+                .map(MallProductDocument::getId)
+                .toList();
+
+        // 2) 通过商品 ID 回源数据库，确保价格/图片等为最新值
+        Map<Long, MallProductWithImageDto> dbProducts = fetchProducts(productIds);
+
+        // 3) 按命中顺序将 DB 数据与 ES 文档合并成返回 VO
+        List<MallProductSearchVo> rows = productIds.stream()
+                .map(id -> toSearchVo(dbProducts.get(id), findDoc(hits, id)))
+                .toList();
+
+        return new PageResult<>((long) safePageNum, (long) safePageSize, hits.getTotalHits(), rows);
+    }
+
+    private Map<Long, MallProductWithImageDto> fetchProducts(List<Long> ids) {
+        // 使用有序 Map 保持与传入 ID 顺序一致，便于直接按顺序组装结果
+        Map<Long, MallProductWithImageDto> map = new LinkedHashMap<>();
+        for (Long id : ids) {
+            // 复用现有 mapper 单条查询，避免重复拼装 DTO 逻辑
+            map.put(id, mallProductMapper.getProductWithImagesById(id));
+        }
+        return map;
+    }
+
+    private MallProductDocument findDoc(SearchHits<MallProductDocument> hits, Long id) {
+        // 在 ES 搜索结果中定位当前商品的文档，用于兜底字段
+        return hits.getSearchHits().stream()
+                .map(SearchHit::getContent)
+                .filter(doc -> Objects.equals(doc.getId(), id))
+                .findFirst()
+                .orElse(null);
+    }
+
+    private MallProductSearchVo toSearchVo(MallProductWithImageDto product, MallProductDocument doc) {
+        Long id = product != null ? product.getId() : doc != null ? doc.getId() : null;
+        String name = product != null ? product.getName() : doc != null ? doc.getName() : null;
+        BigDecimal price = product != null ? product.getPrice() :
+                (doc != null && doc.getPrice() != null ? BigDecimal.valueOf(doc.getPrice()) : null);
+        String cover = extractCover(product);
+        if (cover == null && doc != null) {
+            cover = doc.getCoverImage();
+        }
+
+        return MallProductSearchVo.builder()
+                .productId(id)
+                .productName(name)
+                .cover(cover)
+                .price(price)
+                .build();
+    }
+
+    private String extractCover(MallProductWithImageDto product) {
+        // 按 sort、id 取第一张图片作为封面，保持与后台排序一致
+        if (product == null || product.getProductImages() == null) {
+            return null;
+        }
+        return product.getProductImages().stream()
+                .filter(Objects::nonNull)
+                .sorted(Comparator.comparing(MallProductImage::getSort, Comparator.nullsLast(Integer::compareTo))
+                        .thenComparing(MallProductImage::getId, Comparator.nullsLast(Long::compareTo)))
+                .map(MallProductImage::getImageUrl)
+                .filter(Objects::nonNull)
+                .findFirst()
+                .orElse(null);
+    }
 
     @Override
     public void recordView(Long productId) {
