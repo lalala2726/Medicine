@@ -2,7 +2,10 @@ package cn.zhangchuangla.medicine.llm.model.tool;
 
 import cn.zhangchuangla.medicine.model.dto.DrugDetailDto;
 import io.swagger.v3.oas.annotations.media.Schema;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Data;
+import lombok.NoArgsConstructor;
 
 import java.math.BigDecimal;
 import java.util.List;
@@ -11,6 +14,9 @@ import java.util.List;
  * 商品对话用的精简视图。
  */
 @Data
+@Builder
+@NoArgsConstructor
+@AllArgsConstructor
 @Schema(description = "商品信息快照")
 public class ProductSnapshot {
 

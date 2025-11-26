@@ -1,7 +1,10 @@
 package cn.zhangchuangla.medicine.llm.model.tool;
 
 import io.swagger.v3.oas.annotations.media.Schema;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Data;
+import lombok.NoArgsConstructor;
 
 import java.math.BigDecimal;
 
@@ -9,6 +12,9 @@ import java.math.BigDecimal;
  * 订单整体运营概况。
  */
 @Data
+@Builder
+@NoArgsConstructor
+@AllArgsConstructor
 @Schema(description = "订单整体概况")
 public class OrderOverviewSnapshot {
 

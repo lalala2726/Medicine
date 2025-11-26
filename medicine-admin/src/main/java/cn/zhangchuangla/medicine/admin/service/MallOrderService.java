@@ -1,5 +1,6 @@
 package cn.zhangchuangla.medicine.admin.service;
 
+import cn.zhangchuangla.medicine.admin.model.dto.OrderOverviewStats;
 import cn.zhangchuangla.medicine.admin.model.dto.UserOrderStatistics;
 import cn.zhangchuangla.medicine.admin.model.request.*;
 import cn.zhangchuangla.medicine.admin.model.vo.OrderAddressVo;
@@ -199,4 +200,9 @@ public interface MallOrderService extends IService<MallOrder> {
      * @return 是否成功
      */
     boolean deleteOrders(List<Long> ids);
+
+    /**
+     * 查询订单概况统计数据。
+     */
+    OrderOverviewStats getOrderOverviewStats();
 }

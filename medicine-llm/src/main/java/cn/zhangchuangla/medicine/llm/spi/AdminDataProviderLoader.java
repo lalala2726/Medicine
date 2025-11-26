@@ -1,6 +1,7 @@
 package cn.zhangchuangla.medicine.llm.spi;
 
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 import java.util.Optional;
@@ -15,8 +16,8 @@ public class AdminDataProviderLoader {
 
     private final AdminDataProvider provider;
 
-    public AdminDataProviderLoader() {
-        this.provider = loadProvider();
+    public AdminDataProviderLoader(@Autowired(required = false) AdminDataProvider providerFromContext) {
+        this.provider = providerFromContext != null ? providerFromContext : loadProvider();
     }
 
     public Optional<AdminDataProvider> getProvider() {

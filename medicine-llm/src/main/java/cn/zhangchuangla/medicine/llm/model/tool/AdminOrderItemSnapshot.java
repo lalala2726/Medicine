@@ -1,7 +1,10 @@
 package cn.zhangchuangla.medicine.llm.model.tool;
 
 import io.swagger.v3.oas.annotations.media.Schema;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Data;
+import lombok.NoArgsConstructor;
 
 import java.math.BigDecimal;
 import java.util.List;
@@ -10,6 +13,9 @@ import java.util.List;
  * 订单子项简要信息。
  */
 @Data
+@Builder
+@NoArgsConstructor
+@AllArgsConstructor
 @Schema(description = "订单明细快照")
 public class AdminOrderItemSnapshot {
 
