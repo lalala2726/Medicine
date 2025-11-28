@@ -162,16 +162,9 @@ public class MallProductServiceImpl extends ServiceImpl<MallProductMapper, MallP
             return new PageResult<>((long) safePageNum, (long) safePageSize, 0L, Collections.emptyList());
         }
 
-        List<Long> ids = hits.stream()
+        List<MallProductSearchVo> rows = hits.getSearchHits().stream()
                 .map(SearchHit::getContent)
-                .map(MallProductDocument::getId)
-                .filter(Objects::nonNull)
-                .toList();
-
-        Map<Long, MallProductWithImageDto> productMap = fetchProducts(ids);
-
-        List<MallProductSearchVo> rows = ids.stream()
-                .map(id -> toSearchVo(productMap.get(id), findDoc(hits, id)))
+                .map(this::toSearchVo)
                 .filter(vo -> vo.getProductId() != null)
                 .toList();
 
@@ -183,37 +176,16 @@ public class MallProductServiceImpl extends ServiceImpl<MallProductMapper, MallP
         );
     }
 
-    private Map<Long, MallProductWithImageDto> fetchProducts(List<Long> ids) {
-        // 使用有序 Map 保持与传入 ID 顺序一致，便于直接按顺序组装结果
-        Map<Long, MallProductWithImageDto> map = new LinkedHashMap<>();
-        for (Long id : ids) {
-            // 复用现有 mapper 单条查询，避免重复拼装 DTO 逻辑
-            map.put(id, mallProductMapper.getProductWithImagesById(id));
-        }
-        return map;
-    }
-
-    private MallProductDocument findDoc(SearchHits<MallProductDocument> hits, Long id) {
-        // 在 ES 搜索结果中定位当前商品的文档，用于兜底字段
-        return hits.getSearchHits().stream()
-                .map(SearchHit::getContent)
-                .filter(doc -> Objects.equals(doc.getId(), id))
-                .findFirst()
-                .orElse(null);
-    }
-
-    private MallProductSearchVo toSearchVo(MallProductWithImageDto product, MallProductDocument doc) {
-        Long id = product != null ? product.getId() : doc != null ? doc.getId() : null;
-        String name = product != null ? product.getName() : doc != null ? doc.getName() : null;
-        String cover = extractCover(product);
-        if (cover == null && doc != null) {
-            cover = doc.getCoverImage();
+    private MallProductSearchVo toSearchVo(MallProductDocument doc) {
+        if (doc == null) {
+            return MallProductSearchVo.builder().build();
         }
 
         return MallProductSearchVo.builder()
-                .productId(id)
-                .productName(name)
-                .cover(cover)
+                .productId(doc.getId())
+                .productName(doc.getName())
+                .cover(doc.getCoverImage())
+                .price(doc.getPrice())
                 .build();
     }
 

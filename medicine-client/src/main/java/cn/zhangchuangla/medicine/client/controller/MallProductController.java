@@ -67,7 +67,13 @@ public class MallProductController extends BaseController {
     }
 
 
-    @GetMapping("/suggest")
+    /**
+     * 商品搜索建议
+     *
+     * @param keyword 关键字
+     * @return 建议
+     */
+    @GetMapping("/search/suggest")
     @Operation(summary = "商品搜索建议")
     @Anonymous
     public AjaxResult<List<String>> suggest(@RequestParam("keyword") String keyword) {
