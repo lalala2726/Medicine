@@ -1,13 +1,13 @@
 package cn.zhangchuangla.medicine.client.controller;
 
 import cn.zhangchuangla.medicine.client.enums.ProductViewPeriod;
-import cn.zhangchuangla.medicine.client.model.request.SearchRequest;
 import cn.zhangchuangla.medicine.client.model.vo.MallProductSearchVo;
 import cn.zhangchuangla.medicine.client.model.vo.MallProductVo;
 import cn.zhangchuangla.medicine.client.service.MallProductService;
 import cn.zhangchuangla.medicine.common.core.base.AjaxResult;
 import cn.zhangchuangla.medicine.common.core.base.PageResult;
 import cn.zhangchuangla.medicine.common.core.base.TableDataResult;
+import cn.zhangchuangla.medicine.common.elasticsearch.model.request.MallProductSearchRequest;
 import cn.zhangchuangla.medicine.common.security.annotation.Anonymous;
 import cn.zhangchuangla.medicine.common.security.base.BaseController;
 import cn.zhangchuangla.medicine.model.vo.mall.RecommendListVo;
@@ -16,6 +16,7 @@ import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.constraints.Min;
 import lombok.RequiredArgsConstructor;
+import org.springframework.util.StringUtils;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
@@ -56,10 +57,22 @@ public class MallProductController extends BaseController {
      */
     @GetMapping("/search")
     @Operation(summary = "搜索商品")
-    public AjaxResult<TableDataResult> search(@Validated SearchRequest request) {
-        request.setKeyword(request.getKeyword().trim());
+    @Anonymous
+    public AjaxResult<TableDataResult> search(@Validated MallProductSearchRequest request) {
+        if (StringUtils.hasText(request.getKeyword())) {
+            request.setKeyword(request.getKeyword().trim());
+        }
         PageResult<MallProductSearchVo> result = mallProductService.search(request);
         return TableDataResult.build(result);
+    }
+
+
+    @GetMapping("/suggest")
+    @Operation(summary = "商品搜索建议")
+    @Anonymous
+    public AjaxResult<List<String>> suggest(@RequestParam("keyword") String keyword) {
+        List<String> suggests = mallProductService.suggest(StringUtils.hasText(keyword) ? keyword.trim() : keyword);
+        return success(suggests);
     }
 
     /**

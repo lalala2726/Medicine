@@ -1,10 +1,10 @@
 package cn.zhangchuangla.medicine.client.service;
 
 import cn.zhangchuangla.medicine.client.enums.ProductViewPeriod;
-import cn.zhangchuangla.medicine.client.model.request.SearchRequest;
 import cn.zhangchuangla.medicine.client.model.vo.MallProductSearchVo;
 import cn.zhangchuangla.medicine.client.model.vo.MallProductVo;
 import cn.zhangchuangla.medicine.common.core.base.PageResult;
+import cn.zhangchuangla.medicine.common.elasticsearch.model.request.MallProductSearchRequest;
 import cn.zhangchuangla.medicine.model.dto.MallProductWithImageDto;
 import cn.zhangchuangla.medicine.model.entity.MallProduct;
 import cn.zhangchuangla.medicine.model.vo.mall.RecommendListVo;
@@ -90,6 +90,14 @@ public interface MallProductService extends IService<MallProduct> {
      *
      * @return 搜索结果
      */
-    PageResult<MallProductSearchVo> search(SearchRequest request);
+    PageResult<MallProductSearchVo> search(MallProductSearchRequest request);
+
+    /**
+     * 搜索建议（商品名/分类名/通用名）。
+     *
+     * @param keyword 关键字
+     * @return 建议列表
+     */
+    List<String> suggest(String keyword);
 
 }

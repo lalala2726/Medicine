@@ -1,6 +1,7 @@
 package cn.zhangchuangla.medicine.common.elasticsearch.service;
 
 import cn.zhangchuangla.medicine.common.elasticsearch.document.MallProductDocument;
+import cn.zhangchuangla.medicine.common.elasticsearch.model.request.MallProductSearchRequest;
 import org.springframework.data.elasticsearch.core.SearchHits;
 
 import java.util.List;
@@ -34,11 +35,13 @@ public interface MallProductSearchService {
     /**
      * 关键字搜索。
      *
-     * @param keyword 关键字
-     * @param page    页码，从0开始
-     * @param size    页大小
      * @return 命中文档（包含总数）
      */
-    SearchHits<MallProductDocument> search(String keyword, int page, int size);
+    SearchHits<MallProductDocument> search(MallProductSearchRequest request);
+
+    /**
+     * 搜索建议，仅命中名称/通用名/品牌（支持拼音）。
+     */
+    List<String> suggest(String keyword, int size);
 
 }

@@ -3,7 +3,6 @@ package cn.zhangchuangla.medicine.client.service.impl;
 import cn.zhangchuangla.medicine.client.enums.ProductViewPeriod;
 import cn.zhangchuangla.medicine.client.mapper.MallProductMapper;
 import cn.zhangchuangla.medicine.client.model.dto.RecommendProductDto;
-import cn.zhangchuangla.medicine.client.model.request.SearchRequest;
 import cn.zhangchuangla.medicine.client.model.vo.MallProductSearchVo;
 import cn.zhangchuangla.medicine.client.model.vo.MallProductVo;
 import cn.zhangchuangla.medicine.client.service.MallProductImageService;
@@ -14,6 +13,7 @@ import cn.zhangchuangla.medicine.common.core.enums.ResponseCode;
 import cn.zhangchuangla.medicine.common.core.exception.ServiceException;
 import cn.zhangchuangla.medicine.common.core.utils.Assert;
 import cn.zhangchuangla.medicine.common.elasticsearch.document.MallProductDocument;
+import cn.zhangchuangla.medicine.common.elasticsearch.model.request.MallProductSearchRequest;
 import cn.zhangchuangla.medicine.common.elasticsearch.service.MallProductSearchService;
 import cn.zhangchuangla.medicine.common.security.base.BaseService;
 import cn.zhangchuangla.medicine.model.dto.MallProductWithImageDto;
@@ -28,7 +28,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
 
-import java.math.BigDecimal;
 import java.util.*;
 
 /**
@@ -148,28 +147,40 @@ public class MallProductServiceImpl extends ServiceImpl<MallProductMapper, MallP
     }
 
     @Override
-    public PageResult<MallProductSearchVo> search(SearchRequest request) {
+    public PageResult<MallProductSearchVo> search(MallProductSearchRequest request) {
         int safePageNum = Math.max(request.getPageNum(), 1);
         int safePageSize = Math.max(request.getPageSize(), 1);
         if (!StringUtils.hasText(request.getKeyword())) {
             return new PageResult<>((long) safePageNum, (long) safePageSize, 0L, Collections.emptyList());
         }
-        // 1) 在 ES 中搜索，先拿到匹配的商品 ID 顺序列表
-        SearchHits<MallProductDocument> hits = mallProductSearchService.search(request.getKeyword(), safePageNum - 1, safePageSize);
-        List<Long> productIds = hits.getSearchHits().stream()
+        request.setKeyword(request.getKeyword().trim());
+        request.setPageNum(safePageNum);
+        request.setPageSize(safePageSize);
+
+        SearchHits<MallProductDocument> hits = mallProductSearchService.search(request);
+        if (hits == null || hits.isEmpty()) {
+            return new PageResult<>((long) safePageNum, (long) safePageSize, 0L, Collections.emptyList());
+        }
+
+        List<Long> ids = hits.stream()
                 .map(SearchHit::getContent)
                 .map(MallProductDocument::getId)
+                .filter(Objects::nonNull)
                 .toList();
 
-        // 2) 通过商品 ID 回源数据库，确保价格/图片等为最新值
-        Map<Long, MallProductWithImageDto> dbProducts = fetchProducts(productIds);
+        Map<Long, MallProductWithImageDto> productMap = fetchProducts(ids);
 
-        // 3) 按命中顺序将 DB 数据与 ES 文档合并成返回 VO
-        List<MallProductSearchVo> rows = productIds.stream()
-                .map(id -> toSearchVo(dbProducts.get(id), findDoc(hits, id)))
+        List<MallProductSearchVo> rows = ids.stream()
+                .map(id -> toSearchVo(productMap.get(id), findDoc(hits, id)))
+                .filter(vo -> vo.getProductId() != null)
                 .toList();
 
-        return new PageResult<>((long) safePageNum, (long) safePageSize, hits.getTotalHits(), rows);
+        return new PageResult<>(
+                (long) safePageNum,
+                (long) safePageSize,
+                hits.getTotalHits(),
+                rows
+        );
     }
 
     private Map<Long, MallProductWithImageDto> fetchProducts(List<Long> ids) {
@@ -194,8 +205,6 @@ public class MallProductServiceImpl extends ServiceImpl<MallProductMapper, MallP
     private MallProductSearchVo toSearchVo(MallProductWithImageDto product, MallProductDocument doc) {
         Long id = product != null ? product.getId() : doc != null ? doc.getId() : null;
         String name = product != null ? product.getName() : doc != null ? doc.getName() : null;
-        BigDecimal price = product != null ? product.getPrice() :
-                (doc != null && doc.getPrice() != null ? BigDecimal.valueOf(doc.getPrice()) : null);
         String cover = extractCover(product);
         if (cover == null && doc != null) {
             cover = doc.getCoverImage();
@@ -205,7 +214,6 @@ public class MallProductServiceImpl extends ServiceImpl<MallProductMapper, MallP
                 .productId(id)
                 .productName(name)
                 .cover(cover)
-                .price(price)
                 .build();
     }
 
@@ -222,6 +230,14 @@ public class MallProductServiceImpl extends ServiceImpl<MallProductMapper, MallP
                 .filter(Objects::nonNull)
                 .findFirst()
                 .orElse(null);
+    }
+
+    @Override
+    public List<String> suggest(String keyword) {
+        if (!StringUtils.hasText(keyword)) {
+            return Collections.emptyList();
+        }
+        return mallProductSearchService.suggest(keyword.trim(), 10);
     }
 
     @Override

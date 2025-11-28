@@ -10,27 +10,16 @@
         <relativePath>../../pom.xml</relativePath>
     </parent>
 
-    <artifactId>medicine-common-elasticsearch</artifactId>
+    <artifactId>medicine-common-rabbitmq</artifactId>
 
     <dependencies>
         <dependency>
-            <groupId>cn.zhangchuangla.medicine</groupId>
-            <artifactId>medicine-model</artifactId>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-amqp</artifactId>
         </dependency>
-
         <dependency>
             <groupId>org.projectlombok</groupId>
             <artifactId>lombok</artifactId>
-            <optional>true</optional>
-        </dependency>
-        <!-- https://mvnrepository.com/artifact/org.springframework.boot/spring-boot-starter-data-elasticsearch -->
-        <dependency>
-            <groupId>org.springframework.boot</groupId>
-            <artifactId>spring-boot-starter-data-elasticsearch</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>cn.zhangchuangla.medicine</groupId>
-            <artifactId>medicine-common-rabbitmq</artifactId>
         </dependency>
     </dependencies>
 

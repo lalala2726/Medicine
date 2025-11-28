@@ -1,9 +1,8 @@
 package cn.zhangchuangla.medicine.admin.task;
 
 import cn.zhangchuangla.medicine.admin.mapper.MallProductMapper;
-import cn.zhangchuangla.medicine.common.elasticsearch.document.MallProductDocument;
-import cn.zhangchuangla.medicine.common.elasticsearch.service.MallProductSearchService;
-import cn.zhangchuangla.medicine.common.elasticsearch.support.MallProductDocumentConverter;
+import cn.zhangchuangla.medicine.common.rabbitmq.message.ProductIndexPayload;
+import cn.zhangchuangla.medicine.common.rabbitmq.publisher.ProductIndexMessagePublisher;
 import cn.zhangchuangla.medicine.model.dto.MallProductDetailDto;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -22,10 +21,10 @@ import java.util.Collection;
 public class MallProductSearchIndexer {
 
     private final MallProductMapper mallProductMapper;
-    private final MallProductSearchService mallProductSearchService;
+    private final ProductIndexMessagePublisher productIndexMessagePublisher;
 
     /**
-     * 异步写入/更新商品索引。
+     * 异步写入/更新商品索引：admin 侧只负责发 MQ 消息。
      */
     @Async
     public void reindexAsync(Long productId) {
@@ -34,12 +33,13 @@ public class MallProductSearchIndexer {
         }
         MallProductDetailDto detail = mallProductMapper.getMallProductDetailById(productId);
         if (detail == null) {
-            log.warn("Skip reindexing, product {} not found", productId);
+            log.warn("跳过重建索引，商品 {} 未找到", productId);
             return;
         }
-        MallProductDocument document = MallProductDocumentConverter.from(detail);
-        mallProductSearchService.save(document);
-        log.info("Indexed product {} into Elasticsearch", productId);
+        ProductIndexPayload payload = toPayload(detail);
+        productIndexMessagePublisher.publishUpsert(payload);
+
+        log.info("向 RabbitMQ 发布商品 {} 的索引事件", productId);
     }
 
     /**
@@ -50,7 +50,27 @@ public class MallProductSearchIndexer {
         if (CollectionUtils.isEmpty(productIds)) {
             return;
         }
-        productIds.forEach(mallProductSearchService::deleteById);
-        log.info("Removed {} products from Elasticsearch", productIds.size());
+        productIndexMessagePublisher.publishDelete(productIds);
+
+        log.info("向 RabbitMQ 发布 {} 个商品的删除事件", productIds.size());
+    }
+
+    private ProductIndexPayload toPayload(MallProductDetailDto mallProductDetailDto) {
+        if (mallProductDetailDto == null) {
+            return null;
+        }
+        return ProductIndexPayload.builder()
+                .id(mallProductDetailDto.getId())
+                .name(mallProductDetailDto.getName())
+                .price(mallProductDetailDto.getPrice())
+                .status(mallProductDetailDto.getStatus())
+                // 可能为null的字段
+                .categoryName(mallProductDetailDto.getCategoryName())
+                .brand(mallProductDetailDto.getDrugDetail() != null ? mallProductDetailDto.getDrugDetail().getBrand() : null)
+                .commonName(mallProductDetailDto.getDrugDetail() != null ? mallProductDetailDto.getDrugDetail().getCommonName() : null)
+                .efficacy(mallProductDetailDto.getDrugDetail() != null ? mallProductDetailDto.getDrugDetail().getEfficacy() : null)
+                .instruction(mallProductDetailDto.getDrugDetail() != null ? mallProductDetailDto.getDrugDetail().getInstruction() : null)
+                .coverImage(mallProductDetailDto.getImages() != null && !mallProductDetailDto.getImages().isEmpty() ? mallProductDetailDto.getImages().getFirst() : null)
+                .build();
     }
 }

@@ -24,10 +24,28 @@ spring:
       - org.springframework.ai.vectorstore.milvus.autoconfigure.MilvusVectorStoreAutoConfiguration
 
   #   elasticsearch 配置
+
   elasticsearch:
     username: elastic
     password: zhangchuang2726
     uris: http://192.168.10.110:9200
+  rabbitmq:
+    host: 192.168.10.110
+    port: 5672
+    username: zhangchuang
+    password: zhangchuang2726
+    virtual-host: /
+    listener:
+      simple:
+        # 自动确认；如需手动确认可改为 manual
+        acknowledge-mode: auto
+        prefetch: 10
+        concurrency: 2
+        max-concurrency: 10
+    publisher-confirm-type: correlated
+    publisher-returns: true
+    template:
+      mandatory: true
 server:
   port: 8080
 mybatis-plus:

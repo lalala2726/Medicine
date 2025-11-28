@@ -6,19 +6,23 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.elasticsearch.annotations.*;
+import org.springframework.data.elasticsearch.core.suggest.Completion;
 
-import java.util.List;
+import java.math.BigDecimal;
 
 /**
- * 商品搜索索引文档。
- *
- * <p>用于将商城商品和药品信息同步到 Elasticsearch，便于名称/品牌/功效等多字段检索。</p>
+ * ES 商品索引（完整版）
+ * 支持：
+ * - IK + 拼音全文搜索
+ * - Completion Suggest（自动补全）
+ * - 品牌/名称/通用名 三路补全
  */
 @Data
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-@Document(indexName = MallProductDocument.INDEX_NAME)
+@Document(indexName = MallProductDocument.INDEX_NAME, createIndex = true)
+@Setting(settingPath = "/elasticsearch/mall_product-settings.json")
 public class MallProductDocument {
 
     public static final String INDEX_NAME = "mall_product";
@@ -27,77 +31,83 @@ public class MallProductDocument {
     private Long id;
 
     /**
-     * 商品名称，提供全文检索和前缀匹配（keyword 子字段用于前缀/模糊）。
+     * 商品名称（text + keyword + 拼音搜索）
      */
-    @MultiField(mainField = @Field(type = FieldType.Text),
-            otherFields = @InnerField(suffix = "keyword", type = FieldType.Keyword))
+    @MultiField(
+            mainField = @Field(type = FieldType.Text, analyzer = "ik_pinyin_index", searchAnalyzer = "ik_pinyin_search"),
+            otherFields = @InnerField(suffix = "keyword", type = FieldType.Keyword)
+    )
     private String name;
 
-    @Field(type = FieldType.Long)
-    private Long categoryId;
-
+    /**
+     * 分类名
+     */
     @Field(type = FieldType.Keyword)
     private String categoryName;
 
-    @Field(type = FieldType.Double)
-    private Double price;
+    /**
+     * 商品价格
+     */
+    @Field(type = FieldType.Scaled_Float, scalingFactor = 100)
+    private BigDecimal price;
 
+    /**
+     * 状态
+     */
     @Field(type = FieldType.Integer)
     private Integer status;
 
-    @MultiField(mainField = @Field(type = FieldType.Text),
-            otherFields = @InnerField(suffix = "keyword", type = FieldType.Keyword))
+    /**
+     * 品牌（text + 拼音搜索）
+     */
+    @MultiField(
+            mainField = @Field(type = FieldType.Text, analyzer = "ik_pinyin_index", searchAnalyzer = "ik_pinyin_search"),
+            otherFields = @InnerField(suffix = "keyword", type = FieldType.Keyword)
+    )
     private String brand;
 
     /**
-     * 药品通用名。
+     * 通用名（如“对乙酰氨基酚”）
      */
-    @MultiField(mainField = @Field(type = FieldType.Text),
-            otherFields = @InnerField(suffix = "keyword", type = FieldType.Keyword))
+    @MultiField(
+            mainField = @Field(type = FieldType.Text, analyzer = "ik_pinyin_index", searchAnalyzer = "ik_pinyin_search"),
+            otherFields = @InnerField(suffix = "keyword", type = FieldType.Keyword)
+    )
     private String commonName;
 
     /**
-     * 功效/主治。
+     * 商品名称补全（拼音+中文）
      */
-    @MultiField(mainField = @Field(type = FieldType.Text),
-            otherFields = @InnerField(suffix = "keyword", type = FieldType.Keyword))
+    @CompletionField(analyzer = "ik_pinyin_index", searchAnalyzer = "ik_pinyin_search", maxInputLength = 100)
+    private Completion nameSuggest;
+
+    /**
+     * 通用名补全
+     */
+    @CompletionField(analyzer = "ik_smart", searchAnalyzer = "ik_smart", maxInputLength = 100)
+    private Completion commonNameSuggest;
+
+    /**
+     * 品牌补全
+     */
+    @CompletionField(analyzer = "ik_smart", searchAnalyzer = "ik_smart", maxInputLength = 100)
+    private Completion brandSuggest;
+
+    /**
+     * 功效/主治
+     */
+    @Field(type = FieldType.Text, analyzer = "ik_max_word", searchAnalyzer = "ik_smart")
     private String efficacy;
 
     /**
-     * 主要成分。
-     */
-    @MultiField(mainField = @Field(type = FieldType.Text),
-            otherFields = @InnerField(suffix = "keyword", type = FieldType.Keyword))
-    private String composition;
-
-    /**
-     * 用法用量。
-     */
-    @MultiField(mainField = @Field(type = FieldType.Text),
-            otherFields = @InnerField(suffix = "keyword", type = FieldType.Keyword))
-    private String usageMethod;
-
-    /**
-     * 其他提示信息。
-     */
-    @Field(type = FieldType.Text)
-    private String warmTips;
-
-    /**
-     * 说明书全文，作为长文本检索补充。
-     */
-    @Field(type = FieldType.Text)
-    private String instruction;
-
-    /**
-     * 商品主图。
+     * 主图
      */
     @Field(type = FieldType.Keyword, index = false)
     private String coverImage;
 
     /**
-     * 所有图片地址，便于前端快速展示。
+     * 药品说明书
      */
-    @Field(type = FieldType.Keyword, index = false)
-    private List<String> imageUrls;
+    @Field(type = FieldType.Text, analyzer = "ik_max_word", searchAnalyzer = "ik_smart")
+    private String instruction;
 }
