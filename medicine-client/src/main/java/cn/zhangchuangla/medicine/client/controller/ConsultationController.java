@@ -1,5 +1,6 @@
 package cn.zhangchuangla.medicine.client.controller;
 
+import cn.zhangchuangla.medicine.llm.model.response.ClientChatResponse;
 import cn.zhangchuangla.medicine.llm.service.ConsultationService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -28,13 +29,11 @@ public class ConsultationController {
     }
 
 
-    @PostMapping(value = "/simple", produces = "text/event-stream")
-    @Operation(summary = "简单咨询", description = "简单的医疗咨询接口，返回OpenAI格式的响应")
-    public Flux<ChatResponse> simpleConsultation(@RequestBody ConsultationRequest request) {
+    @PostMapping(value = "/chat", produces = "text/event-stream")
+    @Operation(summary = "简单咨询", description = "简单的医疗咨询接口，返回 ClientChatResponse SSE 消息（文本或卡片）")
+    public Flux<ClientChatResponse> simpleConsultation(@RequestBody ConsultationRequest request) {
         log.info("咨询问题：{}", request.question);
-        return consultationService.simpleConsultation(request.question())
-                .map(content -> new ChatResponse(content, false))
-                .concatWith(Flux.just(new ChatResponse("", true)));
+        return consultationService.simpleConsultation(request.question());
     }
 
 
@@ -45,12 +44,6 @@ public class ConsultationController {
      */
     public record ConsultationRequest(
             String question
-    ) {
-    }
-
-    public record ChatResponse(
-            String content,
-            Boolean finished
     ) {
     }
 }
