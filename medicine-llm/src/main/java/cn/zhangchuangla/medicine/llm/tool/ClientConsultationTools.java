@@ -1,9 +1,12 @@
 package cn.zhangchuangla.medicine.llm.tool;
 
+import cn.zhangchuangla.medicine.llm.model.enums.MessageRole;
+import cn.zhangchuangla.medicine.llm.model.response.ClientChatResponse;
 import cn.zhangchuangla.medicine.llm.model.response.card.MedicineCardItem;
 import cn.zhangchuangla.medicine.llm.model.response.card.ProductCardItem;
 import cn.zhangchuangla.medicine.llm.spi.ClientDataProvider;
 import cn.zhangchuangla.medicine.llm.spi.ClientDataProviderLoader;
+import cn.zhangchuangla.medicine.llm.utils.SseMessageInjector;
 import org.springframework.ai.tool.annotation.Tool;
 import org.springframework.ai.tool.annotation.ToolParam;
 import org.springframework.stereotype.Component;
@@ -19,9 +22,11 @@ public class ClientConsultationTools {
 
 
     private final ClientDataProviderLoader providerLoader;
+    private final SseMessageInjector messageInjector;
 
-    public ClientConsultationTools(ClientDataProviderLoader providerLoader) {
+    public ClientConsultationTools(ClientDataProviderLoader providerLoader, SseMessageInjector messageInjector) {
         this.providerLoader = providerLoader;
+        this.messageInjector = messageInjector;
     }
 
 
@@ -37,6 +42,7 @@ public class ClientConsultationTools {
             @ToolParam(description = "关键词或症状描述") String keyword,
             @ToolParam(description = "返回最大条数，默认 5") Integer limit) {
         int safeLimit = limit == null || limit <= 0 ? 5 : Math.min(limit, 20);
+        messageInjector.send(buildNotice("正在调用 recommend_medicines_for_card 工具，为您查询药品推荐..."));
         return requireProvider().recommendMedicines(keyword, safeLimit);
     }
 
@@ -52,6 +58,7 @@ public class ClientConsultationTools {
             @ToolParam(description = "关键词，例如商品名、订单号、症状对应商品") String keyword,
             @ToolParam(description = "返回最大条数，默认 5") Integer limit) {
         int safeLimit = limit == null || limit <= 0 ? 5 : Math.min(limit, 20);
+        messageInjector.send(buildNotice("正在调用 search_products_for_card 工具，搜索商品/订单..."));
         return requireProvider().searchProducts(keyword, safeLimit);
     }
 
@@ -65,6 +72,7 @@ public class ClientConsultationTools {
     public List<ProductCardItem> latestOrders(
             @ToolParam(description = "返回最大条数，默认 5") Integer limit) {
         int safeLimit = limit == null || limit <= 0 ? 5 : Math.min(limit, 20);
+        messageInjector.send(buildNotice("正在调用 list_latest_orders_for_card 工具，查询最近订单..."));
         return requireProvider().latestOrders(safeLimit);
     }
 
@@ -77,8 +85,23 @@ public class ClientConsultationTools {
     @Tool(name = "get_product_card_by_id", description = "根据 ID 查询商品或订单卡片条目，用于补充")
     public ProductCardItem productCardById(
             @ToolParam(description = "商品或订单ID") String productId) {
+        messageInjector.send(buildNotice("正在调用 get_product_card_by_id 工具，查询商品/订单详情..."));
         return requireProvider().findProductById(productId)
                 .orElseThrow(() -> new IllegalArgumentException("未找到对应的商品/订单"));
+    }
+
+    @Tool(name = "date_time_tool", description = "获取当前系统时间")
+    public long dateTime() {
+        messageInjector.send(buildNotice("正在调用 date_time_tool 工具，获取当前系统时间..."));
+        System.out.println("AI调用了获取当前的时间工具");
+        return System.currentTimeMillis();
+    }
+
+    private ClientChatResponse buildNotice(String content) {
+        ClientChatResponse resp = new ClientChatResponse();
+        resp.setRole(MessageRole.ASSISTANT);
+        resp.setContent(content);
+        return resp;
     }
 
     private ClientDataProvider requireProvider() {

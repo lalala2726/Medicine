@@ -1,11 +1,15 @@
 package cn.zhangchuangla.medicine.llm.model.enums;
 
+import lombok.Getter;
+
 /**
  * @author Chuang
  * <p>
  * created on 2025/11/30
  */
+@Getter
 public enum MessageRole {
+
     USER("user"),
     ASSISTANT("assistant"),
     SYSTEM("system");
@@ -24,7 +28,4 @@ public enum MessageRole {
         return null;
     }
 
-    public String getRole() {
-        return role;
-    }
 }
