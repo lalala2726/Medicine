@@ -54,7 +54,6 @@ public class TableDataResult implements Serializable {
     @Schema(description = "列表数据")
     private List<?> rows;
 
-
     /**
      * 其他参数
      */

@@ -39,6 +39,33 @@
         <result property="isDeleted" column="is_deleted"/>
     </resultMap>
 
+    <!-- 订单详情DTO结果映射 -->
+    <resultMap id="OrderDetailDtoMap" type="cn.zhangchuangla.medicine.client.model.dto.OrderDetailDto">
+        <id property="id" column="id"/>
+        <result property="orderNo" column="orderNo"/>
+        <result property="orderStatus" column="orderStatus"/>
+        <result property="totalAmount" column="totalAmount"/>
+        <result property="payAmount" column="payAmount"/>
+        <result property="freightAmount" column="freightAmount"/>
+        <result property="payType" column="payType"/>
+        <result property="deliveryType" column="deliveryType"/>
+        <result property="paid" column="paid"/>
+        <result property="payExpireTime" column="payExpireTime"/>
+        <result property="payTime" column="payTime"/>
+        <result property="deliverTime" column="deliverTime"/>
+        <result property="receiveTime" column="receiveTime"/>
+        <result property="finishTime" column="finishTime"/>
+        <result property="createTime" column="createTime"/>
+        <result property="note" column="note"/>
+        <result property="afterSaleFlag" column="afterSaleFlag"/>
+        <result property="refundStatus" column="refundStatus"/>
+        <result property="refundPrice" column="refundPrice"/>
+        <result property="refundTime" column="refundTime"/>
+        <result property="receiverName" column="receiverName"/>
+        <result property="receiverPhone" column="receiverPhone"/>
+        <result property="receiverDetail" column="receiverDetail"/>
+    </resultMap>
+
     <!-- 订单DTO字段列表 -->
     <sql id="MallOrderDto_Column_List">
         id, order_no, user_id, total_amount, pay_amount, freight_amount,
@@ -54,7 +81,7 @@
         SELECT
         <include refid="MallOrderDto_Column_List"/>
         FROM mall_order o
-        WHERE (o.is_deleted IS NULL OR o.is_deleted = 0)
+        WHERE (o.is_deleted = 0)
         AND o.user_id = #{userId}
         <if test="request.orderStatus != null and request.orderStatus != ''">
             AND o.order_status = #{request.orderStatus}
@@ -65,7 +92,7 @@
         <if test="request.productName != null and request.productName != ''">
             AND EXISTS (
             SELECT 1 FROM mall_order_item oi
-            WHERE (oi.is_deleted IS NULL OR oi.is_deleted = 0)
+            WHERE (oi.is_deleted = 0)
             AND oi.order_id = o.id
             AND oi.product_name LIKE CONCAT('%', #{request.productName}, '%')
             )
@@ -74,7 +101,7 @@
     </select>
 
     <!-- 订单详情查询 -->
-    <select id="selectOrderDetail" resultType="cn.zhangchuangla.medicine.client.model.vo.OrderDetailVo">
+    <select id="getOrderDetailByOrderNo" resultMap="OrderDetailDtoMap">
         SELECT o.id,
                o.order_no        AS orderNo,
                o.order_status    AS orderStatus,
@@ -99,7 +126,7 @@
                o.receiver_phone  AS receiverPhone,
                o.receiver_detail AS receiverDetail
         FROM mall_order o
-        WHERE (o.is_deleted IS NULL OR o.is_deleted = 0)
+        WHERE (o.is_deleted = 0)
         AND o.order_no = #{orderNo}
         AND o.user_id = #{userId}
     </select>

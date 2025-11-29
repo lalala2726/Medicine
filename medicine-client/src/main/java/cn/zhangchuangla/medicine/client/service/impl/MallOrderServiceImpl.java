@@ -2,6 +2,7 @@ package cn.zhangchuangla.medicine.client.service.impl;
 
 import cn.zhangchuangla.medicine.client.mapper.MallOrderMapper;
 import cn.zhangchuangla.medicine.client.model.dto.MallOrderDto;
+import cn.zhangchuangla.medicine.client.model.dto.OrderDetailDto;
 import cn.zhangchuangla.medicine.client.model.request.*;
 import cn.zhangchuangla.medicine.client.model.vo.*;
 import cn.zhangchuangla.medicine.client.service.*;
@@ -719,9 +720,6 @@ public class MallOrderServiceImpl extends ServiceImpl<MallOrderMapper, MallOrder
                     String.format("当前订单状态[%s]不允许取消", statusName));
         }
 
-        // 记录取消前的状态，避免发货后误恢复库存
-        String originalStatus = mallOrder.getOrderStatus();
-
         // 4. 更新订单状态为已取消
         Date now = new Date();
         mallOrder.setOrderStatus(OrderStatusEnum.CANCELLED.getType());
@@ -965,35 +963,30 @@ public class MallOrderServiceImpl extends ServiceImpl<MallOrderMapper, MallOrder
         Long userId = getUserId();
 
         // 1. 查询订单详情
-        OrderDetailVo orderDetailVo = baseMapper.selectOrderDetail(orderNo, userId);
-        if (orderDetailVo == null) {
+        OrderDetailDto orderDetailDto = baseMapper.getOrderDetailByOrderNo(orderNo, userId);
+        if (orderDetailDto == null) {
             throw new ServiceException(ResponseCode.RESULT_IS_NULL, "订单不存在");
         }
 
         // 2. 设置订单状态名称
-        OrderStatusEnum orderStatusEnum = OrderStatusEnum.fromCode(orderDetailVo.getOrderStatus());
-        orderDetailVo.setOrderStatusName(orderStatusEnum != null ? orderStatusEnum.getName() : "未知");
+        OrderStatusEnum orderStatusEnum = OrderStatusEnum.fromCode(orderDetailDto.getOrderStatus());
 
         // 3. 设置支付方式名称
-        PayTypeEnum payTypeEnum = PayTypeEnum.fromCode(orderDetailVo.getPayType());
-        orderDetailVo.setPayTypeName(payTypeEnum != null ? payTypeEnum.getType() : "未知");
+        PayTypeEnum payTypeEnum = PayTypeEnum.fromCode(orderDetailDto.getPayType());
 
         // 4. 设置配送方式名称
-        DeliveryTypeEnum deliveryTypeEnum = DeliveryTypeEnum.fromCode(orderDetailVo.getDeliveryType());
-        orderDetailVo.setDeliveryTypeName(deliveryTypeEnum != null ? deliveryTypeEnum.getName() : "未知");
+        DeliveryTypeEnum deliveryTypeEnum = DeliveryTypeEnum.fromCode(orderDetailDto.getDeliveryType());
 
-        // 5. 从 SQL 查询结果中获取收货人信息并重新构建
+        // 5. 从 SQL 查询结果中获取收货人信息
         OrderDetailVo.ReceiverInfo receiverInfo = OrderDetailVo.ReceiverInfo.builder()
-                .receiverName(orderDetailVo.getReceiverName())
-                .receiverPhone(orderDetailVo.getReceiverPhone())
-                .receiverDetail(orderDetailVo.getReceiverDetail())
+                .receiverName(orderDetailDto.getReceiverName())
+                .receiverPhone(orderDetailDto.getReceiverPhone())
+                .receiverDetail(orderDetailDto.getReceiverDetail())
                 .build();
-        orderDetailVo.setReceiverInfo(receiverInfo);
 
         // 6. 查询订单项
-        Long orderId = orderDetailVo.getId();
         List<MallOrderItem> orderItems = mallOrderItemService.lambdaQuery()
-                .eq(MallOrderItem::getOrderId, orderId)
+                .eq(MallOrderItem::getOrderId, orderDetailDto.getId())
                 .list();
 
         List<OrderDetailVo.OrderItemDetailVo> itemDetailVos = new ArrayList<>();
@@ -1015,24 +1008,50 @@ public class MallOrderServiceImpl extends ServiceImpl<MallOrderMapper, MallOrder
                     .build();
             itemDetailVos.add(itemDetailVo);
         }
-        orderDetailVo.setItems(itemDetailVos);
 
         // 7. 查询物流信息
-        MallOrderShipping shipping = mallOrderShippingService.getByOrderId(orderId);
+        MallOrderShipping shipping = mallOrderShippingService.getByOrderId(orderDetailDto.getId());
+        OrderDetailVo.ShippingInfo shippingInfo = null;
         if (shipping != null) {
             ShippingStatusEnum shippingStatusEnum = ShippingStatusEnum.fromCode(shipping.getStatus());
-
-            OrderDetailVo.ShippingInfo shippingInfo = OrderDetailVo.ShippingInfo.builder()
+            shippingInfo = OrderDetailVo.ShippingInfo.builder()
                     .logisticsCompany(shipping.getShippingCompany())
                     .trackingNumber(shipping.getShippingNo())
                     .shippingStatus(shipping.getStatus())
                     .shippingStatusName(shippingStatusEnum != null ? shippingStatusEnum.getName() : "未知")
                     .shipTime(shipping.getDeliverTime())
                     .build();
-            orderDetailVo.setShippingInfo(shippingInfo);
         }
 
-        return orderDetailVo;
+        // 8. 构建并返回 OrderDetailVo
+        return OrderDetailVo.builder()
+                .id(orderDetailDto.getId())
+                .orderNo(orderDetailDto.getOrderNo())
+                .orderStatus(orderDetailDto.getOrderStatus())
+                .orderStatusName(orderStatusEnum != null ? orderStatusEnum.getName() : "未知")
+                .totalAmount(orderDetailDto.getTotalAmount())
+                .payAmount(orderDetailDto.getPayAmount())
+                .freightAmount(orderDetailDto.getFreightAmount())
+                .payType(orderDetailDto.getPayType())
+                .payTypeName(payTypeEnum != null ? payTypeEnum.getType() : "未知")
+                .deliveryType(orderDetailDto.getDeliveryType())
+                .deliveryTypeName(deliveryTypeEnum != null ? deliveryTypeEnum.getName() : "未知")
+                .paid(orderDetailDto.getPaid())
+                .payExpireTime(orderDetailDto.getPayExpireTime())
+                .payTime(orderDetailDto.getPayTime())
+                .deliverTime(orderDetailDto.getDeliverTime())
+                .receiveTime(orderDetailDto.getReceiveTime())
+                .finishTime(orderDetailDto.getFinishTime())
+                .createTime(orderDetailDto.getCreateTime())
+                .note(orderDetailDto.getNote())
+                .afterSaleFlag(OrderItemAfterSaleStatusEnum.fromCode(orderDetailDto.getAfterSaleFlag()))
+                .refundStatus(orderDetailDto.getRefundStatus())
+                .refundPrice(orderDetailDto.getRefundPrice())
+                .refundTime(orderDetailDto.getRefundTime())
+                .receiverInfo(receiverInfo)
+                .items(itemDetailVos)
+                .shippingInfo(shippingInfo)
+                .build();
     }
 
     @Override
@@ -1392,7 +1411,7 @@ public class MallOrderServiceImpl extends ServiceImpl<MallOrderMapper, MallOrder
             detailBuilder.append(address.getAddress());
         }
         if (StringUtils.hasText(address.getDetailAddress())) {
-            if (detailBuilder.length() > 0) {
+            if (!detailBuilder.isEmpty()) {
                 detailBuilder.append(" ");
             }
             detailBuilder.append(address.getDetailAddress());
