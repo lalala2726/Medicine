@@ -47,22 +47,6 @@ public class ClientConsultationTools {
     }
 
     /**
-     * 搜索商品/订单，生成 product-card 所需数据。
-     *
-     * @param keyword 关键词，如订单号、商品名
-     * @param limit   最大返回条数，默认 5，最大 20
-     * @return 商品/订单卡片条目列表
-     */
-    @Tool(name = "search_products_for_card", description = "搜索商品/订单，返回 product-card 所需的条目")
-    public List<ProductCardItem> searchProducts(
-            @ToolParam(description = "关键词，例如商品名、订单号、症状对应商品") String keyword,
-            @ToolParam(description = "返回最大条数，默认 5") Integer limit) {
-        int safeLimit = limit == null || limit <= 0 ? 5 : Math.min(limit, 20);
-        messageInjector.send(buildNotice("正在调用 search_products_for_card 工具，搜索商品/订单..."));
-        return requireProvider().searchProducts(keyword, safeLimit);
-    }
-
-    /**
      * 获取最近订单/常购商品列表。
      *
      * @param limit 最大返回条数，默认 5，最大 20
@@ -70,32 +54,16 @@ public class ClientConsultationTools {
      */
     @Tool(name = "list_latest_orders_for_card", description = "查询最近订单或常购商品，便于直接生成 ")
     public List<ProductCardItem> latestOrders(
-            @ToolParam(description = "返回最大条数，默认 5") Integer limit) {
+            @ToolParam(description = "返回最大条数，默认 5") Integer limit,
+            @ToolParam(description = """
+                    是否直接发送订单信息给用户。若为 true，系统将直接发送卡片消息此工具返回 null；
+                    若为 false 或不传入，则返回订单数据供 AI 分析使用
+                    """) Boolean isSned) {
         int safeLimit = limit == null || limit <= 0 ? 5 : Math.min(limit, 20);
         messageInjector.send(buildNotice("正在调用 list_latest_orders_for_card 工具，查询最近订单..."));
         return requireProvider().latestOrders(safeLimit);
     }
 
-    /**
-     * 根据ID查询单条商品/订单卡片条目。
-     *
-     * @param productId 商品或订单ID
-     * @return 商品/订单卡片条目
-     */
-    @Tool(name = "get_product_card_by_id", description = "根据 ID 查询商品或订单卡片条目，用于补充")
-    public ProductCardItem productCardById(
-            @ToolParam(description = "商品或订单ID") String productId) {
-        messageInjector.send(buildNotice("正在调用 get_product_card_by_id 工具，查询商品/订单详情..."));
-        return requireProvider().findProductById(productId)
-                .orElseThrow(() -> new IllegalArgumentException("未找到对应的商品/订单"));
-    }
-
-    @Tool(name = "date_time_tool", description = "获取当前系统时间")
-    public long dateTime() {
-        messageInjector.send(buildNotice("正在调用 date_time_tool 工具，获取当前系统时间..."));
-        System.out.println("AI调用了获取当前的时间工具");
-        return System.currentTimeMillis();
-    }
 
     private ClientChatResponse buildNotice(String content) {
         ClientChatResponse resp = new ClientChatResponse();

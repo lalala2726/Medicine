@@ -1,4 +1,4 @@
-package cn.zhangchuangla.medicine.client.llm;
+package cn.zhangchuangla.medicine.client.spi;
 
 import cn.zhangchuangla.medicine.client.model.request.OrderListRequest;
 import cn.zhangchuangla.medicine.client.model.vo.MallProductSearchVo;
@@ -53,6 +53,12 @@ public class ClientDataProviderImpl implements ClientDataProvider {
                 .toList();
     }
 
+    /**
+     * 获取当前用户最近的订单
+     *
+     * @param limit 查询数量
+     * @return 最近的订单
+     */
     @Override
     public List<ProductCardItem> latestOrders(int limit) {
         OrderListRequest request = new OrderListRequest();
