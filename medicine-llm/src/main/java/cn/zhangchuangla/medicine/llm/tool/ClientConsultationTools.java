@@ -4,8 +4,9 @@ import cn.zhangchuangla.medicine.llm.model.enums.CardType;
 import cn.zhangchuangla.medicine.llm.model.enums.MessageRole;
 import cn.zhangchuangla.medicine.llm.model.enums.MessageType;
 import cn.zhangchuangla.medicine.llm.model.response.ClientChatResponse;
-import cn.zhangchuangla.medicine.llm.model.response.card.ProductCard;
-import cn.zhangchuangla.medicine.llm.model.response.card.ProductPurchaseCard;
+import cn.zhangchuangla.medicine.llm.model.response.ProductCard;
+import cn.zhangchuangla.medicine.llm.model.response.ProductPurchaseCard;
+import cn.zhangchuangla.medicine.llm.model.response.SymptomSelectorCard;
 import cn.zhangchuangla.medicine.llm.model.tool.ClientMallProductOut;
 import cn.zhangchuangla.medicine.llm.model.tool.ClientSearchMallProductOut;
 import cn.zhangchuangla.medicine.llm.model.tool.MedicineCardItem;
@@ -84,7 +85,7 @@ public class ClientConsultationTools {
             适用于用户想了解或比较商品时使用，需传入有效的商品ID列表。
             """)
     public String sendProductCard(@ToolParam(description = "商品ID") List<Long> productIds,
-                                @ToolParam(description = "卡片标题") String title) {
+                                  @ToolParam(description = "卡片标题") String title) {
         if (productIds == null || productIds.isEmpty()) {
             return "未发送，商品ID列表为空";
         }
@@ -172,8 +173,8 @@ public class ClientConsultationTools {
             返回发送结果或失败原因。
             """)
     public String snedProductPurchaseCard(@ToolParam(description = "商品ID和商品数量") List<ProductPurchaseCardQuantity> request,
-                                        @ToolParam(description = "卡片标题") String title,
-                                        @ToolParam(description = "卡片描述") String description) {
+                                          @ToolParam(description = "卡片标题") String title,
+                                          @ToolParam(description = "卡片描述") String description) {
         if (request == null || request.isEmpty()) {
             return "未发送，商品参数为空";
         }
@@ -253,6 +254,31 @@ public class ClientConsultationTools {
         } catch (Exception ex) {
             return "发送失败：" + ex.getMessage();
         }
+    }
+
+
+    @Tool(name = "sendSymptomSelector", description = """
+            当需要询问用户有哪些症状的时候,需要进行选择的时候这边可以提供相关的选择让用户进行选择,减少用户的操作
+            """)
+    public String sendSymptomSelector(@ToolParam(description = "症状列表") List<String> symptoms, @ToolParam(description = "标题") String title) {
+        if (symptoms == null || symptoms.isEmpty()) {
+            return "未发送，症状参数为空";
+        }
+        if (title == null || title.isBlank()) {
+            title = "请选择症状";
+        }
+        SymptomSelectorCard payload = SymptomSelectorCard.builder()
+                .title(title)
+                .options(symptoms)
+                .build();
+
+        ClientChatResponse response = ClientChatResponse.builder()
+                .role(MessageRole.ASSISTANT)
+                .type(MessageType.CARD)
+                .card(List.of(payload))
+                .build();
+        messageInjector.send(response, true);
+        return "发送成功";
     }
 
     @Data

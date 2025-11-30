@@ -1,4 +1,4 @@
-package cn.zhangchuangla.medicine.llm.model.response.card;
+package cn.zhangchuangla.medicine.llm.model.response;
 
 /**
  * @author Chuang

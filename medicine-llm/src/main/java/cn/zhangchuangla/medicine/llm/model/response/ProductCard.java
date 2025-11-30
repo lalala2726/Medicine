@@ -1,8 +1,8 @@
-package cn.zhangchuangla.medicine.llm.model.response.card;
+
+package cn.zhangchuangla.medicine.llm.model.response;
 
 import cn.zhangchuangla.medicine.llm.model.enums.CardType;
 import cn.zhangchuangla.medicine.llm.model.tool.MedicineCardItem;
-import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -16,13 +16,16 @@ import java.util.List;
  * created on 2025/12/1
  */
 @Data
-@Schema(description = "商品卡片")
 public class ProductCard implements Card{
 
-    @Schema(description = "卡片类型")
+    /**
+     * 卡片类型
+     */
     private CardType cardType;
 
-    @Schema(description = "卡片数据")
+    /**
+     * 卡片数据
+     */
     private ProductCardPayload payload;
 
 
@@ -32,10 +35,14 @@ public class ProductCard implements Card{
     @Builder
     public static class ProductCardPayload {
 
-        @Schema(description = "卡片标题")
+        /**
+         * 卡片标题
+         */
         private String title;
 
-        @Schema(description = "药品列表")
+        /**
+         * 卡片描述，可为空
+         */
         private List<MedicineCardItem> medicines;
     }
 
