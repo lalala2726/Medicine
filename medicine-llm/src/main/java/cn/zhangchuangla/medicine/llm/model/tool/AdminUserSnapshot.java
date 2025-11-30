@@ -1,7 +1,10 @@
 package cn.zhangchuangla.medicine.llm.model.tool;
 
 import io.swagger.v3.oas.annotations.media.Schema;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Data;
+import lombok.NoArgsConstructor;
 
 import java.math.BigDecimal;
 import java.util.Date;
@@ -11,6 +14,9 @@ import java.util.Set;
  * 精简的用户画像，供 LLM 工具调用返回。
  */
 @Data
+@Builder
+@NoArgsConstructor
+@AllArgsConstructor
 @Schema(description = "AI 工具可用的用户信息快照")
 public class AdminUserSnapshot {
 

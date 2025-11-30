@@ -1,7 +1,12 @@
 package cn.zhangchuangla.medicine.client.service;
 
 import cn.zhangchuangla.medicine.client.enums.ProductViewPeriod;
+import cn.zhangchuangla.medicine.client.model.vo.MallProductSearchVo;
 import cn.zhangchuangla.medicine.client.model.vo.MallProductVo;
+import cn.zhangchuangla.medicine.common.core.base.PageResult;
+import cn.zhangchuangla.medicine.common.elasticsearch.model.request.MallProductSearchRequest;
+import cn.zhangchuangla.medicine.llm.model.tool.ClientSearchMallProductOut;
+import cn.zhangchuangla.medicine.model.dto.MallProductDetailDto;
 import cn.zhangchuangla.medicine.model.dto.MallProductWithImageDto;
 import cn.zhangchuangla.medicine.model.entity.MallProduct;
 import cn.zhangchuangla.medicine.model.vo.mall.RecommendListVo;
@@ -81,4 +86,36 @@ public interface MallProductService extends IService<MallProduct> {
      * @param quantity  数量
      */
     void restoreStock(Long productId, Integer quantity);
+
+    /**
+     * 搜索商品（名称/品牌/功效等）。
+     *
+     * @return 搜索结果
+     */
+    PageResult<MallProductSearchVo> search(MallProductSearchRequest request);
+
+    /**
+     * 搜索建议（商品名/分类名/通用名）。
+     *
+     * @param keyword 关键字
+     * @return 建议列表
+     */
+    List<String> suggest(String keyword);
+
+    /**
+     * 搜索商品
+     *
+     * @param keyword 关键字
+     * @param limit   限制数量
+     * @return 商品列表
+     */
+    List<ClientSearchMallProductOut> SearchDetail(String keyword, int limit);
+
+    /**
+     * 获取商品详情（包含药品信息）
+     *
+     * @param id 商品ID
+     * @return 商品详情
+     */
+    MallProductDetailDto getProductAndDrugInfoById(Long id);
 }

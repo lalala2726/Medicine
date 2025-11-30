@@ -44,6 +44,14 @@
             <artifactId>medicine-llm</artifactId>
         </dependency>
         <dependency>
+            <groupId>cn.zhangchuangla.medicine</groupId>
+            <artifactId>medicine-common-elasticsearch</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>cn.zhangchuangla.medicine</groupId>
+            <artifactId>medicine-common-rabbitmq</artifactId>
+        </dependency>
+        <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-web</artifactId>
         </dependency>

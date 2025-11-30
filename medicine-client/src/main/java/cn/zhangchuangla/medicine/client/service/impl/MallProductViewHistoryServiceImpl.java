@@ -3,28 +3,50 @@ package cn.zhangchuangla.medicine.client.service.impl;
 import cn.zhangchuangla.medicine.client.mapper.MallProductViewHistoryMapper;
 import cn.zhangchuangla.medicine.client.model.request.ViewHistoryRequest;
 import cn.zhangchuangla.medicine.client.model.vo.ViewHistoryVo;
+import cn.zhangchuangla.medicine.client.service.MallOrderItemService;
 import cn.zhangchuangla.medicine.client.service.MallProductViewHistoryService;
 import cn.zhangchuangla.medicine.common.core.utils.Assert;
 import cn.zhangchuangla.medicine.model.entity.MallProductViewHistory;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
+import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
 import java.util.Date;
+import java.util.Map;
+import java.util.Objects;
+import java.util.stream.Collectors;
 
 /**
  * @author Chuang
  */
 @Service
+@RequiredArgsConstructor
 public class MallProductViewHistoryServiceImpl extends ServiceImpl<MallProductViewHistoryMapper, MallProductViewHistory>
         implements MallProductViewHistoryService {
+
+    private final MallOrderItemService mallOrderItemService;
 
     @Override
     public Page<ViewHistoryVo> listViewHistory(Long userId, ViewHistoryRequest request) {
         Assert.isPositive(userId, "用户ID不能为空");
         ViewHistoryRequest pageRequest = request == null ? new ViewHistoryRequest() : request;
         Page<ViewHistoryVo> page = pageRequest.toPage();
-        return baseMapper.listViewHistory(page, userId);
+        Page<ViewHistoryVo> resultPage = baseMapper.listViewHistory(page, userId);
+
+        if (resultPage.getRecords().isEmpty()) {
+            return resultPage;
+        }
+
+        Map<Long, Integer> salesMap = mallOrderItemService.getCompletedSalesByProductIds(
+                resultPage.getRecords().stream()
+                        .map(ViewHistoryVo::getProductId)
+                        .filter(Objects::nonNull)
+                        .distinct()
+                        .collect(Collectors.toList()));
+
+        resultPage.getRecords().forEach(item -> item.setSales(salesMap.getOrDefault(item.getProductId(), 0)));
+        return resultPage;
     }
 
     @Override
@@ -83,4 +105,3 @@ public class MallProductViewHistoryServiceImpl extends ServiceImpl<MallProductVi
                 .one();
     }
 }
-

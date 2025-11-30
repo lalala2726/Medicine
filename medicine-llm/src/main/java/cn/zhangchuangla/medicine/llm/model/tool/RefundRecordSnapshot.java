@@ -1,7 +1,10 @@
 package cn.zhangchuangla.medicine.llm.model.tool;
 
 import io.swagger.v3.oas.annotations.media.Schema;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Data;
+import lombok.NoArgsConstructor;
 
 import java.math.BigDecimal;
 import java.util.Date;
@@ -10,6 +13,9 @@ import java.util.Date;
  * 售后/退款记录的精简视图。
  */
 @Data
+@Builder
+@NoArgsConstructor
+@AllArgsConstructor
 @Schema(description = "退款记录快照")
 public class RefundRecordSnapshot {
 

@@ -1,5 +1,6 @@
 package cn.zhangchuangla.medicine.admin.mapper;
 
+import cn.zhangchuangla.medicine.admin.model.dto.OrderOverviewStats;
 import cn.zhangchuangla.medicine.admin.model.request.MallOrderListRequest;
 import cn.zhangchuangla.medicine.model.dto.OrderWithProductDto;
 import cn.zhangchuangla.medicine.model.entity.MallOrder;
@@ -46,8 +47,12 @@ public interface MallOrderMapper extends BaseMapper<MallOrder> {
      * @return 用户已付款的订单
      */
     Page<MallOrder> getPaidOrderPage(Page<MallOrder> page, @Param("userId") Long userId);
-}
 
+    /**
+     * 聚合订单概况统计数据。
+     */
+    OrderOverviewStats getOrderOverviewStats();
+}
 
 
 

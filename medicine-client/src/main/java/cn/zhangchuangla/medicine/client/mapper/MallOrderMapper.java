@@ -1,8 +1,8 @@
 package cn.zhangchuangla.medicine.client.mapper;
 
 import cn.zhangchuangla.medicine.client.model.dto.MallOrderDto;
+import cn.zhangchuangla.medicine.client.model.dto.OrderDetailDto;
 import cn.zhangchuangla.medicine.client.model.request.OrderListRequest;
-import cn.zhangchuangla.medicine.client.model.vo.OrderDetailVo;
 import cn.zhangchuangla.medicine.model.entity.MallOrder;
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
@@ -32,8 +32,8 @@ public interface MallOrderMapper extends BaseMapper<MallOrder> {
      * @param userId  用户ID
      * @return 订单详情
      */
-    OrderDetailVo selectOrderDetail(@Param("orderNo") String orderNo,
-                                    @Param("userId") Long userId);
+    OrderDetailDto getOrderDetailByOrderNo(@Param("orderNo") String orderNo,
+                                           @Param("userId") Long userId);
 }
 
 

@@ -3,22 +3,33 @@ package cn.zhangchuangla.medicine.client.service.impl;
 import cn.zhangchuangla.medicine.client.enums.ProductViewPeriod;
 import cn.zhangchuangla.medicine.client.mapper.MallProductMapper;
 import cn.zhangchuangla.medicine.client.model.dto.RecommendProductDto;
+import cn.zhangchuangla.medicine.client.model.vo.MallProductSearchVo;
 import cn.zhangchuangla.medicine.client.model.vo.MallProductVo;
+import cn.zhangchuangla.medicine.client.service.MallOrderItemService;
 import cn.zhangchuangla.medicine.client.service.MallProductImageService;
 import cn.zhangchuangla.medicine.client.service.MallProductService;
 import cn.zhangchuangla.medicine.client.service.MallProductViewHistoryService;
+import cn.zhangchuangla.medicine.common.core.base.PageResult;
 import cn.zhangchuangla.medicine.common.core.enums.ResponseCode;
 import cn.zhangchuangla.medicine.common.core.exception.ServiceException;
 import cn.zhangchuangla.medicine.common.core.utils.Assert;
+import cn.zhangchuangla.medicine.common.elasticsearch.document.MallProductDocument;
+import cn.zhangchuangla.medicine.common.elasticsearch.model.request.MallProductSearchRequest;
+import cn.zhangchuangla.medicine.common.elasticsearch.service.MallProductSearchService;
 import cn.zhangchuangla.medicine.common.security.base.BaseService;
+import cn.zhangchuangla.medicine.llm.model.tool.ClientSearchMallProductOut;
+import cn.zhangchuangla.medicine.model.dto.MallProductDetailDto;
 import cn.zhangchuangla.medicine.model.dto.MallProductWithImageDto;
 import cn.zhangchuangla.medicine.model.entity.MallProduct;
 import cn.zhangchuangla.medicine.model.entity.MallProductImage;
 import cn.zhangchuangla.medicine.model.vo.mall.RecommendListVo;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.elasticsearch.core.SearchHit;
+import org.springframework.data.elasticsearch.core.SearchHits;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.util.StringUtils;
 
 import java.util.*;
 
@@ -33,6 +44,8 @@ public class MallProductServiceImpl extends ServiceImpl<MallProductMapper, MallP
     private final MallProductMapper mallProductMapper;
     private final MallProductImageService mallProductImageService;
     private final MallProductViewHistoryService mallProductViewHistoryService;
+    private final MallOrderItemService mallOrderItemService;
+    private final MallProductSearchService mallProductSearchService;
     private static final int RECOMMEND_LIMIT = 20;
 
     @Override
@@ -45,6 +58,13 @@ public class MallProductServiceImpl extends ServiceImpl<MallProductMapper, MallP
         if (candidates.isEmpty()) {
             return Collections.emptyList();
         }
+
+        // 追加销量信息（单独查询，避免多表关联超过 3 张表）
+        Map<Long, Integer> salesMap = mallOrderItemService.getCompletedSalesByProductIds(
+                candidates.stream()
+                        .map(MallProduct::getId)
+                        .toList());
+        candidates.forEach(product -> product.setSales(Optional.ofNullable(salesMap.get(product.getId())).orElse(0)));
 
         // 计算权重，加入适度随机，排序后截取
         List<RecommendProductDto> picked = candidates.stream()
@@ -72,6 +92,7 @@ public class MallProductServiceImpl extends ServiceImpl<MallProductMapper, MallP
                         .productName(product.getName())
                         .cover(imageMap.get(product.getId()))
                         .price(product.getPrice())
+                        .sales(product.getSales())
                         .build()
         ).toList();
     }
@@ -109,6 +130,9 @@ public class MallProductServiceImpl extends ServiceImpl<MallProductMapper, MallP
             throw new ServiceException(ResponseCode.RESULT_IS_NULL, "商品不存在");
         }
 
+        Map<Long, Integer> salesMap = mallOrderItemService.getCompletedSalesByProductIds(List.of(id));
+        productWithImages.setSales(salesMap.getOrDefault(id, 0));
+
         // 构建返回VO
         cn.zhangchuangla.medicine.client.model.vo.MallProductVo productVo =
                 new cn.zhangchuangla.medicine.client.model.vo.MallProductVo();
@@ -117,6 +141,7 @@ public class MallProductServiceImpl extends ServiceImpl<MallProductMapper, MallP
         productVo.setUnit(productWithImages.getUnit());
         productVo.setPrice(productWithImages.getPrice());
         productVo.setStock(productWithImages.getStock());
+        productVo.setSales(productWithImages.getSales());
         productVo.setDrugDetail(productWithImages.getDrugDetail());
 
         // 提取图片URL列表
@@ -132,9 +157,107 @@ public class MallProductServiceImpl extends ServiceImpl<MallProductMapper, MallP
 
     @Override
     public MallProductWithImageDto getProductWithImagesById(Long id) {
-        return mallProductMapper.getProductWithImagesById(id);
+        if (id == null) {
+            return null;
+        }
+        MallProductWithImageDto product = mallProductMapper.getProductWithImagesById(id);
+        if (product == null) {
+            return null;
+        }
+        Map<Long, Integer> salesMap = mallOrderItemService.getCompletedSalesByProductIds(List.of(id));
+        product.setSales(salesMap.getOrDefault(id, 0));
+        return product;
     }
 
+    @Override
+    public PageResult<MallProductSearchVo> search(MallProductSearchRequest request) {
+        int safePageNum = Math.max(request.getPageNum(), 1);
+        int safePageSize = Math.max(request.getPageSize(), 1);
+        if (!StringUtils.hasText(request.getKeyword())) {
+            return new PageResult<>((long) safePageNum, (long) safePageSize, 0L, Collections.emptyList());
+        }
+        request.setKeyword(request.getKeyword().trim());
+        request.setPageNum(safePageNum);
+        request.setPageSize(safePageSize);
+
+        SearchHits<MallProductDocument> hits = mallProductSearchService.search(request);
+        if (hits == null || hits.isEmpty()) {
+            return new PageResult<>((long) safePageNum, (long) safePageSize, 0L, Collections.emptyList());
+        }
+
+        List<MallProductSearchVo> rows = hits.getSearchHits().stream()
+                .map(SearchHit::getContent)
+                .map(this::toSearchVo)
+                .filter(vo -> vo.getProductId() != null)
+                .toList();
+
+        return new PageResult<>(
+                (long) safePageNum,
+                (long) safePageSize,
+                hits.getTotalHits(),
+                rows
+        );
+    }
+
+    private MallProductSearchVo toSearchVo(MallProductDocument doc) {
+        if (doc == null) {
+            return MallProductSearchVo.builder().build();
+        }
+
+        return MallProductSearchVo.builder()
+                .productId(doc.getId())
+                .productName(doc.getName())
+                .cover(doc.getCoverImage())
+                .price(doc.getPrice())
+                .build();
+    }
+
+    @Override
+    public List<String> suggest(String keyword) {
+        if (!StringUtils.hasText(keyword)) {
+            return Collections.emptyList();
+        }
+        return mallProductSearchService.suggest(keyword.trim(), 10);
+    }
+
+
+    @Override
+    public List<ClientSearchMallProductOut> SearchDetail(String keyword, int limit) {
+        SearchHits<MallProductDocument> searchHits = mallProductSearchService.search(new MallProductSearchRequest(keyword, limit));
+        if (searchHits == null || searchHits.isEmpty()) {
+            return Collections.emptyList();
+        }
+        return searchHits.getSearchHits().stream()
+                .map(SearchHit::getContent)
+                .map(content -> ClientSearchMallProductOut.builder()
+                        .commonName(content.getCommonName())
+                        .categoryName(content.getCategoryName())
+                        .name(content.getName())
+                        .efficacy(content.getEfficacy())
+                        .id(content.getId())
+                        .prescription(content.getPrescription())
+                        .build())
+                .toList();
+    }
+
+    @Override
+    public MallProductDetailDto getProductAndDrugInfoById(Long id) {
+        Assert.isPositive(id, "商品ID不能为空");
+        MallProductDetailDto mallProductDetailDto = mallProductMapper.getProductAndDrugInfoById(id);
+        if (mallProductDetailDto == null) {
+            throw new ServiceException(ResponseCode.RESULT_IS_NULL, "商品不存在");
+        }
+        List<String> imageUrls = mallProductImageService.lambdaQuery()
+                .eq(MallProductImage::getProductId, id)
+                .orderByAsc(MallProductImage::getSort)
+                .list()
+                .stream()
+                .map(MallProductImage::getImageUrl)
+                .toList();
+        mallProductDetailDto.setImages(imageUrls);
+        return mallProductDetailDto;
+
+    }
 
     @Override
     public void recordView(Long productId) {

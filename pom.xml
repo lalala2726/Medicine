@@ -70,6 +70,16 @@
             </dependency>
             <dependency>
                 <groupId>cn.zhangchuangla.medicine</groupId>
+                <artifactId>medicine-common-elasticsearch</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>cn.zhangchuangla.medicine</groupId>
+                <artifactId>medicine-common-rabbitmq</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>cn.zhangchuangla.medicine</groupId>
                 <artifactId>medicine-common-core</artifactId>
                 <version>${project.version}</version>
             </dependency>
@@ -271,6 +281,7 @@
         <module>medicine-client</module>
         <module>medicine-payment</module>
         <module>medicine-llm</module>
-        <module>medicine-common/medicine-common-es</module>
+        <module>medicine-common/medicine-common-elasticsearch</module>
+        <module>medicine-common/medicine-common-rabbitmq</module>
     </modules>
 </project>

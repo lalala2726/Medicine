@@ -1,9 +1,9 @@
 package cn.zhangchuangla.medicine.admin.spi;
 
+import cn.zhangchuangla.medicine.admin.model.dto.OrderOverviewStats;
 import cn.zhangchuangla.medicine.admin.model.vo.UserDetailVo;
 import cn.zhangchuangla.medicine.admin.model.vo.analytics.*;
 import cn.zhangchuangla.medicine.admin.service.*;
-import cn.zhangchuangla.medicine.common.core.utils.SpringUtils;
 import cn.zhangchuangla.medicine.common.security.entity.SysUserDetails;
 import cn.zhangchuangla.medicine.common.security.utils.SecurityUtils;
 import cn.zhangchuangla.medicine.llm.model.tool.*;
@@ -11,8 +11,9 @@ import cn.zhangchuangla.medicine.llm.spi.AdminDataProvider;
 import cn.zhangchuangla.medicine.model.dto.DrugDetailDto;
 import cn.zhangchuangla.medicine.model.entity.*;
 import cn.zhangchuangla.medicine.model.enums.AfterSaleStatusEnum;
-import cn.zhangchuangla.medicine.model.enums.OrderStatusEnum;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.stereotype.Component;
 
 import java.math.BigDecimal;
 import java.util.Collections;
@@ -25,37 +26,45 @@ import java.util.stream.Collectors;
  * admin 模块对 LLM 的数据暴露实现，通过 SPI 被 medicine-llm 发现。
  */
 @Slf4j
+@Component
+@RequiredArgsConstructor
 public class AdminModuleDataProvider implements AdminDataProvider {
 
-    private static final int PAID_FLAG = 1;
+    private final UserService userService;
+    private final MallOrderService mallOrderService;
+    private final MallOrderItemService mallOrderItemService;
+    private final MallAfterSaleService mallAfterSaleService;
+    private final MallProductService mallProductService;
+    private final MallProductImageService mallProductImageService;
+    private final MallMedicineDetailService mallMedicineDetailService;
+    private final AnalyticsService analyticsService;
 
     @Override
     public Optional<AdminUserSnapshot> currentUser() {
         try {
             SysUserDetails loginUser = SecurityUtils.getLoginUser();
             Long userId = loginUser.getUserId();
-            UserDetailVo detail = userId == null ? null : userService().getUserDetailById(userId);
-
-            AdminUserSnapshot snapshot = new AdminUserSnapshot();
-            snapshot.setUserId(userId);
-            snapshot.setUsername(loginUser.getUsername());
-            snapshot.setRoles(SecurityUtils.getRoles());
+            UserDetailVo detail = userId == null ? null : userService.getUserDetailById(userId);
+            AdminUserSnapshot.AdminUserSnapshotBuilder builder = AdminUserSnapshot.builder()
+                    .userId(userId)
+                    .username(loginUser.getUsername())
+                    .roles(SecurityUtils.getRoles());
 
             if (detail != null) {
-                snapshot.setNickname(detail.getNickName());
+                builder.nickname(detail.getNickName());
                 if (detail.getBasicInfo() != null) {
-                    snapshot.setPhoneNumber(detail.getBasicInfo().getPhoneNumber());
-                    snapshot.setEmail(detail.getBasicInfo().getEmail());
+                    builder.phoneNumber(detail.getBasicInfo().getPhoneNumber());
+                    builder.email(detail.getBasicInfo().getEmail());
                 }
                 if (detail.getSecurityInfo() != null) {
-                    snapshot.setLastLoginIp(detail.getSecurityInfo().getLastLoginIp());
-                    snapshot.setLastLoginTime(detail.getSecurityInfo().getLastLoginTime());
+                    builder.lastLoginIp(detail.getSecurityInfo().getLastLoginIp());
+                    builder.lastLoginTime(detail.getSecurityInfo().getLastLoginTime());
                 }
-                snapshot.setTotalOrders(detail.getTotalOrders() == null ? 0L : detail.getTotalOrders().longValue());
-                snapshot.setTotalConsume(defaultBigDecimal(detail.getTotalConsume()));
-                snapshot.setWalletBalance(defaultBigDecimal(detail.getWalletBalance()));
+                builder.totalOrders(detail.getTotalOrders() == null ? 0L : detail.getTotalOrders().longValue());
+                builder.totalConsume(defaultBigDecimal(detail.getTotalConsume()));
+                builder.walletBalance(defaultBigDecimal(detail.getWalletBalance()));
             }
-            return Optional.of(snapshot);
+            return Optional.of(builder.build());
         } catch (Exception ex) {
             log.warn("Failed to load current admin user info via SPI", ex);
             return Optional.empty();
@@ -65,7 +74,7 @@ public class AdminModuleDataProvider implements AdminDataProvider {
     @Override
     public long totalUserCount() {
         try {
-            return userService().count();
+            return userService.count();
         } catch (Exception ex) {
             log.warn("Failed to count users for LLM tool", ex);
             return 0L;
@@ -78,7 +87,7 @@ public class AdminModuleDataProvider implements AdminDataProvider {
             return Optional.empty();
         }
         try {
-            MallOrder order = mallOrderService().getOrderByOrderNo(orderNo.trim());
+            MallOrder order = mallOrderService.getOrderByOrderNo(orderNo.trim());
             if (order == null) {
                 return Optional.empty();
             }
@@ -92,7 +101,7 @@ public class AdminModuleDataProvider implements AdminDataProvider {
     @Override
     public List<AdminOrderSnapshot> latestOrders(int limit) {
         try {
-            List<MallOrder> orders = mallOrderService().lambdaQuery()
+            List<MallOrder> orders = mallOrderService.lambdaQuery()
                     .orderByDesc(MallOrder::getCreateTime)
                     .last("LIMIT " + limit)
                     .list();
@@ -111,34 +120,32 @@ public class AdminModuleDataProvider implements AdminDataProvider {
     @Override
     public OrderOverviewSnapshot orderOverview() {
         try {
-            MallOrderService orderService = mallOrderService();
-            OrderOverviewSnapshot snapshot = new OrderOverviewSnapshot();
-            snapshot.setTotalOrders(orderService.count());
-            snapshot.setPendingPayment(orderService.lambdaQuery().eq(MallOrder::getOrderStatus, OrderStatusEnum.PENDING_PAYMENT.getType()).count());
-            snapshot.setPendingShipment(orderService.lambdaQuery().eq(MallOrder::getOrderStatus, OrderStatusEnum.PENDING_SHIPMENT.getType()).count());
-            snapshot.setPendingReceipt(orderService.lambdaQuery().eq(MallOrder::getOrderStatus, OrderStatusEnum.PENDING_RECEIPT.getType()).count());
-            snapshot.setCompleted(orderService.lambdaQuery().eq(MallOrder::getOrderStatus, OrderStatusEnum.COMPLETED.getType()).count());
-            snapshot.setRefunded(orderService.lambdaQuery().eq(MallOrder::getOrderStatus, OrderStatusEnum.REFUNDED.getType()).count());
-            snapshot.setAfterSale(orderService.lambdaQuery().eq(MallOrder::getOrderStatus, OrderStatusEnum.AFTER_SALE.getType()).count());
-            snapshot.setCancelled(orderService.lambdaQuery().eq(MallOrder::getOrderStatus, OrderStatusEnum.CANCELLED.getType()).count());
+            OrderOverviewStats stats = Optional.ofNullable(mallOrderService.getOrderOverviewStats())
+                    .orElseGet(() -> OrderOverviewStats.builder()
+                            .totalOrders(0L)
+                            .pendingPayment(0L)
+                            .pendingShipment(0L)
+                            .pendingReceipt(0L)
+                            .completed(0L)
+                            .refunded(0L)
+                            .afterSale(0L)
+                            .cancelled(0L)
+                            .totalSales(BigDecimal.ZERO)
+                            .refundedAmount(BigDecimal.ZERO)
+                            .build());
 
-            List<MallOrder> paidOrders = orderService.lambdaQuery()
-                    .eq(MallOrder::getPaid, PAID_FLAG)
-                    .notIn(MallOrder::getOrderStatus, OrderStatusEnum.CANCELLED.getType(), OrderStatusEnum.REFUNDED.getType())
-                    .select(MallOrder::getPayAmount)
-                    .list();
-            snapshot.setTotalSales(sumAmounts(paidOrders.stream()
-                    .map(MallOrder::getPayAmount)
-                    .toList()));
-
-            List<BigDecimal> refundAmounts = orderService.lambdaQuery()
-                    .select(MallOrder::getRefundPrice)
-                    .list()
-                    .stream()
-                    .map(MallOrder::getRefundPrice)
-                    .toList();
-            snapshot.setRefundedAmount(sumAmounts(refundAmounts));
-            return snapshot;
+            return OrderOverviewSnapshot.builder()
+                    .totalOrders(stats.getTotalOrders())
+                    .pendingPayment(stats.getPendingPayment())
+                    .pendingShipment(stats.getPendingShipment())
+                    .pendingReceipt(stats.getPendingReceipt())
+                    .completed(stats.getCompleted())
+                    .refunded(stats.getRefunded())
+                    .afterSale(stats.getAfterSale())
+                    .cancelled(stats.getCancelled())
+                    .totalSales(defaultBigDecimal(stats.getTotalSales()))
+                    .refundedAmount(defaultBigDecimal(stats.getRefundedAmount()))
+                    .build();
         } catch (Exception ex) {
             log.warn("Failed to build order overview for LLM tool", ex);
             return new OrderOverviewSnapshot();
@@ -148,7 +155,7 @@ public class AdminModuleDataProvider implements AdminDataProvider {
     @Override
     public RefundOverviewSnapshot refundOverview(int recentLimit) {
         try {
-            MallAfterSaleService afterSaleService = mallAfterSaleService();
+            MallAfterSaleService afterSaleService = mallAfterSaleService;
             RefundOverviewSnapshot snapshot = new RefundOverviewSnapshot();
             snapshot.setPending(afterSaleService.lambdaQuery()
                     .eq(MallAfterSale::getAfterSaleStatus, AfterSaleStatusEnum.PENDING)
@@ -171,7 +178,7 @@ public class AdminModuleDataProvider implements AdminDataProvider {
                     .toList();
             snapshot.setTotalRequestedAmount(sumAmounts(requestedAmounts));
 
-            List<BigDecimal> refundedAmounts = mallOrderService().lambdaQuery()
+            List<BigDecimal> refundedAmounts = mallOrderService.lambdaQuery()
                     .select(MallOrder::getRefundPrice)
                     .list()
                     .stream()
@@ -196,7 +203,7 @@ public class AdminModuleDataProvider implements AdminDataProvider {
     public List<ProductSnapshot> searchProducts(String keyword, int limit) {
         try {
             String like = keyword == null ? "" : keyword.trim();
-            List<MallProduct> products = mallProductService().lambdaQuery()
+            List<MallProduct> products = mallProductService.lambdaQuery()
                     .like(!like.isEmpty(), MallProduct::getName, like)
                     .orderByDesc(MallProduct::getUpdateTime)
                     .last("LIMIT " + limit)
@@ -217,7 +224,7 @@ public class AdminModuleDataProvider implements AdminDataProvider {
             return Optional.empty();
         }
         try {
-            MallProduct product = mallProductService().getById(productId);
+            MallProduct product = mallProductService.getById(productId);
             if (product == null) {
                 return Optional.empty();
             }
@@ -231,7 +238,7 @@ public class AdminModuleDataProvider implements AdminDataProvider {
     @Override
     public AnalyticsOverviewSnapshot analyticsOverview() {
         try {
-            OverviewVo vo = analyticsService().overview();
+            OverviewVo vo = analyticsService.overview();
             AnalyticsOverviewSnapshot snapshot = new AnalyticsOverviewSnapshot();
             snapshot.setTotalUsers(defaultLong(vo.getTotalUsers()));
             snapshot.setTotalOrders(defaultLong(vo.getTotalOrders()));
@@ -250,17 +257,15 @@ public class AdminModuleDataProvider implements AdminDataProvider {
     @Override
     public List<OrderTrendPointSnapshot> orderTrend(String period) {
         try {
-            List<OrderTrendPoint> points = analyticsService().orderTrend(period);
+            List<OrderTrendPoint> points = analyticsService.orderTrend(period);
             if (points == null) {
                 return Collections.emptyList();
             }
-            return points.stream().map(p -> {
-                OrderTrendPointSnapshot snap = new OrderTrendPointSnapshot();
-                snap.setLabel(p.getLabel());
-                snap.setOrderCount(defaultLong(p.getOrderCount()));
-                snap.setOrderAmount(defaultBigDecimal(p.getOrderAmount()));
-                return snap;
-            }).toList();
+            return points.stream().map(p -> OrderTrendPointSnapshot.builder()
+                    .label(p.getLabel())
+                    .orderCount(defaultLong(p.getOrderCount()))
+                    .orderAmount(defaultBigDecimal(p.getOrderAmount()))
+                    .build()).toList();
         } catch (Exception ex) {
             log.warn("Failed to load order trend for LLM tool", ex);
             return Collections.emptyList();
@@ -270,17 +275,15 @@ public class AdminModuleDataProvider implements AdminDataProvider {
     @Override
     public List<StatusDistributionSnapshot> orderStatusDistribution() {
         try {
-            List<StatusDistribution> list = analyticsService().orderStatusDistribution();
+            List<StatusDistribution> list = analyticsService.orderStatusDistribution();
             if (list == null) {
                 return Collections.emptyList();
             }
-            return list.stream().map(item -> {
-                StatusDistributionSnapshot snap = new StatusDistributionSnapshot();
-                snap.setStatus(item.getStatus());
-                snap.setStatusName(item.getStatusName());
-                snap.setCount(defaultLong(item.getCount()));
-                return snap;
-            }).toList();
+            return list.stream().map(item -> StatusDistributionSnapshot.builder()
+                    .status(item.getStatus())
+                    .statusName(item.getStatusName())
+                    .count(defaultLong(item.getCount()))
+                    .build()).toList();
         } catch (Exception ex) {
             log.warn("Failed to load order status distribution for LLM tool", ex);
             return Collections.emptyList();
@@ -290,18 +293,16 @@ public class AdminModuleDataProvider implements AdminDataProvider {
     @Override
     public List<PaymentDistributionSnapshot> paymentDistribution() {
         try {
-            List<PaymentDistribution> list = analyticsService().paymentDistribution();
+            List<PaymentDistribution> list = analyticsService.paymentDistribution();
             if (list == null) {
                 return Collections.emptyList();
             }
-            return list.stream().map(item -> {
-                PaymentDistributionSnapshot snap = new PaymentDistributionSnapshot();
-                snap.setPayType(item.getPayType());
-                snap.setPayTypeName(item.getPayTypeName());
-                snap.setCount(defaultLong(item.getCount()));
-                snap.setAmount(defaultBigDecimal(item.getAmount()));
-                return snap;
-            }).toList();
+            return list.stream().map(item -> PaymentDistributionSnapshot.builder()
+                    .payType(item.getPayType())
+                    .payTypeName(item.getPayTypeName())
+                    .count(defaultLong(item.getCount()))
+                    .amount(defaultBigDecimal(item.getAmount()))
+                    .build()).toList();
         } catch (Exception ex) {
             log.warn("Failed to load payment distribution for LLM tool", ex);
             return Collections.emptyList();
@@ -312,18 +313,16 @@ public class AdminModuleDataProvider implements AdminDataProvider {
     public List<HotProductRankSnapshot> hotProducts(int limit) {
         try {
             int safeLimit = normalizeLimit(limit);
-            List<HotProductRank> list = analyticsService().hotProducts(safeLimit);
+            List<HotProductRank> list = analyticsService.hotProducts(safeLimit);
             if (list == null) {
                 return Collections.emptyList();
             }
-            return list.stream().map(item -> {
-                HotProductRankSnapshot snap = new HotProductRankSnapshot();
-                snap.setProductId(item.getProductId());
-                snap.setProductName(item.getProductName());
-                snap.setQuantity(defaultLong(item.getQuantity()));
-                snap.setAmount(defaultBigDecimal(item.getAmount()));
-                return snap;
-            }).toList();
+            return list.stream().map(item -> HotProductRankSnapshot.builder()
+                    .productId(item.getProductId())
+                    .productName(item.getProductName())
+                    .quantity(defaultLong(item.getQuantity()))
+                    .amount(defaultBigDecimal(item.getAmount()))
+                    .build()).toList();
         } catch (Exception ex) {
             log.warn("Failed to load hot products for LLM tool", ex);
             return Collections.emptyList();
@@ -334,19 +333,17 @@ public class AdminModuleDataProvider implements AdminDataProvider {
     public List<ReturnRateStatSnapshot> productReturnRates(int limit) {
         try {
             int safeLimit = normalizeLimit(limit);
-            List<ReturnRateStat> list = analyticsService().productReturnRates(safeLimit);
+            List<ReturnRateStat> list = analyticsService.productReturnRates(safeLimit);
             if (list == null) {
                 return Collections.emptyList();
             }
-            return list.stream().map(item -> {
-                ReturnRateStatSnapshot snap = new ReturnRateStatSnapshot();
-                snap.setProductId(item.getProductId());
-                snap.setProductName(item.getProductName());
-                snap.setSoldQuantity(defaultLong(item.getSoldQuantity()));
-                snap.setReturnQuantity(defaultLong(item.getReturnQuantity()));
-                snap.setReturnRate(item.getReturnRate() == null ? BigDecimal.ZERO : item.getReturnRate());
-                return snap;
-            }).toList();
+            return list.stream().map(item -> ReturnRateStatSnapshot.builder()
+                    .productId(item.getProductId())
+                    .productName(item.getProductName())
+                    .soldQuantity(defaultLong(item.getSoldQuantity()))
+                    .returnQuantity(defaultLong(item.getReturnQuantity()))
+                    .returnRate(item.getReturnRate() == null ? BigDecimal.ZERO : item.getReturnRate())
+                    .build()).toList();
         } catch (Exception ex) {
             log.warn("Failed to load product return rates for LLM tool", ex);
             return Collections.emptyList();
@@ -354,59 +351,56 @@ public class AdminModuleDataProvider implements AdminDataProvider {
     }
 
     private AdminOrderSnapshot buildOrderSnapshot(MallOrder order) {
-        AdminOrderSnapshot snapshot = new AdminOrderSnapshot();
-        snapshot.setOrderNo(order.getOrderNo());
-        snapshot.setOrderStatus(order.getOrderStatus());
-        snapshot.setPayType(order.getPayType());
-        snapshot.setPaid(order.getPaid());
-        snapshot.setTotalAmount(order.getTotalAmount());
-        snapshot.setPayAmount(order.getPayAmount());
-        snapshot.setRefundAmount(order.getRefundPrice());
-        snapshot.setRefundStatus(order.getRefundStatus());
-        snapshot.setReceiverName(order.getReceiverName());
-        snapshot.setReceiverPhone(order.getReceiverPhone());
-        snapshot.setReceiverDetail(order.getReceiverDetail());
-        snapshot.setCreateTime(order.getCreateTime());
-        snapshot.setPayTime(order.getPayTime());
-        snapshot.setDeliverTime(order.getDeliverTime());
-        snapshot.setReceiveTime(order.getReceiveTime());
-        snapshot.setRefundTime(order.getRefundTime());
-
-        snapshot.setItems(loadOrderItems(order.getId()));
-        return snapshot;
+        return AdminOrderSnapshot.builder()
+                .orderNo(order.getOrderNo())
+                .orderStatus(order.getOrderStatus())
+                .payType(order.getPayType())
+                .paid(order.getPaid())
+                .totalAmount(order.getTotalAmount())
+                .payAmount(order.getPayAmount())
+                .refundAmount(order.getRefundPrice())
+                .refundStatus(order.getRefundStatus())
+                .receiverName(order.getReceiverName())
+                .receiverPhone(order.getReceiverPhone())
+                .receiverDetail(order.getReceiverDetail())
+                .createTime(order.getCreateTime())
+                .payTime(order.getPayTime())
+                .deliverTime(order.getDeliverTime())
+                .receiveTime(order.getReceiveTime())
+                .refundTime(order.getRefundTime())
+                .items(loadOrderItems(order.getId()))
+                .build();
     }
 
     private List<AdminOrderItemSnapshot> loadOrderItems(Long orderId) {
         if (orderId == null) {
             return Collections.emptyList();
         }
-        List<MallOrderItem> items = mallOrderItemService().getOrderItemByOrderId(orderId);
+        List<MallOrderItem> items = mallOrderItemService.getOrderItemByOrderId(orderId);
         if (items == null || items.isEmpty()) {
             return Collections.emptyList();
         }
-        return items.stream().map(item -> {
-            AdminOrderItemSnapshot snapshot = new AdminOrderItemSnapshot();
-            snapshot.setProductName(item.getProductName());
-            snapshot.setQuantity(item.getQuantity());
-            snapshot.setPrice(item.getPrice());
-            snapshot.setTotalPrice(item.getTotalPrice());
-            snapshot.setAfterSaleStatus(item.getAfterSaleStatus());
-            snapshot.setImages(loadFirstImages(item.getProductId()));
-            return snapshot;
-        }).toList();
+        return items.stream().map(item -> AdminOrderItemSnapshot.builder()
+                .productName(item.getProductName())
+                .quantity(item.getQuantity())
+                .price(item.getPrice())
+                .totalPrice(item.getTotalPrice())
+                .afterSaleStatus(item.getAfterSaleStatus())
+                .images(loadFirstImages(item.getProductId()))
+                .build()).toList();
     }
 
     private RefundRecordSnapshot buildRefundRecord(MallAfterSale record) {
-        RefundRecordSnapshot snapshot = new RefundRecordSnapshot();
-        snapshot.setAfterSaleNo(record.getAfterSaleNo());
-        snapshot.setOrderNo(record.getOrderNo());
-        snapshot.setAfterSaleType(record.getAfterSaleType() == null ? null : record.getAfterSaleType().getType());
-        snapshot.setAfterSaleStatus(record.getAfterSaleStatus() == null ? null : record.getAfterSaleStatus().getStatus());
-        snapshot.setRefundAmount(record.getRefundAmount());
-        snapshot.setApplyTime(record.getApplyTime());
-        snapshot.setCompleteTime(record.getCompleteTime());
-        snapshot.setApplyReason(record.getApplyReason() == null ? null : record.getApplyReason().getName());
-        return snapshot;
+        return RefundRecordSnapshot.builder()
+                .afterSaleNo(record.getAfterSaleNo())
+                .orderNo(record.getOrderNo())
+                .afterSaleType(record.getAfterSaleType() == null ? null : record.getAfterSaleType().getType())
+                .afterSaleStatus(record.getAfterSaleStatus() == null ? null : record.getAfterSaleStatus().getStatus())
+                .refundAmount(record.getRefundAmount())
+                .applyTime(record.getApplyTime())
+                .completeTime(record.getCompleteTime())
+                .applyReason(record.getApplyReason() == null ? null : record.getApplyReason().getName())
+                .build();
     }
 
     private BigDecimal sumAmounts(List<BigDecimal> amounts) {
@@ -439,23 +433,21 @@ public class AdminModuleDataProvider implements AdminDataProvider {
                 .filter(Objects::nonNull)
                 .toList();
 
-        List<ProductSnapshot> snapshots = products.stream().map(p -> {
-            ProductSnapshot snapshot = new ProductSnapshot();
-            snapshot.setId(p.getId());
-            snapshot.setName(p.getName());
-            snapshot.setPrice(p.getPrice());
-            snapshot.setStock(p.getStock());
-            snapshot.setStatus(p.getStatus());
-            snapshot.setDeliveryType(p.getDeliveryType());
-            return snapshot;
-        }).toList();
+        List<ProductSnapshot> snapshots = products.stream().map(p -> ProductSnapshot.builder()
+                .id(p.getId())
+                .name(p.getName())
+                .price(p.getPrice())
+                .stock(p.getStock())
+                .status(p.getStatus())
+                .deliveryType(p.getDeliveryType())
+                .build()).toList();
 
         if (!ids.isEmpty()) {
-            var images = mallProductImageService().getFirstImageByProductIds(ids).stream()
+            var images = mallProductImageService.getFirstImageByProductIds(ids).stream()
                     .collect(Collectors.groupingBy(MallProductImage::getProductId, Collectors.mapping(MallProductImage::getImageUrl, Collectors.toList())));
             snapshots.forEach(s -> s.setImages(images.getOrDefault(s.getId(), Collections.emptyList())));
 
-            var details = mallMedicineDetailService().lambdaQuery()
+            var details = mallMedicineDetailService.lambdaQuery()
                     .in(DrugDetail::getProductId, ids)
                     .list()
                     .stream()
@@ -469,43 +461,10 @@ public class AdminModuleDataProvider implements AdminDataProvider {
         if (productId == null) {
             return Collections.emptyList();
         }
-        return mallProductImageService().getFirstImageByProductIds(List.of(productId)).stream()
+        return mallProductImageService.getFirstImageByProductIds(List.of(productId)).stream()
                 .map(MallProductImage::getImageUrl)
                 .toList();
     }
-
-    private UserService userService() {
-        return SpringUtils.getBean(UserService.class);
-    }
-
-    private MallOrderService mallOrderService() {
-        return SpringUtils.getBean(MallOrderService.class);
-    }
-
-    private MallOrderItemService mallOrderItemService() {
-        return SpringUtils.getBean(MallOrderItemService.class);
-    }
-
-    private MallAfterSaleService mallAfterSaleService() {
-        return SpringUtils.getBean(MallAfterSaleService.class);
-    }
-
-    private MallProductService mallProductService() {
-        return SpringUtils.getBean(MallProductService.class);
-    }
-
-    private MallProductImageService mallProductImageService() {
-        return SpringUtils.getBean(MallProductImageService.class);
-    }
-
-    private MallMedicineDetailService mallMedicineDetailService() {
-        return SpringUtils.getBean(MallMedicineDetailService.class);
-    }
-
-    private AnalyticsService analyticsService() {
-        return SpringUtils.getBean(AnalyticsService.class);
-    }
-
     private DrugDetailDto toDrugDetailDto(DrugDetail detail) {
         if (detail == null) {
             return null;

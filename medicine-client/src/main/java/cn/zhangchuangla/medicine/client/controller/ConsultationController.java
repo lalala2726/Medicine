@@ -8,7 +8,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
-import reactor.core.publisher.Flux;
+import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 
 /**
  * @author Chuang
@@ -28,13 +28,11 @@ public class ConsultationController {
     }
 
 
-    @PostMapping(value = "/simple", produces = "text/event-stream")
-    @Operation(summary = "简单咨询", description = "简单的医疗咨询接口，返回OpenAI格式的响应")
-    public Flux<ChatResponse> simpleConsultation(@RequestBody ConsultationRequest request) {
+    @PostMapping(value = "/chat", produces = "text/event-stream")
+    @Operation(summary = "简单咨询", description = "简单的医疗咨询接口，返回 ClientChatResponse SSE 消息（文本或卡片）")
+    public SseEmitter simpleConsultation(@RequestBody ConsultationRequest request) {
         log.info("咨询问题：{}", request.question);
-        return consultationService.simpleConsultation(request.question())
-                .map(content -> new ChatResponse(content, false))
-                .concatWith(Flux.just(new ChatResponse("", true)));
+        return consultationService.simpleConsultation(request.question());
     }
 
 
@@ -45,12 +43,6 @@ public class ConsultationController {
      */
     public record ConsultationRequest(
             String question
-    ) {
-    }
-
-    public record ChatResponse(
-            String content,
-            Boolean finished
     ) {
     }
 }

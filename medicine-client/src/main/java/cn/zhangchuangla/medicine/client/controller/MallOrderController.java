@@ -74,6 +74,16 @@ public class MallOrderController extends BaseController {
     }
 
     /**
+     * 获取订单支付信息
+     */
+    @GetMapping("/pay_info")
+    @Operation(summary = "获取订单支付信息")
+    public AjaxResult<OrderPayInfoVo> getOrderPayInfo(@Validated OrderPayInfoRequest request) {
+        OrderPayInfoVo orderPayInfoVo = mallOrderService.getOrderPayInfo(request);
+        return success(orderPayInfoVo);
+    }
+
+    /**
      * 订单支付
      * <p>
      * 对已创建的待支付订单进行支付操作，支持钱包支付和支付宝支付：

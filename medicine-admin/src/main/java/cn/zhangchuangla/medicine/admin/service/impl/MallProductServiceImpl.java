@@ -1,8 +1,10 @@
 package cn.zhangchuangla.medicine.admin.service.impl;
 
+import cn.zhangchuangla.medicine.admin.mapper.MallOrderItemMapper;
 import cn.zhangchuangla.medicine.admin.mapper.MallProductMapper;
 import cn.zhangchuangla.medicine.admin.model.dto.ProductSalesDto;
 import cn.zhangchuangla.medicine.admin.service.*;
+import cn.zhangchuangla.medicine.admin.task.MallProductSearchIndexer;
 import cn.zhangchuangla.medicine.common.core.constants.RedisConstants;
 import cn.zhangchuangla.medicine.common.core.exception.ServiceException;
 import cn.zhangchuangla.medicine.common.core.utils.Assert;
@@ -11,7 +13,9 @@ import cn.zhangchuangla.medicine.common.security.utils.SecurityUtils;
 import cn.zhangchuangla.medicine.model.dto.MallProductDetailDto;
 import cn.zhangchuangla.medicine.model.entity.DrugDetail;
 import cn.zhangchuangla.medicine.model.entity.MallProduct;
+import cn.zhangchuangla.medicine.model.entity.MallProductImage;
 import cn.zhangchuangla.medicine.model.enums.DeliveryTypeEnum;
+import cn.zhangchuangla.medicine.model.enums.OrderStatusEnum;
 import cn.zhangchuangla.medicine.model.request.mall.MallProductAddRequest;
 import cn.zhangchuangla.medicine.model.request.mall.MallProductListQueryRequest;
 import cn.zhangchuangla.medicine.model.request.mall.MallProductUpdateRequest;
@@ -23,11 +27,15 @@ import org.springframework.beans.BeanUtils;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.support.TransactionSynchronization;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
 
 import java.math.BigDecimal;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 /**
  * 商城商品服务实现类
@@ -48,6 +56,8 @@ public class MallProductServiceImpl extends ServiceImpl<MallProductMapper, MallP
     private final MallProductImageService mallProductImageService;
     private final MallMedicineDetailService medicineDetailService;
     private final MallProductStatsService mallProductStatsService;
+    private final MallOrderItemMapper mallOrderItemMapper;
+    private final MallProductSearchIndexer mallProductSearchIndexer;
 
     @Override
     public Page<MallProduct> listMallProduct(MallProductListQueryRequest request) {
@@ -73,11 +83,18 @@ public class MallProductServiceImpl extends ServiceImpl<MallProductMapper, MallP
             productSales.forEach(sales -> salesMap.put(sales.getProductId(), sales.getSales()));
         }
 
+        List<Long> productIds = page.getRecords().stream().map(MallProduct::getId).toList();
+        Map<Long, String> coverImageMap = mallProductImageService.getFirstImageByProductIds(productIds)
+                .stream()
+                .collect(Collectors.toMap(MallProductImage::getProductId, MallProductImage::getImageUrl));
+
         // 为每个商品设置销量
         page.getRecords().forEach(product -> {
             Long productId = product.getId();
             Integer sales = salesMap.get(productId);
             product.setSales(sales != null ? sales : 0);
+            String cover = coverImageMap.get(productId);
+            product.setImages(cover == null ? List.of() : List.of(cover));
         });
         return page;
     }
@@ -92,6 +109,14 @@ public class MallProductServiceImpl extends ServiceImpl<MallProductMapper, MallP
         if (product == null) {
             throw new ServiceException("商品不存在");
         }
+        List<String> images = mallProductImageService.lambdaQuery()
+                .eq(MallProductImage::getProductId, id)
+                .orderByAsc(MallProductImage::getSort)
+                .list()
+                .stream()
+                .map(MallProductImage::getImageUrl)
+                .toList();
+        product.setImages(images);
         return product;
     }
 
@@ -140,7 +165,12 @@ public class MallProductServiceImpl extends ServiceImpl<MallProductMapper, MallP
         DrugDetail drugDetail = copyProperties(request.getDrugDetail(), DrugDetail.class);
         drugDetail.setProductId(product.getId());
         boolean result = medicineDetailService.addMedicineDetail(drugDetail);
-        return save && result;
+
+        boolean success = save && result;
+        if (success) {
+            runAfterCommit(() -> mallProductSearchIndexer.reindexAsync(product.getId()));
+        }
+        return success;
     }
 
     @Override
@@ -190,7 +220,11 @@ public class MallProductServiceImpl extends ServiceImpl<MallProductMapper, MallP
             medicineDetailService.updateMedicineDetail(drugDetail);
         }
 
-        return updateById(existingProduct);
+        boolean updated = updateById(existingProduct);
+        if (updated) {
+            runAfterCommit(() -> mallProductSearchIndexer.reindexAsync(existingProduct.getId()));
+        }
+        return updated;
     }
 
     @Override
@@ -214,12 +248,42 @@ public class MallProductServiceImpl extends ServiceImpl<MallProductMapper, MallP
             throw new ServiceException("商品不存在: " + notExistIds);
         }
 
+        List<String> limitedOrderStatuses = List.of(
+                OrderStatusEnum.PENDING_SHIPMENT.getType(),
+                OrderStatusEnum.PENDING_RECEIPT.getType(),
+                OrderStatusEnum.AFTER_SALE.getType()
+        );
+        List<Long> blockedProductIds = mallOrderItemMapper.findProductIdsWithOrderStatuses(ids, limitedOrderStatuses);
+        if (!blockedProductIds.isEmpty()) {
+            throw new ServiceException("商品存在待发货/待收货/售后中的订单，无法删除: " + blockedProductIds);
+        }
+
         // 删除关联的图片
         mallProductImageService.removeImagesById(ids);
 
         // 删除关联的药品详情
         medicineDetailService.deleteMedicineDetailByProductIds(ids);
 
-        return removeByIds(ids);
+        boolean removed = removeByIds(ids);
+        if (removed) {
+            runAfterCommit(() -> mallProductSearchIndexer.removeAsync(ids));
+        }
+        return removed;
+    }
+
+    /**
+     * 在事务提交后触发异步同步，避免读取到未提交数据。
+     */
+    private void runAfterCommit(Runnable task) {
+        if (TransactionSynchronizationManager.isActualTransactionActive()) {
+            TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
+                @Override
+                public void afterCommit() {
+                    task.run();
+                }
+            });
+        } else {
+            task.run();
+        }
     }
 }

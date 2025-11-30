@@ -1,5 +1,7 @@
 package cn.zhangchuangla.medicine.client.model.vo;
 
+import cn.zhangchuangla.medicine.common.core.annotation.DataMasking;
+import cn.zhangchuangla.medicine.common.core.enums.MaskingType;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -28,6 +30,7 @@ public class UserAddressVo {
     private String receiverName;
 
     @Schema(description = "收货人手机号", example = "13800138000")
+    @DataMasking(type = MaskingType.MOBILE_PHONE)
     private String receiverPhone;
 
     @Schema(description = "地址(省市区县街道等)", example = "广东省深圳市南山区科技园街道")

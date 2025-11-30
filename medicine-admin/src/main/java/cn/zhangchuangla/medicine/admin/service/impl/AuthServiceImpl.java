@@ -2,6 +2,7 @@ package cn.zhangchuangla.medicine.admin.service.impl;
 
 import cn.zhangchuangla.medicine.admin.service.AuthService;
 import cn.zhangchuangla.medicine.common.core.constants.RolesConstant;
+import cn.zhangchuangla.medicine.common.core.enums.ResponseCode;
 import cn.zhangchuangla.medicine.common.core.exception.LoginException;
 import cn.zhangchuangla.medicine.common.core.utils.Assert;
 import cn.zhangchuangla.medicine.common.security.base.BaseService;
@@ -48,7 +49,7 @@ public class AuthServiceImpl implements AuthService, BaseService {
                     .map(GrantedAuthority::getAuthority)
                     .anyMatch(RolesConstant.ADMIN::equalsIgnoreCase);
             if (!hasAdminRole) {
-                throw new LoginException("仅管理员账户可以登录");
+                throw new LoginException(ResponseCode.OPERATION_ERROR, "账号不存在!");
             }
         } catch (BadCredentialsException e) {
             throw new LoginException("账号或密码错误");

@@ -43,7 +43,7 @@ public class LLMParseImageService {
         OpenAiApi qwenClient = baseOpenAiApi.mutate()
                 // todo 这边后续统一进行配置
                 .baseUrl("https://dashscope.aliyuncs.com/compatible-mode")
-                .apiKey(System.getenv("DEEPSEEK_API_KEY"))
+                .apiKey(System.getenv("DASHSCOPE_API_KEY"))
                 .build();
 
         // 构造多模态消息：多张图片 + 文本指令

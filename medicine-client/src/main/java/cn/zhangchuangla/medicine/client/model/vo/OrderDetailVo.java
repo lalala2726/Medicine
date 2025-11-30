@@ -1,5 +1,7 @@
 package cn.zhangchuangla.medicine.client.model.vo;
 
+import cn.zhangchuangla.medicine.common.core.annotation.DataMasking;
+import cn.zhangchuangla.medicine.common.core.enums.MaskingType;
 import cn.zhangchuangla.medicine.model.enums.OrderItemAfterSaleStatusEnum;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.AllArgsConstructor;
@@ -93,11 +95,6 @@ public class OrderDetailVo {
     @Schema(description = "退款时间")
     private Date refundTime;
 
-    // 临时字段,用于接收 SQL 查询结果,不返回给前端
-    private String receiverName;
-    private String receiverPhone;
-    private String receiverDetail;
-
     @Schema(description = "收货人信息")
     private ReceiverInfo receiverInfo;
 
@@ -121,6 +118,7 @@ public class OrderDetailVo {
         private String receiverName;
 
         @Schema(description = "收货人电话")
+        @DataMasking(type = MaskingType.MOBILE_PHONE)
         private String receiverPhone;
 
         @Schema(description = "收货详细地址")

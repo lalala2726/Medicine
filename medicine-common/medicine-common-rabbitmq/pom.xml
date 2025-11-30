@@ -10,7 +10,18 @@
         <relativePath>../../pom.xml</relativePath>
     </parent>
 
-    <artifactId>medicine-common-es</artifactId>
+    <artifactId>medicine-common-rabbitmq</artifactId>
+
+    <dependencies>
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-amqp</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.projectlombok</groupId>
+            <artifactId>lombok</artifactId>
+        </dependency>
+    </dependencies>
 
     <properties>
         <maven.compiler.source>21</maven.compiler.source>

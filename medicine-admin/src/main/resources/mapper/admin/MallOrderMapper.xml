@@ -171,4 +171,22 @@
         ORDER BY create_time DESC
     </select>
 
+    <select id="getOrderOverviewStats" resultType="cn.zhangchuangla.medicine.admin.model.dto.OrderOverviewStats">
+        SELECT
+            COUNT(*)                                                    AS totalOrders,
+            SUM(CASE WHEN order_status = 'PENDING_PAYMENT' THEN 1 ELSE 0 END) AS pendingPayment,
+            SUM(CASE WHEN order_status = 'PENDING_SHIPMENT' THEN 1 ELSE 0 END) AS pendingShipment,
+            SUM(CASE WHEN order_status = 'PENDING_RECEIPT' THEN 1 ELSE 0 END) AS pendingReceipt,
+            SUM(CASE WHEN order_status = 'COMPLETED' THEN 1 ELSE 0 END) AS completed,
+            SUM(CASE WHEN order_status = 'REFUNDED' THEN 1 ELSE 0 END) AS refunded,
+            SUM(CASE WHEN order_status = 'AFTER_SALE' THEN 1 ELSE 0 END) AS afterSale,
+            SUM(CASE WHEN order_status = 'CANCELLED' THEN 1 ELSE 0 END) AS cancelled,
+            COALESCE(SUM(CASE
+                             WHEN paid = 1 AND order_status NOT IN ('CANCELLED', 'REFUNDED')
+                                 THEN pay_amount ELSE 0 END), 0)       AS totalSales,
+            COALESCE(SUM(refund_price), 0)                              AS refundedAmount
+        FROM mall_order
+        WHERE (is_deleted IS NULL OR is_deleted = 0)
+    </select>
+
 </mapper>

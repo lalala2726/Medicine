@@ -40,4 +40,7 @@ public class MallProductVo {
     @Schema(description = "药品说明信息")
     private DrugDetailDto drugDetail;
 
+    @Schema(description = "销量（已完成订单数量）", example = "256")
+    private Integer sales;
+
 }

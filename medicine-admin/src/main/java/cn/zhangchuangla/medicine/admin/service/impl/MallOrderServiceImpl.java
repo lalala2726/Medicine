@@ -2,6 +2,7 @@ package cn.zhangchuangla.medicine.admin.service.impl;
 
 import cn.zhangchuangla.medicine.admin.mapper.MallOrderMapper;
 import cn.zhangchuangla.medicine.admin.mapper.UserMapper;
+import cn.zhangchuangla.medicine.admin.model.dto.OrderOverviewStats;
 import cn.zhangchuangla.medicine.admin.model.dto.UserOrderStatistics;
 import cn.zhangchuangla.medicine.admin.model.request.*;
 import cn.zhangchuangla.medicine.admin.model.vo.OrderAddressVo;
@@ -986,5 +987,25 @@ public class MallOrderServiceImpl extends ServiceImpl<MallOrderMapper, MallOrder
 
         orders.forEach(order -> log.info("订单{}删除成功", order.getOrderNo()));
         return true;
+    }
+
+    @Override
+    public OrderOverviewStats getOrderOverviewStats() {
+        OrderOverviewStats stats = mallOrderMapper.getOrderOverviewStats();
+        if (stats == null) {
+            return OrderOverviewStats.builder()
+                    .totalOrders(0L)
+                    .pendingPayment(0L)
+                    .pendingShipment(0L)
+                    .pendingReceipt(0L)
+                    .completed(0L)
+                    .refunded(0L)
+                    .afterSale(0L)
+                    .cancelled(0L)
+                    .totalSales(BigDecimal.ZERO)
+                    .refundedAmount(BigDecimal.ZERO)
+                    .build();
+        }
+        return stats;
     }
 }
