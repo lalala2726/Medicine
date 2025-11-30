@@ -4,7 +4,7 @@ import cn.zhangchuangla.medicine.llm.model.enums.CardType;
 import cn.zhangchuangla.medicine.llm.model.enums.MessageRole;
 import cn.zhangchuangla.medicine.llm.model.enums.MessageType;
 import cn.zhangchuangla.medicine.llm.model.response.ClientChatResponse;
-import cn.zhangchuangla.medicine.llm.model.response.card.MedicineRecommendCard;
+import cn.zhangchuangla.medicine.llm.model.response.card.ProductPurchaseCard;
 import cn.zhangchuangla.medicine.llm.model.tool.ClientMallProductOut;
 import cn.zhangchuangla.medicine.llm.model.tool.ClientSearchMallProductOut;
 import cn.zhangchuangla.medicine.llm.model.tool.MedicineCardItem;
@@ -95,7 +95,7 @@ public class ClientConsultationTools {
                         .build())
                 .toList();
 
-        MedicineRecommendCard.MedicineRecommendPayload payload = MedicineRecommendCard.MedicineRecommendPayload.builder()
+        ProductPurchaseCard.ProductPurchaseCardPayload payload = ProductPurchaseCard.ProductPurchaseCardPayload.builder()
                 .title(title == null ? "药品推荐" : title)
                 .description(description == null ? "相关药品推荐" : description)
                 .medicines(items)
@@ -104,7 +104,7 @@ public class ClientConsultationTools {
         ClientChatResponse response = ClientChatResponse.builder()
                 .role(MessageRole.ASSISTANT)
                 .type(MessageType.CARD)
-                .card(List.of(MedicineRecommendCard.builder()
+                .card(List.of(ProductPurchaseCard.builder()
                         .cardType(CardType.PRODUCT_PURCHASE)
                         .payload(payload)
                         .build()))

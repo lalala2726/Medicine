@@ -17,17 +17,17 @@ import java.util.List;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class MedicineRecommendCard implements Card {
+public class ProductPurchaseCard implements Card {
 
     private CardType cardType;
 
-    private MedicineRecommendPayload payload;
+    private ProductPurchaseCardPayload payload;
 
     @Data
     @AllArgsConstructor
     @NoArgsConstructor
     @Builder
-    public static class MedicineRecommendPayload {
+    public static class ProductPurchaseCardPayload {
 
         @Schema(description = "卡片标题")
         private String title;
