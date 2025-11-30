@@ -7,7 +7,6 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import java.math.BigDecimal;
-import java.util.List;
 
 /**
  * 药品推荐卡片中的单个药品信息。
@@ -31,9 +30,6 @@ public class MedicineCardItem {
     @Schema(description = "当前价格")
     private BigDecimal price;
 
-    @Schema(description = "划线价，可为空")
-    private BigDecimal originalPrice;
-
     @Schema(description = "规格描述")
     private String spec;
 
@@ -42,10 +38,4 @@ public class MedicineCardItem {
 
     @Schema(description = "是否处方药")
     private Boolean prescription;
-
-    @Schema(description = "标签列表")
-    private List<String> tags;
-
-    @Schema(description = "库存数量，可为空")
-    private Integer stock;
 }

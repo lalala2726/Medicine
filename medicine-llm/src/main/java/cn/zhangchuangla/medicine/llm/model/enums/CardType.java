@@ -1,5 +1,8 @@
 package cn.zhangchuangla.medicine.llm.model.enums;
 
+import com.fasterxml.jackson.annotation.JsonValue;
+import lombok.Getter;
+
 /**
  *
  * 卡片类型，type=CARD 时必填，如 PRODUCT_LIST、ORDER_STATUS 等
@@ -8,11 +11,12 @@ package cn.zhangchuangla.medicine.llm.model.enums;
  * <p>
  * created on 2025/11/30
  */
+@Getter
 public enum CardType {
 
     SYMPTOM_SELECTOR("symptom-selector"),
 
-    MEDICINE_RECOMMEND("medicine-recommend"),
+    PRODUCT_PURCHASE("product-purchase"),
 
     PRODUCT_CARD("product-card");
 
@@ -20,6 +24,11 @@ public enum CardType {
 
     CardType(String value) {
         this.value = value;
+    }
+
+    @JsonValue
+    public String jsonValue() {
+        return value;
     }
 
     public static CardType fromValue(String value) {
@@ -34,7 +43,4 @@ public enum CardType {
         return null;
     }
 
-    public String getValue() {
-        return value;
-    }
 }

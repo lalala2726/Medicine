@@ -144,8 +144,7 @@
                             GROUP BY product_id) v ON v.product_id = p.id
         WHERE p.status = 1
           AND (p.is_deleted = 0)
-        ORDER BY COALESCE(s.sales, 0) DESC,
-                 COALESCE(v.views, 0) DESC,
+        ORDER BY COALESCE(v.views, 0) DESC,
                  p.sort,
                  p.id DESC
         LIMIT 100

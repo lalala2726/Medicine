@@ -8,7 +8,6 @@ import cn.zhangchuangla.medicine.llm.model.response.card.MedicineRecommendCard;
 import cn.zhangchuangla.medicine.llm.model.tool.ClientMallProductOut;
 import cn.zhangchuangla.medicine.llm.model.tool.ClientSearchMallProductOut;
 import cn.zhangchuangla.medicine.llm.model.tool.MedicineCardItem;
-import cn.zhangchuangla.medicine.llm.model.tool.MedicineRecommendPayload;
 import cn.zhangchuangla.medicine.llm.spi.ClientDataProvider;
 import cn.zhangchuangla.medicine.llm.spi.ClientDataProviderLoader;
 import cn.zhangchuangla.medicine.llm.utils.SseMessageInjector;
@@ -70,8 +69,10 @@ public class ClientConsultationTools {
         return requireProvider().getMallProductById(id);
     }
 
-    @Tool(name = "snedProductCardMessage", description = "调用此工具传递相关的商品ID将会给用户聊天窗口发送商品卡片,为了确保用户的体验请确保你不会发送消息之后再调用此接口")
-    public void snedProductCardMessage(@ToolParam(description = "商品ID") List<Long> productIds) {
+    @Tool(name = "snedProductCardMessage", description = "调用此工具传递相关的商品ID将会给用户聊天窗口发送商品卡片")
+    public void snedProductCardMessage(@ToolParam(description = "商品ID") List<Long> productIds,
+                                       @ToolParam(description = "卡片标题") String title,
+                                       @ToolParam(description = "卡片描述") String description) {
         if (productIds == null || productIds.isEmpty()) {
             return;
         }
@@ -91,14 +92,12 @@ public class ClientConsultationTools {
                         .spec(product.getUnit())
                         .efficacy(product.getDrugDetail() == null ? null : product.getDrugDetail().getEfficacy())
                         .prescription(product.getDrugDetail() == null ? null : product.getDrugDetail().getPrescription())
-                        .tags(buildTags(product))
-                        .stock(null)
                         .build())
                 .toList();
 
-        MedicineRecommendPayload payload = MedicineRecommendPayload.builder()
-                .title("为你推荐的药品")
-                .description("以下商品供你参考，点击卡片查看详情")
+        MedicineRecommendCard.MedicineRecommendPayload payload = MedicineRecommendCard.MedicineRecommendPayload.builder()
+                .title(title == null ? "药品推荐" : title)
+                .description(description == null ? "相关药品推荐" : description)
                 .medicines(items)
                 .build();
 
@@ -106,7 +105,7 @@ public class ClientConsultationTools {
                 .role(MessageRole.ASSISTANT)
                 .type(MessageType.CARD)
                 .card(List.of(MedicineRecommendCard.builder()
-                        .cardType(CardType.MEDICINE_RECOMMEND)
+                        .cardType(CardType.PRODUCT_PURCHASE)
                         .payload(payload)
                         .build()))
                 .build();
