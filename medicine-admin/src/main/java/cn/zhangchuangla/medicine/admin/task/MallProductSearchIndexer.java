@@ -64,9 +64,9 @@ public class MallProductSearchIndexer {
                 .name(mallProductDetailDto.getName())
                 .price(mallProductDetailDto.getPrice())
                 .status(mallProductDetailDto.getStatus())
-                .prescription(mallProductDetailDto.getDrugDetail().getPrescription())
                 // 可能为null的字段
                 .categoryName(mallProductDetailDto.getCategoryName())
+                .prescription(mallProductDetailDto.getDrugDetail() != null ? mallProductDetailDto.getDrugDetail().getPrescription() : null)
                 .brand(mallProductDetailDto.getDrugDetail() != null ? mallProductDetailDto.getDrugDetail().getBrand() : null)
                 .commonName(mallProductDetailDto.getDrugDetail() != null ? mallProductDetailDto.getDrugDetail().getCommonName() : null)
                 .efficacy(mallProductDetailDto.getDrugDetail() != null ? mallProductDetailDto.getDrugDetail().getEfficacy() : null)
