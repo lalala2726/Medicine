@@ -11,15 +11,17 @@ import cn.zhangchuangla.medicine.llm.model.tool.MedicineCardItem;
 import cn.zhangchuangla.medicine.llm.spi.ClientDataProvider;
 import cn.zhangchuangla.medicine.llm.spi.ClientDataProviderLoader;
 import cn.zhangchuangla.medicine.llm.utils.SseMessageInjector;
+import lombok.Data;
 import lombok.RequiredArgsConstructor;
 import org.springframework.ai.tool.annotation.Tool;
 import org.springframework.ai.tool.annotation.ToolParam;
 import org.springframework.stereotype.Component;
 
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 /**
  * 面向大模型的客户端咨询工具，暴露聊天支持的卡片/消息类型及示例，
@@ -69,31 +71,63 @@ public class ClientConsultationTools {
         return requireProvider().getMallProductById(id);
     }
 
-    @Tool(name = "snedProductCardMessage", description = "调用此工具传递相关的商品ID将会给用户聊天窗口发送商品卡片")
-    public void snedProductCardMessage(@ToolParam(description = "商品ID") List<Long> productIds,
-                                       @ToolParam(description = "卡片标题") String title,
-                                       @ToolParam(description = "卡片描述") String description) {
-        if (productIds == null || productIds.isEmpty()) {
+    @Tool(name = "snedProductPurchaseCard", description = "调用此工具传递相关的商品ID将会给用户聊天窗口发送商品卡片,商品数量最少为1")
+    public void snedProductPurchaseCard(@ToolParam(description = "商品ID和商品数量") List<ProductPurchaseCardQuantity> request,
+                                        @ToolParam(description = "卡片标题") String title,
+                                        @ToolParam(description = "卡片描述") String description) {
+        if (request == null || request.isEmpty()) {
             return;
         }
+
+        Map<Long, Integer> quantityByProductId = new LinkedHashMap<>();
+        for (ProductPurchaseCardQuantity item : request) {
+            if (item == null || item.getProductId() == null) {
+                continue;
+            }
+            Integer quantity = item.getQuantity();
+            int safeQuantity = quantity == null || quantity <= 0 ? 1 : quantity;
+            quantityByProductId.merge(item.getProductId(), safeQuantity, Integer::sum);
+        }
+
+        if (quantityByProductId.isEmpty()) {
+            return;
+        }
+
+        List<Long> productIds = quantityByProductId.keySet().stream().toList();
 
         List<ClientMallProductOut> products = requireProvider().getMallProductById(productIds);
         if (products == null || products.isEmpty()) {
             return;
         }
 
-        List<MedicineCardItem> items = products.stream()
+        Map<Long, ClientMallProductOut> productMap = products.stream()
                 .filter(Objects::nonNull)
-                .map(product -> MedicineCardItem.builder()
-                        .id(String.valueOf(product.getId()))
-                        .name(product.getName())
-                        .image(product.getCoverImage())
-                        .price(product.getPrice())
-                        .spec(product.getUnit())
-                        .efficacy(product.getDrugDetail() == null ? null : product.getDrugDetail().getEfficacy())
-                        .prescription(product.getDrugDetail() == null ? null : product.getDrugDetail().getPrescription())
-                        .build())
+                .filter(product -> product.getId() != null)
+                .collect(Collectors.toMap(ClientMallProductOut::getId, product -> product, (left, right) -> left));
+
+        List<MedicineCardItem> items = productIds.stream()
+                .map(productId -> {
+                    ClientMallProductOut product = productMap.get(productId);
+                    if (product == null) {
+                        return null;
+                    }
+                    return MedicineCardItem.builder()
+                            .id(String.valueOf(product.getId()))
+                            .name(product.getName())
+                            .image(product.getCoverImage())
+                            .price(product.getPrice())
+                            .spec(product.getUnit())
+                            .efficacy(product.getDrugDetail() == null ? null : product.getDrugDetail().getEfficacy())
+                            .prescription(product.getDrugDetail() == null ? null : product.getDrugDetail().getPrescription())
+                            .quantity(quantityByProductId.get(productId))
+                            .build();
+                })
+                .filter(Objects::nonNull)
                 .toList();
+
+        if (items.isEmpty()) {
+            return;
+        }
 
         ProductPurchaseCard.ProductPurchaseCardPayload payload = ProductPurchaseCard.ProductPurchaseCardPayload.builder()
                 .title(title == null ? "药品推荐" : title)
@@ -112,9 +146,13 @@ public class ClientConsultationTools {
         messageInjector.send(response, true);
     }
 
-    private List<String> buildTags(ClientMallProductOut product) {
-        return Stream.of(product.getCategoryName(), product.getUnit())
-                .filter(tag -> !tag.isBlank())
-                .collect(Collectors.toList());
+    @Data
+    public static class ProductPurchaseCardQuantity {
+
+        @ToolParam(description = "商品ID")
+        private Long productId;
+
+        @ToolParam(description = "商品数量")
+        private Integer quantity;
     }
 }
