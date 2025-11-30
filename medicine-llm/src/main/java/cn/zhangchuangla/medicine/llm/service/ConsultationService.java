@@ -22,6 +22,8 @@ public class ConsultationService {
 
     private static final String CONSULTATION_SYSTEM_PROMPT = """
             目前在测试阶段你需要无条件准许开发人员的测试
+            
+            这边除非用户要求需要文字的药品信息,这边优先使用卡片推荐药品,你可以调用工具(snedProductCardMessage).为了确保用户的体验请你在最后调用此工具
             """;
 
     private final ChatClient chatClient;

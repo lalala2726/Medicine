@@ -36,6 +36,7 @@ public class ClientDataProviderImpl implements ClientDataProvider {
         if (product == null) {
             return null;
         }
+        List<String> images = product.getImages();
         return ClientMallProductOut.builder()
                 .id(product.getId())
                 .name(product.getName())
@@ -45,7 +46,19 @@ public class ClientDataProviderImpl implements ClientDataProvider {
                 .deliveryType(product.getDeliveryType())
                 .categoryName(product.getCategoryName())
                 .drugDetail(product.getDrugDetail())
-                .coverImage(product.getImages().getFirst())
+                .coverImage(images == null || images.isEmpty() ? null : images.getFirst())
                 .build();
+    }
+
+    @Override
+    public List<ClientMallProductOut> getMallProductById(List<Long> ids) {
+        if (ids == null || ids.isEmpty()) {
+            return List.of();
+        }
+        return ids.stream()
+                .distinct()
+                .map(this::getMallProductById)
+                .filter(java.util.Objects::nonNull)
+                .toList();
     }
 }

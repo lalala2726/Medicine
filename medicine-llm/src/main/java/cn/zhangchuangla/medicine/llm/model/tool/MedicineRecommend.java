@@ -1,10 +1,19 @@
 package cn.zhangchuangla.medicine.llm.model.tool;
 
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Data;
+import lombok.NoArgsConstructor;
+
 /**
  * @author Chuang
  * <p>
  * created on 2025/11/30
  */
+@Data
+@AllArgsConstructor
+@NoArgsConstructor
+@Builder
 public class MedicineRecommend {
 
     /**

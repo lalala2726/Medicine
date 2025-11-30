@@ -4,7 +4,12 @@ import cn.zhangchuangla.medicine.llm.model.enums.MessageRole;
 import cn.zhangchuangla.medicine.llm.model.enums.MessageType;
 import cn.zhangchuangla.medicine.llm.model.response.card.Card;
 import io.swagger.v3.oas.annotations.media.Schema;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Data;
+import lombok.NoArgsConstructor;
+
+import java.util.List;
 
 /**
  * @author Chuang
@@ -13,6 +18,9 @@ import lombok.Data;
  */
 @Data
 @Schema(description = "客户端聊天响应")
+@AllArgsConstructor
+@NoArgsConstructor
+@Builder
 public class ClientChatResponse {
 
     @Schema(description = "消息发送方角色：USER / ASSISTANT / SYSTEM")
@@ -25,5 +33,8 @@ public class ClientChatResponse {
     private MessageType type;
 
     @Schema(description = "卡片消息")
-    private Card card;
+    private List<Card> card;
+
+    @Schema(description = "是否结束")
+    private Boolean isFinish;
 }

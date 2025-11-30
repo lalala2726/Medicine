@@ -13,4 +13,6 @@ public interface ClientDataProvider {
     List<ClientSearchMallProductOut> searchMallProducts(String keyword, int limit);
 
     ClientMallProductOut getMallProductById(Long id);
+
+    List<ClientMallProductOut> getMallProductById(List<Long> ids);
 }
