@@ -5,6 +5,7 @@ import cn.zhangchuangla.medicine.client.mapper.MallProductMapper;
 import cn.zhangchuangla.medicine.client.model.dto.RecommendProductDto;
 import cn.zhangchuangla.medicine.client.model.vo.MallProductSearchVo;
 import cn.zhangchuangla.medicine.client.model.vo.MallProductVo;
+import cn.zhangchuangla.medicine.client.service.MallOrderItemService;
 import cn.zhangchuangla.medicine.client.service.MallProductImageService;
 import cn.zhangchuangla.medicine.client.service.MallProductService;
 import cn.zhangchuangla.medicine.client.service.MallProductViewHistoryService;
@@ -43,6 +44,7 @@ public class MallProductServiceImpl extends ServiceImpl<MallProductMapper, MallP
     private final MallProductMapper mallProductMapper;
     private final MallProductImageService mallProductImageService;
     private final MallProductViewHistoryService mallProductViewHistoryService;
+    private final MallOrderItemService mallOrderItemService;
     private final MallProductSearchService mallProductSearchService;
     private static final int RECOMMEND_LIMIT = 20;
 
@@ -56,6 +58,13 @@ public class MallProductServiceImpl extends ServiceImpl<MallProductMapper, MallP
         if (candidates.isEmpty()) {
             return Collections.emptyList();
         }
+
+        // 追加销量信息（单独查询，避免多表关联超过 3 张表）
+        Map<Long, Integer> salesMap = mallOrderItemService.getCompletedSalesByProductIds(
+                candidates.stream()
+                        .map(MallProduct::getId)
+                        .toList());
+        candidates.forEach(product -> product.setSales(Optional.ofNullable(salesMap.get(product.getId())).orElse(0)));
 
         // 计算权重，加入适度随机，排序后截取
         List<RecommendProductDto> picked = candidates.stream()
@@ -121,6 +130,9 @@ public class MallProductServiceImpl extends ServiceImpl<MallProductMapper, MallP
             throw new ServiceException(ResponseCode.RESULT_IS_NULL, "商品不存在");
         }
 
+        Map<Long, Integer> salesMap = mallOrderItemService.getCompletedSalesByProductIds(List.of(id));
+        productWithImages.setSales(salesMap.getOrDefault(id, 0));
+
         // 构建返回VO
         cn.zhangchuangla.medicine.client.model.vo.MallProductVo productVo =
                 new cn.zhangchuangla.medicine.client.model.vo.MallProductVo();
@@ -145,7 +157,16 @@ public class MallProductServiceImpl extends ServiceImpl<MallProductMapper, MallP
 
     @Override
     public MallProductWithImageDto getProductWithImagesById(Long id) {
-        return mallProductMapper.getProductWithImagesById(id);
+        if (id == null) {
+            return null;
+        }
+        MallProductWithImageDto product = mallProductMapper.getProductWithImagesById(id);
+        if (product == null) {
+            return null;
+        }
+        Map<Long, Integer> salesMap = mallOrderItemService.getCompletedSalesByProductIds(List.of(id));
+        product.setSales(salesMap.getOrDefault(id, 0));
+        return product;
     }
 
     @Override
@@ -226,6 +247,14 @@ public class MallProductServiceImpl extends ServiceImpl<MallProductMapper, MallP
         if (mallProductDetailDto == null) {
             throw new ServiceException(ResponseCode.RESULT_IS_NULL, "商品不存在");
         }
+        List<String> imageUrls = mallProductImageService.lambdaQuery()
+                .eq(MallProductImage::getProductId, id)
+                .orderByAsc(MallProductImage::getSort)
+                .list()
+                .stream()
+                .map(MallProductImage::getImageUrl)
+                .toList();
+        mallProductDetailDto.setImages(imageUrls);
         return mallProductDetailDto;
 
     }

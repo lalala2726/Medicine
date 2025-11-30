@@ -86,7 +86,7 @@
                p.update_time,
                p.create_by,
                p.update_by,
-               COALESCE(s.sales, 0)      AS sales,
+               0                         AS sales,
                img.id                    as img_id,
                img.product_id            as img_product_id,
                img.image_url,
@@ -113,13 +113,6 @@
                md.taboo                  AS med_taboo,
                md.instruction            AS med_instruction
         FROM mall_product p
-                 LEFT JOIN (SELECT moi.product_id, SUM(moi.quantity) AS sales
-                            FROM mall_order_item moi
-                                     INNER JOIN mall_order mo ON moi.order_id = mo.id
-                            WHERE moi.is_deleted = 0
-                              AND mo.is_deleted = 0
-                              AND mo.order_status = 'COMPLETED'
-                            GROUP BY moi.product_id) s ON s.product_id = p.id
                  LEFT JOIN mall_product_image img ON p.id = img.product_id AND (img.is_deleted = 0)
                  LEFT JOIN drug_detail md ON p.id = md.product_id AND (md.is_deleted = 0)
         WHERE (p.is_deleted = 0)
@@ -143,16 +136,9 @@
                p.create_by,
                p.update_by,
                p.is_deleted,
-               COALESCE(s.sales, 0) AS sales,
+               0 AS sales,
                COALESCE(v.views, 0) AS views
         FROM mall_product p
-                 LEFT JOIN (SELECT moi.product_id, SUM(moi.quantity) AS sales
-                            FROM mall_order_item moi
-                                     INNER JOIN mall_order mo ON moi.order_id = mo.id
-                            WHERE moi.is_deleted = 0
-                              AND mo.is_deleted = 0
-                              AND mo.order_status = 'COMPLETED'
-                            GROUP BY moi.product_id) s ON s.product_id = p.id
                  LEFT JOIN (SELECT product_id, SUM(view_count) AS views
                             FROM mall_product_view_history
                             GROUP BY product_id) v ON v.product_id = p.id
@@ -226,7 +212,7 @@
                p.update_by,
                p.is_deleted,
                c.name                    AS category_name,
-               img.image_url,
+               NULL                      AS image_url,
                md.common_name            AS med_common_name,
                md.composition            AS med_composition,
                md.characteristics        AS med_characteristics,
@@ -249,11 +235,6 @@
                md.instruction            AS med_instruction
         FROM mall_product p
                  LEFT JOIN mall_category c ON p.category_id = c.id
-                 LEFT JOIN (SELECT i.product_id, i.image_url
-                            FROM mall_product_image i
-                            WHERE (i.is_deleted = 0)
-                            ORDER BY i.sort, i.id
-                            LIMIT 1) img ON img.product_id = p.id
                  LEFT JOIN drug_detail md ON p.id = md.product_id AND (md.is_deleted = 0)
         WHERE (p.is_deleted = 0)
           AND p.id = #{productId}

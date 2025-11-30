@@ -118,14 +118,7 @@
         p.create_by,
         p.update_by,
         c.name AS category_name,
-        (
-        SELECT i.image_url
-        FROM mall_product_image i
-        WHERE (i.is_deleted IS NULL OR i.is_deleted = 0)
-        AND i.product_id = p.id
-        ORDER BY i.sort , i.id
-        LIMIT 1
-        ) AS image_url,
+        NULL AS image_url,
         md.common_name AS med_common_name,
         md.composition AS med_composition,
         md.characteristics AS med_characteristics,
@@ -147,8 +140,8 @@
         md.taboo AS med_taboo,
         md.instruction AS med_instruction
         FROM mall_product p
-        LEFT JOIN mall_category c ON p.category_id = c.id
-        LEFT JOIN drug_detail md ON p.id = md.product_id AND (md.is_deleted IS NULL OR md.is_deleted = 0)
+                 LEFT JOIN mall_category c ON p.category_id = c.id
+                 LEFT JOIN drug_detail md ON p.id = md.product_id AND (md.is_deleted IS NULL OR md.is_deleted = 0)
         <where>
             (p.is_deleted IS NULL OR p.is_deleted = 0)
             <if test="request.id != null">
@@ -189,7 +182,7 @@
                p.create_by,
                p.update_by,
                c.name                    AS category_name,
-               i.image_url               AS image_url,
+               NULL                      AS image_url,
                md.common_name            AS med_common_name,
                md.composition            AS med_composition,
                md.characteristics        AS med_characteristics,
@@ -212,10 +205,9 @@
                md.instruction            AS med_instruction
         FROM mall_product p
                  LEFT JOIN mall_category c ON p.category_id = c.id
-                 LEFT JOIN mall_product_image i ON i.product_id = p.id AND (i.is_deleted IS NULL OR i.is_deleted = 0)
                  LEFT JOIN drug_detail md ON p.id = md.product_id AND (md.is_deleted IS NULL OR md.is_deleted = 0)
         WHERE (p.is_deleted IS NULL OR p.is_deleted = 0)
           AND p.id = #{id}
-        ORDER BY i.sort, i.id
+        ORDER BY p.id
     </select>
 </mapper>

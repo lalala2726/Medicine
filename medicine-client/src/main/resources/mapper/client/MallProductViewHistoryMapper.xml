@@ -18,33 +18,24 @@
     </sql>
 
     <select id="listViewHistory" resultType="cn.zhangchuangla.medicine.client.model.vo.ViewHistoryVo">
-        select
-        h.product_id      as productId,
-        p.name            as productName,
-        p.price           as price,
-        coalesce(s.sales, 0) as sales,
-        img.image_url     as coverImage,
-        h.view_count      as viewCount,
-        h.first_view_time as firstViewTime,
-        h.last_view_time  as lastViewTime
-        from mall_product_view_history h
-        left join mall_product p on h.product_id = p.id
-        left join (
-            select product_id, min(image_url) as image_url
-            from mall_product_image
-            where is_deleted = 0
-            group by product_id
-        ) img on img.product_id = h.product_id
-        left join (
-            select moi.product_id as product_id, sum(moi.quantity) as sales
-            from mall_order_item moi
-                     inner join mall_order mo on moi.order_id = mo.id
-            where moi.is_deleted = 0
-              and mo.is_deleted = 0
-              and mo.order_status = 'COMPLETED'
-            group by moi.product_id
-        ) s on s.product_id = h.product_id
-        where h.user_id = #{userId}
-        order by h.last_view_time desc, h.id desc
+        SELECT
+        h.product_id      AS productId,
+        p.name            AS productName,
+        p.price           AS price,
+        0                 AS sales,
+        img.image_url     AS coverImage,
+        h.view_count      AS viewCount,
+        h.first_view_time AS firstViewTime,
+        h.last_view_time  AS lastViewTime
+        FROM mall_product_view_history h
+                 LEFT JOIN mall_product p ON h.product_id = p.id
+                 LEFT JOIN (
+            SELECT product_id, MIN(image_url) AS image_url
+            FROM mall_product_image
+            WHERE is_deleted = 0
+            GROUP BY product_id
+        ) img ON img.product_id = h.product_id
+        WHERE h.user_id = #{userId}
+        ORDER BY h.last_view_time DESC, h.id DESC
     </select>
 </mapper>

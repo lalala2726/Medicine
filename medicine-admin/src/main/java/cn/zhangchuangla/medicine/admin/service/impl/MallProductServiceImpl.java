@@ -13,6 +13,7 @@ import cn.zhangchuangla.medicine.common.security.utils.SecurityUtils;
 import cn.zhangchuangla.medicine.model.dto.MallProductDetailDto;
 import cn.zhangchuangla.medicine.model.entity.DrugDetail;
 import cn.zhangchuangla.medicine.model.entity.MallProduct;
+import cn.zhangchuangla.medicine.model.entity.MallProductImage;
 import cn.zhangchuangla.medicine.model.enums.DeliveryTypeEnum;
 import cn.zhangchuangla.medicine.model.enums.OrderStatusEnum;
 import cn.zhangchuangla.medicine.model.request.mall.MallProductAddRequest;
@@ -33,6 +34,8 @@ import java.math.BigDecimal;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 /**
  * 商城商品服务实现类
@@ -80,11 +83,18 @@ public class MallProductServiceImpl extends ServiceImpl<MallProductMapper, MallP
             productSales.forEach(sales -> salesMap.put(sales.getProductId(), sales.getSales()));
         }
 
+        List<Long> productIds = page.getRecords().stream().map(MallProduct::getId).toList();
+        Map<Long, String> coverImageMap = mallProductImageService.getFirstImageByProductIds(productIds)
+                .stream()
+                .collect(Collectors.toMap(MallProductImage::getProductId, MallProductImage::getImageUrl));
+
         // 为每个商品设置销量
         page.getRecords().forEach(product -> {
             Long productId = product.getId();
             Integer sales = salesMap.get(productId);
             product.setSales(sales != null ? sales : 0);
+            String cover = coverImageMap.get(productId);
+            product.setImages(cover == null ? List.of() : List.of(cover));
         });
         return page;
     }
@@ -99,6 +109,14 @@ public class MallProductServiceImpl extends ServiceImpl<MallProductMapper, MallP
         if (product == null) {
             throw new ServiceException("商品不存在");
         }
+        List<String> images = mallProductImageService.lambdaQuery()
+                .eq(MallProductImage::getProductId, id)
+                .orderByAsc(MallProductImage::getSort)
+                .list()
+                .stream()
+                .map(MallProductImage::getImageUrl)
+                .toList();
+        product.setImages(images);
         return product;
     }
 
