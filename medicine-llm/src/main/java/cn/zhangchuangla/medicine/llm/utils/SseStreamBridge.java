@@ -109,44 +109,28 @@ public class SseStreamBridge {
     }
 
     /**
-     * 会话包装，允许随时插入消息。
-     */
-    public static class SseSession {
-        private final SseEmitter emitter;
-        private final AtomicBoolean done;
-        private final AtomicReference<ClientChatResponse> lastMessage;
-        private final AtomicReference<ClientChatResponse> buffer;
-
-        SseSession(SseEmitter emitter,
-                   AtomicBoolean done,
-                   AtomicReference<ClientChatResponse> lastMessage,
-                   AtomicReference<ClientChatResponse> buffer) {
-            this.emitter = emitter;
-            this.done = done;
-            this.lastMessage = lastMessage;
-            this.buffer = buffer;
-        }
-
-        public SseEmitter emitter() {
-            return emitter;
-        }
+         * 会话包装，允许随时插入消息。
+         */
+        public record SseSession(SseEmitter emitter, AtomicBoolean done, AtomicReference<ClientChatResponse> lastMessage,
+                                 AtomicReference<ClientChatResponse> buffer) {
 
         public void send(ClientChatResponse content) {
-            if (content == null || done.get()) {
-                return;
+                if (content == null || done.get()) {
+                    return;
+                }
+                sendSafe(emitter, content);
             }
-            sendSafe(emitter, content);
-        }
 
 
-        /**
-         * 标记一条消息为流结束时的最后推送，底层会在 Flux 完成时发送并设置 isFinish=true（如果未显式指定）。
-         */
-        public void sendLast(ClientChatResponse content) {
-            if (content == null || done.get()) {
-                return;
+            /**
+             * 标记一条消息为流结束时的最后推送，底层会在 Flux 完成时发送并设置 isFinish=true（如果未显式指定）。
+             */
+            public void sendLast(ClientChatResponse content) {
+                if (content == null || done.get()) {
+                    return;
+                }
+                lastMessage.set(content);
             }
-            lastMessage.set(content);
+
         }
-    }
 }
