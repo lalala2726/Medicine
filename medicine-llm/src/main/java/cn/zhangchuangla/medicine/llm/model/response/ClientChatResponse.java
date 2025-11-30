@@ -1,5 +1,6 @@
 package cn.zhangchuangla.medicine.llm.model.response;
 
+import cn.zhangchuangla.medicine.llm.model.enums.EventType;
 import cn.zhangchuangla.medicine.llm.model.enums.MessageRole;
 import cn.zhangchuangla.medicine.llm.model.enums.MessageType;
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -28,8 +29,11 @@ public class ClientChatResponse {
     @Schema(description = "完整文本内容")
     private String content;
 
-    @Schema(description = "消息类型：TEXT / CARD")
+    @Schema(description = "消息类型：TEXT / CARD / EVENT")
     private MessageType type;
+
+    @Schema(description = "事件数据")
+    private EventType event;
 
     @Schema(description = "卡片消息")
     private List<Card> card;

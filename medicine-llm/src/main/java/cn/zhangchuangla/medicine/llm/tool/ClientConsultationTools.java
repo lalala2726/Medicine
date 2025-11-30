@@ -1,6 +1,7 @@
 package cn.zhangchuangla.medicine.llm.tool;
 
 import cn.zhangchuangla.medicine.llm.model.enums.CardType;
+import cn.zhangchuangla.medicine.llm.model.enums.EventType;
 import cn.zhangchuangla.medicine.llm.model.enums.MessageRole;
 import cn.zhangchuangla.medicine.llm.model.enums.MessageType;
 import cn.zhangchuangla.medicine.llm.model.response.ClientChatResponse;
@@ -254,6 +255,19 @@ public class ClientConsultationTools {
         } catch (Exception ex) {
             return "发送失败：" + ex.getMessage();
         }
+    }
+
+    @Tool(name = "openUserOrderList", description = """
+            调用此用户会发送一个打开用户前端订单列表的参数,让用户选择订单
+            """)
+    public void openUserOrderList() {
+        ClientChatResponse response = ClientChatResponse.builder()
+                .role(MessageRole.ASSISTANT)
+                .type(MessageType.EVENT)
+                .event(EventType.OPEN_USER_ORDER_LIST)
+                .build();
+
+        messageInjector.send(response, true);
     }
 
 
