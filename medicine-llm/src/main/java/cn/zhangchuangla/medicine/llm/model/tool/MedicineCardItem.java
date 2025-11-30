@@ -38,4 +38,7 @@ public class MedicineCardItem {
 
     @Schema(description = "是否处方药")
     private Boolean prescription;
+
+    @Schema(description = "数量")
+    private Integer quantity;
 }

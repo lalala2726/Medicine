@@ -4,6 +4,7 @@ import cn.zhangchuangla.medicine.llm.model.enums.CardType;
 import cn.zhangchuangla.medicine.llm.model.enums.MessageRole;
 import cn.zhangchuangla.medicine.llm.model.enums.MessageType;
 import cn.zhangchuangla.medicine.llm.model.response.ClientChatResponse;
+import cn.zhangchuangla.medicine.llm.model.response.card.ProductCard;
 import cn.zhangchuangla.medicine.llm.model.response.card.ProductPurchaseCard;
 import cn.zhangchuangla.medicine.llm.model.tool.ClientMallProductOut;
 import cn.zhangchuangla.medicine.llm.model.tool.ClientSearchMallProductOut;
@@ -71,12 +72,110 @@ public class ClientConsultationTools {
         return requireProvider().getMallProductById(id);
     }
 
-    @Tool(name = "snedProductPurchaseCard", description = "调用此工具传递相关的商品ID将会给用户聊天窗口发送商品卡片,商品数量最少为1")
-    public void snedProductPurchaseCard(@ToolParam(description = "商品ID和商品数量") List<ProductPurchaseCardQuantity> request,
+    /**
+     * 发送仅展示的商品卡片，不包含购买交互。
+     *
+     * @param productIds 商品ID列表，去重后按输入顺序展示
+     * @param title      卡片标题，空则使用默认提示
+     * @return 发送结果描述，成功或失败原因
+     */
+    @Tool(name = "sendProductCard", description = """
+            向用户发送商品推荐卡片，仅用于展示商品信息（不包含购买操作）。
+            适用于用户想了解或比较商品时使用，需传入有效的商品ID列表。
+            """)
+    public String sendProductCard(@ToolParam(description = "商品ID") List<Long> productIds,
+                                @ToolParam(description = "卡片标题") String title) {
+        if (productIds == null || productIds.isEmpty()) {
+            return "未发送，商品ID列表为空";
+        }
+
+        List<Long> distinctProductIds = productIds.stream()
+                .filter(Objects::nonNull)
+                .distinct()
+                .toList();
+        if (distinctProductIds.isEmpty()) {
+            return "未发送，商品ID列表为空";
+        }
+
+        List<ClientMallProductOut> products;
+        try {
+            products = requireProvider().getMallProductById(distinctProductIds);
+        } catch (Exception ex) {
+            return "发送失败：" + ex.getMessage();
+        }
+        if (products == null || products.isEmpty()) {
+            return "未发送，未查询到对应商品";
+        }
+
+        Map<Long, ClientMallProductOut> productMap = products.stream()
+                .filter(Objects::nonNull)
+                .filter(product -> product.getId() != null)
+                .collect(Collectors.toMap(ClientMallProductOut::getId, product -> product, (left, right) -> left));
+
+        List<MedicineCardItem> items = distinctProductIds.stream()
+                .map(productId -> {
+                    ClientMallProductOut product = productMap.get(productId);
+                    if (product == null) {
+                        return null;
+                    }
+                    return MedicineCardItem.builder()
+                            .id(String.valueOf(product.getId()))
+                            .name(product.getName())
+                            .image(product.getCoverImage())
+                            .price(product.getPrice())
+                            .spec(product.getUnit())
+                            .efficacy(product.getDrugDetail() == null ? null : product.getDrugDetail().getEfficacy())
+                            .prescription(product.getDrugDetail() == null ? null : product.getDrugDetail().getPrescription())
+                            .build();
+                })
+                .filter(Objects::nonNull)
+                .toList();
+
+        if (items.isEmpty()) {
+            return "未发送，未查询到对应商品";
+        }
+
+        ProductCard.ProductCardPayload payload = ProductCard.ProductCardPayload.builder()
+                .title(title == null || title.isBlank() ? "为你推荐的商品" : title)
+                .medicines(items)
+                .build();
+
+        ProductCard productCard = new ProductCard();
+        productCard.setCardType(CardType.PRODUCT_CARD);
+        productCard.setPayload(payload);
+
+        ClientChatResponse response = ClientChatResponse.builder()
+                .role(MessageRole.ASSISTANT)
+                .type(MessageType.CARD)
+                .card(List.of(productCard))
+                .build();
+
+        try {
+            messageInjector.send(response, true);
+            return "发送成功";
+        } catch (Exception ex) {
+            return "发送失败：" + ex.getMessage();
+        }
+    }
+
+    /**
+     * 发送可下单的商品购买卡片，支持携带商品数量。
+     *
+     * @param request     商品ID与数量列表，数量<=0时自动按1处理并按ID聚合求和
+     * @param title       卡片标题，空则使用默认提示
+     * @param description 卡片描述，空则使用默认提示
+     * @return 发送结果描述，成功或失败原因
+     */
+    @Tool(name = "snedProductPurchaseCard", description = """
+            为用户发送商品购买卡片，用户可直接点击购买。
+            仅在确认用户有购买需求时使用，商品数量至少为 1。
+            返回发送结果或失败原因。
+            """)
+    public String snedProductPurchaseCard(@ToolParam(description = "商品ID和商品数量") List<ProductPurchaseCardQuantity> request,
                                         @ToolParam(description = "卡片标题") String title,
                                         @ToolParam(description = "卡片描述") String description) {
         if (request == null || request.isEmpty()) {
-            return;
+            return "未发送，商品参数为空";
         }
 
         Map<Long, Integer> quantityByProductId = new LinkedHashMap<>();
@@ -90,14 +189,19 @@ public class ClientConsultationTools {
         }
 
         if (quantityByProductId.isEmpty()) {
-            return;
+            return "未发送，商品参数为空";
         }
 
         List<Long> productIds = quantityByProductId.keySet().stream().toList();
 
-        List<ClientMallProductOut> products = requireProvider().getMallProductById(productIds);
+        List<ClientMallProductOut> products;
+        try {
+            products = requireProvider().getMallProductById(productIds);
+        } catch (Exception ex) {
+            return "发送失败：" + ex.getMessage();
+        }
         if (products == null || products.isEmpty()) {
-            return;
+            return "未发送，未查询到对应商品";
         }
 
         Map<Long, ClientMallProductOut> productMap = products.stream()
@@ -126,12 +230,12 @@ public class ClientConsultationTools {
                 .toList();
 
         if (items.isEmpty()) {
-            return;
+            return "未发送，未查询到对应商品";
         }
 
         ProductPurchaseCard.ProductPurchaseCardPayload payload = ProductPurchaseCard.ProductPurchaseCardPayload.builder()
-                .title(title == null ? "药品推荐" : title)
-                .description(description == null ? "相关药品推荐" : description)
+                .title(title == null || title.isBlank() ? "下单推荐" : title)
+                .description(description == null || description.isBlank() ? "为你准备的购买清单" : description)
                 .medicines(items)
                 .build();
 
@@ -143,7 +247,12 @@ public class ClientConsultationTools {
                         .payload(payload)
                         .build()))
                 .build();
-        messageInjector.send(response, true);
+        try {
+            messageInjector.send(response, true);
+            return "发送成功";
+        } catch (Exception ex) {
+            return "发送失败：" + ex.getMessage();
+        }
     }
 
     @Data
