@@ -2,8 +2,7 @@ package cn.zhangchuangla.medicine.common.elasticsearch.model.request;
 
 import cn.zhangchuangla.medicine.common.core.base.PageRequest;
 import io.swagger.v3.oas.annotations.media.Schema;
-import lombok.Data;
-import lombok.EqualsAndHashCode;
+import lombok.*;
 
 import java.math.BigDecimal;
 
@@ -15,7 +14,16 @@ import java.math.BigDecimal;
 @EqualsAndHashCode(callSuper = true)
 @Data
 @Schema(description = "商品搜索请求参数")
+@AllArgsConstructor
+@NoArgsConstructor
+@Builder
 public class MallProductSearchRequest extends PageRequest {
+
+
+    public MallProductSearchRequest(String keyword, int limit) {
+        this.keyword = keyword;
+        super.setPageSize(limit);
+    }
 
     @Schema(description = "搜索关键字,这个关键字匹配商品名称、商品分类名称、商品描述、厂商名称、药品通用名、功效/主治", example = "感冒灵")
     private String keyword;

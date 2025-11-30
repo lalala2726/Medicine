@@ -29,7 +29,7 @@ public class PageRequest {
 
 
     public <T> Page<T> toPage() {
-        long current = Math.max(this.pageNum, 1);
+        long current = this.pageNum;
         long size = Math.max(this.pageSize, 1);
         return new Page<>(current, size);
     }

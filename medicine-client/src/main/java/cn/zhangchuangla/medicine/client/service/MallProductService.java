@@ -5,6 +5,8 @@ import cn.zhangchuangla.medicine.client.model.vo.MallProductSearchVo;
 import cn.zhangchuangla.medicine.client.model.vo.MallProductVo;
 import cn.zhangchuangla.medicine.common.core.base.PageResult;
 import cn.zhangchuangla.medicine.common.elasticsearch.model.request.MallProductSearchRequest;
+import cn.zhangchuangla.medicine.llm.model.tool.ClientSearchMallProductOut;
+import cn.zhangchuangla.medicine.model.dto.MallProductDetailDto;
 import cn.zhangchuangla.medicine.model.dto.MallProductWithImageDto;
 import cn.zhangchuangla.medicine.model.entity.MallProduct;
 import cn.zhangchuangla.medicine.model.vo.mall.RecommendListVo;
@@ -100,4 +102,20 @@ public interface MallProductService extends IService<MallProduct> {
      */
     List<String> suggest(String keyword);
 
+    /**
+     * 搜索商品
+     *
+     * @param keyword 关键字
+     * @param limit   限制数量
+     * @return 商品列表
+     */
+    List<ClientSearchMallProductOut> SearchDetail(String keyword, int limit);
+
+    /**
+     * 获取商品详情（包含药品信息）
+     *
+     * @param id 商品ID
+     * @return 商品详情
+     */
+    MallProductDetailDto getProductAndDrugInfoById(Long id);
 }

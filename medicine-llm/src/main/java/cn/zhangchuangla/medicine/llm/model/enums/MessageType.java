@@ -1,5 +1,7 @@
 package cn.zhangchuangla.medicine.llm.model.enums;
 
+import lombok.Getter;
+
 /**
  * 消息类型：TEXT=文本，CARD=卡片，EVENT=事件，ERROR=错误
  *
@@ -7,6 +9,7 @@ package cn.zhangchuangla.medicine.llm.model.enums;
  * <p>
  * created on 2025/11/30
  */
+@Getter
 public enum MessageType {
 
     TEXT("text"),
@@ -30,10 +33,6 @@ public enum MessageType {
             }
         }
         return null;
-    }
-
-    public String getValue() {
-        return value;
     }
 
 }

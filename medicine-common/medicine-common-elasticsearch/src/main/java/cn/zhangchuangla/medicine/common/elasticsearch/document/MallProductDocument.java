@@ -46,6 +46,12 @@ public class MallProductDocument {
     private String categoryName;
 
     /**
+     * 是否处方药
+     */
+    @Field(type = FieldType.Boolean)
+    private Boolean prescription;
+
+    /**
      * 商品价格
      */
     @Field(type = FieldType.Scaled_Float, scalingFactor = 100)

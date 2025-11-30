@@ -1,6 +1,8 @@
 package cn.zhangchuangla.medicine.llm.model.response;
 
 import cn.zhangchuangla.medicine.llm.model.enums.MessageRole;
+import cn.zhangchuangla.medicine.llm.model.enums.MessageType;
+import cn.zhangchuangla.medicine.llm.model.response.card.Card;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 
@@ -18,4 +20,10 @@ public class ClientChatResponse {
 
     @Schema(description = "完整文本内容")
     private String content;
+
+    @Schema(description = "消息类型：TEXT / CARD")
+    private MessageType type;
+
+    @Schema(description = "卡片消息")
+    private Card card;
 }

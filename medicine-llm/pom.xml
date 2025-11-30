@@ -49,6 +49,10 @@
             <groupId>cn.zhangchuangla.medicine</groupId>
             <artifactId>medicine-model</artifactId>
         </dependency>
+        <dependency>
+            <groupId>co.elastic.clients</groupId>
+            <artifactId>elasticsearch-java</artifactId>
+        </dependency>
     </dependencies>
 
     <properties>

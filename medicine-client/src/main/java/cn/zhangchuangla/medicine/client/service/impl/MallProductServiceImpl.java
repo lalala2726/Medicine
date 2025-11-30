@@ -16,6 +16,8 @@ import cn.zhangchuangla.medicine.common.elasticsearch.document.MallProductDocume
 import cn.zhangchuangla.medicine.common.elasticsearch.model.request.MallProductSearchRequest;
 import cn.zhangchuangla.medicine.common.elasticsearch.service.MallProductSearchService;
 import cn.zhangchuangla.medicine.common.security.base.BaseService;
+import cn.zhangchuangla.medicine.llm.model.tool.ClientSearchMallProductOut;
+import cn.zhangchuangla.medicine.model.dto.MallProductDetailDto;
 import cn.zhangchuangla.medicine.model.dto.MallProductWithImageDto;
 import cn.zhangchuangla.medicine.model.entity.MallProduct;
 import cn.zhangchuangla.medicine.model.entity.MallProductImage;
@@ -189,27 +191,43 @@ public class MallProductServiceImpl extends ServiceImpl<MallProductMapper, MallP
                 .build();
     }
 
-    private String extractCover(MallProductWithImageDto product) {
-        // 按 sort、id 取第一张图片作为封面，保持与后台排序一致
-        if (product == null || product.getProductImages() == null) {
-            return null;
-        }
-        return product.getProductImages().stream()
-                .filter(Objects::nonNull)
-                .sorted(Comparator.comparing(MallProductImage::getSort, Comparator.nullsLast(Integer::compareTo))
-                        .thenComparing(MallProductImage::getId, Comparator.nullsLast(Long::compareTo)))
-                .map(MallProductImage::getImageUrl)
-                .filter(Objects::nonNull)
-                .findFirst()
-                .orElse(null);
-    }
-
     @Override
     public List<String> suggest(String keyword) {
         if (!StringUtils.hasText(keyword)) {
             return Collections.emptyList();
         }
         return mallProductSearchService.suggest(keyword.trim(), 10);
+    }
+
+
+    @Override
+    public List<ClientSearchMallProductOut> SearchDetail(String keyword, int limit) {
+        SearchHits<MallProductDocument> searchHits = mallProductSearchService.search(new MallProductSearchRequest(keyword, limit));
+        if (searchHits == null || searchHits.isEmpty()) {
+            return Collections.emptyList();
+        }
+        return searchHits.getSearchHits().stream()
+                .map(SearchHit::getContent)
+                .map(content -> ClientSearchMallProductOut.builder()
+                        .commonName(content.getCommonName())
+                        .categoryName(content.getCategoryName())
+                        .name(content.getName())
+                        .efficacy(content.getEfficacy())
+                        .id(content.getId())
+                        .prescription(content.getPrescription())
+                        .build())
+                .toList();
+    }
+
+    @Override
+    public MallProductDetailDto getProductAndDrugInfoById(Long id) {
+        Assert.isPositive(id, "商品ID不能为空");
+        MallProductDetailDto mallProductDetailDto = mallProductMapper.getProductAndDrugInfoById(id);
+        if (mallProductDetailDto == null) {
+            throw new ServiceException(ResponseCode.RESULT_IS_NULL, "商品不存在");
+        }
+        return mallProductDetailDto;
+
     }
 
     @Override

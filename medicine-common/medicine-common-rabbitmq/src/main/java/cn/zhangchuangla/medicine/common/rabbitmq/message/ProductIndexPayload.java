@@ -70,4 +70,9 @@ public class ProductIndexPayload {
      * 封面图片
      */
     private String coverImage;
+
+    /**
+     * 是否处方药
+     */
+    private Boolean prescription;
 }

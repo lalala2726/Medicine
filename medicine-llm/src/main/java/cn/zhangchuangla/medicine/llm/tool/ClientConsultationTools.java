@@ -2,8 +2,8 @@ package cn.zhangchuangla.medicine.llm.tool;
 
 import cn.zhangchuangla.medicine.llm.model.enums.MessageRole;
 import cn.zhangchuangla.medicine.llm.model.response.ClientChatResponse;
-import cn.zhangchuangla.medicine.llm.model.response.card.MedicineCardItem;
-import cn.zhangchuangla.medicine.llm.model.response.card.ProductCardItem;
+import cn.zhangchuangla.medicine.llm.model.tool.ClientMallProductOut;
+import cn.zhangchuangla.medicine.llm.model.tool.ClientSearchMallProductOut;
 import cn.zhangchuangla.medicine.llm.spi.ClientDataProvider;
 import cn.zhangchuangla.medicine.llm.spi.ClientDataProviderLoader;
 import cn.zhangchuangla.medicine.llm.utils.SseMessageInjector;
@@ -29,39 +29,34 @@ public class ClientConsultationTools {
         this.messageInjector = messageInjector;
     }
 
-
     /**
-     * 获取药品推荐列表（真实数据），用于 medicine-recommend 卡片。
+     * 搜索商城药品,用于当AI诊断完病情之后获取药品信息
      *
-     * @param keyword 关键词或症状描述
-     * @param limit   最大返回条数，默认 5，最大 20
-     * @return 药品卡片条目列表
+     * @param keyword 关键字
+     * @param limit   最大返回数量
+     * @return 商品列表
      */
-    @Tool(name = "recommend_medicines_for_card", description = "获取药品推荐列表，包含价格/处方标识/功效等")
-    public List<MedicineCardItem> recommendMedicines(
-            @ToolParam(description = "关键词或症状描述") String keyword,
-            @ToolParam(description = "返回最大条数，默认 5") Integer limit) {
-        int safeLimit = limit == null || limit <= 0 ? 5 : Math.min(limit, 20);
-        messageInjector.send(buildNotice("正在调用 recommend_medicines_for_card 工具，为您查询药品推荐..."));
-        return requireProvider().recommendMedicines(keyword, safeLimit);
+    @Tool(description = "获取商城药品信息")
+    public List<ClientSearchMallProductOut> searchMallProducts(@ToolParam(description = "搜索关键字,可以搜索商品(药品)可以搜索生病的症状") String keyword,
+                                                               @ToolParam(description = "最大返回数量,默认为10") int limit) {
+        if (keyword == null) {
+            return List.of();
+        }
+        return requireProvider().searchMallProducts(keyword, limit);
     }
 
     /**
-     * 获取最近订单/常购商品列表。
+     * 根据药品ID获取药品详细信息
      *
-     * @param limit 最大返回条数，默认 5，最大 20
-     * @return 商品/订单卡片条目列表
+     * @param id 商品ID
+     * @return 商品详细信息
      */
-    @Tool(name = "list_latest_orders_for_card", description = "查询最近订单或常购商品，便于直接生成 ")
-    public List<ProductCardItem> latestOrders(
-            @ToolParam(description = "返回最大条数，默认 5") Integer limit,
-            @ToolParam(description = """
-                    是否直接发送订单信息给用户。若为 true，系统将直接发送卡片消息此工具返回 null；
-                    若为 false 或不传入，则返回订单数据供 AI 分析使用
-                    """) Boolean isSned) {
-        int safeLimit = limit == null || limit <= 0 ? 5 : Math.min(limit, 20);
-        messageInjector.send(buildNotice("正在调用 list_latest_orders_for_card 工具，查询最近订单..."));
-        return requireProvider().latestOrders(safeLimit);
+    @Tool(description = "根据药品ID获取药品详细信息")
+    public ClientMallProductOut getMallProductById(@ToolParam(description = "药品ID") Long id) {
+        if (id == null) {
+            return null;
+        }
+        return requireProvider().getMallProductById(id);
     }
 
 

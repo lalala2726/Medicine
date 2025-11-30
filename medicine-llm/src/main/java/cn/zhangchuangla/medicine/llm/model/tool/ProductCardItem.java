@@ -1,4 +1,4 @@
-package cn.zhangchuangla.medicine.llm.model.response.card;
+package cn.zhangchuangla.medicine.llm.model.tool;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.AllArgsConstructor;
