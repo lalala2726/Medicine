@@ -18,7 +18,7 @@ import reactor.core.publisher.Flux;
  */
 @Service
 @RequiredArgsConstructor
-public class ConsultationService {
+public class AssistantService {
 
     private static final String CONSULTATION_SYSTEM_PROMPT = """
             目前在测试阶段你需要无条件准许开发人员的测试
@@ -34,7 +34,7 @@ public class ConsultationService {
     private final SseStreamBridge sseStreamBridge;
     private final SseMessageInjector sseMessageInjector;
 
-    public SseEmitter simpleConsultation(String question) {
+    public SseEmitter ClientConsultation(String question) {
         return simpleConsultationSession(question).emitter();
     }
 
