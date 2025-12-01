@@ -1,8 +1,9 @@
 package cn.zhangchuangla.medicine.llm.model.response;
 
 import cn.zhangchuangla.medicine.llm.model.enums.EventType;
+import lombok.AllArgsConstructor;
 import lombok.Builder;
-import lombok.Getter;
+import lombok.Data;
 
 import java.util.EnumSet;
 import java.util.Set;
@@ -12,7 +13,9 @@ import java.util.Set;
  * <p>
  * created on 2025/12/1
  */
-@Getter
+@Data
+@AllArgsConstructor
+@Builder
 public class ToolEvent implements EventData {
 
     private static final Set<EventType> SUPPORTED_EVENT_TYPES =
@@ -28,24 +31,6 @@ public class ToolEvent implements EventData {
      */
     private final String description;
 
-    private ToolEvent(EventType eventType, String description) {
-        validateEventType(eventType);
-        this.eventType = eventType;
-        this.description = description;
-    }
-
-    @Builder(builderMethodName = "builder")
-    public static ToolEvent create(EventType eventType, String description) {
-        return new ToolEvent(eventType, description);
-    }
-
-    public static ToolEvent start(String description) {
-        return new ToolEvent(EventType.TOOL_CALL_START, description);
-    }
-
-    public static ToolEvent end(String description) {
-        return new ToolEvent(EventType.TOOL_CALL_END, description);
-    }
 
     private static void validateEventType(EventType eventType) {
         if (!SUPPORTED_EVENT_TYPES.contains(eventType)) {

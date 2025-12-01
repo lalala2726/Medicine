@@ -1,6 +1,7 @@
 package cn.zhangchuangla.medicine.llm.model.enums;
 
 import com.fasterxml.jackson.annotation.JsonValue;
+import lombok.Getter;
 
 import java.util.Map;
 import java.util.Optional;
@@ -10,6 +11,7 @@ import java.util.Optional;
  * <p>
  * created on 2025/12/1
  */
+@Getter
 public enum EventType {
 
     TOOL_CALL_START("tool_call_start"),
@@ -33,10 +35,6 @@ public enum EventType {
     @Deprecated
     public static EventType getByValue(String value) {
         return VALUE_MAPPING.get(value);
-    }
-
-    public String getValue() {
-        return value;
     }
 
     @JsonValue

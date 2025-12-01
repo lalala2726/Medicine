@@ -32,6 +32,9 @@ public class ChatResponse {
     @Schema(description = "消息类型：TEXT / CARD / EVENT / ACTION")
     private MessageType type;
 
+    @Schema(description = "事件数据")
+    private EventData eventData;
+
     @Schema(description = "动作数据")
     private Action action;
 
