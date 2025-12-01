@@ -18,6 +18,8 @@ public enum MessageType {
 
     EVENT("event"),
 
+    ACTION("action"),
+
     ERROR("error");
 
     private final String value;

@@ -7,7 +7,7 @@
     <resultMap id="BaseResultMap" type="cn.zhangchuangla.medicine.model.entity.MallOrderTimeline">
         <id property="id" column="id"/>
         <result property="orderId" column="order_id"/>
-        <result property="eventType" column="event_type"/>
+        <result property="action" column="event_type"/>
         <result property="eventStatus" column="event_status"/>
         <result property="operatorType" column="operator_type"/>
         <result property="description" column="description"/>

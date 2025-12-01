@@ -1,7 +1,7 @@
 package cn.zhangchuangla.medicine.llm.tool;
 
+import cn.zhangchuangla.medicine.llm.model.enums.Action;
 import cn.zhangchuangla.medicine.llm.model.enums.CardType;
-import cn.zhangchuangla.medicine.llm.model.enums.EventType;
 import cn.zhangchuangla.medicine.llm.model.enums.MessageRole;
 import cn.zhangchuangla.medicine.llm.model.enums.MessageType;
 import cn.zhangchuangla.medicine.llm.model.response.ChatResponse;
@@ -315,8 +315,8 @@ public class ClientConsultationTools {
     public void openUserOrderList() {
         ChatResponse response = ChatResponse.builder()
                 .role(MessageRole.ASSISTANT)
-                .type(MessageType.EVENT)
-                .event(EventType.OPEN_USER_ORDER_LIST)
+                .type(MessageType.ACTION)
+                .action(Action.OPEN_USER_ORDER_LIST)
                 .build();
 
         messageInjector.send(response, true);
