@@ -10,6 +10,7 @@ import cn.zhangchuangla.medicine.llm.model.response.ProductPurchaseCard;
 import cn.zhangchuangla.medicine.llm.model.response.SymptomSelectorCard;
 import cn.zhangchuangla.medicine.llm.model.tool.client.MallProductTool;
 import cn.zhangchuangla.medicine.llm.model.tool.client.MedicineCardItemTool;
+import cn.zhangchuangla.medicine.llm.model.tool.client.OrderDetailTool;
 import cn.zhangchuangla.medicine.llm.model.tool.client.SearchMallProductTool;
 import cn.zhangchuangla.medicine.llm.spi.ClientDataProvider;
 import cn.zhangchuangla.medicine.llm.spi.ClientDataProviderLoader;
@@ -293,6 +294,13 @@ public class ClientConsultationTools {
                 .build();
         messageInjector.send(response, true);
         return "发送成功";
+    }
+
+    @Tool(name = "getOrderDetailByOrderNo", description = """
+            根据订单号获取订单详情
+            """)
+    public OrderDetailTool getOrderDetailByOrderNo(@ToolParam(description = "订单号") String orderNo) {
+        return requireProvider().getOrderDetailByOrderNo(orderNo);
     }
 
     @Data

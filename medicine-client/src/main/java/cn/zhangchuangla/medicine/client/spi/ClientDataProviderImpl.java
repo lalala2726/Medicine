@@ -1,7 +1,11 @@
 package cn.zhangchuangla.medicine.client.spi;
 
+import cn.zhangchuangla.medicine.client.model.vo.OrderDetailVo;
+import cn.zhangchuangla.medicine.client.service.MallOrderService;
 import cn.zhangchuangla.medicine.client.service.MallProductService;
+import cn.zhangchuangla.medicine.common.core.utils.BeanCotyUtils;
 import cn.zhangchuangla.medicine.llm.model.tool.client.MallProductTool;
+import cn.zhangchuangla.medicine.llm.model.tool.client.OrderDetailTool;
 import cn.zhangchuangla.medicine.llm.model.tool.client.SearchMallProductTool;
 import cn.zhangchuangla.medicine.llm.spi.ClientDataProvider;
 import cn.zhangchuangla.medicine.model.dto.MallProductDetailDto;
@@ -18,6 +22,7 @@ import java.util.List;
 public class ClientDataProviderImpl implements ClientDataProvider {
 
     private final MallProductService mallProductService;
+    private final MallOrderService mallOrderService;
 
 
     @Override
@@ -60,5 +65,11 @@ public class ClientDataProviderImpl implements ClientDataProvider {
                 .map(this::getMallProductById)
                 .filter(java.util.Objects::nonNull)
                 .toList();
+    }
+
+    @Override
+    public OrderDetailTool getOrderDetailByOrderNo(String orderNo) {
+        OrderDetailVo orderDetail = mallOrderService.getOrderDetail(orderNo);
+        return BeanCotyUtils.copyProperties(orderDetail, OrderDetailTool.class);
     }
 }

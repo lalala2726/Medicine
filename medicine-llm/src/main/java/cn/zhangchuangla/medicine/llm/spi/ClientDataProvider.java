@@ -1,6 +1,7 @@
 package cn.zhangchuangla.medicine.llm.spi;
 
 import cn.zhangchuangla.medicine.llm.model.tool.client.MallProductTool;
+import cn.zhangchuangla.medicine.llm.model.tool.client.OrderDetailTool;
 import cn.zhangchuangla.medicine.llm.model.tool.client.SearchMallProductTool;
 
 import java.util.List;
@@ -15,4 +16,6 @@ public interface ClientDataProvider {
     MallProductTool getMallProductById(Long id);
 
     List<MallProductTool> getMallProductById(List<Long> ids);
+
+    OrderDetailTool getOrderDetailByOrderNo(String orderNo);
 }
