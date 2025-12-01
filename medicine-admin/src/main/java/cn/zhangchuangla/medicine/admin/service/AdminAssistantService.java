@@ -1,8 +1,7 @@
 package cn.zhangchuangla.medicine.admin.service;
 
 import cn.zhangchuangla.medicine.llm.model.dto.DrugInfoDto;
-import cn.zhangchuangla.medicine.llm.model.response.AssistantChatResponse;
-import reactor.core.publisher.Flux;
+import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 
 import java.util.List;
 
@@ -11,10 +10,10 @@ import java.util.List;
  * <p>
  * created on 2025/11/23
  */
-public interface AssistantService {
+public interface AdminAssistantService {
 
 
     DrugInfoDto parseDrugInfoByImage(List<String> imageUrls);
 
-    Flux<AssistantChatResponse> chat(String message);
+    SseEmitter chat(String message);
 }

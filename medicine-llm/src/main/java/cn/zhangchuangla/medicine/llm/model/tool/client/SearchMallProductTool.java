@@ -1,4 +1,4 @@
-package cn.zhangchuangla.medicine.llm.model.tool;
+package cn.zhangchuangla.medicine.llm.model.tool.client;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -14,45 +14,35 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 @NoArgsConstructor
 @Builder
-public class MedicineRecommend {
+public class SearchMallProductTool {
 
     /**
-     * 药品ID
+     * 商品ID
      */
     private Long id;
 
     /**
-     * 药品名称
+     * 商品名称
      */
     private String name;
 
     /**
-     * 图片
+     * 所属分类
      */
-    private String images;
+    private String categoryName;
 
     /**
-     * 价格
+     * 药品通用名
      */
-    private String price;
+    private String commonName;
 
     /**
-     * 功效
-     */
-    private String efficacy;
-
-    /**
-     * 处方标识
+     * 是否处方药
      */
     private Boolean prescription;
 
     /**
-     * 标签
+     * 功能主治
      */
-    private String[] tags;
-
-    /**
-     * 数量
-     */
-    private Integer quantity;
+    private String efficacy;
 }

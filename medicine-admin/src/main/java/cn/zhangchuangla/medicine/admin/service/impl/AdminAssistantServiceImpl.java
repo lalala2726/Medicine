@@ -1,16 +1,17 @@
 package cn.zhangchuangla.medicine.admin.service.impl;
 
-import cn.zhangchuangla.medicine.admin.service.AssistantService;
+import cn.zhangchuangla.medicine.admin.service.AdminAssistantService;
 import cn.zhangchuangla.medicine.common.core.enums.ResponseCode;
 import cn.zhangchuangla.medicine.common.core.exception.ServiceException;
 import cn.zhangchuangla.medicine.common.core.utils.ImageUtils;
 import cn.zhangchuangla.medicine.llm.model.dto.DrugInfoDto;
-import cn.zhangchuangla.medicine.llm.model.response.AssistantChatResponse;
+import cn.zhangchuangla.medicine.llm.service.AssistantService;
 import cn.zhangchuangla.medicine.llm.service.LLMParseImageService;
 import io.minio.GetObjectArgs;
 import io.minio.MinioClient;
+import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
-import reactor.core.publisher.Flux;
+import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 
 import java.io.InputStream;
 import java.net.URI;
@@ -25,15 +26,12 @@ import java.util.List;
  * created on 2025/11/23
  */
 @Service
-public class AssistantServiceImpl implements AssistantService {
+@RequiredArgsConstructor
+public class AdminAssistantServiceImpl implements AdminAssistantService {
 
     private final MinioClient minioClient;
     private final LLMParseImageService llmParseImageService;
-
-    public AssistantServiceImpl(MinioClient minioClient, LLMParseImageService llmParseImageService) {
-        this.minioClient = minioClient;
-        this.llmParseImageService = llmParseImageService;
-    }
+    private final AssistantService assistantService;
 
 
     @Override
@@ -68,8 +66,8 @@ public class AssistantServiceImpl implements AssistantService {
     }
 
     @Override
-    public Flux<AssistantChatResponse> chat(String message) {
-        return llmParseImageService.chat(message);
+    public SseEmitter chat(String message) {
+        return assistantService.chat(message);
     }
 
     private String guessMimeType(String objectName) {

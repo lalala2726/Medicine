@@ -26,11 +26,6 @@ public enum CardType {
         this.value = value;
     }
 
-    @JsonValue
-    public String jsonValue() {
-        return value;
-    }
-
     public static CardType fromValue(String value) {
         if (value == null) {
             return null;
@@ -41,6 +36,11 @@ public enum CardType {
             }
         }
         return null;
+    }
+
+    @JsonValue
+    public String jsonValue() {
+        return value;
     }
 
 }

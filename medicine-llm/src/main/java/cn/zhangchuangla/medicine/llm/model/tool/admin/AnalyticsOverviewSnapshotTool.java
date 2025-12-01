@@ -1,4 +1,4 @@
-package cn.zhangchuangla.medicine.llm.model.tool;
+package cn.zhangchuangla.medicine.llm.model.tool.admin;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
@@ -7,7 +7,7 @@ import java.math.BigDecimal;
 
 @Data
 @Schema(description = "运营总览快照")
-public class AnalyticsOverviewSnapshot {
+public class AnalyticsOverviewSnapshotTool {
 
     @Schema(description = "用户总数")
     private Long totalUsers;

@@ -136,7 +136,7 @@
                p.create_by,
                p.update_by,
                p.is_deleted,
-               0 AS sales,
+               0                    AS sales,
                COALESCE(v.views, 0) AS views
         FROM mall_product p
                  LEFT JOIN (SELECT product_id, SUM(view_count) AS views

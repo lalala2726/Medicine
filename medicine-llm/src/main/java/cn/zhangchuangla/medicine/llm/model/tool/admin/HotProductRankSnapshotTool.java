@@ -1,4 +1,4 @@
-package cn.zhangchuangla.medicine.llm.model.tool;
+package cn.zhangchuangla.medicine.llm.model.tool.admin;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.AllArgsConstructor;
@@ -12,8 +12,8 @@ import java.math.BigDecimal;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-@Schema(description = "商品退货率统计")
-public class ReturnRateStatSnapshot {
+@Schema(description = "热销商品排行条目")
+public class HotProductRankSnapshotTool {
 
     @Schema(description = "商品ID")
     private Long productId;
@@ -22,11 +22,8 @@ public class ReturnRateStatSnapshot {
     private String productName;
 
     @Schema(description = "售出数量")
-    private Long soldQuantity;
+    private Long quantity;
 
-    @Schema(description = "售后/退货数量")
-    private Long returnQuantity;
-
-    @Schema(description = "退货率，0-1")
-    private BigDecimal returnRate;
+    @Schema(description = "销售额")
+    private BigDecimal amount;
 }

@@ -1,4 +1,4 @@
-package cn.zhangchuangla.medicine.llm.model.tool;
+package cn.zhangchuangla.medicine.llm.model.tool.client;
 
 import cn.zhangchuangla.medicine.model.dto.DrugDetailDto;
 import lombok.AllArgsConstructor;
@@ -17,7 +17,7 @@ import java.math.BigDecimal;
 @AllArgsConstructor
 @NoArgsConstructor
 @Builder
-public class ClientMallProductOut {
+public class MallProductTool {
 
     /**
      * 商品ID

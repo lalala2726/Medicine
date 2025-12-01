@@ -140,8 +140,8 @@
         md.taboo AS med_taboo,
         md.instruction AS med_instruction
         FROM mall_product p
-                 LEFT JOIN mall_category c ON p.category_id = c.id
-                 LEFT JOIN drug_detail md ON p.id = md.product_id AND (md.is_deleted IS NULL OR md.is_deleted = 0)
+        LEFT JOIN mall_category c ON p.category_id = c.id
+        LEFT JOIN drug_detail md ON p.id = md.product_id AND (md.is_deleted IS NULL OR md.is_deleted = 0)
         <where>
             (p.is_deleted IS NULL OR p.is_deleted = 0)
             <if test="request.id != null">

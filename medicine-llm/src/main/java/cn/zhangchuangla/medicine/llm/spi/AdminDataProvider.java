@@ -1,6 +1,7 @@
 package cn.zhangchuangla.medicine.llm.spi;
 
-import cn.zhangchuangla.medicine.llm.model.tool.*;
+import cn.zhangchuangla.medicine.llm.model.tool.ProductSnapshot;
+import cn.zhangchuangla.medicine.llm.model.tool.admin.*;
 
 import java.util.List;
 import java.util.Optional;
@@ -13,7 +14,7 @@ public interface AdminDataProvider {
     /**
      * 获取当前登录管理员的精简信息。
      */
-    Optional<AdminUserSnapshot> currentUser();
+    Optional<UserSnapshotTool> currentUser();
 
     /**
      * 统计平台当前的用户数量。
@@ -23,22 +24,22 @@ public interface AdminDataProvider {
     /**
      * 根据订单号查询订单详情。
      */
-    Optional<AdminOrderSnapshot> findOrderByOrderNo(String orderNo);
+    Optional<OrderSnapshotTool> findOrderByOrderNo(String orderNo);
 
     /**
      * 查询最新订单（按创建时间倒序）。
      */
-    List<AdminOrderSnapshot> latestOrders(int limit);
+    List<OrderSnapshotTool> latestOrders(int limit);
 
     /**
      * 获取订单整体概况。
      */
-    OrderOverviewSnapshot orderOverview();
+    OrderOverviewSnapshotTool orderOverview();
 
     /**
      * 获取售后/退款概况。
      */
-    RefundOverviewSnapshot refundOverview(int recentLimit);
+    RefundOverviewSnapshotTool refundOverview(int recentLimit);
 
     /**
      * 根据关键词检索商品。
@@ -53,30 +54,30 @@ public interface AdminDataProvider {
     /**
      * 获取运营分析总览。
      */
-    AnalyticsOverviewSnapshot analyticsOverview();
+    AnalyticsOverviewSnapshotTool analyticsOverview();
 
     /**
      * 获取订单趋势数据。
      */
-    List<OrderTrendPointSnapshot> orderTrend(String period);
+    List<OrderTrendPointSnapshotTool> orderTrend(String period);
 
     /**
      * 获取订单状态分布。
      */
-    List<StatusDistributionSnapshot> orderStatusDistribution();
+    List<StatusDistributionSnapshotTool> orderStatusDistribution();
 
     /**
      * 获取支付方式分布。
      */
-    List<PaymentDistributionSnapshot> paymentDistribution();
+    List<PaymentDistributionSnapshotTool> paymentDistribution();
 
     /**
      * 获取热销商品排行榜。
      */
-    List<HotProductRankSnapshot> hotProducts(int limit);
+    List<HotProductRankSnapshotTool> hotProducts(int limit);
 
     /**
      * 获取商品退货率排行。
      */
-    List<ReturnRateStatSnapshot> productReturnRates(int limit);
+    List<ReturnRateStatSnapshotTool> productReturnRates(int limit);
 }

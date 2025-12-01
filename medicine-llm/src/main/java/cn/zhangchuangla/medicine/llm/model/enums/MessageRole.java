@@ -15,6 +15,7 @@ public enum MessageRole {
     SYSTEM("system");
 
     private final String role;
+
     MessageRole(String role) {
         this.role = role;
     }

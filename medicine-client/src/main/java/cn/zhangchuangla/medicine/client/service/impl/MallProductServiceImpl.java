@@ -17,7 +17,7 @@ import cn.zhangchuangla.medicine.common.elasticsearch.document.MallProductDocume
 import cn.zhangchuangla.medicine.common.elasticsearch.model.request.MallProductSearchRequest;
 import cn.zhangchuangla.medicine.common.elasticsearch.service.MallProductSearchService;
 import cn.zhangchuangla.medicine.common.security.base.BaseService;
-import cn.zhangchuangla.medicine.llm.model.tool.ClientSearchMallProductOut;
+import cn.zhangchuangla.medicine.llm.model.tool.client.SearchMallProductTool;
 import cn.zhangchuangla.medicine.model.dto.MallProductDetailDto;
 import cn.zhangchuangla.medicine.model.dto.MallProductWithImageDto;
 import cn.zhangchuangla.medicine.model.entity.MallProduct;
@@ -41,12 +41,12 @@ import java.util.*;
 public class MallProductServiceImpl extends ServiceImpl<MallProductMapper, MallProduct>
         implements MallProductService, BaseService {
 
+    private static final int RECOMMEND_LIMIT = 20;
     private final MallProductMapper mallProductMapper;
     private final MallProductImageService mallProductImageService;
     private final MallProductViewHistoryService mallProductViewHistoryService;
     private final MallOrderItemService mallOrderItemService;
     private final MallProductSearchService mallProductSearchService;
-    private static final int RECOMMEND_LIMIT = 20;
 
     @Override
     public List<RecommendListVo> recommend() {
@@ -222,14 +222,14 @@ public class MallProductServiceImpl extends ServiceImpl<MallProductMapper, MallP
 
 
     @Override
-    public List<ClientSearchMallProductOut> SearchDetail(String keyword, int limit) {
+    public List<SearchMallProductTool> SearchDetail(String keyword, int limit) {
         SearchHits<MallProductDocument> searchHits = mallProductSearchService.search(new MallProductSearchRequest(keyword, limit));
         if (searchHits == null || searchHits.isEmpty()) {
             return Collections.emptyList();
         }
         return searchHits.getSearchHits().stream()
                 .map(SearchHit::getContent)
-                .map(content -> ClientSearchMallProductOut.builder()
+                .map(content -> SearchMallProductTool.builder()
                         .commonName(content.getCommonName())
                         .categoryName(content.getCategoryName())
                         .name(content.getName())

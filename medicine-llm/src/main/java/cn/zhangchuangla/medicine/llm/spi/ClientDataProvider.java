@@ -1,7 +1,8 @@
 package cn.zhangchuangla.medicine.llm.spi;
 
-import cn.zhangchuangla.medicine.llm.model.tool.ClientMallProductOut;
-import cn.zhangchuangla.medicine.llm.model.tool.ClientSearchMallProductOut;
+import cn.zhangchuangla.medicine.llm.model.tool.client.MallProductTool;
+import cn.zhangchuangla.medicine.llm.model.tool.client.OrderDetailTool;
+import cn.zhangchuangla.medicine.llm.model.tool.client.SearchMallProductTool;
 
 import java.util.List;
 
@@ -10,9 +11,37 @@ import java.util.List;
  */
 public interface ClientDataProvider {
 
-    List<ClientSearchMallProductOut> searchMallProducts(String keyword, int limit);
 
-    ClientMallProductOut getMallProductById(Long id);
+    /**
+     * 搜索商品。
+     *
+     * @param keyword 关键词
+     * @param limit   限制数量
+     * @return 商品列表
+     */
+    List<SearchMallProductTool> searchMallProducts(String keyword, int limit);
 
-    List<ClientMallProductOut> getMallProductById(List<Long> ids);
+    /**
+     * 获取商品详情。
+     *
+     * @param id 商品 ID
+     * @return 商品详情
+     */
+    MallProductTool getMallProductById(Long id);
+
+    /**
+     * 批量获取商品详情。
+     *
+     * @param ids 商品 ID 列表
+     * @return 商品详情列表
+     */
+    List<MallProductTool> getMallProductById(List<Long> ids);
+
+    /**
+     * 获取订单详情。
+     *
+     * @param orderNo 订单号
+     * @return 订单详情
+     */
+    OrderDetailTool getOrderDetailByOrderNo(String orderNo);
 }

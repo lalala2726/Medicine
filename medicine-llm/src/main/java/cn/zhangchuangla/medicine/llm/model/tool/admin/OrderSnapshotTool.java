@@ -1,4 +1,4 @@
-package cn.zhangchuangla.medicine.llm.model.tool;
+package cn.zhangchuangla.medicine.llm.model.tool.admin;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.AllArgsConstructor;
@@ -18,7 +18,7 @@ import java.util.List;
 @NoArgsConstructor
 @AllArgsConstructor
 @Schema(description = "订单信息快照")
-public class AdminOrderSnapshot {
+public class OrderSnapshotTool {
 
     @Schema(description = "订单编号")
     private String orderNo;
@@ -69,5 +69,5 @@ public class AdminOrderSnapshot {
     private Date refundTime;
 
     @Schema(description = "订单商品明细")
-    private List<AdminOrderItemSnapshot> items;
+    private List<OrderItemSnapshotTool> items;
 }

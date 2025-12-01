@@ -6,7 +6,8 @@ import cn.zhangchuangla.medicine.admin.model.vo.analytics.*;
 import cn.zhangchuangla.medicine.admin.service.*;
 import cn.zhangchuangla.medicine.common.security.entity.SysUserDetails;
 import cn.zhangchuangla.medicine.common.security.utils.SecurityUtils;
-import cn.zhangchuangla.medicine.llm.model.tool.*;
+import cn.zhangchuangla.medicine.llm.model.tool.ProductSnapshot;
+import cn.zhangchuangla.medicine.llm.model.tool.admin.*;
 import cn.zhangchuangla.medicine.llm.spi.AdminDataProvider;
 import cn.zhangchuangla.medicine.model.dto.DrugDetailDto;
 import cn.zhangchuangla.medicine.model.entity.*;
@@ -40,12 +41,12 @@ public class AdminModuleDataProvider implements AdminDataProvider {
     private final AnalyticsService analyticsService;
 
     @Override
-    public Optional<AdminUserSnapshot> currentUser() {
+    public Optional<UserSnapshotTool> currentUser() {
         try {
             SysUserDetails loginUser = SecurityUtils.getLoginUser();
             Long userId = loginUser.getUserId();
             UserDetailVo detail = userId == null ? null : userService.getUserDetailById(userId);
-            AdminUserSnapshot.AdminUserSnapshotBuilder builder = AdminUserSnapshot.builder()
+            UserSnapshotTool.UserSnapshotToolBuilder builder = UserSnapshotTool.builder()
                     .userId(userId)
                     .username(loginUser.getUsername())
                     .roles(SecurityUtils.getRoles());
@@ -82,7 +83,7 @@ public class AdminModuleDataProvider implements AdminDataProvider {
     }
 
     @Override
-    public Optional<AdminOrderSnapshot> findOrderByOrderNo(String orderNo) {
+    public Optional<OrderSnapshotTool> findOrderByOrderNo(String orderNo) {
         if (orderNo == null || orderNo.isBlank()) {
             return Optional.empty();
         }
@@ -99,7 +100,7 @@ public class AdminModuleDataProvider implements AdminDataProvider {
     }
 
     @Override
-    public List<AdminOrderSnapshot> latestOrders(int limit) {
+    public List<OrderSnapshotTool> latestOrders(int limit) {
         try {
             List<MallOrder> orders = mallOrderService.lambdaQuery()
                     .orderByDesc(MallOrder::getCreateTime)
@@ -118,7 +119,7 @@ public class AdminModuleDataProvider implements AdminDataProvider {
     }
 
     @Override
-    public OrderOverviewSnapshot orderOverview() {
+    public OrderOverviewSnapshotTool orderOverview() {
         try {
             OrderOverviewStats stats = Optional.ofNullable(mallOrderService.getOrderOverviewStats())
                     .orElseGet(() -> OrderOverviewStats.builder()
@@ -134,7 +135,7 @@ public class AdminModuleDataProvider implements AdminDataProvider {
                             .refundedAmount(BigDecimal.ZERO)
                             .build());
 
-            return OrderOverviewSnapshot.builder()
+            return OrderOverviewSnapshotTool.builder()
                     .totalOrders(stats.getTotalOrders())
                     .pendingPayment(stats.getPendingPayment())
                     .pendingShipment(stats.getPendingShipment())
@@ -148,15 +149,15 @@ public class AdminModuleDataProvider implements AdminDataProvider {
                     .build();
         } catch (Exception ex) {
             log.warn("Failed to build order overview for LLM tool", ex);
-            return new OrderOverviewSnapshot();
+            return new OrderOverviewSnapshotTool();
         }
     }
 
     @Override
-    public RefundOverviewSnapshot refundOverview(int recentLimit) {
+    public RefundOverviewSnapshotTool refundOverview(int recentLimit) {
         try {
             MallAfterSaleService afterSaleService = mallAfterSaleService;
-            RefundOverviewSnapshot snapshot = new RefundOverviewSnapshot();
+            RefundOverviewSnapshotTool snapshot = new RefundOverviewSnapshotTool();
             snapshot.setPending(afterSaleService.lambdaQuery()
                     .eq(MallAfterSale::getAfterSaleStatus, AfterSaleStatusEnum.PENDING)
                     .count());
@@ -195,7 +196,7 @@ public class AdminModuleDataProvider implements AdminDataProvider {
             return snapshot;
         } catch (Exception ex) {
             log.warn("Failed to build refund overview for LLM tool", ex);
-            return new RefundOverviewSnapshot();
+            return new RefundOverviewSnapshotTool();
         }
     }
 
@@ -236,10 +237,10 @@ public class AdminModuleDataProvider implements AdminDataProvider {
     }
 
     @Override
-    public AnalyticsOverviewSnapshot analyticsOverview() {
+    public AnalyticsOverviewSnapshotTool analyticsOverview() {
         try {
             OverviewVo vo = analyticsService.overview();
-            AnalyticsOverviewSnapshot snapshot = new AnalyticsOverviewSnapshot();
+            AnalyticsOverviewSnapshotTool snapshot = new AnalyticsOverviewSnapshotTool();
             snapshot.setTotalUsers(defaultLong(vo.getTotalUsers()));
             snapshot.setTotalOrders(defaultLong(vo.getTotalOrders()));
             snapshot.setPaidOrders(defaultLong(vo.getPaidOrders()));
@@ -250,18 +251,18 @@ public class AdminModuleDataProvider implements AdminDataProvider {
             return snapshot;
         } catch (Exception ex) {
             log.warn("Failed to load analytics overview for LLM tool", ex);
-            return new AnalyticsOverviewSnapshot();
+            return new AnalyticsOverviewSnapshotTool();
         }
     }
 
     @Override
-    public List<OrderTrendPointSnapshot> orderTrend(String period) {
+    public List<OrderTrendPointSnapshotTool> orderTrend(String period) {
         try {
             List<OrderTrendPoint> points = analyticsService.orderTrend(period);
             if (points == null) {
                 return Collections.emptyList();
             }
-            return points.stream().map(p -> OrderTrendPointSnapshot.builder()
+            return points.stream().map(p -> OrderTrendPointSnapshotTool.builder()
                     .label(p.getLabel())
                     .orderCount(defaultLong(p.getOrderCount()))
                     .orderAmount(defaultBigDecimal(p.getOrderAmount()))
@@ -273,13 +274,13 @@ public class AdminModuleDataProvider implements AdminDataProvider {
     }
 
     @Override
-    public List<StatusDistributionSnapshot> orderStatusDistribution() {
+    public List<StatusDistributionSnapshotTool> orderStatusDistribution() {
         try {
             List<StatusDistribution> list = analyticsService.orderStatusDistribution();
             if (list == null) {
                 return Collections.emptyList();
             }
-            return list.stream().map(item -> StatusDistributionSnapshot.builder()
+            return list.stream().map(item -> StatusDistributionSnapshotTool.builder()
                     .status(item.getStatus())
                     .statusName(item.getStatusName())
                     .count(defaultLong(item.getCount()))
@@ -291,13 +292,13 @@ public class AdminModuleDataProvider implements AdminDataProvider {
     }
 
     @Override
-    public List<PaymentDistributionSnapshot> paymentDistribution() {
+    public List<PaymentDistributionSnapshotTool> paymentDistribution() {
         try {
             List<PaymentDistribution> list = analyticsService.paymentDistribution();
             if (list == null) {
                 return Collections.emptyList();
             }
-            return list.stream().map(item -> PaymentDistributionSnapshot.builder()
+            return list.stream().map(item -> PaymentDistributionSnapshotTool.builder()
                     .payType(item.getPayType())
                     .payTypeName(item.getPayTypeName())
                     .count(defaultLong(item.getCount()))
@@ -310,14 +311,14 @@ public class AdminModuleDataProvider implements AdminDataProvider {
     }
 
     @Override
-    public List<HotProductRankSnapshot> hotProducts(int limit) {
+    public List<HotProductRankSnapshotTool> hotProducts(int limit) {
         try {
             int safeLimit = normalizeLimit(limit);
             List<HotProductRank> list = analyticsService.hotProducts(safeLimit);
             if (list == null) {
                 return Collections.emptyList();
             }
-            return list.stream().map(item -> HotProductRankSnapshot.builder()
+            return list.stream().map(item -> HotProductRankSnapshotTool.builder()
                     .productId(item.getProductId())
                     .productName(item.getProductName())
                     .quantity(defaultLong(item.getQuantity()))
@@ -330,14 +331,14 @@ public class AdminModuleDataProvider implements AdminDataProvider {
     }
 
     @Override
-    public List<ReturnRateStatSnapshot> productReturnRates(int limit) {
+    public List<ReturnRateStatSnapshotTool> productReturnRates(int limit) {
         try {
             int safeLimit = normalizeLimit(limit);
             List<ReturnRateStat> list = analyticsService.productReturnRates(safeLimit);
             if (list == null) {
                 return Collections.emptyList();
             }
-            return list.stream().map(item -> ReturnRateStatSnapshot.builder()
+            return list.stream().map(item -> ReturnRateStatSnapshotTool.builder()
                     .productId(item.getProductId())
                     .productName(item.getProductName())
                     .soldQuantity(defaultLong(item.getSoldQuantity()))
@@ -350,8 +351,8 @@ public class AdminModuleDataProvider implements AdminDataProvider {
         }
     }
 
-    private AdminOrderSnapshot buildOrderSnapshot(MallOrder order) {
-        return AdminOrderSnapshot.builder()
+    private OrderSnapshotTool buildOrderSnapshot(MallOrder order) {
+        return OrderSnapshotTool.builder()
                 .orderNo(order.getOrderNo())
                 .orderStatus(order.getOrderStatus())
                 .payType(order.getPayType())
@@ -372,7 +373,7 @@ public class AdminModuleDataProvider implements AdminDataProvider {
                 .build();
     }
 
-    private List<AdminOrderItemSnapshot> loadOrderItems(Long orderId) {
+    private List<OrderItemSnapshotTool> loadOrderItems(Long orderId) {
         if (orderId == null) {
             return Collections.emptyList();
         }
@@ -380,7 +381,7 @@ public class AdminModuleDataProvider implements AdminDataProvider {
         if (items == null || items.isEmpty()) {
             return Collections.emptyList();
         }
-        return items.stream().map(item -> AdminOrderItemSnapshot.builder()
+        return items.stream().map(item -> OrderItemSnapshotTool.builder()
                 .productName(item.getProductName())
                 .quantity(item.getQuantity())
                 .price(item.getPrice())
@@ -390,8 +391,8 @@ public class AdminModuleDataProvider implements AdminDataProvider {
                 .build()).toList();
     }
 
-    private RefundRecordSnapshot buildRefundRecord(MallAfterSale record) {
-        return RefundRecordSnapshot.builder()
+    private RefundRecordSnapshotTool buildRefundRecord(MallAfterSale record) {
+        return RefundRecordSnapshotTool.builder()
                 .afterSaleNo(record.getAfterSaleNo())
                 .orderNo(record.getOrderNo())
                 .afterSaleType(record.getAfterSaleType() == null ? null : record.getAfterSaleType().getType())
@@ -465,6 +466,7 @@ public class AdminModuleDataProvider implements AdminDataProvider {
                 .map(MallProductImage::getImageUrl)
                 .toList();
     }
+
     private DrugDetailDto toDrugDetailDto(DrugDetail detail) {
         if (detail == null) {
             return null;

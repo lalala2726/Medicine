@@ -1,15 +1,17 @@
 package cn.zhangchuangla.medicine.llm.tool;
 
 import cn.zhangchuangla.medicine.llm.model.enums.CardType;
+import cn.zhangchuangla.medicine.llm.model.enums.EventType;
 import cn.zhangchuangla.medicine.llm.model.enums.MessageRole;
 import cn.zhangchuangla.medicine.llm.model.enums.MessageType;
-import cn.zhangchuangla.medicine.llm.model.response.ClientChatResponse;
+import cn.zhangchuangla.medicine.llm.model.response.ChatResponse;
 import cn.zhangchuangla.medicine.llm.model.response.ProductCard;
 import cn.zhangchuangla.medicine.llm.model.response.ProductPurchaseCard;
 import cn.zhangchuangla.medicine.llm.model.response.SymptomSelectorCard;
-import cn.zhangchuangla.medicine.llm.model.tool.ClientMallProductOut;
-import cn.zhangchuangla.medicine.llm.model.tool.ClientSearchMallProductOut;
-import cn.zhangchuangla.medicine.llm.model.tool.MedicineCardItem;
+import cn.zhangchuangla.medicine.llm.model.tool.client.MallProductTool;
+import cn.zhangchuangla.medicine.llm.model.tool.client.MedicineCardItemTool;
+import cn.zhangchuangla.medicine.llm.model.tool.client.OrderDetailTool;
+import cn.zhangchuangla.medicine.llm.model.tool.client.SearchMallProductTool;
 import cn.zhangchuangla.medicine.llm.spi.ClientDataProvider;
 import cn.zhangchuangla.medicine.llm.spi.ClientDataProviderLoader;
 import cn.zhangchuangla.medicine.llm.utils.SseMessageInjector;
@@ -26,33 +28,41 @@ import java.util.Objects;
 import java.util.stream.Collectors;
 
 /**
- * 面向大模型的客户端咨询工具，暴露聊天支持的卡片/消息类型及示例，
- * 以及真实商品/订单数据获取能力
+ * 面向大模型的客户端咨询工具
+ * <p>
  */
 @Component
 @RequiredArgsConstructor
 public class ClientConsultationTools {
 
+    private final ClientDataProviderLoader providerLoader;
+    private final SseMessageInjector messageInjector;
 
     private ClientDataProvider requireProvider() {
         return providerLoader.getProvider()
                 .orElseThrow(() -> new IllegalStateException("未发现 client SPI 提供者，请检查 client 模块是否已注册"));
     }
 
-    private final ClientDataProviderLoader providerLoader;
-    private final SseMessageInjector messageInjector;
-
-
     /**
-     * 搜索商城药品,用于当AI诊断完病情之后获取药品信息
-     *
-     * @param keyword 关键字
-     * @param limit   最大返回数量
-     * @return 商品列表
+     * 搜索商城药品
      */
-    @Tool(name = "searchMallProducts", description = "搜索药品信息")
-    public List<ClientSearchMallProductOut> searchMallProducts(@ToolParam(description = "搜索关键字,可以搜索商品(药品)可以搜索生病的症状") String keyword,
-                                                               @ToolParam(description = "最大返回数量,默认为10") int limit) {
+    @Tool(name = "searchMallProducts", description = """
+            【功能】：根据关键字搜索商城内的药品。
+            
+            【何时使用】：
+            1. 当用户描述身体不适（如“头痛”、“发烧”）需要寻找治疗药物时。
+            2. 当用户直接询问特定药品名称（如“布洛芬”）时。
+            
+            【何时禁止使用】：
+            - 当用户已经选定商品准备购买时。
+            - 当用户只是进行日常闲聊（如打招呼）时。
+            """)
+    public List<SearchMallProductTool> searchMallProducts(
+            @ToolParam(description = "【思维链】：请用一句话解释为什么现在需要搜索药品（例如：用户说头痛，需要查找止痛药）。此参数仅用于辅助思考，不影响逻辑。") String explanation,
+            @ToolParam(description = "搜索关键字。可以是具体的症状（如'感冒'）或药品名。") String keyword,
+            @ToolParam(description = "最大返回数量，默认为10") int limit) {
+
+        // explanation 参数仅用于引导模型思考，实际逻辑中忽略
         if (keyword == null) {
             return List.of();
         }
@@ -61,12 +71,9 @@ public class ClientConsultationTools {
 
     /**
      * 根据药品ID获取药品详细信息
-     *
-     * @param id 商品ID
-     * @return 商品详细信息
      */
     @Tool(name = "getMallProductById", description = "根据药品ID获取药品详细信息")
-    public ClientMallProductOut getMallProductById(@ToolParam(description = "药品ID") Long id) {
+    public MallProductTool getMallProductById(@ToolParam(description = "药品ID") Long id) {
         if (id == null) {
             return null;
         }
@@ -74,18 +81,59 @@ public class ClientConsultationTools {
     }
 
     /**
-     * 发送仅展示的商品卡片，不包含购买交互。
-     *
-     * @param productIds 商品ID列表，去重后按输入顺序展示
-     * @param title      卡片标题，空则使用默认提示
-     * @return 发送结果描述，成功或失败原因
+     * 发送症状选择器
+     */
+    @Tool(name = "sendSymptomSelector", description = """
+            【功能】：发送一个交互式症状选择卡片供用户点击。
+            
+            【何时使用】：
+            - 【关键】：当用户描述了一个笼统的病情（如“我发烧了”），你需要进一步确认具体表现（如“体温多少？”、“有无乏力？”）时，**必须优先使用此工具**，而不是让用户打字。
+            
+            【目标】：
+            - 获取结构化的症状信息，以便进行更精准的药品推荐。
+            """)
+    public String sendSymptomSelector(
+            @ToolParam(description = "【思维链】：解释为什么需要细化症状。") String explanation,
+            @ToolParam(description = "根据用户初步描述生成的候选症状列表，例如 ['38度以上', '畏寒', '咽喉痛']。") List<String> symptoms,
+            @ToolParam(description = "卡片标题，例如'请选择您的具体症状'。") String title) {
+
+        if (symptoms == null || symptoms.isEmpty()) {
+            return "未发送，症状参数为空";
+        }
+        if (title == null || title.isBlank()) {
+            title = "请选择症状";
+        }
+        SymptomSelectorCard payload = SymptomSelectorCard.builder()
+                .title(title)
+                .options(symptoms)
+                .build();
+
+        ChatResponse response = ChatResponse.builder()
+                .role(MessageRole.ASSISTANT)
+                .type(MessageType.CARD)
+                .card(List.of(payload))
+                .build();
+        messageInjector.send(response, true);
+        return "发送成功";
+    }
+
+    /**
+     * 发送仅展示的商品卡片
      */
     @Tool(name = "sendProductCard", description = """
-            向用户发送商品推荐卡片，仅用于展示商品信息（不包含购买操作）。
-            适用于用户想了解或比较商品时使用，需传入有效的商品ID列表。
+            【功能】：向用户发送一组药品的展示卡片（只读，不可直接购买）。
+            
+            【何时使用】：
+            - 在调用 'searchMallProducts' 搜索到结果后，用于向用户展示推荐的药品。
+            
+            【约束】：
+            - 此卡片不具备购买功能。如果用户明确表示要购买，请使用 'snedProductPurchaseCard'。
+            - 必须传入有效的商品ID列表。
             """)
-    public String sendProductCard(@ToolParam(description = "商品ID") List<Long> productIds,
-                                  @ToolParam(description = "卡片标题") String title) {
+    public String sendProductCard(
+            @ToolParam(description = "商品ID列表") List<Long> productIds,
+            @ToolParam(description = "卡片标题，如'为您推荐以下药品'") String title) {
+
         if (productIds == null || productIds.isEmpty()) {
             return "未发送，商品ID列表为空";
         }
@@ -98,7 +146,7 @@ public class ClientConsultationTools {
             return "未发送，商品ID列表为空";
         }
 
-        List<ClientMallProductOut> products;
+        List<MallProductTool> products;
         try {
             products = requireProvider().getMallProductById(distinctProductIds);
         } catch (Exception ex) {
@@ -108,18 +156,16 @@ public class ClientConsultationTools {
             return "未发送，未查询到对应商品";
         }
 
-        Map<Long, ClientMallProductOut> productMap = products.stream()
+        Map<Long, MallProductTool> productMap = products.stream()
                 .filter(Objects::nonNull)
                 .filter(product -> product.getId() != null)
-                .collect(Collectors.toMap(ClientMallProductOut::getId, product -> product, (left, right) -> left));
+                .collect(Collectors.toMap(MallProductTool::getId, product -> product, (left, right) -> left));
 
-        List<MedicineCardItem> items = distinctProductIds.stream()
+        List<MedicineCardItemTool> items = distinctProductIds.stream()
                 .map(productId -> {
-                    ClientMallProductOut product = productMap.get(productId);
-                    if (product == null) {
-                        return null;
-                    }
-                    return MedicineCardItem.builder()
+                    MallProductTool product = productMap.get(productId);
+                    if (product == null) return null;
+                    return MedicineCardItemTool.builder()
                             .id(String.valueOf(product.getId()))
                             .name(product.getName())
                             .image(product.getCoverImage())
@@ -137,7 +183,7 @@ public class ClientConsultationTools {
         }
 
         ProductCard.ProductCardPayload payload = ProductCard.ProductCardPayload.builder()
-                .title(title == null || title.isBlank() ? "为你推荐的商品" : title)
+                .title(title == null || title.isBlank() ? "为您推荐的商品" : title)
                 .medicines(items)
                 .build();
 
@@ -145,7 +191,7 @@ public class ClientConsultationTools {
         productCard.setCardType(CardType.PRODUCT_CARD);
         productCard.setPayload(payload);
 
-        ClientChatResponse response = ClientChatResponse.builder()
+        ChatResponse response = ChatResponse.builder()
                 .role(MessageRole.ASSISTANT)
                 .type(MessageType.CARD)
                 .card(List.of(productCard))
@@ -160,21 +206,24 @@ public class ClientConsultationTools {
     }
 
     /**
-     * 发送可下单的商品购买卡片，支持携带商品数量。
-     *
-     * @param request     商品ID与数量列表，数量<=0时自动按1处理并按ID聚合求和
-     * @param title       卡片标题，空则使用默认提示
-     * @param description 卡片描述，空则使用默认提示
-     * @return 发送结果描述，成功或失败原因
+     * 发送可下单的商品购买卡片
      */
     @Tool(name = "snedProductPurchaseCard", description = """
-            为用户发送商品购买卡片，用户可直接点击购买。
-            仅在确认用户有购买需求时使用，商品数量至少为 1。
-            返回发送结果或失败原因。
+            【功能】：发送带有“立即购买”按钮的结算卡片。
+            
+            【何时使用】：
+            - 仅在用户**明确表达购买意向**时使用（例如：“我要买这个”、“帮我下单”、“来两盒”）。
+            
+            【参数要求】：
+            - 必须准确解析出用户想要的商品ID和对应的数量（quantity）。
+            - 如果用户没说数量，默认为 1。
             """)
-    public String snedProductPurchaseCard(@ToolParam(description = "商品ID和商品数量") List<ProductPurchaseCardQuantity> request,
-                                          @ToolParam(description = "卡片标题") String title,
-                                          @ToolParam(description = "卡片描述") String description) {
+    public String snedProductPurchaseCard(
+            @ToolParam(description = "【思维链】：确认用户是否明确说了'购买'、'下单'等词汇。") String explanation,
+            @ToolParam(description = "购买清单：包含商品ID和购买数量。") List<ProductPurchaseCardQuantity> request,
+            @ToolParam(description = "卡片标题，例如'请确认订单'") String title,
+            @ToolParam(description = "卡片描述，例如'为您生成的购买清单'") String description) {
+
         if (request == null || request.isEmpty()) {
             return "未发送，商品参数为空";
         }
@@ -194,8 +243,7 @@ public class ClientConsultationTools {
         }
 
         List<Long> productIds = quantityByProductId.keySet().stream().toList();
-
-        List<ClientMallProductOut> products;
+        List<MallProductTool> products;
         try {
             products = requireProvider().getMallProductById(productIds);
         } catch (Exception ex) {
@@ -205,18 +253,16 @@ public class ClientConsultationTools {
             return "未发送，未查询到对应商品";
         }
 
-        Map<Long, ClientMallProductOut> productMap = products.stream()
+        Map<Long, MallProductTool> productMap = products.stream()
                 .filter(Objects::nonNull)
                 .filter(product -> product.getId() != null)
-                .collect(Collectors.toMap(ClientMallProductOut::getId, product -> product, (left, right) -> left));
+                .collect(Collectors.toMap(MallProductTool::getId, product -> product, (left, right) -> left));
 
-        List<MedicineCardItem> items = productIds.stream()
+        List<MedicineCardItemTool> items = productIds.stream()
                 .map(productId -> {
-                    ClientMallProductOut product = productMap.get(productId);
-                    if (product == null) {
-                        return null;
-                    }
-                    return MedicineCardItem.builder()
+                    MallProductTool product = productMap.get(productId);
+                    if (product == null) return null;
+                    return MedicineCardItemTool.builder()
                             .id(String.valueOf(product.getId()))
                             .name(product.getName())
                             .image(product.getCoverImage())
@@ -240,7 +286,7 @@ public class ClientConsultationTools {
                 .medicines(items)
                 .build();
 
-        ClientChatResponse response = ClientChatResponse.builder()
+        ChatResponse response = ChatResponse.builder()
                 .role(MessageRole.ASSISTANT)
                 .type(MessageType.CARD)
                 .card(List.of(ProductPurchaseCard.builder()
@@ -256,29 +302,41 @@ public class ClientConsultationTools {
         }
     }
 
-
-    @Tool(name = "sendSymptomSelector", description = """
-            当需要询问用户有哪些症状的时候,需要进行选择的时候这边可以提供相关的选择让用户进行选择,减少用户的操作
+    /**
+     * 打开用户订单列表
+     */
+    @Tool(name = "openUserOrderList", description = """
+            【功能】：在前端触发事件，弹出用户的订单选择列表。
+            
+            【何时使用】：
+            - 当用户询问订单相关问题（如“我的快递呢”、“我要退款”），但**没有提供具体的订单号**时。
+            - 引导用户手动选择订单。
             """)
-    public String sendSymptomSelector(@ToolParam(description = "症状列表") List<String> symptoms, @ToolParam(description = "标题") String title) {
-        if (symptoms == null || symptoms.isEmpty()) {
-            return "未发送，症状参数为空";
-        }
-        if (title == null || title.isBlank()) {
-            title = "请选择症状";
-        }
-        SymptomSelectorCard payload = SymptomSelectorCard.builder()
-                .title(title)
-                .options(symptoms)
+    public void openUserOrderList() {
+        ChatResponse response = ChatResponse.builder()
+                .role(MessageRole.ASSISTANT)
+                .type(MessageType.EVENT)
+                .event(EventType.OPEN_USER_ORDER_LIST)
                 .build();
 
-        ClientChatResponse response = ClientChatResponse.builder()
-                .role(MessageRole.ASSISTANT)
-                .type(MessageType.CARD)
-                .card(List.of(payload))
-                .build();
         messageInjector.send(response, true);
-        return "发送成功";
+    }
+
+    /**
+     * 获取订单详情
+     */
+    @Tool(name = "getOrderDetailByOrderNo", description = """
+            【功能】：根据订单号查询详情。
+            
+            【何时使用】：
+            - 当用户提供了具体的订单号（特征：通常以 'o' 开头，如 'o2024...'）时。
+            
+            【后续操作】：
+            - 获取信息后，请简述订单状态，但**不要**直接列出所有敏感隐私信息，除非用户追问。
+            """)
+    public OrderDetailTool getOrderDetailByOrderNo(
+            @ToolParam(description = "订单号，通常以 'o' 开头") String orderNo) {
+        return requireProvider().getOrderDetailByOrderNo(orderNo);
     }
 
     @Data

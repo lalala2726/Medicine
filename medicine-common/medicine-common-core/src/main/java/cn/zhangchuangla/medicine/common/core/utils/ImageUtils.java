@@ -25,7 +25,7 @@ public final class ImageUtils {
     /**
      * 确保图片不超过 1MB，超出则有损压缩为 JPEG。
      *
-     * @param data          原始图片二进制
+     * @param data             原始图片二进制
      * @param originalMimeType 原始 mime 类型，用于在无需压缩时保持返回值一致
      * @return 压缩后的图片数据和对应 mimeType
      */
