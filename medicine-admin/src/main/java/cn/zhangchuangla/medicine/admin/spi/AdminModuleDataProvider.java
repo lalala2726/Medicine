@@ -46,7 +46,7 @@ public class AdminModuleDataProvider implements AdminDataProvider {
             SysUserDetails loginUser = SecurityUtils.getLoginUser();
             Long userId = loginUser.getUserId();
             UserDetailVo detail = userId == null ? null : userService.getUserDetailById(userId);
-            UserSnapshotTool.AdminUserSnapshotBuilder builder = UserSnapshotTool.builder()
+            UserSnapshotTool.UserSnapshotToolBuilder builder = UserSnapshotTool.builder()
                     .userId(userId)
                     .username(loginUser.getUsername())
                     .roles(SecurityUtils.getRoles());
