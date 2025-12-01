@@ -90,17 +90,18 @@ public class SseMessageInjector {
     }
 
     public void callToolAction(EventType toolAction, String description) {
-        if (!SUPPORTED_EVENT_TYPES.contains(toolAction)) {
+        if (toolAction == null || !SUPPORTED_EVENT_TYPES.contains(toolAction)) {
             log.warn("请将事件类型修改为工具类型!：{}", toolAction);
+            return;
         }
 
-        if (description == null || description.isBlank()) {
-            log.warn("工具描述不能为空");
-        }
+        String safeDescription = (description == null || description.isBlank())
+                ? toolAction.name()
+                : description;
 
         ToolEvent event = ToolEvent.builder()
                 .eventType(toolAction)
-                .description(description)
+                .description(safeDescription)
                 .build();
 
         ChatResponse response = ChatResponse.builder()
@@ -110,8 +111,8 @@ public class SseMessageInjector {
 
         SseStreamBridge.SseSession session = currentSession();
         if (session == null) {
-            log.error("未获取到 SSE 会话，工具事件发送失败，toolAction={}, description={}", toolAction, description);
-            throw new IllegalStateException("SSE 会话未建立，无法发送工具事件");
+            log.warn("未获取到 SSE 会话，工具事件发送失败，toolAction={}, description={}", toolAction, safeDescription);
+            return;
         }
         response.setRole(MessageRole.ASSISTANT);
         response.setIsFinish(false);

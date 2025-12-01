@@ -11,6 +11,7 @@ import cn.zhangchuangla.medicine.llm.model.tool.client.OrderDetailTool;
 import cn.zhangchuangla.medicine.llm.model.tool.client.SearchMallProductTool;
 import cn.zhangchuangla.medicine.llm.spi.ClientDataProvider;
 import cn.zhangchuangla.medicine.llm.spi.ClientDataProviderLoader;
+import cn.zhangchuangla.medicine.llm.tool.annotation.ToolCallStage;
 import cn.zhangchuangla.medicine.llm.utils.SseMessageInjector;
 import lombok.Data;
 import lombok.RequiredArgsConstructor;
@@ -54,6 +55,7 @@ public class ClientConsultationTools {
             - 当用户已经选定商品准备购买时。
             - 当用户只是进行日常闲聊（如打招呼）时。
             """)
+    @ToolCallStage(start = "正在搜索商城药品", end = "商城药品搜索完成")
     public List<SearchMallProductTool> searchMallProducts(
             @ToolParam(description = "【思维链】：请用一句话解释为什么现在需要搜索药品（例如：用户说头痛，需要查找止痛药）。此参数仅用于辅助思考，不影响逻辑。") String explanation,
             @ToolParam(description = "搜索关键字。可以是具体的症状（如'感冒'）或药品名。") String keyword,
@@ -63,24 +65,19 @@ public class ClientConsultationTools {
         if (keyword == null) {
             return List.of();
         }
-        messageInjector.callToolAction(EventType.TOOL_CALL_START, "正在搜索商城药品");
-        List<SearchMallProductTool> result = requireProvider().searchMallProducts(keyword, limit);
-        messageInjector.callToolAction(EventType.TOOL_CALL_END, "商城药品搜索完成");
-        return result;
+        return requireProvider().searchMallProducts(keyword, limit);
     }
 
     /**
      * 根据药品ID获取药品详细信息
      */
     @Tool(name = "getMallProductById", description = "根据药品ID获取药品详细信息")
+    @ToolCallStage(start = "正在查询药品详情", end = "药品详情查询完成")
     public MallProductTool getMallProductById(@ToolParam(description = "药品ID") Long id) {
         if (id == null) {
             return null;
         }
-        messageInjector.callToolAction(EventType.TOOL_CALL_START, "正在查询药品详情");
-        MallProductTool result = requireProvider().getMallProductById(id);
-        messageInjector.callToolAction(EventType.TOOL_CALL_END, "药品详情查询完成");
-        return result;
+        return requireProvider().getMallProductById(id);
     }
 
     /**
@@ -116,9 +113,7 @@ public class ClientConsultationTools {
                 .type(MessageType.CARD)
                 .card(List.of(payload))
                 .build();
-        messageInjector.callToolAction(EventType.TOOL_CALL_START, "正在发送症状选择卡片");
         messageInjector.send(response, true);
-        messageInjector.callToolAction(EventType.TOOL_CALL_END, "症状选择卡片发送完成");
         return "发送成功";
     }
 
@@ -203,9 +198,7 @@ public class ClientConsultationTools {
                 .build();
 
         try {
-            messageInjector.callToolAction(EventType.TOOL_CALL_START, "正在发送商品推荐卡片");
             messageInjector.send(response, true);
-            messageInjector.callToolAction(EventType.TOOL_CALL_END, "商品推荐卡片发送完成");
             return "发送成功";
         } catch (Exception ex) {
             return "发送失败：" + ex.getMessage();
@@ -302,9 +295,7 @@ public class ClientConsultationTools {
                         .build()))
                 .build();
         try {
-            messageInjector.callToolAction(EventType.TOOL_CALL_START, "正在发送购买卡片");
             messageInjector.send(response, true);
-            messageInjector.callToolAction(EventType.TOOL_CALL_END, "购买卡片发送完成");
             return "发送成功";
         } catch (Exception ex) {
             return "发送失败：" + ex.getMessage();
@@ -345,12 +336,10 @@ public class ClientConsultationTools {
             【后续操作】：
             - 获取信息后，请简述订单状态，但**不要**直接列出所有敏感隐私信息，除非用户追问。
             """)
+    @ToolCallStage(start = "正在查询订单详情", end = "订单详情查询完成")
     public OrderDetailTool getOrderDetailByOrderNo(
             @ToolParam(description = "订单号，通常以 'o' 开头") String orderNo) {
-        messageInjector.callToolAction(EventType.TOOL_CALL_START, "正在查询订单详情");
-        OrderDetailTool detail = requireProvider().getOrderDetailByOrderNo(orderNo);
-        messageInjector.callToolAction(EventType.TOOL_CALL_END, "订单详情查询完成");
-        return detail;
+        return requireProvider().getOrderDetailByOrderNo(orderNo);
     }
 
     @Data

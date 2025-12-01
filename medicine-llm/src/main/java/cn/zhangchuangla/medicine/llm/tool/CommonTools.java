@@ -1,6 +1,5 @@
 package cn.zhangchuangla.medicine.llm.tool;
 
-import cn.zhangchuangla.medicine.llm.model.enums.EventType;
 import cn.zhangchuangla.medicine.llm.utils.SseMessageInjector;
 import lombok.RequiredArgsConstructor;
 import net.objecthunter.exp4j.Expression;
@@ -40,8 +39,6 @@ public class CommonTools {
         if (expression == null || expression.trim().isEmpty()) {
             throw new IllegalArgumentException("表达式不能为空");
         }
-
-        messageInjector.callToolAction(EventType.TOOL_CALL_START, "正在计算中");
         try {
             ExpressionBuilder builder = new ExpressionBuilder(expression);
             if (variables != null && !variables.isEmpty()) {
@@ -53,11 +50,8 @@ public class CommonTools {
                 variables.forEach(exp::setVariable);
             }
 
-            double result = exp.evaluate();
-            messageInjector.callToolAction(EventType.TOOL_CALL_END, "计算完成");
-            return result;
+            return exp.evaluate();
         } catch (IllegalArgumentException e) {
-            messageInjector.callToolAction(EventType.TOOL_CALL_END, "通用表达式计算失败");
             throw new IllegalArgumentException("表达式不合法或变量缺失: " + e.getMessage(), e);
         }
     }
@@ -65,16 +59,13 @@ public class CommonTools {
 
     @Tool(name = "get_current_time", description = "获取当前精确时间，包含日期、时间和时区信息")
     public Map<String, String> getCurrentTime() {
-        messageInjector.callToolAction(EventType.TOOL_CALL_START, "正在获取当前时间");
         LocalDateTime now = LocalDateTime.now(ZoneId.of("Asia/Shanghai"));
-        Map<String, String> result = Map.of(
+        return Map.of(
                 "iso_format", now.toString(),
                 "formatted", now.format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")),
                 "day_of_week", now.getDayOfWeek().toString(),
                 "zone", "Asia/Shanghai"
         );
-        messageInjector.callToolAction(EventType.TOOL_CALL_END, "当前时间获取完成");
-        return result;
     }
 
     @Tool(name = "calculate_date_difference", description = "计算两个日期之间的天数差")
@@ -82,13 +73,10 @@ public class CommonTools {
             @ToolParam(description = "开始日期，格式 yyyy-MM-dd") String startDate,
             @ToolParam(description = "结束日期，格式 yyyy-MM-dd") String endDate) {
         try {
-            messageInjector.callToolAction(EventType.TOOL_CALL_START, "正在计算日期差");
             DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd");
             LocalDateTime start = LocalDateTime.parse(startDate + "T00:00:00", DateTimeFormatter.ISO_LOCAL_DATE_TIME);
             LocalDateTime end = LocalDateTime.parse(endDate + "T00:00:00", DateTimeFormatter.ISO_LOCAL_DATE_TIME);
-            long days = Duration.between(start, end).toDays();
-            messageInjector.callToolAction(EventType.TOOL_CALL_END, "日期差计算完成");
-            return days;
+            return Duration.between(start, end).toDays();
         } catch (Exception e) {
             throw new IllegalArgumentException("日期格式错误，请使用 yyyy-MM-dd 格式");
         }
