@@ -1,4 +1,4 @@
-package cn.zhangchuangla.medicine.llm.model.tool;
+package cn.zhangchuangla.medicine.llm.model.tool.client;
 
 import cn.zhangchuangla.medicine.model.dto.DrugDetailDto;
 import lombok.AllArgsConstructor;

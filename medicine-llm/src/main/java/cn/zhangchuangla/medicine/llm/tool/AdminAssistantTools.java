@@ -1,6 +1,7 @@
 package cn.zhangchuangla.medicine.llm.tool;
 
-import cn.zhangchuangla.medicine.llm.model.tool.*;
+import cn.zhangchuangla.medicine.llm.model.tool.ProductSnapshot;
+import cn.zhangchuangla.medicine.llm.model.tool.admin.*;
 import cn.zhangchuangla.medicine.llm.spi.AdminDataProvider;
 import cn.zhangchuangla.medicine.llm.spi.AdminDataProviderLoader;
 import org.springframework.ai.tool.annotation.Tool;

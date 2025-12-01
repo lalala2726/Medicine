@@ -1,7 +1,7 @@
 package cn.zhangchuangla.medicine.llm.spi;
 
-import cn.zhangchuangla.medicine.llm.model.tool.ClientMallProductOut;
-import cn.zhangchuangla.medicine.llm.model.tool.ClientSearchMallProductOut;
+import cn.zhangchuangla.medicine.llm.model.tool.client.ClientMallProductOut;
+import cn.zhangchuangla.medicine.llm.model.tool.client.ClientSearchMallProductOut;
 
 import java.util.List;
 

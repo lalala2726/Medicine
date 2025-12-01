@@ -1,8 +1,8 @@
 package cn.zhangchuangla.medicine.client.spi;
 
 import cn.zhangchuangla.medicine.client.service.MallProductService;
-import cn.zhangchuangla.medicine.llm.model.tool.ClientMallProductOut;
-import cn.zhangchuangla.medicine.llm.model.tool.ClientSearchMallProductOut;
+import cn.zhangchuangla.medicine.llm.model.tool.client.ClientMallProductOut;
+import cn.zhangchuangla.medicine.llm.model.tool.client.ClientSearchMallProductOut;
 import cn.zhangchuangla.medicine.llm.spi.ClientDataProvider;
 import cn.zhangchuangla.medicine.model.dto.MallProductDetailDto;
 import lombok.RequiredArgsConstructor;

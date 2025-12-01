@@ -1,6 +1,7 @@
 package cn.zhangchuangla.medicine.llm.spi;
 
-import cn.zhangchuangla.medicine.llm.model.tool.*;
+import cn.zhangchuangla.medicine.llm.model.tool.ProductSnapshot;
+import cn.zhangchuangla.medicine.llm.model.tool.admin.*;
 
 import java.util.List;
 import java.util.Optional;

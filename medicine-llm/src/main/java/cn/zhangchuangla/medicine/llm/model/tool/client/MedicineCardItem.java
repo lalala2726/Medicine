@@ -1,4 +1,4 @@
-package cn.zhangchuangla.medicine.llm.model.tool;
+package cn.zhangchuangla.medicine.llm.model.tool.client;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.AllArgsConstructor;

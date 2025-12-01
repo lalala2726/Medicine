@@ -1,4 +1,4 @@
-package cn.zhangchuangla.medicine.llm.model.tool;
+package cn.zhangchuangla.medicine.llm.model.tool.client;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;

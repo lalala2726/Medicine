@@ -17,7 +17,7 @@ import cn.zhangchuangla.medicine.common.elasticsearch.document.MallProductDocume
 import cn.zhangchuangla.medicine.common.elasticsearch.model.request.MallProductSearchRequest;
 import cn.zhangchuangla.medicine.common.elasticsearch.service.MallProductSearchService;
 import cn.zhangchuangla.medicine.common.security.base.BaseService;
-import cn.zhangchuangla.medicine.llm.model.tool.ClientSearchMallProductOut;
+import cn.zhangchuangla.medicine.llm.model.tool.client.ClientSearchMallProductOut;
 import cn.zhangchuangla.medicine.model.dto.MallProductDetailDto;
 import cn.zhangchuangla.medicine.model.dto.MallProductWithImageDto;
 import cn.zhangchuangla.medicine.model.entity.MallProduct;

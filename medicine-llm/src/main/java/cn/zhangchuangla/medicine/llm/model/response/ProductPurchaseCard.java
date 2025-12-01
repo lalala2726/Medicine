@@ -1,7 +1,7 @@
 package cn.zhangchuangla.medicine.llm.model.response;
 
 import cn.zhangchuangla.medicine.llm.model.enums.CardType;
-import cn.zhangchuangla.medicine.llm.model.tool.MedicineCardItem;
+import cn.zhangchuangla.medicine.llm.model.tool.client.MedicineCardItem;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
