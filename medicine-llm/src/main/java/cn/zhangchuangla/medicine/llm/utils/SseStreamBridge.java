@@ -17,16 +17,6 @@ public class SseStreamBridge {
 
     private static final long DEFAULT_TIMEOUT_MS = 30_000L;
 
-    /**
-     * 将 Flux<ClientChatResponse> 包装为 SSE，支持手动插入消息。
-     *
-     * @param stream AI 输出流
-     * @return 会话包装，包含 emitter 和手动发送能力
-     */
-    public SseSession bridge(Flux<ClientChatResponse> stream) {
-        return bridge(stream, null);
-    }
-
     private static void sendSafe(SseEmitter emitter, ClientChatResponse content) {
         try {
             emitter.send(content);
@@ -82,6 +72,16 @@ public class SseStreamBridge {
         }
     }
 
+    /**
+     * 将 Flux<ClientChatResponse> 包装为 SSE，支持手动插入消息。
+     *
+     * @param stream AI 输出流
+     * @return 会话包装，包含 emitter 和手动发送能力
+     */
+    public SseSession bridge(Flux<ClientChatResponse> stream) {
+        return bridge(stream, null);
+    }
+
     public SseSession bridge(Flux<ClientChatResponse> stream, Runnable onFinish) {
         SseEmitter emitter = new SseEmitter(DEFAULT_TIMEOUT_MS);
         AtomicBoolean done = new AtomicBoolean(false);
@@ -109,28 +109,28 @@ public class SseStreamBridge {
     }
 
     /**
-         * 会话包装，允许随时插入消息。
-         */
-        public record SseSession(SseEmitter emitter, AtomicBoolean done, AtomicReference<ClientChatResponse> lastMessage,
-                                 AtomicReference<ClientChatResponse> buffer) {
+     * 会话包装，允许随时插入消息。
+     */
+    public record SseSession(SseEmitter emitter, AtomicBoolean done, AtomicReference<ClientChatResponse> lastMessage,
+                             AtomicReference<ClientChatResponse> buffer) {
 
         public void send(ClientChatResponse content) {
-                if (content == null || done.get()) {
-                    return;
-                }
-                sendSafe(emitter, content);
+            if (content == null || done.get()) {
+                return;
             }
-
-
-            /**
-             * 标记一条消息为流结束时的最后推送，底层会在 Flux 完成时发送并设置 isFinish=true（如果未显式指定）。
-             */
-            public void sendLast(ClientChatResponse content) {
-                if (content == null || done.get()) {
-                    return;
-                }
-                lastMessage.set(content);
-            }
-
+            sendSafe(emitter, content);
         }
+
+
+        /**
+         * 标记一条消息为流结束时的最后推送，底层会在 Flux 完成时发送并设置 isFinish=true（如果未显式指定）。
+         */
+        public void sendLast(ClientChatResponse content) {
+            if (content == null || done.get()) {
+                return;
+            }
+            lastMessage.set(content);
+        }
+
+    }
 }

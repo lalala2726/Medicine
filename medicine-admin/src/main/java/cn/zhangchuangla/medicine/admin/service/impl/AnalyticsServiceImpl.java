@@ -131,7 +131,8 @@ public class AnalyticsServiceImpl implements AnalyticsService {
         LocalDate today = LocalDate.now();
         return switch (normalized) {
             case "WEEK" -> new PeriodConfig(today.minusWeeks(12).atStartOfDay(), "%x-%v");
-            case "MONTH" -> new PeriodConfig(today.with(TemporalAdjusters.firstDayOfMonth()).minusMonths(11).atStartOfDay(), "%Y-%m");
+            case "MONTH" ->
+                    new PeriodConfig(today.with(TemporalAdjusters.firstDayOfMonth()).minusMonths(11).atStartOfDay(), "%Y-%m");
             default -> new PeriodConfig(today.minusDays(29).atStartOfDay(), "%Y-%m-%d");
         };
     }

@@ -466,6 +466,7 @@ public class AdminModuleDataProvider implements AdminDataProvider {
                 .map(MallProductImage::getImageUrl)
                 .toList();
     }
+
     private DrugDetailDto toDrugDetailDto(DrugDetail detail) {
         if (detail == null) {
             return null;

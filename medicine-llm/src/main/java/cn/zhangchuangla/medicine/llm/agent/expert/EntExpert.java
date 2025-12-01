@@ -13,7 +13,7 @@ import java.util.concurrent.CompletableFuture;
  * <p>
  * created on 2025/11/20
  */
-public class EntExpert implements AsyncNodeAction<ConsultationState>{
+public class EntExpert implements AsyncNodeAction<ConsultationState> {
 
 
     @Override

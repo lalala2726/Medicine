@@ -1,4 +1,3 @@
-
 package cn.zhangchuangla.medicine.llm.model.response;
 
 import cn.zhangchuangla.medicine.llm.model.enums.CardType;
@@ -16,7 +15,7 @@ import java.util.List;
  * created on 2025/12/1
  */
 @Data
-public class ProductCard implements Card{
+public class ProductCard implements Card {
 
     /**
      * 卡片类型

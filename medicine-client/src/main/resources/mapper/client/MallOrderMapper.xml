@@ -127,8 +127,8 @@
                o.receiver_detail AS receiverDetail
         FROM mall_order o
         WHERE (o.is_deleted = 0)
-        AND o.order_no = #{orderNo}
-        AND o.user_id = #{userId}
+          AND o.order_no = #{orderNo}
+          AND o.user_id = #{userId}
     </select>
 
 </mapper>

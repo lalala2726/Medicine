@@ -41,12 +41,12 @@ import java.util.*;
 public class MallProductServiceImpl extends ServiceImpl<MallProductMapper, MallProduct>
         implements MallProductService, BaseService {
 
+    private static final int RECOMMEND_LIMIT = 20;
     private final MallProductMapper mallProductMapper;
     private final MallProductImageService mallProductImageService;
     private final MallProductViewHistoryService mallProductViewHistoryService;
     private final MallOrderItemService mallOrderItemService;
     private final MallProductSearchService mallProductSearchService;
-    private static final int RECOMMEND_LIMIT = 20;
 
     @Override
     public List<RecommendListVo> recommend() {

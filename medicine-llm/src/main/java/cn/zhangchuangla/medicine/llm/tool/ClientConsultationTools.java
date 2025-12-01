@@ -36,14 +36,13 @@ import java.util.stream.Collectors;
 public class ClientConsultationTools {
 
 
+    private final ClientDataProviderLoader providerLoader;
+    private final SseMessageInjector messageInjector;
+
     private ClientDataProvider requireProvider() {
         return providerLoader.getProvider()
                 .orElseThrow(() -> new IllegalStateException("未发现 client SPI 提供者，请检查 client 模块是否已注册"));
     }
-
-    private final ClientDataProviderLoader providerLoader;
-    private final SseMessageInjector messageInjector;
-
 
     /**
      * 搜索商城药品,用于当AI诊断完病情之后获取药品信息

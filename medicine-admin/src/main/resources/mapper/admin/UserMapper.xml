@@ -72,6 +72,6 @@
                COALESCE(SUM(pay_amount), 0) AS total_consumption
         FROM mall_order
         WHERE (is_deleted IS NULL OR is_deleted = 0)
-        AND user_id = #{userId}
+          AND user_id = #{userId}
     </select>
 </mapper>
