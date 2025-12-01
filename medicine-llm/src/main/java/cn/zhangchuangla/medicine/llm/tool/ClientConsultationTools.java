@@ -1,9 +1,6 @@
 package cn.zhangchuangla.medicine.llm.tool;
 
-import cn.zhangchuangla.medicine.llm.model.enums.Action;
-import cn.zhangchuangla.medicine.llm.model.enums.CardType;
-import cn.zhangchuangla.medicine.llm.model.enums.MessageRole;
-import cn.zhangchuangla.medicine.llm.model.enums.MessageType;
+import cn.zhangchuangla.medicine.llm.model.enums.*;
 import cn.zhangchuangla.medicine.llm.model.response.ChatResponse;
 import cn.zhangchuangla.medicine.llm.model.response.ProductCard;
 import cn.zhangchuangla.medicine.llm.model.response.ProductPurchaseCard;
@@ -66,7 +63,10 @@ public class ClientConsultationTools {
         if (keyword == null) {
             return List.of();
         }
-        return requireProvider().searchMallProducts(keyword, limit);
+        messageInjector.callToolAction(EventType.TOOL_CALL_START, "正在搜索商城药品");
+        List<SearchMallProductTool> result = requireProvider().searchMallProducts(keyword, limit);
+        messageInjector.callToolAction(EventType.TOOL_CALL_END, "商城药品搜索完成");
+        return result;
     }
 
     /**
@@ -77,7 +77,10 @@ public class ClientConsultationTools {
         if (id == null) {
             return null;
         }
-        return requireProvider().getMallProductById(id);
+        messageInjector.callToolAction(EventType.TOOL_CALL_START, "正在查询药品详情");
+        MallProductTool result = requireProvider().getMallProductById(id);
+        messageInjector.callToolAction(EventType.TOOL_CALL_END, "药品详情查询完成");
+        return result;
     }
 
     /**
@@ -113,7 +116,9 @@ public class ClientConsultationTools {
                 .type(MessageType.CARD)
                 .card(List.of(payload))
                 .build();
+        messageInjector.callToolAction(EventType.TOOL_CALL_START, "正在发送症状选择卡片");
         messageInjector.send(response, true);
+        messageInjector.callToolAction(EventType.TOOL_CALL_END, "症状选择卡片发送完成");
         return "发送成功";
     }
 
@@ -198,7 +203,9 @@ public class ClientConsultationTools {
                 .build();
 
         try {
+            messageInjector.callToolAction(EventType.TOOL_CALL_START, "正在发送商品推荐卡片");
             messageInjector.send(response, true);
+            messageInjector.callToolAction(EventType.TOOL_CALL_END, "商品推荐卡片发送完成");
             return "发送成功";
         } catch (Exception ex) {
             return "发送失败：" + ex.getMessage();
@@ -295,7 +302,9 @@ public class ClientConsultationTools {
                         .build()))
                 .build();
         try {
+            messageInjector.callToolAction(EventType.TOOL_CALL_START, "正在发送购买卡片");
             messageInjector.send(response, true);
+            messageInjector.callToolAction(EventType.TOOL_CALL_END, "购买卡片发送完成");
             return "发送成功";
         } catch (Exception ex) {
             return "发送失败：" + ex.getMessage();
@@ -313,6 +322,7 @@ public class ClientConsultationTools {
             - 引导用户手动选择订单。
             """)
     public void openUserOrderList() {
+        messageInjector.callToolAction(EventType.TOOL_CALL_START, "正在打开用户订单列表");
         ChatResponse response = ChatResponse.builder()
                 .role(MessageRole.ASSISTANT)
                 .type(MessageType.ACTION)
@@ -320,6 +330,7 @@ public class ClientConsultationTools {
                 .build();
 
         messageInjector.send(response, true);
+        messageInjector.callToolAction(EventType.TOOL_CALL_END, "用户订单列表已打开");
     }
 
     /**
@@ -336,7 +347,10 @@ public class ClientConsultationTools {
             """)
     public OrderDetailTool getOrderDetailByOrderNo(
             @ToolParam(description = "订单号，通常以 'o' 开头") String orderNo) {
-        return requireProvider().getOrderDetailByOrderNo(orderNo);
+        messageInjector.callToolAction(EventType.TOOL_CALL_START, "正在查询订单详情");
+        OrderDetailTool detail = requireProvider().getOrderDetailByOrderNo(orderNo);
+        messageInjector.callToolAction(EventType.TOOL_CALL_END, "订单详情查询完成");
+        return detail;
     }
 
     @Data

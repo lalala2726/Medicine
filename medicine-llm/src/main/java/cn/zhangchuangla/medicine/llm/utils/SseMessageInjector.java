@@ -47,6 +47,9 @@ public class SseMessageInjector {
         if (response.getRole() == null) {
             response.setRole(MessageRole.ASSISTANT);
         }
+        if (response.getTimestamp() == null) {
+            response.setTimestamp(System.currentTimeMillis());
+        }
         session.send(response);
     }
 
@@ -63,6 +66,9 @@ public class SseMessageInjector {
         }
         if (response.getRole() == null) {
             response.setRole(MessageRole.ASSISTANT);
+        }
+        if (response.getTimestamp() == null) {
+            response.setTimestamp(System.currentTimeMillis());
         }
 
         if (asLast) {
@@ -108,6 +114,11 @@ public class SseMessageInjector {
             throw new IllegalStateException("SSE 会话未建立，无法发送工具事件");
         }
         response.setRole(MessageRole.ASSISTANT);
+        response.setIsFinish(false);
+        if (response.getTimestamp() == null) {
+            response.setTimestamp(System.currentTimeMillis());
+        }
+
         session.send(response);
     }
 }

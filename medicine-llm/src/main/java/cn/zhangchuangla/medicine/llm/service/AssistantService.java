@@ -75,6 +75,7 @@ public class AssistantService {
         ChatResponse response = new ChatResponse();
         response.setRole(MessageRole.ASSISTANT);
         response.setContent(content);
+        response.setTimestamp(System.currentTimeMillis());
         return response;
     }
 }

@@ -29,6 +29,9 @@ public class ChatResponse {
     @Schema(description = "完整文本内容")
     private String content;
 
+    @Schema(description = "消息发送时间戳，毫秒")
+    private Long timestamp;
+
     @Schema(description = "消息类型：TEXT / CARD / EVENT / ACTION")
     private MessageType type;
 
