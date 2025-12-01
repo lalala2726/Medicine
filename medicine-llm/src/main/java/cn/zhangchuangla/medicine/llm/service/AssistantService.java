@@ -49,7 +49,8 @@ public class AssistantService {
                 .tools(clientConsultationTools)
                 .stream()
                 .content()
-                .map(this::toResponse);
+                .map(this::toResponse)
+                .contextCapture();
 
         SseStreamBridge.SseSession session = sseStreamBridge.bridge(stream, sseMessageInjector::clear);
         sseMessageInjector.attach(session);
