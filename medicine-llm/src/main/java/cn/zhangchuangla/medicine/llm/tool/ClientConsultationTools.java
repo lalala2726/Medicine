@@ -4,7 +4,7 @@ import cn.zhangchuangla.medicine.llm.model.enums.CardType;
 import cn.zhangchuangla.medicine.llm.model.enums.EventType;
 import cn.zhangchuangla.medicine.llm.model.enums.MessageRole;
 import cn.zhangchuangla.medicine.llm.model.enums.MessageType;
-import cn.zhangchuangla.medicine.llm.model.response.ClientChatResponse;
+import cn.zhangchuangla.medicine.llm.model.response.ChatResponse;
 import cn.zhangchuangla.medicine.llm.model.response.ProductCard;
 import cn.zhangchuangla.medicine.llm.model.response.ProductPurchaseCard;
 import cn.zhangchuangla.medicine.llm.model.response.SymptomSelectorCard;
@@ -108,7 +108,7 @@ public class ClientConsultationTools {
                 .options(symptoms)
                 .build();
 
-        ClientChatResponse response = ClientChatResponse.builder()
+        ChatResponse response = ChatResponse.builder()
                 .role(MessageRole.ASSISTANT)
                 .type(MessageType.CARD)
                 .card(List.of(payload))
@@ -191,7 +191,7 @@ public class ClientConsultationTools {
         productCard.setCardType(CardType.PRODUCT_CARD);
         productCard.setPayload(payload);
 
-        ClientChatResponse response = ClientChatResponse.builder()
+        ChatResponse response = ChatResponse.builder()
                 .role(MessageRole.ASSISTANT)
                 .type(MessageType.CARD)
                 .card(List.of(productCard))
@@ -286,7 +286,7 @@ public class ClientConsultationTools {
                 .medicines(items)
                 .build();
 
-        ClientChatResponse response = ClientChatResponse.builder()
+        ChatResponse response = ChatResponse.builder()
                 .role(MessageRole.ASSISTANT)
                 .type(MessageType.CARD)
                 .card(List.of(ProductPurchaseCard.builder()
@@ -313,7 +313,7 @@ public class ClientConsultationTools {
             - 引导用户手动选择订单。
             """)
     public void openUserOrderList() {
-        ClientChatResponse response = ClientChatResponse.builder()
+        ChatResponse response = ChatResponse.builder()
                 .role(MessageRole.ASSISTANT)
                 .type(MessageType.EVENT)
                 .event(EventType.OPEN_USER_ORDER_LIST)

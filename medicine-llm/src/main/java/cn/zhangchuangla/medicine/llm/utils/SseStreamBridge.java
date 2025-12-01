@@ -1,6 +1,6 @@
 package cn.zhangchuangla.medicine.llm.utils;
 
-import cn.zhangchuangla.medicine.llm.model.response.ClientChatResponse;
+import cn.zhangchuangla.medicine.llm.model.response.ChatResponse;
 import org.springframework.stereotype.Component;
 import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 import reactor.core.publisher.Flux;
@@ -17,7 +17,7 @@ public class SseStreamBridge {
 
     private static final long DEFAULT_TIMEOUT_MS = 30_000L;
 
-    private static void sendSafe(SseEmitter emitter, ClientChatResponse content) {
+    private static void sendSafe(SseEmitter emitter, ChatResponse content) {
         try {
             emitter.send(content);
         } catch (IOException e) {
@@ -33,12 +33,12 @@ public class SseStreamBridge {
 
     private static void flushPrev(SseEmitter emitter,
                                   AtomicBoolean done,
-                                  AtomicReference<ClientChatResponse> buffer,
-                                  ClientChatResponse next) {
+                                  AtomicReference<ChatResponse> buffer,
+                                  ChatResponse next) {
         if (done.get()) {
             return;
         }
-        ClientChatResponse prev = buffer.getAndSet(next);
+        ChatResponse prev = buffer.getAndSet(next);
         if (prev == null) {
             return;
         }
@@ -50,12 +50,12 @@ public class SseStreamBridge {
 
     private static void flushLast(SseEmitter emitter,
                                   AtomicBoolean done,
-                                  AtomicReference<ClientChatResponse> buffer,
-                                  AtomicReference<ClientChatResponse> lastMessage) {
+                                  AtomicReference<ChatResponse> buffer,
+                                  AtomicReference<ChatResponse> lastMessage) {
         if (done.get()) {
             return;
         }
-        ClientChatResponse last = lastMessage.getAndSet(null);
+        ChatResponse last = lastMessage.getAndSet(null);
         if (last == null) {
             last = buffer.getAndSet(null);
             if (last != null && last.getIsFinish() == null) {
@@ -73,20 +73,20 @@ public class SseStreamBridge {
     }
 
     /**
-     * 将 Flux<ClientChatResponse> 包装为 SSE，支持手动插入消息。
+     * 将 Flux<ChatResponse> 包装为 SSE，支持手动插入消息。
      *
      * @param stream AI 输出流
      * @return 会话包装，包含 emitter 和手动发送能力
      */
-    public SseSession bridge(Flux<ClientChatResponse> stream) {
+    public SseSession bridge(Flux<ChatResponse> stream) {
         return bridge(stream, null);
     }
 
-    public SseSession bridge(Flux<ClientChatResponse> stream, Runnable onFinish) {
+    public SseSession bridge(Flux<ChatResponse> stream, Runnable onFinish) {
         SseEmitter emitter = new SseEmitter(DEFAULT_TIMEOUT_MS);
         AtomicBoolean done = new AtomicBoolean(false);
-        AtomicReference<ClientChatResponse> lastMessage = new AtomicReference<>();
-        AtomicReference<ClientChatResponse> buffer = new AtomicReference<>();
+        AtomicReference<ChatResponse> lastMessage = new AtomicReference<>();
+        AtomicReference<ChatResponse> buffer = new AtomicReference<>();
 
         stream.doOnNext(content -> flushPrev(emitter, done, buffer, content))
                 .doOnComplete(() -> {
@@ -111,10 +111,10 @@ public class SseStreamBridge {
     /**
      * 会话包装，允许随时插入消息。
      */
-    public record SseSession(SseEmitter emitter, AtomicBoolean done, AtomicReference<ClientChatResponse> lastMessage,
-                             AtomicReference<ClientChatResponse> buffer) {
+    public record SseSession(SseEmitter emitter, AtomicBoolean done, AtomicReference<ChatResponse> lastMessage,
+                             AtomicReference<ChatResponse> buffer) {
 
-        public void send(ClientChatResponse content) {
+        public void send(ChatResponse content) {
             if (content == null || done.get()) {
                 return;
             }
@@ -125,7 +125,7 @@ public class SseStreamBridge {
         /**
          * 标记一条消息为流结束时的最后推送，底层会在 Flux 完成时发送并设置 isFinish=true（如果未显式指定）。
          */
-        public void sendLast(ClientChatResponse content) {
+        public void sendLast(ChatResponse content) {
             if (content == null || done.get()) {
                 return;
             }

@@ -228,5 +228,7 @@ public class SystemPrompt {
               **Assistant**: (依次调用 `current_datetime` -> `get_order_trend` -> `list_supported_chart_types` -> `get_chart_sample_by_name`)
               "最近一周的销量趋势如下："
               [此处输出符合前端组件要求的 JSON 图表配置]
+            
+              最后!任何情况下禁止向用户发送任何JSON的参数信息,用户看不懂
             """;
 }

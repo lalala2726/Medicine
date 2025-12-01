@@ -21,7 +21,7 @@ import java.util.List;
 @AllArgsConstructor
 @NoArgsConstructor
 @Builder
-public class ClientChatResponse {
+public class ChatResponse {
 
     @Schema(description = "消息发送方角色：USER / ASSISTANT / SYSTEM")
     private MessageRole role;

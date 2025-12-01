@@ -1,7 +1,7 @@
 package cn.zhangchuangla.medicine.llm.utils;
 
 import cn.zhangchuangla.medicine.llm.model.enums.MessageRole;
-import cn.zhangchuangla.medicine.llm.model.response.ClientChatResponse;
+import cn.zhangchuangla.medicine.llm.model.response.ChatResponse;
 import org.springframework.stereotype.Component;
 
 import java.util.concurrent.atomic.AtomicReference;
@@ -28,7 +28,7 @@ public class SseMessageInjector {
     /**
      * 插入一条消息，外部可自定义内容/role 等。
      */
-    public void send(ClientChatResponse response) {
+    public void send(ChatResponse response) {
         SseStreamBridge.SseSession session = currentSession();
         if (session == null) {
             return;
@@ -42,7 +42,7 @@ public class SseMessageInjector {
     /**
      * 发送消息；当 asLast=true 时，标记 isFinish=true 并保证在流结束时压轴发送。
      */
-    public void send(ClientChatResponse response, boolean asLast) {
+    public void send(ChatResponse response, boolean asLast) {
         if (response == null) {
             return;
         }

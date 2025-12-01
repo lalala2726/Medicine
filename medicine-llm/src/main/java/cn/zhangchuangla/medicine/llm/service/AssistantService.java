@@ -1,7 +1,9 @@
 package cn.zhangchuangla.medicine.llm.service;
 
 import cn.zhangchuangla.medicine.llm.model.enums.MessageRole;
-import cn.zhangchuangla.medicine.llm.model.response.ClientChatResponse;
+import cn.zhangchuangla.medicine.llm.model.response.ChatResponse;
+import cn.zhangchuangla.medicine.llm.prompt.SystemPrompt;
+import cn.zhangchuangla.medicine.llm.tool.AdminAssistantTools;
 import cn.zhangchuangla.medicine.llm.tool.ClientConsultationTools;
 import cn.zhangchuangla.medicine.llm.utils.SseMessageInjector;
 import cn.zhangchuangla.medicine.llm.utils.SseStreamBridge;
@@ -23,11 +25,11 @@ import static cn.zhangchuangla.medicine.llm.prompt.SystemPrompt.CONSULTATION_SYS
 public class AssistantService {
 
 
-
     private final ChatClient chatClient;
     private final ClientConsultationTools clientConsultationTools;
     private final SseStreamBridge sseStreamBridge;
     private final SseMessageInjector sseMessageInjector;
+    private final AdminAssistantTools adminAssistantTools;
 
     public SseEmitter ClientConsultation(String question) {
         return simpleConsultationSession(question).emitter();
@@ -37,7 +39,7 @@ public class AssistantService {
      * 返回可手动插入消息的 SSE 会话包装。
      */
     public SseStreamBridge.SseSession simpleConsultationSession(String question) {
-        Flux<ClientChatResponse> stream = chatClient
+        Flux<ChatResponse> stream = chatClient
                 .prompt()
                 .system(CONSULTATION_SYSTEM_PROMPT)
                 .user(question)
@@ -52,8 +54,23 @@ public class AssistantService {
         return session;
     }
 
-    private ClientChatResponse toResponse(String content) {
-        ClientChatResponse response = new ClientChatResponse();
+    public SseEmitter chat(String userMessage) {
+        Flux<ChatResponse> stream = chatClient.prompt()
+                .tools(adminAssistantTools)
+                .system(SystemPrompt.ADMIN_ASSISTANT_PROMPT)
+                .user(userMessage)
+                .stream()
+                .content()
+                .map(this::toResponse)
+                .contextCapture();
+
+        SseStreamBridge.SseSession session = sseStreamBridge.bridge(stream, sseMessageInjector::clear);
+        sseMessageInjector.attach(session);
+        return session.emitter();
+    }
+
+    private ChatResponse toResponse(String content) {
+        ChatResponse response = new ChatResponse();
         response.setRole(MessageRole.ASSISTANT);
         response.setContent(content);
         return response;

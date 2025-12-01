@@ -2,14 +2,11 @@ package cn.zhangchuangla.medicine.llm.service;
 
 import cn.zhangchuangla.medicine.common.core.utils.Assert;
 import cn.zhangchuangla.medicine.llm.model.dto.DrugInfoDto;
-import cn.zhangchuangla.medicine.llm.model.response.AssistantChatResponse;
 import cn.zhangchuangla.medicine.llm.prompt.SystemPrompt;
-import cn.zhangchuangla.medicine.llm.tool.AdminAssistantTools;
 import com.alibaba.fastjson.JSON;
-import org.springframework.ai.chat.client.ChatClient;
+import lombok.RequiredArgsConstructor;
 import org.springframework.ai.openai.api.OpenAiApi;
 import org.springframework.stereotype.Service;
-import reactor.core.publisher.Flux;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -23,18 +20,10 @@ import java.util.Objects;
  * created on 2025/11/23
  */
 @Service
+@RequiredArgsConstructor
 public class LLMParseImageService {
 
     private final OpenAiApi baseOpenAiApi;
-    private final ChatClient chatClient;
-    private final AdminAssistantTools adminAssistantTools;
-
-    public LLMParseImageService(OpenAiApi baseOpenAiApi, ChatClient chatClient,
-                                AdminAssistantTools adminAssistantTools) {
-        this.baseOpenAiApi = baseOpenAiApi;
-        this.chatClient = chatClient;
-        this.adminAssistantTools = adminAssistantTools;
-    }
 
 
     public DrugInfoDto parseImage(List<String> imageBase64List) {
@@ -72,19 +61,5 @@ public class LLMParseImageService {
                 .content();
 
         return JSON.parseObject(content, DrugInfoDto.class);
-    }
-
-    public Flux<AssistantChatResponse> chat(String userMessage) {
-        return chatClient.prompt()
-                .tools(adminAssistantTools)
-                .system(SystemPrompt.ADMIN_ASSISTANT_PROMPT)
-                .user(userMessage)
-                .stream()
-                .content()
-                .map(content -> {
-                    AssistantChatResponse response = new AssistantChatResponse();
-                    response.setContent(content);
-                    return response;
-                });
     }
 }

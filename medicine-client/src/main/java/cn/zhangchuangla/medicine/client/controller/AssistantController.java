@@ -35,7 +35,7 @@ public class AssistantController extends BaseController {
 
 
     @PostMapping(value = "/chat", produces = "text/event-stream")
-    @Operation(summary = "简单咨询", description = "简单的医疗咨询接口，返回 ClientChatResponse SSE 消息（文本或卡片）")
+    @Operation(summary = "简单咨询", description = "简单的医疗咨询接口，返回 ChatResponse SSE 消息（文本或卡片）")
     public SseEmitter simpleConsultation(@RequestBody ConsultationRequest request) {
         log.info("咨询问题：{}", request.question);
         return assistantService.ClientConsultation(request.question());
