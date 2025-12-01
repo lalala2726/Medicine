@@ -13,7 +13,7 @@ import java.math.BigDecimal;
 @NoArgsConstructor
 @AllArgsConstructor
 @Schema(description = "热销商品排行条目")
-public class HotProductRankSnapshot {
+public class HotProductRankSnapshotTool {
 
     @Schema(description = "商品ID")
     private Long productId;

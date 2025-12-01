@@ -18,7 +18,7 @@ import java.util.Set;
 @NoArgsConstructor
 @AllArgsConstructor
 @Schema(description = "AI 工具可用的用户信息快照")
-public class AdminUserSnapshot {
+public class UserSnapshotTool {
 
     @Schema(description = "用户 ID")
     private Long userId;

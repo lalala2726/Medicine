@@ -1,7 +1,7 @@
 package cn.zhangchuangla.medicine.llm.spi;
 
-import cn.zhangchuangla.medicine.llm.model.tool.client.ClientMallProductOut;
-import cn.zhangchuangla.medicine.llm.model.tool.client.ClientSearchMallProductOut;
+import cn.zhangchuangla.medicine.llm.model.tool.client.MallProductTool;
+import cn.zhangchuangla.medicine.llm.model.tool.client.SearchMallProductTool;
 
 import java.util.List;
 
@@ -10,9 +10,9 @@ import java.util.List;
  */
 public interface ClientDataProvider {
 
-    List<ClientSearchMallProductOut> searchMallProducts(String keyword, int limit);
+    List<SearchMallProductTool> searchMallProducts(String keyword, int limit);
 
-    ClientMallProductOut getMallProductById(Long id);
+    MallProductTool getMallProductById(Long id);
 
-    List<ClientMallProductOut> getMallProductById(List<Long> ids);
+    List<MallProductTool> getMallProductById(List<Long> ids);
 }

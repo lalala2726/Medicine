@@ -13,7 +13,7 @@ import java.math.BigDecimal;
 @NoArgsConstructor
 @AllArgsConstructor
 @Schema(description = "商品退货率统计")
-public class ReturnRateStatSnapshot {
+public class ReturnRateStatSnapshotTool {
 
     @Schema(description = "商品ID")
     private Long productId;

@@ -13,7 +13,7 @@ import java.math.BigDecimal;
 @NoArgsConstructor
 @AllArgsConstructor
 @Schema(description = "支付方式分布")
-public class PaymentDistributionSnapshot {
+public class PaymentDistributionSnapshotTool {
 
     @Schema(description = "支付方式编码")
     private String payType;

@@ -41,7 +41,7 @@ public class AdminAssistantTools {
      * @throws IllegalArgumentException 当订单号对应的订单不存在时抛出
      */
     @Tool(name = "get_order_by_no", description = "按订单号查询订单详情，包含金额、状态、时间节点和商品列表")
-    public AdminOrderSnapshot orderByOrderNo(
+    public OrderSnapshotTool orderByOrderNo(
             @ToolParam(description = "业务订单号，如 O202411250001") String orderNo) {
         return requireProvider().findOrderByOrderNo(orderNo)
                 .orElseThrow(() -> new IllegalArgumentException("未找到对应的订单信息"));
@@ -54,7 +54,7 @@ public class AdminAssistantTools {
      * @return 最近订单快照列表
      */
     @Tool(name = "list_latest_orders", description = "查看最近的订单列表（按创建时间倒序）")
-    public List<AdminOrderSnapshot> latestOrders(
+    public List<OrderSnapshotTool> latestOrders(
             @ToolParam(description = "返回的最大订单条数，默认 10") Integer limit) {
         int safeLimit = limit == null || limit <= 0 ? 10 : Math.min(limit, 50);
         return requireProvider().latestOrders(safeLimit);
@@ -66,7 +66,7 @@ public class AdminAssistantTools {
      * @return 订单概况快照，包含待支付、待发货、售后中、退款金额等信息
      */
     @Tool(name = "get_order_overview", description = "获取订单整体概况：待支付、待发货、售后中、退款金额等")
-    public OrderOverviewSnapshot orderOverview() {
+    public OrderOverviewSnapshotTool orderOverview() {
         return requireProvider().orderOverview();
     }
 
@@ -77,7 +77,7 @@ public class AdminAssistantTools {
      * @return 退款概况快照，包含退款统计和最近退款记录
      */
     @Tool(name = "get_refund_overview", description = "获取退款/售后概况与最近记录")
-    public RefundOverviewSnapshot refundOverview(
+    public RefundOverviewSnapshotTool refundOverview(
             @ToolParam(description = "需要返回的最新记录条数，默认 5") Integer recentLimit) {
         int safeLimit = recentLimit == null || recentLimit <= 0 ? 5 : Math.min(recentLimit, 50);
         return requireProvider().refundOverview(safeLimit);
@@ -117,7 +117,7 @@ public class AdminAssistantTools {
      * @return 分析总览快照，包含用户、订单、退款金额等统计数据
      */
     @Tool(name = "get_analytics_overview", description = "分析-获取运营分析总览数据：用户、订单、退款金额等")
-    public AnalyticsOverviewSnapshot analyticsOverview() {
+    public AnalyticsOverviewSnapshotTool analyticsOverview() {
         return requireProvider().analyticsOverview();
     }
 
@@ -128,7 +128,7 @@ public class AdminAssistantTools {
      * @return 订单趋势点快照列表，便于绘制折线图
      */
     @Tool(name = "get_order_trend", description = "分析-按日/周/月获取订单趋势数据，便于绘制折线图")
-    public List<OrderTrendPointSnapshot> orderTrend(
+    public List<OrderTrendPointSnapshotTool> orderTrend(
             @ToolParam(description = "周期：DAY/WEEK/MONTH，默认 DAY") String period) {
         String safePeriod = period == null || period.isBlank() ? "DAY" : period.trim().toUpperCase();
         return requireProvider().orderTrend(safePeriod);
@@ -141,7 +141,7 @@ public class AdminAssistantTools {
      * @return 状态分布快照列表，包含各状态的订单数量统计
      */
     @Tool(name = "get_order_status_distribution", description = "分析-获取订单状态分布")
-    public List<StatusDistributionSnapshot> orderStatusDistribution() {
+    public List<StatusDistributionSnapshotTool> orderStatusDistribution() {
         return requireProvider().orderStatusDistribution();
     }
 
@@ -151,7 +151,7 @@ public class AdminAssistantTools {
      * @return 支付方式分布快照列表，包含各支付方式的使用统计
      */
     @Tool(name = "get_payment_distribution", description = "分析-获取支付方式分布")
-    public List<PaymentDistributionSnapshot> paymentDistribution() {
+    public List<PaymentDistributionSnapshotTool> paymentDistribution() {
         return requireProvider().paymentDistribution();
     }
 
@@ -162,7 +162,7 @@ public class AdminAssistantTools {
      * @return 热销商品排行快照列表，按销量和销售额排序
      */
     @Tool(name = "get_hot_products", description = "分析-获取热销商品排行榜，按销量和销售额排序")
-    public List<HotProductRankSnapshot> hotProducts(
+    public List<HotProductRankSnapshotTool> hotProducts(
             @ToolParam(description = "返回的商品条数，默认 10") Integer limit) {
         int safeLimit = limit == null || limit <= 0 ? 10 : Math.min(limit, 50);
         return requireProvider().hotProducts(safeLimit);
@@ -175,7 +175,7 @@ public class AdminAssistantTools {
      * @return 退货率统计快照列表，包含售出数和退货率
      */
     @Tool(name = "get_product_return_rates", description = "分析-获取商品退货率排行，含售出数和退货率")
-    public List<ReturnRateStatSnapshot> productReturnRates(
+    public List<ReturnRateStatSnapshotTool> productReturnRates(
             @ToolParam(description = "返回的商品条数，默认 10") Integer limit) {
         int safeLimit = limit == null || limit <= 0 ? 10 : Math.min(limit, 50);
         return requireProvider().productReturnRates(safeLimit);

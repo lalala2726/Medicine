@@ -11,7 +11,7 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 @Schema(description = "订单状态分布")
-public class StatusDistributionSnapshot {
+public class StatusDistributionSnapshotTool {
 
     @Schema(description = "订单状态编码")
     private String status;

@@ -16,7 +16,7 @@ import java.math.BigDecimal;
 @NoArgsConstructor
 @AllArgsConstructor
 @Schema(description = "药品卡片条目")
-public class MedicineCardItem {
+public class MedicineCardItemTool {
 
     @Schema(description = "药品ID，用于跳转详情页")
     private String id;

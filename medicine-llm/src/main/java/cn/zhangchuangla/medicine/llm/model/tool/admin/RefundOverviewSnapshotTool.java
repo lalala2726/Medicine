@@ -11,7 +11,7 @@ import java.util.List;
  */
 @Data
 @Schema(description = "退款/售后总览")
-public class RefundOverviewSnapshot {
+public class RefundOverviewSnapshotTool {
 
     @Schema(description = "待审核数量")
     private long pending;
@@ -32,5 +32,5 @@ public class RefundOverviewSnapshot {
     private BigDecimal refundedAmount;
 
     @Schema(description = "最近的售后记录")
-    private List<RefundRecordSnapshot> recentRecords;
+    private List<RefundRecordSnapshotTool> recentRecords;
 }

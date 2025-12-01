@@ -17,7 +17,7 @@ import java.util.Date;
 @NoArgsConstructor
 @AllArgsConstructor
 @Schema(description = "退款记录快照")
-public class RefundRecordSnapshot {
+public class RefundRecordSnapshotTool {
 
     @Schema(description = "售后单号")
     private String afterSaleNo;

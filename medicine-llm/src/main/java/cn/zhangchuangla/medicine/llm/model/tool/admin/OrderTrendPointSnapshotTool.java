@@ -13,7 +13,7 @@ import java.math.BigDecimal;
 @NoArgsConstructor
 @AllArgsConstructor
 @Schema(description = "订单趋势点")
-public class OrderTrendPointSnapshot {
+public class OrderTrendPointSnapshotTool {
 
     @Schema(description = "分组标签")
     private String label;

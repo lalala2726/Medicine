@@ -16,7 +16,7 @@ import java.math.BigDecimal;
 @NoArgsConstructor
 @AllArgsConstructor
 @Schema(description = "商品卡片条目")
-public class ProductCardItem {
+public class ProductCardItemTool {
 
     @Schema(description = "商品")
     private String id;

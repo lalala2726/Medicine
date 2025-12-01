@@ -16,7 +16,7 @@ import java.math.BigDecimal;
 @NoArgsConstructor
 @AllArgsConstructor
 @Schema(description = "订单整体概况")
-public class OrderOverviewSnapshot {
+public class OrderOverviewSnapshotTool {
 
     @Schema(description = "订单总量")
     private long totalOrders;

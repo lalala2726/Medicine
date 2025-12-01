@@ -1,8 +1,8 @@
 package cn.zhangchuangla.medicine.client.spi;
 
 import cn.zhangchuangla.medicine.client.service.MallProductService;
-import cn.zhangchuangla.medicine.llm.model.tool.client.ClientMallProductOut;
-import cn.zhangchuangla.medicine.llm.model.tool.client.ClientSearchMallProductOut;
+import cn.zhangchuangla.medicine.llm.model.tool.client.MallProductTool;
+import cn.zhangchuangla.medicine.llm.model.tool.client.SearchMallProductTool;
 import cn.zhangchuangla.medicine.llm.spi.ClientDataProvider;
 import cn.zhangchuangla.medicine.model.dto.MallProductDetailDto;
 import lombok.RequiredArgsConstructor;
@@ -21,7 +21,7 @@ public class ClientDataProviderImpl implements ClientDataProvider {
 
 
     @Override
-    public List<ClientSearchMallProductOut> searchMallProducts(String keyword, int limit) {
+    public List<SearchMallProductTool> searchMallProducts(String keyword, int limit) {
         if (keyword.isBlank()) {
             return List.of();
         }
@@ -31,13 +31,13 @@ public class ClientDataProviderImpl implements ClientDataProvider {
     }
 
     @Override
-    public ClientMallProductOut getMallProductById(Long id) {
+    public MallProductTool getMallProductById(Long id) {
         MallProductDetailDto product = mallProductService.getProductAndDrugInfoById(id);
         if (product == null) {
             return null;
         }
         List<String> images = product.getImages();
-        return ClientMallProductOut.builder()
+        return MallProductTool.builder()
                 .id(product.getId())
                 .name(product.getName())
                 .unit(product.getUnit())
@@ -51,7 +51,7 @@ public class ClientDataProviderImpl implements ClientDataProvider {
     }
 
     @Override
-    public List<ClientMallProductOut> getMallProductById(List<Long> ids) {
+    public List<MallProductTool> getMallProductById(List<Long> ids) {
         if (ids == null || ids.isEmpty()) {
             return List.of();
         }

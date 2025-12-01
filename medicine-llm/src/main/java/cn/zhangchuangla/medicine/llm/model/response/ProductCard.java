@@ -2,7 +2,7 @@
 package cn.zhangchuangla.medicine.llm.model.response;
 
 import cn.zhangchuangla.medicine.llm.model.enums.CardType;
-import cn.zhangchuangla.medicine.llm.model.tool.client.MedicineCardItem;
+import cn.zhangchuangla.medicine.llm.model.tool.client.MedicineCardItemTool;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -43,7 +43,7 @@ public class ProductCard implements Card{
         /**
          * 卡片描述，可为空
          */
-        private List<MedicineCardItem> medicines;
+        private List<MedicineCardItemTool> medicines;
     }
 
 }

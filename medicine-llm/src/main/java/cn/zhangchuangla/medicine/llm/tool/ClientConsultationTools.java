@@ -8,9 +8,9 @@ import cn.zhangchuangla.medicine.llm.model.response.ClientChatResponse;
 import cn.zhangchuangla.medicine.llm.model.response.ProductCard;
 import cn.zhangchuangla.medicine.llm.model.response.ProductPurchaseCard;
 import cn.zhangchuangla.medicine.llm.model.response.SymptomSelectorCard;
-import cn.zhangchuangla.medicine.llm.model.tool.client.ClientMallProductOut;
-import cn.zhangchuangla.medicine.llm.model.tool.client.ClientSearchMallProductOut;
-import cn.zhangchuangla.medicine.llm.model.tool.client.MedicineCardItem;
+import cn.zhangchuangla.medicine.llm.model.tool.client.MallProductTool;
+import cn.zhangchuangla.medicine.llm.model.tool.client.MedicineCardItemTool;
+import cn.zhangchuangla.medicine.llm.model.tool.client.SearchMallProductTool;
 import cn.zhangchuangla.medicine.llm.spi.ClientDataProvider;
 import cn.zhangchuangla.medicine.llm.spi.ClientDataProviderLoader;
 import cn.zhangchuangla.medicine.llm.utils.SseMessageInjector;
@@ -52,8 +52,8 @@ public class ClientConsultationTools {
      * @return 商品列表
      */
     @Tool(name = "searchMallProducts", description = "搜索药品信息")
-    public List<ClientSearchMallProductOut> searchMallProducts(@ToolParam(description = "搜索关键字,可以搜索商品(药品)可以搜索生病的症状") String keyword,
-                                                               @ToolParam(description = "最大返回数量,默认为10") int limit) {
+    public List<SearchMallProductTool> searchMallProducts(@ToolParam(description = "搜索关键字,可以搜索商品(药品)可以搜索生病的症状") String keyword,
+                                                          @ToolParam(description = "最大返回数量,默认为10") int limit) {
         if (keyword == null) {
             return List.of();
         }
@@ -67,7 +67,7 @@ public class ClientConsultationTools {
      * @return 商品详细信息
      */
     @Tool(name = "getMallProductById", description = "根据药品ID获取药品详细信息")
-    public ClientMallProductOut getMallProductById(@ToolParam(description = "药品ID") Long id) {
+    public MallProductTool getMallProductById(@ToolParam(description = "药品ID") Long id) {
         if (id == null) {
             return null;
         }
@@ -99,7 +99,7 @@ public class ClientConsultationTools {
             return "未发送，商品ID列表为空";
         }
 
-        List<ClientMallProductOut> products;
+        List<MallProductTool> products;
         try {
             products = requireProvider().getMallProductById(distinctProductIds);
         } catch (Exception ex) {
@@ -109,18 +109,18 @@ public class ClientConsultationTools {
             return "未发送，未查询到对应商品";
         }
 
-        Map<Long, ClientMallProductOut> productMap = products.stream()
+        Map<Long, MallProductTool> productMap = products.stream()
                 .filter(Objects::nonNull)
                 .filter(product -> product.getId() != null)
-                .collect(Collectors.toMap(ClientMallProductOut::getId, product -> product, (left, right) -> left));
+                .collect(Collectors.toMap(MallProductTool::getId, product -> product, (left, right) -> left));
 
-        List<MedicineCardItem> items = distinctProductIds.stream()
+        List<MedicineCardItemTool> items = distinctProductIds.stream()
                 .map(productId -> {
-                    ClientMallProductOut product = productMap.get(productId);
+                    MallProductTool product = productMap.get(productId);
                     if (product == null) {
                         return null;
                     }
-                    return MedicineCardItem.builder()
+                    return MedicineCardItemTool.builder()
                             .id(String.valueOf(product.getId()))
                             .name(product.getName())
                             .image(product.getCoverImage())
@@ -196,7 +196,7 @@ public class ClientConsultationTools {
 
         List<Long> productIds = quantityByProductId.keySet().stream().toList();
 
-        List<ClientMallProductOut> products;
+        List<MallProductTool> products;
         try {
             products = requireProvider().getMallProductById(productIds);
         } catch (Exception ex) {
@@ -206,18 +206,18 @@ public class ClientConsultationTools {
             return "未发送，未查询到对应商品";
         }
 
-        Map<Long, ClientMallProductOut> productMap = products.stream()
+        Map<Long, MallProductTool> productMap = products.stream()
                 .filter(Objects::nonNull)
                 .filter(product -> product.getId() != null)
-                .collect(Collectors.toMap(ClientMallProductOut::getId, product -> product, (left, right) -> left));
+                .collect(Collectors.toMap(MallProductTool::getId, product -> product, (left, right) -> left));
 
-        List<MedicineCardItem> items = productIds.stream()
+        List<MedicineCardItemTool> items = productIds.stream()
                 .map(productId -> {
-                    ClientMallProductOut product = productMap.get(productId);
+                    MallProductTool product = productMap.get(productId);
                     if (product == null) {
                         return null;
                     }
-                    return MedicineCardItem.builder()
+                    return MedicineCardItemTool.builder()
                             .id(String.valueOf(product.getId()))
                             .name(product.getName())
                             .image(product.getCoverImage())

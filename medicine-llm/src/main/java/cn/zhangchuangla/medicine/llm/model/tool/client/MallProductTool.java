@@ -17,7 +17,7 @@ import java.math.BigDecimal;
 @AllArgsConstructor
 @NoArgsConstructor
 @Builder
-public class ClientMallProductOut {
+public class MallProductTool {
 
     /**
      * 商品ID
