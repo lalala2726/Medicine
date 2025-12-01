@@ -9,7 +9,6 @@ import org.springframework.ai.tool.annotation.ToolParam;
 import org.springframework.stereotype.Component;
 
 import java.util.List;
-import java.util.Map;
 
 /**
  * 面向大模型的后台数据工具
@@ -24,17 +23,6 @@ public class AdminAssistantTools {
         this.providerLoader = providerLoader;
     }
 
-    // ==================== 基础统计 ====================
-
-    @Tool(name = "current_datetime", description = "获取系统当前时间。当用户提到'今天'、'本月'、'最近'等相对时间时，必须先调用此工具确认基准时间。")
-    public Map<String, String> currentDateTime() {
-        java.time.ZonedDateTime now = java.time.ZonedDateTime.now(java.time.ZoneId.of("Asia/Shanghai"));
-        return Map.of(
-                "iso", now.toString(),
-                "date", now.toLocalDate().toString(),
-                "time", now.toLocalTime().withNano(0).toString()
-        );
-    }
 
     @Tool(name = "count_total_users", description = "统计平台当前的总注册用户数。仅用于回答用户总量的概览问题。")
     public long totalUsers() {
