@@ -30,7 +30,7 @@ public class RouteNode implements NodeAction {
                 .user(summary)
                 .call()
                 .content();
-        if (content == null){
+        if (content == null) {
             throw new LLMParamException("路由结果为空");
         }
         return Map.of("route", content);

@@ -17,12 +17,11 @@ public enum EventType {
     TOOL_CALL_START("tool_call_start"),
     TOOL_CALL_END("tool_call_end");
 
-    private final String value;
-
     private static final Map<String, EventType> VALUE_MAPPING = Map.of(
             TOOL_CALL_START.value, TOOL_CALL_START,
             TOOL_CALL_END.value, TOOL_CALL_END
     );
+    private final String value;
 
     EventType(String value) {
         this.value = value;
