@@ -45,19 +45,19 @@ public class ClientConsultationTools {
      * 搜索商城药品
      */
     @Tool(name = "searchMallProducts", description = """
-            【功能】：根据关键字搜索商城内的药品。
+            <功能>：根据关键字搜索商城内的药品。
             
-            【何时使用】：
+            <何时使用>：
             1. 当用户描述身体不适（如“头痛”、“发烧”）需要寻找治疗药物时。
             2. 当用户直接询问特定药品名称（如“布洛芬”）时。
             
-            【何时禁止使用】：
+            <何时禁止使用>：
             - 当用户已经选定商品准备购买时。
             - 当用户只是进行日常闲聊（如打招呼）时。
             """)
     @ToolCallStage(start = "正在搜索商城药品", end = "商城药品搜索完成")
     public List<SearchMallProductTool> searchMallProducts(
-            @ToolParam(description = "【思维链】：请用一句话解释为什么现在需要搜索药品（例如：用户说头痛，需要查找止痛药）。此参数仅用于辅助思考，不影响逻辑。") String explanation,
+            @ToolParam(description = "<思维链>：请用一句话解释为什么现在需要搜索药品（例如：用户说头痛，需要查找止痛药）。此参数仅用于辅助思考，不影响逻辑。") String explanation,
             @ToolParam(description = "搜索关键字。可以是具体的症状（如'感冒'）或药品名。") String keyword,
             @ToolParam(description = "最大返回数量，默认为10") int limit) {
 
@@ -84,16 +84,16 @@ public class ClientConsultationTools {
      * 发送症状选择器
      */
     @Tool(name = "sendSymptomSelector", description = """
-            【功能】：发送一个交互式症状选择卡片供用户点击。
+            <功能>：发送一个交互式症状选择卡片供用户点击。
             
-            【何时使用】：
-            - 【关键】：当用户描述了一个笼统的病情（如“我发烧了”），你需要进一步确认具体表现（如“体温多少？”、“有无乏力？”）时，**必须优先使用此工具**，而不是让用户打字。
+            <何时使用>：
+            - <关键>：当用户描述了一个笼统的病情（如“我发烧了”），你需要进一步确认具体表现（如“体温多少？”、“有无乏力？”）时，**必须优先使用此工具**，而不是让用户打字。
             
-            【目标】：
+            <目标>：
             - 获取结构化的症状信息，以便进行更精准的药品推荐。
             """)
     public String sendSymptomSelector(
-            @ToolParam(description = "【思维链】：解释为什么需要细化症状。") String explanation,
+            @ToolParam(description = "<思维链>：解释为什么需要细化症状。") String explanation,
             @ToolParam(description = "根据用户初步描述生成的候选症状列表，例如 ['38度以上', '畏寒', '咽喉痛']。") List<String> symptoms,
             @ToolParam(description = "卡片标题，例如'请选择您的具体症状'。") String title) {
 
@@ -121,12 +121,12 @@ public class ClientConsultationTools {
      * 发送仅展示的商品卡片
      */
     @Tool(name = "sendProductCard", description = """
-            【功能】：向用户发送一组药品的展示卡片（只读，不可直接购买）。
+            <功能>：向用户发送一组药品的展示卡片（只读，不可直接购买）。
             
-            【何时使用】：
+            <何时使用>：
             - 在调用 'searchMallProducts' 搜索到结果后，用于向用户展示推荐的药品。
             
-            【约束】：
+            <约束>：
             - 此卡片不具备购买功能。如果用户明确表示要购买，请使用 'snedProductPurchaseCard'。
             - 必须传入有效的商品ID列表。
             """)
@@ -209,17 +209,17 @@ public class ClientConsultationTools {
      * 发送可下单的商品购买卡片
      */
     @Tool(name = "snedProductPurchaseCard", description = """
-            【功能】：发送带有“立即购买”按钮的结算卡片。
+            <功能>：发送带有“立即购买”按钮的结算卡片。
             
-            【何时使用】：
+            <何时使用>：
             - 仅在用户**明确表达购买意向**时使用（例如：“我要买这个”、“帮我下单”、“来两盒”）。
             
-            【参数要求】：
+            <参数要求>：
             - 必须准确解析出用户想要的商品ID和对应的数量（quantity）。
             - 如果用户没说数量，默认为 1。
             """)
     public String snedProductPurchaseCard(
-            @ToolParam(description = "【思维链】：确认用户是否明确说了'购买'、'下单'等词汇。") String explanation,
+            @ToolParam(description = "<思维链>：确认用户是否明确说了'购买'、'下单'等词汇。") String explanation,
             @ToolParam(description = "购买清单：包含商品ID和购买数量。") List<ProductPurchaseCardQuantity> request,
             @ToolParam(description = "卡片标题，例如'请确认订单'") String title,
             @ToolParam(description = "卡片描述，例如'为您生成的购买清单'") String description) {
@@ -306,9 +306,9 @@ public class ClientConsultationTools {
      * 打开用户订单列表
      */
     @Tool(name = "openUserOrderList", description = """
-            【功能】：在前端触发事件，弹出用户的订单选择列表。
+            <功能>：在前端触发事件，弹出用户的订单选择列表。
             
-            【何时使用】：
+            <何时使用>：
             - 当用户询问订单相关问题（如“我的快递呢”、“我要退款”），但**没有提供具体的订单号**时。
             - 引导用户手动选择订单。
             """)
@@ -328,12 +328,12 @@ public class ClientConsultationTools {
      * 获取订单详情
      */
     @Tool(name = "getOrderDetailByOrderNo", description = """
-            【功能】：根据订单号查询详情。
+            <功能>：根据订单号查询详情。
             
-            【何时使用】：
+            <何时使用>：
             - 当用户提供了具体的订单号（特征：通常以 'o' 开头，如 'o2024...'）时。
             
-            【后续操作】：
+            <后续操作>：
             - 获取信息后，请简述订单状态，但**不要**直接列出所有敏感隐私信息，除非用户追问。
             """)
     @ToolCallStage(start = "正在查询订单详情", end = "订单详情查询完成")
