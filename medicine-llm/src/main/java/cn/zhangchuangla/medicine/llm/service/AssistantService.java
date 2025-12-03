@@ -5,6 +5,7 @@ import cn.zhangchuangla.medicine.llm.model.response.ChatResponse;
 import cn.zhangchuangla.medicine.llm.prompt.SystemPrompt;
 import cn.zhangchuangla.medicine.llm.tool.AdminAssistantTools;
 import cn.zhangchuangla.medicine.llm.tool.ClientConsultationTools;
+import cn.zhangchuangla.medicine.llm.tool.CommonTools;
 import cn.zhangchuangla.medicine.llm.utils.SseMessageInjector;
 import cn.zhangchuangla.medicine.llm.utils.SseStreamBridge;
 import lombok.RequiredArgsConstructor;
@@ -30,6 +31,7 @@ public class AssistantService {
     private final SseStreamBridge sseStreamBridge;
     private final SseMessageInjector sseMessageInjector;
     private final AdminAssistantTools adminAssistantTools;
+    private final CommonTools commonTools;
 
     public SseEmitter ClientConsultation(String question) {
         return simpleConsultationSession(question).emitter();
@@ -56,7 +58,7 @@ public class AssistantService {
 
     public SseEmitter chat(String userMessage) {
         Flux<ChatResponse> stream = chatClient.prompt()
-                .tools(adminAssistantTools)
+                .tools(adminAssistantTools, commonTools)
                 .system(SystemPrompt.ADMIN_ASSISTANT_PROMPT)
                 .user(userMessage)
                 .stream()
@@ -73,6 +75,7 @@ public class AssistantService {
         ChatResponse response = new ChatResponse();
         response.setRole(MessageRole.ASSISTANT);
         response.setContent(content);
+        response.setTimestamp(System.currentTimeMillis());
         return response;
     }
 }

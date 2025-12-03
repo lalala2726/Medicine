@@ -15,13 +15,13 @@
     </select>
 
     <select id="orderAmountStats" resultType="cn.zhangchuangla.medicine.admin.model.vo.analytics.OrderAmountStats">
-        SELECT COUNT(*)                                                                                             AS totalOrders,
+        SELECT COUNT(*)            AS totalOrders,
                SUM(CASE
                        WHEN paid = 1 AND order_status NOT IN ('CANCELLED', 'REFUNDED') THEN 1
-                       ELSE 0 END)                                                                                  AS paidOrders,
+                       ELSE 0 END) AS paidOrders,
                SUM(CASE
                        WHEN paid = 1 AND order_status NOT IN ('CANCELLED', 'REFUNDED') THEN pay_amount
-                       ELSE 0 END)                                                                                  AS totalAmount,
+                       ELSE 0 END) AS totalAmount,
                CASE
                    WHEN SUM(CASE WHEN paid = 1 AND order_status NOT IN ('CANCELLED', 'REFUNDED') THEN 1 ELSE 0 END) = 0
                        THEN 0
@@ -29,7 +29,7 @@
                                 WHEN paid = 1 AND order_status NOT IN ('CANCELLED', 'REFUNDED') THEN pay_amount
                                 ELSE 0 END) /
                         SUM(CASE WHEN paid = 1 AND order_status NOT IN ('CANCELLED', 'REFUNDED') THEN 1 ELSE 0 END)
-                   END                                                                                              AS averageAmount
+                   END             AS averageAmount
         FROM mall_order
         WHERE is_deleted = 0
     </select>

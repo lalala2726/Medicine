@@ -15,7 +15,9 @@ import java.util.concurrent.atomic.AtomicReference;
 @Component
 public class SseStreamBridge {
 
-    private static final long DEFAULT_TIMEOUT_MS = 30_000L;
+    // todo 后续优化,这边设置心跳机制
+
+    private static final long DEFAULT_TIMEOUT_MS = 60 * 60 * 1000L;
 
     private static void sendSafe(SseEmitter emitter, ChatResponse content) {
         try {
