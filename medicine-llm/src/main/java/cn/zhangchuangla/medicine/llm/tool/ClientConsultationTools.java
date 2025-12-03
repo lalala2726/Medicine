@@ -1,5 +1,6 @@
 package cn.zhangchuangla.medicine.llm.tool;
 
+import cn.zhangchuangla.medicine.llm.annotation.ToolCallStage;
 import cn.zhangchuangla.medicine.llm.model.enums.*;
 import cn.zhangchuangla.medicine.llm.model.response.ChatResponse;
 import cn.zhangchuangla.medicine.llm.model.response.ProductCard;
@@ -11,7 +12,6 @@ import cn.zhangchuangla.medicine.llm.model.tool.client.OrderDetailTool;
 import cn.zhangchuangla.medicine.llm.model.tool.client.SearchMallProductTool;
 import cn.zhangchuangla.medicine.llm.spi.ClientDataProvider;
 import cn.zhangchuangla.medicine.llm.spi.ClientDataProviderLoader;
-import cn.zhangchuangla.medicine.llm.tool.annotation.ToolCallStage;
 import cn.zhangchuangla.medicine.llm.utils.SseMessageInjector;
 import lombok.Data;
 import lombok.RequiredArgsConstructor;

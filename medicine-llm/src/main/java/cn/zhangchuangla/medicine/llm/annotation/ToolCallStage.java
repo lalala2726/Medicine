@@ -1,4 +1,4 @@
-package cn.zhangchuangla.medicine.llm.tool.annotation;
+package cn.zhangchuangla.medicine.llm.annotation;
 
 import java.lang.annotation.*;
 

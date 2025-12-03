@@ -1,7 +1,7 @@
-package cn.zhangchuangla.medicine.llm.tool.aspect;
+package cn.zhangchuangla.medicine.llm.aspect;
 
+import cn.zhangchuangla.medicine.llm.annotation.ToolCallStage;
 import cn.zhangchuangla.medicine.llm.model.enums.EventType;
-import cn.zhangchuangla.medicine.llm.tool.annotation.ToolCallStage;
 import cn.zhangchuangla.medicine.llm.utils.SseMessageInjector;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;

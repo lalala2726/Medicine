@@ -1,10 +1,10 @@
 package cn.zhangchuangla.medicine.llm.tool;
 
+import cn.zhangchuangla.medicine.llm.annotation.ToolCallStage;
 import cn.zhangchuangla.medicine.llm.model.tool.ProductSnapshot;
 import cn.zhangchuangla.medicine.llm.model.tool.admin.*;
 import cn.zhangchuangla.medicine.llm.spi.AdminDataProvider;
 import cn.zhangchuangla.medicine.llm.spi.AdminDataProviderLoader;
-import cn.zhangchuangla.medicine.llm.tool.annotation.ToolCallStage;
 import lombok.RequiredArgsConstructor;
 import org.springframework.ai.tool.annotation.Tool;
 import org.springframework.ai.tool.annotation.ToolParam;
