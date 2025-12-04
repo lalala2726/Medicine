@@ -19,7 +19,7 @@ import java.util.List;
  * 运营分析控制器
  * 提供运营数据分析相关的接口，包括订单趋势、商品销售等统计数据
  *
- * @author zhangchuang
+ * @author Chuang
  */
 @RestController
 @RequestMapping("/analytics")
