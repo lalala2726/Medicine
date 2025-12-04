@@ -5,14 +5,14 @@
 <mapper namespace="cn.zhangchuangla.medicine.admin.mapper.KnowledgeBaseMapper">
 
     <resultMap id="BaseResultMap" type="cn.zhangchuangla.medicine.model.entity.KnowledgeBase">
-            <id property="id" column="id" />
-            <result property="name" column="name" />
-            <result property="cover" column="cover" />
-            <result property="description" column="description" />
-            <result property="createTime" column="create_time" />
-            <result property="updateTime" column="update_time" />
-            <result property="createBy" column="create_by" />
-            <result property="updateBy" column="update_by" />
+        <id property="id" column="id"/>
+        <result property="name" column="name"/>
+        <result property="cover" column="cover"/>
+        <result property="description" column="description"/>
+        <result property="createTime" column="create_time"/>
+        <result property="updateTime" column="update_time"/>
+        <result property="createBy" column="create_by"/>
+        <result property="updateBy" column="update_by"/>
     </resultMap>
 
     <sql id="Base_Column_List">
