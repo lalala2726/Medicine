@@ -12,6 +12,7 @@ import io.milvus.v2.service.collection.request.DropCollectionReq;
 import io.milvus.v2.service.collection.request.HasCollectionReq;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.ai.vectorstore.milvus.MilvusVectorStore;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
 
@@ -27,9 +28,11 @@ import java.util.List;
 @RequiredArgsConstructor
 public class MilvusKnowledgeBaseServiceImpl implements MilvusKnowledgeBaseService {
 
-    private static final String PRIMARY_FIELD = "kb_id";
-    private static final String VECTOR_FIELD = "embedding";
-    private static final String CONTENT_FIELD = "content";
+    private static final String PRIMARY_FIELD = MilvusVectorStore.DOC_ID_FIELD_NAME;
+    private static final String VECTOR_FIELD = MilvusVectorStore.EMBEDDING_FIELD_NAME;
+    private static final String CONTENT_FIELD = MilvusVectorStore.CONTENT_FIELD_NAME;
+    private static final String METADATA_FIELD = MilvusVectorStore.METADATA_FIELD_NAME;
+    private static final int DOC_ID_MAX_LENGTH = 64;
 
     private final MilvusClientV2 milvusClient;
     private final MilvusProperties milvusProperties;
@@ -51,15 +54,16 @@ public class MilvusKnowledgeBaseServiceImpl implements MilvusKnowledgeBaseServic
                 .collectionName(collectionName)
                 .build());
         if (exists) {
-            log.info("Milvus collection [{}] already exists for knowledge base {}", collectionName, knowledgeBaseId);
+            log.info("Milvus collection [{}] already exists for knowledge base {}, skip recreate. vectorDimension={}", collectionName, knowledgeBaseId, milvusProperties.getVectorDimension());
             return;
         }
 
-        // 构建集合 schema：主键 + 向量字段 + 文本内容字段
+        // 构建集合 schema：文档主键（VarChar） + 嵌入向量 + 文本内容 + 元信息(JSON)
         CreateCollectionReq.CollectionSchema schema = milvusClient.createSchema();
         schema.addField(AddFieldReq.builder()
                 .fieldName(PRIMARY_FIELD)
-                .dataType(DataType.Int64)
+                .dataType(DataType.VarChar)
+                .maxLength(DOC_ID_MAX_LENGTH)
                 .isPrimaryKey(true)
                 .autoID(false)
                 .build());
@@ -72,6 +76,11 @@ public class MilvusKnowledgeBaseServiceImpl implements MilvusKnowledgeBaseServic
                 .fieldName(CONTENT_FIELD)
                 .dataType(DataType.VarChar)
                 .maxLength(milvusProperties.getContentMaxLength())
+                .isNullable(true)
+                .build());
+        schema.addField(AddFieldReq.builder()
+                .fieldName(METADATA_FIELD)
+                .dataType(DataType.JSON)
                 .isNullable(true)
                 .build());
 
@@ -94,7 +103,7 @@ public class MilvusKnowledgeBaseServiceImpl implements MilvusKnowledgeBaseServic
                 .indexParams(indexParams)
                 .build());
 
-        log.info("Created Milvus collection [{}] for knowledge base {}", collectionName, knowledgeBaseId);
+        log.info("Created Milvus collection [{}] for knowledge base {}, vectorDimension={}", collectionName, knowledgeBaseId, milvusProperties.getVectorDimension());
     }
 
     @Override

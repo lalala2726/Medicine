@@ -2,6 +2,7 @@
 package cn.zhangchuangla.medicine.admin.controller;
 
 import cn.zhangchuangla.medicine.admin.model.request.KnowledgeBaseAddRequest;
+import cn.zhangchuangla.medicine.admin.model.request.KnowledgeBaseImportRequest;
 import cn.zhangchuangla.medicine.admin.model.request.KnowledgeBaseListRequest;
 import cn.zhangchuangla.medicine.admin.model.request.KnowledgeBaseUpdateRequest;
 import cn.zhangchuangla.medicine.admin.model.vo.KnowledgeBaseListVo;
@@ -110,6 +111,21 @@ public class KnowledgeBaseController extends BaseController {
     @Operation(summary = "删除知识库")
     public AjaxResult<Void> deleteKnowledgeBase(@PathVariable("id") Integer id) {
         boolean result = knowledgeBaseService.deleteKnowledgeBase(id);
+        return toAjax(result);
+    }
+
+    /**
+     * 导入知识库
+     * <p>
+     * 导入知识库文件，并解析为知识库记录
+     *
+     * @param request 导入请求参数，包含导入的文件信息
+     * @return 导入操作的结果
+     */
+    @PostMapping("/import")
+    @Operation(summary = "导入知识库")
+    public AjaxResult<Void> importKnowledgeBase(@Validated @RequestBody KnowledgeBaseImportRequest request) {
+        boolean result = knowledgeBaseService.importKnowledgeBase(request);
         return toAjax(result);
     }
 

@@ -64,7 +64,8 @@ milvus:
   uri: http://localhost:19530
   database: medicine
   collection-prefix: kb_
-  vector-dimension: 1536
+  # 与嵌入模型维度保持一致（当前 text-embedding-v3 配置为 1024 维）
+  vector-dimension: 1024
   content-max-length: 2048
   metric-type: COSINE
 

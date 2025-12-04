@@ -1,7 +1,10 @@
 package cn.zhangchuangla.medicine.admin.common.storage.service.impl;
 
 import cn.zhangchuangla.medicine.admin.common.storage.config.MinioConfig;
+import cn.zhangchuangla.medicine.admin.common.storage.model.MinioFileObject;
 import cn.zhangchuangla.medicine.admin.common.storage.service.MinioStorageService;
+import cn.zhangchuangla.medicine.common.core.enums.ResponseCode;
+import cn.zhangchuangla.medicine.common.core.exception.ServiceException;
 import io.minio.*;
 import io.minio.messages.Bucket;
 import lombok.RequiredArgsConstructor;
@@ -9,9 +12,12 @@ import lombok.extern.slf4j.Slf4j;
 import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
 import org.springframework.stereotype.Service;
+import org.springframework.util.StringUtils;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.InputStream;
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.util.List;
 
 /**
@@ -136,6 +142,38 @@ public class MinioStorageServiceImpl implements MinioStorageService {
         }
     }
 
+    @Override
+    public MinioFileObject fetchFileByUrl(String fileUrl) {
+        // 统一从 MinIO URL 解析 bucket/object，再读取文件内容，供业务复用
+        MinioLocation location = parseLocation(fileUrl);
+        try {
+            // 先读取对象属性，拿到 Content-Type 便于后续业务做类型判断
+            StatObjectResponse statObject = minioClient.statObject(
+                    StatObjectArgs.builder()
+                            .bucket(location.bucket())
+                            .object(location.object())
+                            .build()
+            );
+            try (InputStream objectStream = minioClient.getObject(
+                    GetObjectArgs.builder()
+                            .bucket(location.bucket())
+                            .object(location.object())
+                            .build())) {
+                byte[] data = objectStream.readAllBytes();
+                return MinioFileObject.builder()
+                        .bucket(location.bucket())
+                        .objectName(location.object())
+                        .filename(extractFilename(location.object()))
+                        .contentType(statObject != null ? statObject.contentType() : null)
+                        .data(data)
+                        .build();
+            }
+        } catch (Exception ex) {
+            log.error("Failed to fetch file from MinIO, url: {}", fileUrl, ex);
+            throw new ServiceException(ResponseCode.OPERATION_ERROR, "读取文件失败，请稍后重试");
+        }
+    }
+
     @NotNull
     @Contract("null -> fail")
     private String normalizeEndpoint(String endpoint) {
@@ -143,6 +181,45 @@ public class MinioStorageServiceImpl implements MinioStorageService {
             throw new IllegalStateException("minio.endpoint 未配置");
         }
         return endpoint.endsWith("/") ? endpoint.substring(0, endpoint.length() - 1) : endpoint;
+    }
+
+    /**
+     * 将完整的 MinIO URL 拆解为 bucket 与 object，方便后续下载。
+     */
+    private MinioLocation parseLocation(String fileUrl) {
+        try {
+            URI uri = new URI(fileUrl);
+            String path = uri.getPath();
+            if (!StringUtils.hasText(path)) {
+                throw new ServiceException(ResponseCode.PARAM_ERROR, "文件路径格式不正确");
+            }
+
+            String normalizedPath = path.startsWith("/") ? path.substring(1) : path;
+            int firstSlash = normalizedPath.indexOf('/');
+            if (firstSlash <= 0 || firstSlash == normalizedPath.length() - 1) {
+                throw new ServiceException(ResponseCode.PARAM_ERROR, "文件路径格式不正确");
+            }
+
+            String bucket = normalizedPath.substring(0, firstSlash);
+            String object = normalizedPath.substring(firstSlash + 1);
+            if (!StringUtils.hasText(bucket) || !StringUtils.hasText(object)) {
+                throw new ServiceException(ResponseCode.PARAM_ERROR, "文件路径格式不正确");
+            }
+            return new MinioLocation(bucket, object);
+        } catch (URISyntaxException ex) {
+            throw new ServiceException(ResponseCode.PARAM_ERROR, "文件地址格式不正确");
+        }
+    }
+
+    private String extractFilename(String objectName) {
+        if (!StringUtils.hasText(objectName)) {
+            return "unknown";
+        }
+        int lastSlash = objectName.lastIndexOf('/');
+        return lastSlash >= 0 ? objectName.substring(lastSlash + 1) : objectName;
+    }
+
+    private record MinioLocation(String bucket, String object) {
     }
 
 }

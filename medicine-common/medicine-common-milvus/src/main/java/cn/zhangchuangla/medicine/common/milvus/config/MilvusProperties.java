@@ -37,7 +37,7 @@ public class MilvusProperties {
     /**
      * 向量维度，需与后续嵌入模型维度保持一致
      */
-    private Integer vectorDimension = 1536;
+    private Integer vectorDimension = 1024;
 
     /**
      * 文本字段最大长度

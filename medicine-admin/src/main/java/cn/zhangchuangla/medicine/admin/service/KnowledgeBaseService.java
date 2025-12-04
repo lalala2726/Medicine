@@ -1,6 +1,7 @@
 package cn.zhangchuangla.medicine.admin.service;
 
 import cn.zhangchuangla.medicine.admin.model.request.KnowledgeBaseAddRequest;
+import cn.zhangchuangla.medicine.admin.model.request.KnowledgeBaseImportRequest;
 import cn.zhangchuangla.medicine.admin.model.request.KnowledgeBaseListRequest;
 import cn.zhangchuangla.medicine.admin.model.request.KnowledgeBaseUpdateRequest;
 import cn.zhangchuangla.medicine.model.entity.KnowledgeBase;
@@ -51,4 +52,12 @@ public interface KnowledgeBaseService extends IService<KnowledgeBase> {
      * @return 知识库详情
      */
     KnowledgeBase getKnowledgeBase(Integer id);
+
+    /**
+     * 导入知识库
+     *
+     * @param request 导入参数
+     * @return 是否导入成功
+     */
+    boolean importKnowledgeBase(KnowledgeBaseImportRequest request);
 }
