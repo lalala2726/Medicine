@@ -285,8 +285,7 @@ public class KnowledgeBaseServiceImpl extends ServiceImpl<KnowledgeBaseMapper, K
             // 先写向量，确保成功后再批量入库 chunk 记录
             vectorStore.add(vectorDocuments);
         } catch (Exception ex) {
-            log.error("向量写入失败",ex);
-            log.error("删除向量失败",ex);
+            log.error("向量写入失败", ex);
             throw new ServiceException(ResponseCode.OPERATION_ERROR, "向量写入失败，请稍后重试");
         }
 
