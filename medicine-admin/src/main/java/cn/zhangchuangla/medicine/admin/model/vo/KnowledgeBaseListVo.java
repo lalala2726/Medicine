@@ -24,9 +24,6 @@ public class KnowledgeBaseListVo {
     @Schema(description = "封面", example = "https://example.com/cover.jpg")
     private String cover;
 
-    @Schema(description = "创建时间")
-    private Date createTime;
-
     @Schema(description = "更新时间")
     private Date updateTime;
 }
