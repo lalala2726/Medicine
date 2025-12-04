@@ -14,6 +14,7 @@ import cn.zhangchuangla.medicine.common.core.enums.ResponseCode;
 import cn.zhangchuangla.medicine.common.core.exception.ServiceException;
 import cn.zhangchuangla.medicine.common.milvus.config.MilvusProperties;
 import cn.zhangchuangla.medicine.common.milvus.service.MilvusKnowledgeBaseService;
+import cn.zhangchuangla.medicine.common.rabbitmq.publisher.KnowledgeBaseIngestPublisher;
 import cn.zhangchuangla.medicine.common.security.base.BaseService;
 import cn.zhangchuangla.medicine.common.security.utils.SecurityUtils;
 import cn.zhangchuangla.medicine.model.entity.KbDocument;
@@ -29,20 +30,24 @@ import io.milvus.param.IndexType;
 import io.milvus.param.MetricType;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.jetbrains.annotations.NotNull;
 import org.springframework.ai.document.Document;
 import org.springframework.ai.embedding.EmbeddingModel;
+import org.springframework.ai.reader.tika.TikaDocumentReader;
 import org.springframework.ai.tokenizer.JTokkitTokenCountEstimator;
 import org.springframework.ai.tokenizer.TokenCountEstimator;
 import org.springframework.ai.transformer.splitter.TokenTextSplitter;
 import org.springframework.ai.vectorstore.milvus.MilvusVectorStore;
 import org.springframework.beans.BeanUtils;
+import org.springframework.core.io.ByteArrayResource;
+import org.springframework.core.io.Resource;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.CollectionUtils;
 import org.springframework.util.StringUtils;
 
-import java.nio.charset.StandardCharsets;
 import java.util.*;
+import java.util.stream.Collectors;
 
 /**
  * 知识库 Service 实现
@@ -56,10 +61,15 @@ public class KnowledgeBaseServiceImpl extends ServiceImpl<KnowledgeBaseMapper, K
     /**
      * 文本分片的默认参数：尽量让每片在 500 tokens 左右，便于向量召回。
      */
-    private static final int DEFAULT_CHUNK_SIZE = 500;
+    private static final int DEFAULT_CHUNK_SIZE = 400;
     private static final int MIN_CHUNK_SIZE_CHARS = 120;
     private static final int MIN_CHUNK_LENGTH_TO_EMBED = 80;
     private static final int MAX_CHUNKS = 5000;
+    private static final int EMBEDDING_BATCH_SIZE = 10;
+    /**
+     * 防止写入 Milvus 的 VarChar 超长，按字符截断；65535 是常见上限，这里预留安全余量。
+     */
+    private static final int MAX_CHUNK_CHAR_LENGTH = 2000;
 
     private final MilvusKnowledgeBaseService milvusKnowledgeBaseService;
     private final MinioStorageService minioStorageService;
@@ -67,6 +77,7 @@ public class KnowledgeBaseServiceImpl extends ServiceImpl<KnowledgeBaseMapper, K
     private final KbDocumentChunkService kbDocumentChunkService;
     private final EmbeddingModel embeddingModel;
     private final MilvusProperties milvusProperties;
+    private final KnowledgeBaseIngestPublisher knowledgeBaseIngestPublisher;
 
     @Override
     public Page<KnowledgeBase> listKnowledgeBase(KnowledgeBaseListRequest request) {
@@ -123,7 +134,17 @@ public class KnowledgeBaseServiceImpl extends ServiceImpl<KnowledgeBaseMapper, K
         if (CollectionUtils.isEmpty(request.getFileUrls())) {
             throw new ServiceException(ResponseCode.PARAM_ERROR, "请至少提供一个文本文件地址");
         }
+        knowledgeBaseIngestPublisher.publish(knowledgeBase.getId(), request.getFileUrls());
+        return true;
+    }
 
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public void ingestKnowledgeBase(Integer knowledgeBaseId, List<String> fileUrls) {
+        KnowledgeBase knowledgeBase = getKnowledgeBase(knowledgeBaseId);
+        if (CollectionUtils.isEmpty(fileUrls)) {
+            throw new ServiceException(ResponseCode.PARAM_ERROR, "请至少提供一个文本文件地址");
+        }
         // 预先准备好分片与 token 统计工具，保证所有文件使用一致策略
         // Spring AI 的 TokenTextSplitter 会按照 token 近似长度切片，避免过长文本直接入库
         TokenTextSplitter splitter = TokenTextSplitter.builder()
@@ -143,10 +164,9 @@ public class KnowledgeBaseServiceImpl extends ServiceImpl<KnowledgeBaseMapper, K
         MilvusVectorStore vectorStore = buildVectorStore(milvusServiceClient, knowledgeBase.getId());
         try {
             vectorStore.afterPropertiesSet();
-            for (String fileUrl : request.getFileUrls()) {
-                importTxtFile(knowledgeBase.getId(), fileUrl, splitter, tokenCountEstimator, vectorStore);
+            for (String fileUrl : fileUrls) {
+                importFile(knowledgeBase.getId(), fileUrl, splitter, tokenCountEstimator, vectorStore);
             }
-            return true;
         } catch (Exception ex) {
             log.error("知识库导入失败", ex);
             throw ex instanceof ServiceException ? (ServiceException) ex
@@ -195,45 +215,46 @@ public class KnowledgeBaseServiceImpl extends ServiceImpl<KnowledgeBaseMapper, K
     }
 
     /**
-     * 单个 TXT 的导入流程：
-     * 1. 从 MinIO 读取文件 -> 文本字符串
+     * 单个文件的导入流程：
+     * 1. 从 MinIO 读取文件 -> 通过 Tika 抽取纯文本
      * 2. 使用 TokenTextSplitter 切片，添加 chunk 序号与元数据
      * 3. 调用 Spring AI 向量存储，先生成 embedding 再写入 Milvus
      * 4. 将文档与切片元数据落库，保证向量与数据库一一对应
      */
-    private void importTxtFile(Integer kbId,
-                               String fileUrl,
-                               TokenTextSplitter splitter,
-                               TokenCountEstimator tokenCountEstimator,
-                               MilvusVectorStore vectorStore) {
+    private void importFile(Integer kbId,
+                            String fileUrl,
+                            TokenTextSplitter splitter,
+                            TokenCountEstimator tokenCountEstimator,
+                            MilvusVectorStore vectorStore) {
         if (!StringUtils.hasText(fileUrl)) {
             throw new ServiceException(ResponseCode.PARAM_ERROR, "文件地址不能为空");
         }
 
         MinioFileObject fileObject = minioStorageService.fetchFileByUrl(fileUrl);
-        if (!isTxtFile(fileObject)) {
-            throw new ServiceException(ResponseCode.PARAM_ERROR, "当前仅支持 txt 文件导入");
+        Document extracted = parseDocumentWithTika(fileObject);
+        if (!StringUtils.hasText(extracted.getText())) {
+            throw new ServiceException(ResponseCode.PARAM_ERROR, "未能解析出文本内容，请确认文件是否受支持或文本是否为空");
         }
 
-        String content = new String(fileObject.getData(), StandardCharsets.UTF_8);
-        if (!StringUtils.hasText(content)) {
-            throw new ServiceException(ResponseCode.PARAM_ERROR, "文本内容为空，无法导入");
+        long documentId = IdWorker.getId();
+        Map<String, Object> metadata = new HashMap<>();
+        if (!CollectionUtils.isEmpty(extracted.getMetadata())) {
+            metadata.putAll(extracted.getMetadata());
         }
+        metadata.put("kbId", kbId);
+        metadata.put("docId", documentId);
+        metadata.put("filename", fileObject.getFilename());
+        metadata.put("objectPath", fileObject.getObjectName());
 
         // 构造基础 Document（带文件元数据），便于切片后继承这些 metadata
-        long documentId = IdWorker.getId();
         Document baseDoc = Document.builder()
                 .id(String.valueOf(documentId))
-                .text(content)
-                .metadata(Map.of(
-                        "kbId", kbId,
-                        "docId", documentId,
-                        "filename", fileObject.getFilename(),
-                        "objectPath", fileObject.getObjectName()
-                ))
+                .text(extracted.getText())
+                .metadata(metadata)
                 .build();
 
         List<Document> splitDocuments = splitter.apply(List.of(baseDoc));
+        splitDocuments = sanitizeDocuments(splitDocuments);
         if (splitDocuments.isEmpty()) {
             throw new ServiceException(ResponseCode.OPERATION_ERROR, "未能从文件中切分出有效文本");
         }
@@ -272,7 +293,7 @@ public class KnowledgeBaseServiceImpl extends ServiceImpl<KnowledgeBaseMapper, K
                 .kbId(kbId)
                 .filename(fileObject.getFilename())
                 .filePath(fileObject.getObjectName())
-                .fileType("txt")
+                .fileType(resolveFileType(fileObject))
                 .chunkCount(chunkEntities.size())
                 .status("SUCCESS")
                 .build();
@@ -282,11 +303,10 @@ public class KnowledgeBaseServiceImpl extends ServiceImpl<KnowledgeBaseMapper, K
         }
 
         try {
-            // 先写向量，确保成功后再批量入库 chunk 记录
-            vectorStore.add(vectorDocuments);
+            // 先写向量，确保成功后再批量入库 chunk 记录；分批写入避免一次请求超量
+            addVectorsInBatches(vectorStore, vectorDocuments);
         } catch (Exception ex) {
-            log.error("向量写入失败",ex);
-            log.error("删除向量失败",ex);
+            log.error("向量写入失败，kbId={}, file={}", kbId, fileObject.getFilename(), ex);
             throw new ServiceException(ResponseCode.OPERATION_ERROR, "向量写入失败，请稍后重试");
         }
 
@@ -298,6 +318,117 @@ public class KnowledgeBaseServiceImpl extends ServiceImpl<KnowledgeBaseMapper, K
         } catch (RuntimeException ex) {
             vectorStore.delete(vectorDocuments.stream().map(Document::getId).toList());
             throw ex;
+        }
+    }
+
+    /**
+     * 使用 Tika 抽取多种格式的文本内容，并合并为单个 Document。
+     */
+    private Document parseDocumentWithTika(MinioFileObject fileObject) {
+        Resource resource = new ByteArrayResource(fileObject.getData()) {
+            @Override
+            public String getFilename() {
+                return fileObject.getFilename();
+            }
+
+            @NotNull
+            @Override
+            public String getDescription() {
+                return fileObject.getObjectName();
+            }
+        };
+
+        List<Document> documents = new TikaDocumentReader(resource).get();
+        if (CollectionUtils.isEmpty(documents)) {
+            throw new ServiceException(ResponseCode.OPERATION_ERROR, "未能读取到文件内容");
+        }
+
+        String mergedText = documents.stream()
+                .map(Document::getText)
+                .filter(StringUtils::hasText)
+                .collect(Collectors.joining("\n\n"));
+        if (!StringUtils.hasText(mergedText)) {
+            throw new ServiceException(ResponseCode.OPERATION_ERROR, "文件内容为空，无法导入");
+        }
+
+        Map<String, Object> mergedMetadata = new HashMap<>();
+        documents.stream()
+                .map(Document::getMetadata)
+                .forEach(meta -> meta.forEach(mergedMetadata::putIfAbsent));
+
+        return Document.builder()
+                .text(mergedText)
+                .metadata(mergedMetadata)
+                .build();
+    }
+
+    private String resolveFileType(MinioFileObject fileObject) {
+        String filename = fileObject.getFilename();
+        if (StringUtils.hasText(filename)) {
+            int lastDot = filename.lastIndexOf('.');
+            if (lastDot >= 0 && lastDot < filename.length() - 1) {
+                return filename.substring(lastDot + 1).toLowerCase(Locale.ROOT);
+            }
+        }
+        String contentType = fileObject.getContentType();
+        if (StringUtils.hasText(contentType)) {
+            int slashIndex = contentType.lastIndexOf('/');
+            if (slashIndex >= 0 && slashIndex < contentType.length() - 1) {
+                return contentType.substring(slashIndex + 1).toLowerCase(Locale.ROOT);
+            }
+            return contentType.toLowerCase(Locale.ROOT);
+        }
+        return "unknown";
+    }
+
+    /**
+     * 过滤/截断异常超长的切片，避免超出 Milvus VarChar 长度。
+     */
+    private List<Document> sanitizeDocuments(List<Document> splitDocuments) {
+        List<Document> sanitized = new ArrayList<>(splitDocuments.size());
+        for (Document doc : splitDocuments) {
+            String text = doc.getText();
+            if (!StringUtils.hasText(text)) {
+                continue;
+            }
+            if (text.length() > MAX_CHUNK_CHAR_LENGTH) {
+                Map<String, Object> meta = doc.getMetadata();
+                log.warn("切片长度过长，已截断。length={}, limit={}, kbId={}, docId={}",
+                        text.length(), MAX_CHUNK_CHAR_LENGTH,
+                        meta.get("kbId"),
+                        meta.get("docId"));
+                Document truncated = doc.mutate()
+                        .text(text.substring(0, MAX_CHUNK_CHAR_LENGTH))
+                        .metadata("truncated", true)
+                        .build();
+                sanitized.add(truncated);
+            } else {
+                sanitized.add(doc);
+            }
+        }
+        return sanitized;
+    }
+
+    /**
+     * 将向量分批写入，避免单次请求传入超过 EMBEDDING_BATCH_SIZE 的切片。
+     */
+    private void addVectorsInBatches(MilvusVectorStore vectorStore, List<Document> vectorDocuments) {
+        List<String> addedIds = new ArrayList<>();
+        for (int i = 0; i < vectorDocuments.size(); i += EMBEDDING_BATCH_SIZE) {
+            List<Document> batch = vectorDocuments.subList(i, Math.min(i + EMBEDDING_BATCH_SIZE, vectorDocuments.size()));
+            try {
+                vectorStore.add(batch);
+                addedIds.addAll(batch.stream().map(Document::getId).toList());
+            } catch (Exception ex) {
+                if (!addedIds.isEmpty()) {
+                    try {
+                        vectorStore.delete(addedIds);
+                    } catch (Exception cleanupEx) {
+                        log.warn("清理已写入的向量失败，ids={}", addedIds, cleanupEx);
+                    }
+                }
+                throw ex;
+            }
         }
     }
 
@@ -355,14 +486,6 @@ public class KnowledgeBaseServiceImpl extends ServiceImpl<KnowledgeBaseMapper, K
         } catch (IllegalArgumentException ex) {
             return MetricType.COSINE;
         }
-    }
-
-    private boolean isTxtFile(MinioFileObject fileObject) {
-        String filename = fileObject.getFilename();
-        String contentType = fileObject.getContentType();
-        boolean byName = StringUtils.hasText(filename) && filename.toLowerCase(Locale.ROOT).endsWith(".txt");
-        boolean byContentType = StringUtils.hasText(contentType) && contentType.toLowerCase(Locale.ROOT).contains("text/plain");
-        return byName || byContentType;
     }
 
     private void closeQuietly(MilvusServiceClient milvusServiceClient) {

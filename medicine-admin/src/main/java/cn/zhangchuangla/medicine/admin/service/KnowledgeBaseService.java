@@ -8,6 +8,8 @@ import cn.zhangchuangla.medicine.model.entity.KnowledgeBase;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.IService;
 
+import java.util.List;
+
 /**
  * @author Chuang
  */
@@ -60,4 +62,12 @@ public interface KnowledgeBaseService extends IService<KnowledgeBase> {
      * @return 是否导入成功
      */
     boolean importKnowledgeBase(KnowledgeBaseImportRequest request);
+
+    /**
+     * 异步消息消费时调用的导入逻辑（包含切片与向量写入）。
+     *
+     * @param knowledgeBaseId 知识库ID
+     * @param fileUrls        文件地址列表
+     */
+    void ingestKnowledgeBase(Integer knowledgeBaseId, List<String> fileUrls);
 }
