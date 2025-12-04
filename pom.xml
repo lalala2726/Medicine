@@ -105,6 +105,11 @@
                 <artifactId>medicine-llm</artifactId>
                 <version>${project.version}</version>
             </dependency>
+            <dependency>
+                <groupId>cn.zhangchuangla.medicine</groupId>
+                <artifactId>medicine-common-milvus</artifactId>
+                <version>${project.version}</version>
+            </dependency>
             <!-- MyBatis-Plus JSqlParser，提供分页插件支持 -->
             <dependency>
                 <groupId>com.baomidou</groupId>
@@ -275,5 +280,6 @@
         <module>medicine-llm</module>
         <module>medicine-common/medicine-common-elasticsearch</module>
         <module>medicine-common/medicine-common-rabbitmq</module>
+        <module>medicine-common/medicine-common-milvus</module>
     </modules>
 </project>
