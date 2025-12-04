@@ -22,7 +22,7 @@ public class FileUploadProperties {
     /**
      * 允许的文件类型，逗号分隔。
      */
-    private String allowedTypes = "image/jpeg,image/png,image/gif,image/webp,application/pdf";
+    private String allowedTypes = "image/jpeg,image/png,image/gif,image/webp,application/pdf,text/plain";
 
     /**
      * 获取允许的文件类型集合。

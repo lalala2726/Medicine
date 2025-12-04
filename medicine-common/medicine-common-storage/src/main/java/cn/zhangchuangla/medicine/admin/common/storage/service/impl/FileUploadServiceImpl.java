@@ -47,9 +47,9 @@ public class FileUploadServiceImpl implements FileUploadService {
             }
             // 文件类型校验
             String contentType = file.getContentType();
-            if (contentType == null || !isAllowedFileType(contentType)) {
-                throw new IllegalArgumentException("不支持的文件类型: " + contentType);
-            }
+//            if (contentType == null || !isAllowedFileType(contentType)) {
+//                throw new IllegalArgumentException("不支持的文件类型: " + contentType);
+//            }
 
             // 生成年月文件夹路径
             String folderPath = generateYearMonthFolderPath();

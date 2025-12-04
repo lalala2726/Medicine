@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="cn.zhangchuangla.medicine.admin.mapper.KbDocumentChunkMapper">
+
+    <resultMap id="BaseResultMap" type="cn.zhangchuangla.medicine.model.entity.KbDocumentChunk">
+            <id property="id" column="id" />
+            <result property="docId" column="doc_id" />
+            <result property="chunkIndex" column="chunk_index" />
+            <result property="content" column="content" />
+            <result property="tokenCount" column="token_count" />
+            <result property="pageNum" column="page_num" />
+            <result property="vectorId" column="vector_id" />
+            <result property="createTime" column="create_time" />
+    </resultMap>
+
+    <sql id="Base_Column_List">
+        id,doc_id,chunk_index,content,token_count,page_num,
+        vector_id,create_time
+    </sql>
+</mapper>

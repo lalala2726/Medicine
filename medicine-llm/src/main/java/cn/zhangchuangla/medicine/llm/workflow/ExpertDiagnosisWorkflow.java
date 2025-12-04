@@ -51,6 +51,8 @@ public class ExpertDiagnosisWorkflow {
             keyStrategyHashMap.put(MedicineStateKeyEnum.USER_INTENT.getKey(), new ReplaceStrategy());
             keyStrategyHashMap.put(MedicineStateKeyEnum.SYSTEM_RESPONSE.getKey(), new ReplaceStrategy());
             keyStrategyHashMap.put("route", new ReplaceStrategy());
+            keyStrategyHashMap.put("diagnosisResult", new ReplaceStrategy());
+            keyStrategyHashMap.put("finalResult", new ReplaceStrategy());
             return keyStrategyHashMap;
         };
 
