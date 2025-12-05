@@ -156,9 +156,8 @@ public class KnowledgeBaseServiceImpl extends ServiceImpl<KnowledgeBaseMapper, K
                 .build();
         TokenCountEstimator tokenCountEstimator = new JTokkitTokenCountEstimator();
 
-        // 为确保旧的 Milvus 集合 schema 与当前代码一致，这里先重建集合（会清空旧向量；如需保留请改为迁移方案）
-        recreateMilvusCollection(knowledgeBase.getId());
-
+        // 确保集合存在，但不再删除旧数据，避免导入时覆盖历史内容
+        milvusKnowledgeBaseService.createKnowledgeBaseSpace(knowledgeBase.getId());
         // VectorStore 需要手动初始化 schema（未启用自动装配），因此手动构建客户端与集合
         MilvusServiceClient milvusServiceClient = buildMilvusClient();
         MilvusVectorStore vectorStore = buildVectorStore(milvusServiceClient, knowledgeBase.getId());
@@ -459,21 +458,9 @@ public class KnowledgeBaseServiceImpl extends ServiceImpl<KnowledgeBaseMapper, K
                 .indexType(IndexType.AUTOINDEX)
                 .metricType(resolveMetricType())
                 .autoId(false)
-                .initializeSchema(true)
+                // 集合由 MilvusKnowledgeBaseService 创建，这里不再重新初始化，避免覆盖既有索引/数据
+                .initializeSchema(false)
                 .build();
-    }
-
-    /**
-     * 重新创建知识库对应的 Milvus 集合，避免旧 schema（如 kb_id 主键或缺少 metadata 字段）导致写入失败。
-     * 如果需要保留历史向量，请改为迁移方案而非直接删除。
-     */
-    private void recreateMilvusCollection(Integer kbId) {
-        try {
-            milvusKnowledgeBaseService.dropKnowledgeBaseSpace(kbId);
-        } catch (Exception ex) {
-            log.warn("删除 Milvus 集合失败，将继续尝试重新创建。kbId={}", kbId, ex);
-        }
-        milvusKnowledgeBaseService.createKnowledgeBaseSpace(kbId);
     }
 
     private MetricType resolveMetricType() {
