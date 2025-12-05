@@ -2,6 +2,7 @@ package cn.zhangchuangla.medicine.admin.service;
 
 import cn.zhangchuangla.medicine.admin.model.request.*;
 import cn.zhangchuangla.medicine.admin.model.vo.KnowledgeBaseDocumentVo;
+import cn.zhangchuangla.medicine.admin.model.vo.KnowledgeBaseListVo;
 import cn.zhangchuangla.medicine.model.entity.KnowledgeBase;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.IService;
@@ -19,7 +20,7 @@ public interface KnowledgeBaseService extends IService<KnowledgeBase> {
      * @param request 查询参数
      * @return 知识库分页数据
      */
-    Page<KnowledgeBase> listKnowledgeBase(KnowledgeBaseListRequest request);
+    Page<KnowledgeBaseListVo> listKnowledgeBase(KnowledgeBaseListRequest request);
 
     /**
      * 新增知识库

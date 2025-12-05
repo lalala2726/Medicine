@@ -24,6 +24,12 @@ public class KnowledgeBaseListVo {
     @Schema(description = "封面", example = "https://example.com/cover.jpg")
     private String cover;
 
+    @Schema(description = "文件数量", example = "20")
+    private Integer fileCount;
+
+    @Schema(description = "切片数量", example = "10")
+    private Integer sliceCount;
+
     @Schema(description = "更新时间")
     private Date updateTime;
 }

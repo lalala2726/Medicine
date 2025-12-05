@@ -46,8 +46,8 @@ public class KnowledgeBaseController extends BaseController {
     @GetMapping("/list")
     @Operation(summary = "知识库列表")
     public AjaxResult<TableDataResult> knowledgeBaseList(KnowledgeBaseListRequest request) {
-        Page<KnowledgeBase> page = knowledgeBaseService.listKnowledgeBase(request);
-        return getTableData(page, copyListProperties(page, KnowledgeBaseListVo.class));
+        Page<KnowledgeBaseListVo> page = knowledgeBaseService.listKnowledgeBase(request);
+        return getTableData(page);
     }
 
     /**

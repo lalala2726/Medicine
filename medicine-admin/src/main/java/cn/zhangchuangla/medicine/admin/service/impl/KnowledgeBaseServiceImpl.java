@@ -3,8 +3,10 @@ package cn.zhangchuangla.medicine.admin.service.impl;
 import cn.zhangchuangla.medicine.admin.common.storage.model.MinioFileObject;
 import cn.zhangchuangla.medicine.admin.common.storage.service.MinioStorageService;
 import cn.zhangchuangla.medicine.admin.mapper.KnowledgeBaseMapper;
+import cn.zhangchuangla.medicine.admin.model.dto.KnowledgeBaseStatsDto;
 import cn.zhangchuangla.medicine.admin.model.request.*;
 import cn.zhangchuangla.medicine.admin.model.vo.KnowledgeBaseDocumentVo;
+import cn.zhangchuangla.medicine.admin.model.vo.KnowledgeBaseListVo;
 import cn.zhangchuangla.medicine.admin.service.KbDocumentChunkService;
 import cn.zhangchuangla.medicine.admin.service.KbDocumentService;
 import cn.zhangchuangla.medicine.admin.service.KnowledgeBaseService;
@@ -81,16 +83,12 @@ public class KnowledgeBaseServiceImpl extends ServiceImpl<KnowledgeBaseMapper, K
     private final KnowledgeBaseIngestPublisher knowledgeBaseIngestPublisher;
 
     @Override
-    public Page<KnowledgeBase> listKnowledgeBase(KnowledgeBaseListRequest request) {
-        LambdaQueryWrapper<KnowledgeBase> wrapper = new LambdaQueryWrapper<>();
-        if (StringUtils.hasText(request.getName())) {
-            wrapper.like(KnowledgeBase::getName, request.getName());
-        }
-        if (StringUtils.hasText(request.getDescription())) {
-            wrapper.like(KnowledgeBase::getDescription, request.getDescription());
-        }
-        wrapper.orderByDesc(KnowledgeBase::getCreateTime);
-        return page(request.toPage(), wrapper);
+    public Page<KnowledgeBaseListVo> listKnowledgeBase(KnowledgeBaseListRequest request) {
+        Page<KnowledgeBaseStatsDto> dtoPage = baseMapper.selectPageWithStats(request.toPage(), request);
+        List<KnowledgeBaseListVo> records = copyListProperties(dtoPage.getRecords(), KnowledgeBaseListVo.class);
+        Page<KnowledgeBaseListVo> resultPage = new Page<>(dtoPage.getCurrent(), dtoPage.getSize(), dtoPage.getTotal());
+        resultPage.setRecords(records);
+        return resultPage;
     }
 
     @Override
