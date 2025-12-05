@@ -134,7 +134,7 @@ public class KnowledgeBaseController extends BaseController {
      * @param id 知识库ID，必须为数字类型
      * @return 包含文档列表的分页数据结果
      */
-    @GetMapping("/document/{id}")
+    @GetMapping("/{id}/document/list")
     @Operation(summary = "知识库文档列表")
     public AjaxResult<TableDataResult> documentList(@PathVariable("id") Integer id, DocumentListRequest request) {
         Page<KnowledgeBaseDocumentVo> page = knowledgeBaseService.documentList(id, request);

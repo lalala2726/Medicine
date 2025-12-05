@@ -40,7 +40,6 @@ public class KbDocument {
      */
     private String filePath;
 
-
     /**
      * 文件大小
      */

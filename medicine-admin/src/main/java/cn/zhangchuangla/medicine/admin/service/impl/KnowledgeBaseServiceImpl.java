@@ -69,6 +69,8 @@ public class KnowledgeBaseServiceImpl extends ServiceImpl<KnowledgeBaseMapper, K
      * 防止写入 Milvus 的 VarChar 超长，按字符截断；65535 是常见上限，这里预留安全余量。
      */
     private static final int MAX_CHUNK_CHAR_LENGTH = 2000;
+    private static final String STATUS_PROCESSING = "PROCESSING";
+    private static final String STATUS_SUCCESS = "SUCCESS";
 
     private final MilvusKnowledgeBaseService milvusKnowledgeBaseService;
     private final MinioStorageService minioStorageService;
@@ -254,6 +256,7 @@ public class KnowledgeBaseServiceImpl extends ServiceImpl<KnowledgeBaseMapper, K
         }
 
         MinioFileObject fileObject = minioStorageService.fetchFileByUrl(fileUrl);
+        String username = getUsername();
         Document extracted = parseDocumentWithTika(fileObject);
         if (!StringUtils.hasText(extracted.getText())) {
             throw new ServiceException(ResponseCode.PARAM_ERROR, "未能解析出文本内容，请确认文件是否受支持或文本是否为空");
@@ -316,9 +319,14 @@ public class KnowledgeBaseServiceImpl extends ServiceImpl<KnowledgeBaseMapper, K
                 .kbId(kbId)
                 .filename(fileObject.getFilename())
                 .filePath(fileObject.getObjectName())
+                .fileSize(formatFileSizeInMb(fileObject))
                 .fileType(resolveFileType(fileObject))
                 .chunkCount(chunkEntities.size())
-                .status("SUCCESS")
+                .uploadTime(now)
+                .updateTime(now)
+                .uploadBy(username)
+                .updateBy(username)
+                .status(STATUS_PROCESSING)
                 .build();
 
         if (!kbDocumentService.save(kbDocument)) {
@@ -338,8 +346,15 @@ public class KnowledgeBaseServiceImpl extends ServiceImpl<KnowledgeBaseMapper, K
                 vectorStore.delete(vectorDocuments.stream().map(Document::getId).toList());
                 throw new ServiceException(ResponseCode.OPERATION_ERROR, "保存文本切片失败");
             }
+            kbDocumentService.lambdaUpdate()
+                    .eq(KbDocument::getId, documentId)
+                    .set(KbDocument::getStatus, STATUS_SUCCESS)
+                    .set(KbDocument::getUpdateTime, new Date())
+                    .set(KbDocument::getUpdateBy, username)
+                    .update();
         } catch (RuntimeException ex) {
             vectorStore.delete(vectorDocuments.stream().map(Document::getId).toList());
+            log.error("保存文本切片失败，kbId={}, file={}", kbId, fileObject.getFilename(), ex);
             throw ex;
         }
     }
@@ -402,6 +417,13 @@ public class KnowledgeBaseServiceImpl extends ServiceImpl<KnowledgeBaseMapper, K
             return contentType.toLowerCase(Locale.ROOT);
         }
         return "unknown";
+    }
+
+    private String formatFileSizeInMb(MinioFileObject fileObject) {
+        byte[] data = fileObject.getData();
+        long sizeInBytes = data == null ? 0 : data.length;
+        double sizeInMb = sizeInBytes / (1024.0 * 1024.0);
+        return String.format(Locale.ROOT, "%.2fMB", sizeInMb);
     }
 
     /**
