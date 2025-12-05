@@ -68,6 +68,7 @@ milvus:
   vector-dimension: 1024
   content-max-length: 2048
   metric-type: COSINE
+  default-knowledge-base-id: 6
 
 # 安全配置
 security:

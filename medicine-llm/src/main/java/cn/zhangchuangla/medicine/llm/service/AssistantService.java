@@ -2,14 +2,15 @@ package cn.zhangchuangla.medicine.llm.service;
 
 import cn.zhangchuangla.medicine.llm.model.enums.MessageRole;
 import cn.zhangchuangla.medicine.llm.model.response.ChatResponse;
-import cn.zhangchuangla.medicine.llm.prompt.SystemPrompt;
 import cn.zhangchuangla.medicine.llm.tool.AdminAssistantTools;
 import cn.zhangchuangla.medicine.llm.tool.ClientConsultationTools;
 import cn.zhangchuangla.medicine.llm.tool.CommonTools;
 import cn.zhangchuangla.medicine.llm.utils.SseMessageInjector;
 import cn.zhangchuangla.medicine.llm.utils.SseStreamBridge;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.ai.chat.client.ChatClient;
+import org.springframework.ai.rag.advisor.RetrievalAugmentationAdvisor;
 import org.springframework.stereotype.Service;
 import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 import reactor.core.publisher.Flux;
@@ -23,6 +24,7 @@ import static cn.zhangchuangla.medicine.llm.prompt.SystemPrompt.CONSULTATION_SYS
  */
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class AssistantService {
 
 
@@ -32,13 +34,18 @@ public class AssistantService {
     private final SseMessageInjector sseMessageInjector;
     private final AdminAssistantTools adminAssistantTools;
     private final CommonTools commonTools;
+    private final RetrievalAugmentationAdvisor knowledgeBaseRetrievalAdvisor;
 
     public SseEmitter ClientConsultation(String question) {
         return simpleConsultationSession(question).emitter();
     }
 
+
     /**
-     * 返回可手动插入消息的 SSE 会话包装。
+     * 简单咨询会话
+     *
+     * @param question 问题
+     * @return SSE 会话
      */
     public SseStreamBridge.SseSession simpleConsultationSession(String question) {
         Flux<ChatResponse> stream = chatClient
@@ -56,16 +63,21 @@ public class AssistantService {
         return session;
     }
 
-    public SseEmitter chat(String userMessage) {
+    /**
+     * 管理员助手会话
+     *
+     * @param userMessage 用户消息
+     * @return SSE 会话
+     */
+    public SseEmitter AdminAssistantChat(String userMessage) {
         Flux<ChatResponse> stream = chatClient.prompt()
                 .tools(adminAssistantTools, commonTools)
-                .system(SystemPrompt.ADMIN_ASSISTANT_PROMPT)
                 .user(userMessage)
+                .advisors(knowledgeBaseRetrievalAdvisor)
                 .stream()
                 .content()
                 .map(this::toResponse)
                 .contextCapture();
-
         SseStreamBridge.SseSession session = sseStreamBridge.bridge(stream, sseMessageInjector::clear);
         sseMessageInjector.attach(session);
         return session.emitter();

@@ -39,9 +39,7 @@ public class MilvusKnowledgeBaseServiceImpl implements MilvusKnowledgeBaseServic
 
     @Override
     public void createKnowledgeBaseSpace(Integer knowledgeBaseId) {
-        if (knowledgeBaseId == null) {
-            throw new ServiceException("知识库ID不能为空");
-        }
+        knowledgeBaseId = resolveKnowledgeBaseId(knowledgeBaseId);
         if (!StringUtils.hasText(milvusProperties.getCollectionPrefix())) {
             throw new ServiceException("Milvus 集合前缀未配置");
         }
@@ -108,9 +106,7 @@ public class MilvusKnowledgeBaseServiceImpl implements MilvusKnowledgeBaseServic
 
     @Override
     public void dropKnowledgeBaseSpace(Integer knowledgeBaseId) {
-        if (knowledgeBaseId == null) {
-            return;
-        }
+        knowledgeBaseId = resolveKnowledgeBaseId(knowledgeBaseId);
         String collectionName = buildCollectionName(knowledgeBaseId);
         boolean exists = milvusClient.hasCollection(HasCollectionReq.builder()
                 .collectionName(collectionName)
@@ -128,6 +124,20 @@ public class MilvusKnowledgeBaseServiceImpl implements MilvusKnowledgeBaseServic
 
     @Override
     public String buildCollectionName(Integer knowledgeBaseId) {
-        return milvusProperties.getCollectionPrefix() + knowledgeBaseId;
+        return milvusProperties.getCollectionPrefix() + resolveKnowledgeBaseId(knowledgeBaseId);
+    }
+
+    /**
+     * 优先使用入参的知识库 ID，未传入时回退到配置的默认值。
+     */
+    private Integer resolveKnowledgeBaseId(Integer knowledgeBaseId) {
+        if (knowledgeBaseId != null) {
+            return knowledgeBaseId;
+        }
+        Integer defaultKbId = milvusProperties.getDefaultKnowledgeBaseId();
+        if (defaultKbId == null) {
+            throw new ServiceException("知识库ID不能为空");
+        }
+        return defaultKbId;
     }
 }

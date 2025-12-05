@@ -17,11 +17,3 @@ spring:
           port: 19530
         embedding-dimension: 1024
         collection-name: medicine
-logging:
-  level:
-    root: INFO
-    org.springframework.ai: DEBUG
-    org.springframework.web.client: DEBUG
-    org.springframework.web.client.RestClient: TRACE
-    org.springframework.http: TRACE
-    org.apache.hc.client5.http: DEBUG
