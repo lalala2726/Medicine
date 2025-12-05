@@ -7,6 +7,8 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.util.Date;
+
 /**
  * 知识库文件表，存储与知识库相关的文件信息
  */
@@ -37,6 +39,32 @@ public class KbDocument {
      * 对象存储中的路径
      */
     private String filePath;
+
+
+    /**
+     * 文件大小
+     */
+    private String fileSize;
+
+    /**
+     * 上传时间
+     */
+    private Date uploadTime;
+
+    /**
+     * 更新时间
+     */
+    private Date updateTime;
+
+    /**
+     * 上传者
+     */
+    private String uploadBy;
+
+    /**
+     * 更新者
+     */
+    private String updateBy;
 
     /**
      * 文件类型，如 pdf、docx、xlsx 等

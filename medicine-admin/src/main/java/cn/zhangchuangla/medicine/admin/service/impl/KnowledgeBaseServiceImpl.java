@@ -3,15 +3,14 @@ package cn.zhangchuangla.medicine.admin.service.impl;
 import cn.zhangchuangla.medicine.admin.common.storage.model.MinioFileObject;
 import cn.zhangchuangla.medicine.admin.common.storage.service.MinioStorageService;
 import cn.zhangchuangla.medicine.admin.mapper.KnowledgeBaseMapper;
-import cn.zhangchuangla.medicine.admin.model.request.KnowledgeBaseAddRequest;
-import cn.zhangchuangla.medicine.admin.model.request.KnowledgeBaseImportRequest;
-import cn.zhangchuangla.medicine.admin.model.request.KnowledgeBaseListRequest;
-import cn.zhangchuangla.medicine.admin.model.request.KnowledgeBaseUpdateRequest;
+import cn.zhangchuangla.medicine.admin.model.request.*;
+import cn.zhangchuangla.medicine.admin.model.vo.KnowledgeBaseDocumentVo;
 import cn.zhangchuangla.medicine.admin.service.KbDocumentChunkService;
 import cn.zhangchuangla.medicine.admin.service.KbDocumentService;
 import cn.zhangchuangla.medicine.admin.service.KnowledgeBaseService;
 import cn.zhangchuangla.medicine.common.core.enums.ResponseCode;
 import cn.zhangchuangla.medicine.common.core.exception.ServiceException;
+import cn.zhangchuangla.medicine.common.core.utils.Assert;
 import cn.zhangchuangla.medicine.common.milvus.config.MilvusProperties;
 import cn.zhangchuangla.medicine.common.milvus.service.MilvusKnowledgeBaseService;
 import cn.zhangchuangla.medicine.common.rabbitmq.publisher.KnowledgeBaseIngestPublisher;
@@ -174,6 +173,31 @@ public class KnowledgeBaseServiceImpl extends ServiceImpl<KnowledgeBaseMapper, K
             closeQuietly(milvusServiceClient);
         }
     }
+
+    @Override
+    public Page<KnowledgeBaseDocumentVo> documentList(Integer id, DocumentListRequest request) {
+        Assert.isPositive(id, "知识库ID不能为空");
+        Page<KbDocument> page = kbDocumentService.documentPage(id, request);
+
+        List<KnowledgeBaseDocumentVo> knowledgeBaseDocumentVos = page.getRecords().stream()
+                .map(document -> KnowledgeBaseDocumentVo.builder()
+                        .id(document.getId())
+                        .knowledgeBaseId(document.getKbId())
+                        .chunk(document.getChunkCount())
+                        .fileName(document.getFilename())
+                        .fileSize(document.getFileSize())
+                        .uploadTime(document.getUploadTime())
+                        .updateTime(document.getUpdateTime())
+                        .status(document.getStatus())
+                        .fileType(document.getFileType())
+                        .build())
+                .collect(Collectors.toList());
+
+        Page<KnowledgeBaseDocumentVo> resultPage = new Page<>(page.getCurrent(), page.getSize(), page.getTotal());
+        resultPage.setRecords(knowledgeBaseDocumentVos);
+        return resultPage;
+    }
+
 
     @Override
     @Transactional(rollbackFor = Exception.class)

@@ -1,9 +1,7 @@
 package cn.zhangchuangla.medicine.admin.service;
 
-import cn.zhangchuangla.medicine.admin.model.request.KnowledgeBaseAddRequest;
-import cn.zhangchuangla.medicine.admin.model.request.KnowledgeBaseImportRequest;
-import cn.zhangchuangla.medicine.admin.model.request.KnowledgeBaseListRequest;
-import cn.zhangchuangla.medicine.admin.model.request.KnowledgeBaseUpdateRequest;
+import cn.zhangchuangla.medicine.admin.model.request.*;
+import cn.zhangchuangla.medicine.admin.model.vo.KnowledgeBaseDocumentVo;
 import cn.zhangchuangla.medicine.model.entity.KnowledgeBase;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.IService;
@@ -70,4 +68,13 @@ public interface KnowledgeBaseService extends IService<KnowledgeBase> {
      * @param fileUrls        文件地址列表
      */
     void ingestKnowledgeBase(Integer knowledgeBaseId, List<String> fileUrls);
+
+    /**
+     * 文档列表
+     *
+     * @param id      知识库ID
+     * @param request 文档列表参数
+     * @return 文档列表
+     */
+    Page<KnowledgeBaseDocumentVo> documentList(Integer id, DocumentListRequest request);
 }

@@ -9,13 +9,34 @@
         <result property="kbId" column="kb_id"/>
         <result property="filename" column="filename"/>
         <result property="filePath" column="file_path"/>
+        <result property="fileSize" column="file_size"/>
+        <result property="uploadTime" column="upload_time"/>
+        <result property="updateTime" column="update_time"/>
+        <result property="uploadBy" column="upload_by"/>
+        <result property="updateBy" column="update_by"/>
         <result property="fileType" column="file_type"/>
         <result property="status" column="status"/>
         <result property="chunkCount" column="chunk_count"/>
     </resultMap>
 
     <sql id="Base_Column_List">
-        id,kb_id,filename,file_path,file_type,status,
-        chunk_count
+        id,kb_id,filename,file_path,file_size,
+        upload_time,update_time,upload_by,update_by,
+        file_type,`status`,chunk_count
     </sql>
+    <select id="documentPage" resultMap="BaseResultMap">
+        SELECT
+        <include refid="Base_Column_List"/>
+        FROM kb_document
+        <where>
+            kb_id = #{id}
+            <if test="request.fileType != null and request.fileType != ''">
+                AND file_type = #{request.fileType}
+            </if>
+            <if test="request.fileName != null and request.fileName != ''">
+                AND (file_name LIKE CONCAT('%', #{request.fileName}, '%')
+            </if>
+        </where>
+        ORDER BY upload_time DESC
+    </select>
 </mapper>

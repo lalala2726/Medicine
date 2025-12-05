@@ -1,9 +1,7 @@
 package cn.zhangchuangla.medicine.admin.controller;
 
-import cn.zhangchuangla.medicine.admin.model.request.KnowledgeBaseAddRequest;
-import cn.zhangchuangla.medicine.admin.model.request.KnowledgeBaseImportRequest;
-import cn.zhangchuangla.medicine.admin.model.request.KnowledgeBaseListRequest;
-import cn.zhangchuangla.medicine.admin.model.request.KnowledgeBaseUpdateRequest;
+import cn.zhangchuangla.medicine.admin.model.request.*;
+import cn.zhangchuangla.medicine.admin.model.vo.KnowledgeBaseDocumentVo;
 import cn.zhangchuangla.medicine.admin.model.vo.KnowledgeBaseListVo;
 import cn.zhangchuangla.medicine.admin.model.vo.KnowledgeBaseVo;
 import cn.zhangchuangla.medicine.admin.service.KnowledgeBaseService;
@@ -128,4 +126,18 @@ public class KnowledgeBaseController extends BaseController {
         return toAjax(result);
     }
 
+    /**
+     * 获取知识库文档列表
+     * <p>
+     * 根据知识库ID获取该知识库下的文档列表
+     *
+     * @param id 知识库ID，必须为数字类型
+     * @return 包含文档列表的分页数据结果
+     */
+    @GetMapping("/document/{id}")
+    @Operation(summary = "知识库文档列表")
+    public AjaxResult<TableDataResult> documentList(@PathVariable("id") Integer id, DocumentListRequest request) {
+        Page<KnowledgeBaseDocumentVo> page = knowledgeBaseService.documentList(id, request);
+        return getTableData(page);
+    }
 }
