@@ -1,5 +1,6 @@
 package cn.zhangchuangla.medicine.model.entity;
 
+import com.baomidou.mybatisplus.annotation.IdType;
 import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableName;
 import lombok.AllArgsConstructor;
@@ -20,9 +21,9 @@ import java.util.Date;
 public class KbDocument {
 
     /**
-     * UUID 类型的 id，确保每个文件的唯一性
+     * id，确保每个文件的唯一性
      */
-    @TableId
+    @TableId(type = IdType.AUTO)
     private Long id;
 
     /**

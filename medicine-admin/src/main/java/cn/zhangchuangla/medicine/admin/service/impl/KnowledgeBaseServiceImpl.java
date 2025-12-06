@@ -16,6 +16,7 @@ import cn.zhangchuangla.medicine.common.core.utils.Assert;
 import cn.zhangchuangla.medicine.common.milvus.config.MilvusProperties;
 import cn.zhangchuangla.medicine.common.milvus.service.MilvusKnowledgeBaseService;
 import cn.zhangchuangla.medicine.common.rabbitmq.publisher.KnowledgeBaseIngestPublisher;
+import cn.zhangchuangla.medicine.common.rabbitmq.publisher.KnowledgeBaseVectorDeletePublisher;
 import cn.zhangchuangla.medicine.common.security.base.BaseService;
 import cn.zhangchuangla.medicine.common.security.utils.SecurityUtils;
 import cn.zhangchuangla.medicine.model.entity.KbDocument;
@@ -81,6 +82,7 @@ public class KnowledgeBaseServiceImpl extends ServiceImpl<KnowledgeBaseMapper, K
     private final EmbeddingModel embeddingModel;
     private final MilvusProperties milvusProperties;
     private final KnowledgeBaseIngestPublisher knowledgeBaseIngestPublisher;
+    private final KnowledgeBaseVectorDeletePublisher knowledgeBaseVectorDeletePublisher;
 
     @Override
     public Page<KnowledgeBaseListVo> listKnowledgeBase(KnowledgeBaseListRequest request) {
@@ -139,6 +141,44 @@ public class KnowledgeBaseServiceImpl extends ServiceImpl<KnowledgeBaseMapper, K
 
     @Override
     @Transactional(rollbackFor = Exception.class)
+    public boolean deleteDocument(DocumentDeleteRequest request) {
+        Assert.notNull(request, "请求参数不能为空");
+        Assert.notNull(request.getKnowledgeBaseId(), "知识库ID不能为空");
+        Assert.notNull(request.getDocumentId(), "文档ID不能为空");
+
+        KnowledgeBase knowledgeBase = getKnowledgeBase(request.getKnowledgeBaseId());
+        Long documentId = request.getDocumentId();
+
+        KbDocument document = kbDocumentService.getDocumentById(documentId);
+        if (document == null || !Objects.equals(document.getKbId(), knowledgeBase.getId())) {
+            throw new ServiceException("文档不存在");
+        }
+
+        List<KbDocumentChunk> chunks = kbDocumentChunkService.lambdaQuery()
+                .eq(KbDocumentChunk::getDocId, documentId)
+                .list();
+        List<String> vectorIds = chunks.stream()
+                .map(KbDocumentChunk::getVectorId)
+                .filter(Objects::nonNull)
+                .map(String::valueOf)
+                .toList();
+
+        kbDocumentChunkService.lambdaUpdate()
+                .eq(KbDocumentChunk::getDocId, documentId)
+                .remove();
+
+        boolean removed = kbDocumentService.removeById(documentId);
+        if (!removed) {
+            throw new ServiceException(ResponseCode.OPERATION_ERROR, "删除文档失败");
+        }
+
+        // 异步删除 Milvus 向量，避免阻塞数据库删除流程
+        knowledgeBaseVectorDeletePublisher.publish(knowledgeBase.getId(), vectorIds, documentId);
+        return true;
+    }
+
+    @Override
+    @Transactional(rollbackFor = Exception.class)
     public void ingestKnowledgeBase(Integer knowledgeBaseId, List<String> fileUrls, String username) {
         KnowledgeBase knowledgeBase = getKnowledgeBase(knowledgeBaseId);
         if (CollectionUtils.isEmpty(fileUrls)) {
@@ -170,6 +210,25 @@ public class KnowledgeBaseServiceImpl extends ServiceImpl<KnowledgeBaseMapper, K
             log.error("知识库导入失败", ex);
             throw ex instanceof ServiceException ? (ServiceException) ex
                     : new ServiceException(ResponseCode.OPERATION_ERROR, "知识库导入失败，请稍后重试");
+        } finally {
+            closeQuietly(milvusServiceClient);
+        }
+    }
+
+    @Override
+    public void deleteDocumentVectors(Integer knowledgeBaseId, List<String> vectorIds) {
+        if (CollectionUtils.isEmpty(vectorIds)) {
+            return;
+        }
+        MilvusServiceClient milvusServiceClient = buildMilvusClient();
+        MilvusVectorStore vectorStore = buildVectorStore(milvusServiceClient, knowledgeBaseId);
+        try {
+            vectorStore.afterPropertiesSet();
+            vectorStore.delete(vectorIds);
+        } catch (Exception ex) {
+            log.error("向量删除失败, kbId={}, vectors={}", knowledgeBaseId, vectorIds, ex);
+            throw ex instanceof ServiceException ? (ServiceException) ex
+                    : new ServiceException(ResponseCode.OPERATION_ERROR, "向量删除失败，请稍后重试");
         } finally {
             closeQuietly(milvusServiceClient);
         }

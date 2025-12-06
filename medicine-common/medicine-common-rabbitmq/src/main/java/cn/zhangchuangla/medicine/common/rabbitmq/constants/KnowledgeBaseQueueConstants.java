@@ -8,4 +8,7 @@ public interface KnowledgeBaseQueueConstants {
     String EXCHANGE = "kb.import.exchange";
     String QUEUE = "kb.import.queue";
     String ROUTING_IMPORT = "kb.import";
+
+    String VECTOR_DELETE_QUEUE = "kb.vector.delete.queue";
+    String ROUTING_VECTOR_DELETE = "kb.vector.delete";
 }

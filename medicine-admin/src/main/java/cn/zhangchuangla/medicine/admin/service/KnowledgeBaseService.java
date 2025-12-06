@@ -63,6 +63,14 @@ public interface KnowledgeBaseService extends IService<KnowledgeBase> {
     boolean importKnowledgeBase(KnowledgeBaseImportRequest request);
 
     /**
+     * 删除知识库文档（同步删除数据库，异步删除向量）。
+     *
+     * @param request 删除参数
+     * @return 是否删除成功
+     */
+    boolean deleteDocument(DocumentDeleteRequest request);
+
+    /**
      * 异步消息消费时调用的导入逻辑（包含切片与向量写入）。
      *
      * @param knowledgeBaseId 知识库ID
@@ -70,6 +78,14 @@ public interface KnowledgeBaseService extends IService<KnowledgeBase> {
      * @param username        操作人用户名（在 MQ 发布时传入）
      */
     void ingestKnowledgeBase(Integer knowledgeBaseId, List<String> fileUrls, String username);
+
+    /**
+     * 异步删除 Milvus 向量。
+     *
+     * @param knowledgeBaseId 知识库ID
+     * @param vectorIds       向量ID列表
+     */
+    void deleteDocumentVectors(Integer knowledgeBaseId, List<String> vectorIds);
 
     /**
      * 文档列表

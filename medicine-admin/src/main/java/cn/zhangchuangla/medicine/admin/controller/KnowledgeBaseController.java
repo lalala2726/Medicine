@@ -119,10 +119,26 @@ public class KnowledgeBaseController extends BaseController {
      * @param request 导入请求参数，包含导入的文件信息
      * @return 导入操作的结果
      */
-    @PostMapping("/import")
-    @Operation(summary = "导入知识库")
+    @PostMapping("/document/import")
+    @Operation(summary = "导入文档到知识库")
     public AjaxResult<Void> importKnowledgeBase(@Validated @RequestBody KnowledgeBaseImportRequest request) {
         boolean result = knowledgeBaseService.importKnowledgeBase(request);
+        return toAjax(result);
+    }
+
+
+    /**
+     * 从知识库中删除文档
+     * <p>
+     * 根据文档ID从指定的知识库中删除文档
+     *
+     * @param request 文档删除请求参数，包含文档ID
+     * @return 删除操作的结果
+     */
+    @DeleteMapping("/document")
+    @Operation(summary = "从知识库删除文档")
+    public AjaxResult<Void> deleteDocument(@Validated @RequestBody DocumentDeleteRequest request) {
+        boolean result = knowledgeBaseService.deleteDocument(request);
         return toAjax(result);
     }
 
