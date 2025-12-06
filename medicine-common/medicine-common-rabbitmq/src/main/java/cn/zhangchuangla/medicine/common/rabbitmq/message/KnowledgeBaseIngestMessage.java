@@ -19,4 +19,5 @@ public class KnowledgeBaseIngestMessage implements Serializable {
 
     private Integer knowledgeBaseId;
     private List<String> fileUrls;
+    private String username;
 }

@@ -26,7 +26,7 @@ public class KnowledgeBaseIngestListener {
             return;
         }
         try {
-            knowledgeBaseService.ingestKnowledgeBase(message.getKnowledgeBaseId(), message.getFileUrls());
+            knowledgeBaseService.ingestKnowledgeBase(message.getKnowledgeBaseId(), message.getFileUrls(), message.getUsername());
         } catch (Exception ex) {
             log.error("知识库导入失败, kbId={}, files={}", message.getKnowledgeBaseId(), message.getFileUrls(), ex);
             throw ex;

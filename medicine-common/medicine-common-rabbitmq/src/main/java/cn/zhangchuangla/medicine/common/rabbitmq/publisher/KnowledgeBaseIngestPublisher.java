@@ -21,6 +21,10 @@ public class KnowledgeBaseIngestPublisher {
     private final RabbitTemplate rabbitTemplate;
 
     public void publish(Integer knowledgeBaseId, List<String> fileUrls) {
+        publish(knowledgeBaseId, fileUrls, null);
+    }
+
+    public void publish(Integer knowledgeBaseId, List<String> fileUrls, String username) {
         if (knowledgeBaseId == null || CollectionUtils.isEmpty(fileUrls)) {
             log.warn("Skip publish knowledge base ingest event, invalid payload. kbId={}, files={}", knowledgeBaseId, fileUrls);
             return;
@@ -28,6 +32,7 @@ public class KnowledgeBaseIngestPublisher {
         KnowledgeBaseIngestMessage message = KnowledgeBaseIngestMessage.builder()
                 .knowledgeBaseId(knowledgeBaseId)
                 .fileUrls(fileUrls)
+                .username(username)
                 .build();
         rabbitTemplate.convertAndSend(
                 KnowledgeBaseQueueConstants.EXCHANGE,

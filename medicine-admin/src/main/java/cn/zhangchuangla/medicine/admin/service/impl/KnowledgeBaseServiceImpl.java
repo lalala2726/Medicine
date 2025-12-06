@@ -133,17 +133,18 @@ public class KnowledgeBaseServiceImpl extends ServiceImpl<KnowledgeBaseMapper, K
         if (CollectionUtils.isEmpty(request.getFileUrls())) {
             throw new ServiceException(ResponseCode.PARAM_ERROR, "请至少提供一个文本文件地址");
         }
-        knowledgeBaseIngestPublisher.publish(knowledgeBase.getId(), request.getFileUrls());
+        knowledgeBaseIngestPublisher.publish(knowledgeBase.getId(), request.getFileUrls(), getUsername());
         return true;
     }
 
     @Override
     @Transactional(rollbackFor = Exception.class)
-    public void ingestKnowledgeBase(Integer knowledgeBaseId, List<String> fileUrls) {
+    public void ingestKnowledgeBase(Integer knowledgeBaseId, List<String> fileUrls, String username) {
         KnowledgeBase knowledgeBase = getKnowledgeBase(knowledgeBaseId);
         if (CollectionUtils.isEmpty(fileUrls)) {
             throw new ServiceException(ResponseCode.PARAM_ERROR, "请至少提供一个文本文件地址");
         }
+        String operator = StringUtils.hasText(username) ? username : "system";
         // 预先准备好分片与 token 统计工具，保证所有文件使用一致策略
         // Spring AI 的 TokenTextSplitter 会按照 token 近似长度切片，避免过长文本直接入库
         TokenTextSplitter splitter = TokenTextSplitter.builder()
@@ -163,7 +164,7 @@ public class KnowledgeBaseServiceImpl extends ServiceImpl<KnowledgeBaseMapper, K
         try {
             vectorStore.afterPropertiesSet();
             for (String fileUrl : fileUrls) {
-                importFile(knowledgeBase.getId(), fileUrl, splitter, tokenCountEstimator, vectorStore);
+                importFile(knowledgeBase.getId(), fileUrl, splitter, tokenCountEstimator, vectorStore, operator);
             }
         } catch (Exception ex) {
             log.error("知识库导入失败", ex);
@@ -248,13 +249,13 @@ public class KnowledgeBaseServiceImpl extends ServiceImpl<KnowledgeBaseMapper, K
                             String fileUrl,
                             TokenTextSplitter splitter,
                             TokenCountEstimator tokenCountEstimator,
-                            MilvusVectorStore vectorStore) {
+                            MilvusVectorStore vectorStore,
+                            String username) {
         if (!StringUtils.hasText(fileUrl)) {
             throw new ServiceException(ResponseCode.PARAM_ERROR, "文件地址不能为空");
         }
 
         MinioFileObject fileObject = minioStorageService.fetchFileByUrl(fileUrl);
-        String username = getUsername();
         Document extracted = parseDocumentWithTika(fileObject);
         if (!StringUtils.hasText(extracted.getText())) {
             throw new ServiceException(ResponseCode.PARAM_ERROR, "未能解析出文本内容，请确认文件是否受支持或文本是否为空");

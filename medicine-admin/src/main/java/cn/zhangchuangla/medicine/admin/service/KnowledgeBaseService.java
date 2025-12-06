@@ -67,8 +67,9 @@ public interface KnowledgeBaseService extends IService<KnowledgeBase> {
      *
      * @param knowledgeBaseId 知识库ID
      * @param fileUrls        文件地址列表
+     * @param username        操作人用户名（在 MQ 发布时传入）
      */
-    void ingestKnowledgeBase(Integer knowledgeBaseId, List<String> fileUrls);
+    void ingestKnowledgeBase(Integer knowledgeBaseId, List<String> fileUrls, String username);
 
     /**
      * 文档列表
