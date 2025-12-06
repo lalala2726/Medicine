@@ -46,6 +46,8 @@
         <redisson.version>3.52.0</redisson.version>
         <lombok.version>1.18.34</lombok.version>
         <h2.version>2.3.232</h2.version>
+        <exp4j.version>0.4.8</exp4j.version>
+        <zxing.version>3.5.2</zxing.version>
     </properties>
     <dependencyManagement>
         <dependencies>
@@ -178,6 +180,11 @@
                 <version>${fastjson.version}</version>
             </dependency>
             <dependency>
+                <groupId>net.objecthunter</groupId>
+                <artifactId>exp4j</artifactId>
+                <version>${exp4j.version}</version>
+            </dependency>
+            <dependency>
                 <groupId>org.lionsoul</groupId>
                 <artifactId>ip2region</artifactId>
                 <version>${ip2region.version}</version>
@@ -256,6 +263,16 @@
                 <groupId>org.bouncycastle</groupId>
                 <artifactId>bcprov-jdk18on</artifactId>
                 <version>1.80</version>
+            </dependency>
+            <dependency>
+                <groupId>com.google.zxing</groupId>
+                <artifactId>core</artifactId>
+                <version>${zxing.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.google.zxing</groupId>
+                <artifactId>javase</artifactId>
+                <version>${zxing.version}</version>
             </dependency>
             <dependency>
                 <groupId>org.projectlombok</groupId>
