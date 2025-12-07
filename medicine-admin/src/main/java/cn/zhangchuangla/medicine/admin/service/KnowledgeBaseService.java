@@ -1,6 +1,7 @@
 package cn.zhangchuangla.medicine.admin.service;
 
 import cn.zhangchuangla.medicine.admin.model.request.*;
+import cn.zhangchuangla.medicine.admin.model.vo.DocumentSliceListVo;
 import cn.zhangchuangla.medicine.admin.model.vo.KnowledgeBaseDocumentVo;
 import cn.zhangchuangla.medicine.admin.model.vo.KnowledgeBaseListVo;
 import cn.zhangchuangla.medicine.model.entity.KnowledgeBase;
@@ -95,4 +96,12 @@ public interface KnowledgeBaseService extends IService<KnowledgeBase> {
      * @return 文档列表
      */
     Page<KnowledgeBaseDocumentVo> documentList(Integer id, DocumentListRequest request);
+
+    /**
+     * 文档切片列表
+     *
+     * @param id 知识库ID
+     * @return 文档切片列表
+     */
+    Page<DocumentSliceListVo> documentSliceList(Long documentId, DocumentSliceListRequest request);
 }

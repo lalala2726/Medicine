@@ -5,6 +5,7 @@ import cn.zhangchuangla.medicine.admin.common.storage.service.MinioStorageServic
 import cn.zhangchuangla.medicine.admin.mapper.KnowledgeBaseMapper;
 import cn.zhangchuangla.medicine.admin.model.dto.KnowledgeBaseStatsDto;
 import cn.zhangchuangla.medicine.admin.model.request.*;
+import cn.zhangchuangla.medicine.admin.model.vo.DocumentSliceListVo;
 import cn.zhangchuangla.medicine.admin.model.vo.KnowledgeBaseDocumentVo;
 import cn.zhangchuangla.medicine.admin.model.vo.KnowledgeBaseListVo;
 import cn.zhangchuangla.medicine.admin.service.KbDocumentChunkService;
@@ -13,6 +14,7 @@ import cn.zhangchuangla.medicine.admin.service.KnowledgeBaseService;
 import cn.zhangchuangla.medicine.common.core.enums.ResponseCode;
 import cn.zhangchuangla.medicine.common.core.exception.ServiceException;
 import cn.zhangchuangla.medicine.common.core.utils.Assert;
+import cn.zhangchuangla.medicine.common.core.utils.UUIDUtils;
 import cn.zhangchuangla.medicine.common.milvus.config.MilvusProperties;
 import cn.zhangchuangla.medicine.common.milvus.service.MilvusKnowledgeBaseService;
 import cn.zhangchuangla.medicine.common.rabbitmq.publisher.KnowledgeBaseIngestPublisher;
@@ -61,13 +63,30 @@ public class KnowledgeBaseServiceImpl extends ServiceImpl<KnowledgeBaseMapper, K
         implements KnowledgeBaseService, BaseService {
 
     /**
-     * 文本分片的默认参数：尽量让每片在 500 tokens 左右，便于向量召回。
+     * 目标切片 token 大小（近似），便于向量召回效果。
      */
     private static final int DEFAULT_CHUNK_SIZE = 400;
+
+    /**
+     * 切片时的最小字符数，避免过短片段。
+     */
     private static final int MIN_CHUNK_SIZE_CHARS = 120;
+
+    /**
+     * 参与向量化的最小文本长度，过滤极短文本。
+     */
     private static final int MIN_CHUNK_LENGTH_TO_EMBED = 80;
+
+    /**
+     * 单文件允许的最大切片数量，防止超大文件拖垮处理。
+     */
     private static final int MAX_CHUNKS = 5000;
+
+    /**
+     * 向量写入的批量大小，控制单次 embedding 数量。
+     */
     private static final int EMBEDDING_BATCH_SIZE = 10;
+
     /**
      * 防止写入 Milvus 的 VarChar 超长，按字符截断；65535 是常见上限，这里预留安全余量。
      */
@@ -84,6 +103,9 @@ public class KnowledgeBaseServiceImpl extends ServiceImpl<KnowledgeBaseMapper, K
     private final KnowledgeBaseIngestPublisher knowledgeBaseIngestPublisher;
     private final KnowledgeBaseVectorDeletePublisher knowledgeBaseVectorDeletePublisher;
 
+    /**
+     * 分页查询知识库列表，附带统计信息。
+     */
     @Override
     public Page<KnowledgeBaseListVo> listKnowledgeBase(KnowledgeBaseListRequest request) {
         Page<KnowledgeBaseStatsDto> dtoPage = baseMapper.selectPageWithStats(request.toPage(), request);
@@ -93,6 +115,9 @@ public class KnowledgeBaseServiceImpl extends ServiceImpl<KnowledgeBaseMapper, K
         return resultPage;
     }
 
+    /**
+     * 新增知识库并在 Milvus 创建集合。
+     */
     @Override
     @Transactional(rollbackFor = Exception.class)
     public boolean addKnowledgeBase(KnowledgeBaseAddRequest request) {
@@ -119,6 +144,9 @@ public class KnowledgeBaseServiceImpl extends ServiceImpl<KnowledgeBaseMapper, K
         return true;
     }
 
+    /**
+     * 获取知识库详情，不存在则抛异常。
+     */
     @Override
     public KnowledgeBase getKnowledgeBase(Integer id) {
         KnowledgeBase knowledgeBase = getById(id);
@@ -128,6 +156,9 @@ public class KnowledgeBaseServiceImpl extends ServiceImpl<KnowledgeBaseMapper, K
         return knowledgeBase;
     }
 
+    /**
+     * 发起知识库导入：校验参数后发送 MQ 进行异步处理。
+     */
     @Override
     @Transactional(rollbackFor = Exception.class)
     public boolean importKnowledgeBase(KnowledgeBaseImportRequest request) {
@@ -139,6 +170,12 @@ public class KnowledgeBaseServiceImpl extends ServiceImpl<KnowledgeBaseMapper, K
         return true;
     }
 
+    /**
+     * 删除知识库文档：
+     * 1. 校验知识库与文档归属关系。
+     * 2. 立即删除数据库中的文档与切片记录。
+     * 3. 通过 MQ 异步删除 Milvus 中的向量，避免阻塞请求。
+     */
     @Override
     @Transactional(rollbackFor = Exception.class)
     public boolean deleteDocument(DocumentDeleteRequest request) {
@@ -177,6 +214,13 @@ public class KnowledgeBaseServiceImpl extends ServiceImpl<KnowledgeBaseMapper, K
         return true;
     }
 
+    /**
+     * 异步导入知识库：由 MQ 触发，串行处理文件解析、切片、向量写入与数据库落库。
+     *
+     * @param knowledgeBaseId 知识库 ID
+     * @param fileUrls        文件地址
+     * @param username        操作人（MQ 侧传入）
+     */
     @Override
     @Transactional(rollbackFor = Exception.class)
     public void ingestKnowledgeBase(Integer knowledgeBaseId, List<String> fileUrls, String username) {
@@ -215,6 +259,12 @@ public class KnowledgeBaseServiceImpl extends ServiceImpl<KnowledgeBaseMapper, K
         }
     }
 
+    /**
+     * 异步删除向量：消费 MQ 消息，连接 Milvus 并删除指定向量 ID 列表。
+     *
+     * @param knowledgeBaseId 知识库 ID，用于确定集合名
+     * @param vectorIds       待删除的向量 ID
+     */
     @Override
     public void deleteDocumentVectors(Integer knowledgeBaseId, List<String> vectorIds) {
         if (CollectionUtils.isEmpty(vectorIds)) {
@@ -234,6 +284,9 @@ public class KnowledgeBaseServiceImpl extends ServiceImpl<KnowledgeBaseMapper, K
         }
     }
 
+    /**
+     * 查询知识库下的文档列表。
+     */
     @Override
     public Page<KnowledgeBaseDocumentVo> documentList(Integer id, DocumentListRequest request) {
         Assert.isPositive(id, "知识库ID不能为空");
@@ -258,7 +311,30 @@ public class KnowledgeBaseServiceImpl extends ServiceImpl<KnowledgeBaseMapper, K
         return resultPage;
     }
 
+    @Override
+    public Page<DocumentSliceListVo> documentSliceList(Long documentId, DocumentSliceListRequest request) {
+        Assert.notNull(documentId, "文档ID不能为空");
+        Page<KbDocumentChunk> chunkPage = kbDocumentChunkService.documentSliceList(documentId, request);
+        List<DocumentSliceListVo> records = chunkPage.getRecords().stream()
+                .map(chunk -> DocumentSliceListVo.builder()
+                        .uuid(chunk.getUuid())
+                        .documentId(chunk.getDocId())
+                        .context(chunk.getContent())
+                        .createTime(chunk.getCreateTime())
+                        .updateTime(chunk.getUpdateTime())
+                        .createBy(chunk.getCreateBy())
+                        .updateBy(chunk.getUpdateBy())
+                        .build())
+                .toList();
+        Page<DocumentSliceListVo> resultPage = new Page<>(chunkPage.getCurrent(), chunkPage.getSize(), chunkPage.getTotal());
+        resultPage.setRecords(records);
+        return resultPage;
+    }
 
+
+    /**
+     * 更新知识库信息。
+     */
     @Override
     @Transactional(rollbackFor = Exception.class)
     public boolean updateKnowledgeBase(KnowledgeBaseUpdateRequest request) {
@@ -274,6 +350,9 @@ public class KnowledgeBaseServiceImpl extends ServiceImpl<KnowledgeBaseMapper, K
         return updateById(knowledgeBase);
     }
 
+    /**
+     * 删除知识库并删除对应 Milvus 集合。
+     */
     @Override
     @Transactional(rollbackFor = Exception.class)
     public boolean deleteKnowledgeBase(Integer id) {
@@ -281,7 +360,6 @@ public class KnowledgeBaseServiceImpl extends ServiceImpl<KnowledgeBaseMapper, K
 
         // 删除向量库集合，保证数据库和向量库一致
         milvusKnowledgeBaseService.dropKnowledgeBaseSpace(id);
-
         return removeById(knowledgeBase.getId());
     }
 
@@ -303,6 +381,13 @@ public class KnowledgeBaseServiceImpl extends ServiceImpl<KnowledgeBaseMapper, K
      * 2. 使用 TokenTextSplitter 切片，添加 chunk 序号与元数据
      * 3. 调用 Spring AI 向量存储，先生成 embedding 再写入 Milvus
      * 4. 将文档与切片元数据落库，保证向量与数据库一一对应
+     *
+     * @param kbId                知识库 ID
+     * @param fileUrl             文件地址
+     * @param splitter            文本切片器
+     * @param tokenCountEstimator token 统计器
+     * @param vectorStore         向量存储
+     * @param username            操作人
      */
     private void importFile(Integer kbId,
                             String fileUrl,
@@ -364,9 +449,12 @@ public class KnowledgeBaseServiceImpl extends ServiceImpl<KnowledgeBaseMapper, K
                     .chunkIndex(chunkIndex)
                     .content(splitDocument.getText())
                     .tokenCount(tokenCountEstimator.estimate(splitDocument.getText()))
+                    // todo 如果是PDF这边需要标明PDF的页数
                     .pageNum(null)
                     .vectorId(vectorId)
                     .createTime(now)
+                    .uuid(UUIDUtils.simple())
+                    .createBy(username)
                     .build();
             chunkEntities.add(chunk);
             chunkIndex++;
@@ -400,7 +488,7 @@ public class KnowledgeBaseServiceImpl extends ServiceImpl<KnowledgeBaseMapper, K
         }
 
         try {
-            if (!kbDocumentChunkService.saveBatch(chunkEntities)) {
+            if (!kbDocumentChunkService.saveKbDocuments(chunkEntities)) {
                 vectorStore.delete(vectorDocuments.stream().map(Document::getId).toList());
                 throw new ServiceException(ResponseCode.OPERATION_ERROR, "保存文本切片失败");
             }
@@ -458,6 +546,9 @@ public class KnowledgeBaseServiceImpl extends ServiceImpl<KnowledgeBaseMapper, K
                 .build();
     }
 
+    /**
+     * 推断文件类型（优先文件名后缀，其次 Content-Type）。
+     */
     private String resolveFileType(MinioFileObject fileObject) {
         String filename = fileObject.getFilename();
         if (StringUtils.hasText(filename)) {
@@ -477,6 +568,9 @@ public class KnowledgeBaseServiceImpl extends ServiceImpl<KnowledgeBaseMapper, K
         return "unknown";
     }
 
+    /**
+     * 将文件大小格式化为 MB 文本。
+     */
     private String formatFileSizeInMb(MinioFileObject fileObject) {
         byte[] data = fileObject.getData();
         long sizeInBytes = data == null ? 0 : data.length;
@@ -486,6 +580,9 @@ public class KnowledgeBaseServiceImpl extends ServiceImpl<KnowledgeBaseMapper, K
 
     /**
      * 过滤/截断异常超长的切片，避免超出 Milvus VarChar 长度。
+     *
+     * @param splitDocuments 切片列表
+     * @return 处理后的切片列表
      */
     private List<Document> sanitizeDocuments(List<Document> splitDocuments) {
         List<Document> sanitized = new ArrayList<>(splitDocuments.size());
@@ -514,6 +611,9 @@ public class KnowledgeBaseServiceImpl extends ServiceImpl<KnowledgeBaseMapper, K
 
     /**
      * 将向量分批写入，避免单次请求传入超过 EMBEDDING_BATCH_SIZE 的切片。
+     *
+     * @param vectorStore     向量存储
+     * @param vectorDocuments 待写入的向量文档
      */
     private void addVectorsInBatches(MilvusVectorStore vectorStore, List<Document> vectorDocuments) {
         List<String> addedIds = new ArrayList<>();
@@ -535,6 +635,9 @@ public class KnowledgeBaseServiceImpl extends ServiceImpl<KnowledgeBaseMapper, K
         }
     }
 
+    /**
+     * 构建 Milvus 客户端，读取配置校验 URI/token/database。
+     */
     private MilvusServiceClient buildMilvusClient() {
         if (!StringUtils.hasText(milvusProperties.getUri())) {
             throw new ServiceException(ResponseCode.OPERATION_ERROR, "Milvus 连接地址未配置");
@@ -550,6 +653,9 @@ public class KnowledgeBaseServiceImpl extends ServiceImpl<KnowledgeBaseMapper, K
         return new MilvusServiceClient(builder.build());
     }
 
+    /**
+     * 构建 VectorStore，保持集合名/索引配置与 MilvusKnowledgeBaseService 一致。
+     */
     private MilvusVectorStore buildVectorStore(MilvusServiceClient milvusServiceClient, Integer kbId) {
         // 通过 Spring AI builder 手动指定集合名/维度/索引，确保与 MilvusKnowledgeBaseService 的 schema 保持一致
         return MilvusVectorStore.builder(milvusServiceClient, embeddingModel)
@@ -567,6 +673,9 @@ public class KnowledgeBaseServiceImpl extends ServiceImpl<KnowledgeBaseMapper, K
                 .build();
     }
 
+    /**
+     * 解析 Milvus 度量方式，缺省使用 COSINE。
+     */
     private MetricType resolveMetricType() {
         String metric = milvusProperties.getMetricType();
         if (!StringUtils.hasText(metric)) {
@@ -579,6 +688,9 @@ public class KnowledgeBaseServiceImpl extends ServiceImpl<KnowledgeBaseMapper, K
         }
     }
 
+    /**
+     * 安全关闭 Milvus 客户端。
+     */
     private void closeQuietly(MilvusServiceClient milvusServiceClient) {
         if (milvusServiceClient == null) {
             return;

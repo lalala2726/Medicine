@@ -1,6 +1,7 @@
 package cn.zhangchuangla.medicine.admin.controller;
 
 import cn.zhangchuangla.medicine.admin.model.request.*;
+import cn.zhangchuangla.medicine.admin.model.vo.DocumentSliceListVo;
 import cn.zhangchuangla.medicine.admin.model.vo.KnowledgeBaseDocumentVo;
 import cn.zhangchuangla.medicine.admin.model.vo.KnowledgeBaseListVo;
 import cn.zhangchuangla.medicine.admin.model.vo.KnowledgeBaseVo;
@@ -140,6 +141,20 @@ public class KnowledgeBaseController extends BaseController {
     public AjaxResult<Void> deleteDocument(@Validated @RequestBody DocumentDeleteRequest request) {
         boolean result = knowledgeBaseService.deleteDocument(request);
         return toAjax(result);
+    }
+
+    /**
+     * 获取知识库文档分片列表
+     *
+     * @param documentId 文档ID
+     * @param request    文档分片列表查询请求参数，包含分页信息和查询条件
+     * @return 包含文档分片列表的分页数据结果
+     */
+    @GetMapping("/document/{documentId:\\d+}/slice/list")
+    @Operation(summary = "获取知识库文档分片列表")
+    public AjaxResult<TableDataResult> documentSliceList(@PathVariable("documentId") Long documentId, DocumentSliceListRequest request) {
+        Page<DocumentSliceListVo> page = knowledgeBaseService.documentSliceList(documentId, request);
+        return getTableData(page);
     }
 
     /**
