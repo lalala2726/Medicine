@@ -17,6 +17,8 @@ import cn.zhangchuangla.medicine.common.core.utils.Assert;
 import cn.zhangchuangla.medicine.common.core.utils.UUIDUtils;
 import cn.zhangchuangla.medicine.common.milvus.config.MilvusProperties;
 import cn.zhangchuangla.medicine.common.milvus.service.MilvusKnowledgeBaseService;
+import cn.zhangchuangla.medicine.common.rabbitmq.message.KnowledgeBaseChunkUpdateMessage;
+import cn.zhangchuangla.medicine.common.rabbitmq.publisher.KnowledgeBaseChunkUpdatePublisher;
 import cn.zhangchuangla.medicine.common.rabbitmq.publisher.KnowledgeBaseDeletePublisher;
 import cn.zhangchuangla.medicine.common.rabbitmq.publisher.KnowledgeBaseIngestPublisher;
 import cn.zhangchuangla.medicine.common.rabbitmq.publisher.KnowledgeBaseVectorDeletePublisher;
@@ -103,6 +105,7 @@ public class KnowledgeBaseServiceImpl extends ServiceImpl<KnowledgeBaseMapper, K
     private final MilvusProperties milvusProperties;
     private final KnowledgeBaseIngestPublisher knowledgeBaseIngestPublisher;
     private final KnowledgeBaseDeletePublisher knowledgeBaseDeletePublisher;
+    private final KnowledgeBaseChunkUpdatePublisher knowledgeBaseChunkUpdatePublisher;
     private final KnowledgeBaseVectorDeletePublisher knowledgeBaseVectorDeletePublisher;
 
     /**
@@ -287,6 +290,51 @@ public class KnowledgeBaseServiceImpl extends ServiceImpl<KnowledgeBaseMapper, K
     }
 
     /**
+     * MQ 消费：重算并写入单个切片向量。
+     */
+    @Override
+    public void updateDocumentChunkVector(KnowledgeBaseChunkUpdateMessage message) {
+        if (message == null || message.getKnowledgeBaseId() == null || message.getVectorId() == null) {
+            log.warn("跳过切片向量更新，参数为空: {}", message);
+            return;
+        }
+        String text = message.getContent();
+        if (!StringUtils.hasText(text)) {
+            log.warn("跳过切片向量更新，内容为空: {}", message.getChunkId());
+            return;
+        }
+        if (text.length() > MAX_CHUNK_CHAR_LENGTH) {
+            text = text.substring(0, MAX_CHUNK_CHAR_LENGTH);
+        }
+        String vectorId = String.valueOf(message.getVectorId());
+        Document vectorDocument = Document.builder()
+                .id(vectorId)
+                .text(text)
+                .metadata("chunkIndex", message.getChunkIndex())
+                .metadata("kbId", message.getKnowledgeBaseId())
+                .metadata("docId", message.getDocumentId())
+                .build();
+
+        MilvusServiceClient milvusServiceClient = buildMilvusClient();
+        MilvusVectorStore vectorStore = buildVectorStore(milvusServiceClient, message.getKnowledgeBaseId());
+        try {
+            vectorStore.afterPropertiesSet();
+            try {
+                vectorStore.delete(List.of(vectorId));
+            } catch (Exception ignore) {
+                log.debug("删除旧向量失败或不存在，继续写入, vectorId={}", vectorId);
+            }
+            vectorStore.add(List.of(vectorDocument));
+        } catch (Exception ex) {
+            log.error("切片向量更新失败, chunkId={}, vectorId={}", message.getChunkId(), vectorId, ex);
+            throw ex instanceof ServiceException ? (ServiceException) ex
+                    : new ServiceException(ResponseCode.OPERATION_ERROR, "向量更新失败，请稍后重试");
+        } finally {
+            closeQuietly(milvusServiceClient);
+        }
+    }
+
+    /**
      * 查询知识库下的文档列表。
      */
     @Override
@@ -319,6 +367,7 @@ public class KnowledgeBaseServiceImpl extends ServiceImpl<KnowledgeBaseMapper, K
         Page<KbDocumentChunk> chunkPage = kbDocumentChunkService.documentSliceList(documentId, request);
         List<DocumentSliceListVo> records = chunkPage.getRecords().stream()
                 .map(chunk -> DocumentSliceListVo.builder()
+                        .id(chunk.getId())
                         .uuid(chunk.getUuid())
                         .documentId(chunk.getDocId())
                         .context(chunk.getContent())
@@ -331,6 +380,57 @@ public class KnowledgeBaseServiceImpl extends ServiceImpl<KnowledgeBaseMapper, K
         Page<DocumentSliceListVo> resultPage = new Page<>(chunkPage.getCurrent(), chunkPage.getSize(), chunkPage.getTotal());
         resultPage.setRecords(records);
         return resultPage;
+    }
+
+    /**
+     * 更新文档切片，立即更新数据库并异步重算向量。
+     */
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public boolean updateDocumentChunk(DocumentSliceUpdateRequest request) {
+        Assert.notNull(request, "请求参数不能为空");
+        Assert.notNull(request.getChunkId(), "切片ID不能为空");
+
+        KbDocumentChunk chunk = kbDocumentChunkService.getById(request.getChunkId());
+        if (chunk == null) {
+            throw new ServiceException(ResponseCode.NOT_FOUND, "切片不存在");
+        }
+        KbDocument document = kbDocumentService.getById(chunk.getDocId());
+        if (document == null) {
+            throw new ServiceException(ResponseCode.NOT_FOUND, "文档不存在");
+        }
+        KnowledgeBase knowledgeBase = getKnowledgeBase(document.getKbId());
+
+        String newContent = request.getContent();
+        int tokenCount = new JTokkitTokenCountEstimator().estimate(newContent);
+        Date now = new Date();
+        String username = getUsername();
+
+        KbDocumentChunk update = new KbDocumentChunk();
+        update.setId(chunk.getId());
+        update.setContent(newContent);
+        update.setTokenCount(tokenCount);
+        update.setUpdateTime(now);
+        update.setUpdateBy(username);
+        kbDocumentChunkService.updateById(update);
+
+        kbDocumentService.lambdaUpdate()
+                .eq(KbDocument::getId, document.getId())
+                .set(KbDocument::getUpdateTime, now)
+                .set(KbDocument::getUpdateBy, username)
+                .update();
+
+        // 发布异步向量重算
+        KnowledgeBaseChunkUpdateMessage message = KnowledgeBaseChunkUpdateMessage.builder()
+                .knowledgeBaseId(knowledgeBase.getId())
+                .documentId(document.getId())
+                .chunkId(chunk.getId())
+                .chunkIndex(chunk.getChunkIndex())
+                .vectorId(chunk.getVectorId())
+                .content(newContent)
+                .build();
+        knowledgeBaseChunkUpdatePublisher.publish(message);
+        return true;
     }
 
 

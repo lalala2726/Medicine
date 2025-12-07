@@ -100,7 +100,6 @@ public interface KnowledgeBaseService extends IService<KnowledgeBase> {
     /**
      * 文档切片列表
      *
-     * @param id 知识库ID
      * @return 文档切片列表
      */
     Page<DocumentSliceListVo> documentSliceList(Long documentId, DocumentSliceListRequest request);
@@ -112,4 +111,19 @@ public interface KnowledgeBaseService extends IService<KnowledgeBase> {
      * @param batchSize       单批删除数量
      */
     void deleteKnowledgeBaseData(Integer knowledgeBaseId, Integer batchSize);
+
+    /**
+     * 更新文档切片内容，并异步重算向量。
+     *
+     * @param request 更新请求
+     * @return 是否成功
+     */
+    boolean updateDocumentChunk(DocumentSliceUpdateRequest request);
+
+    /**
+     * 消费 MQ，重算并写入切片向量。
+     *
+     * @param message 切片更新消息
+     */
+    void updateDocumentChunkVector(cn.zhangchuangla.medicine.common.rabbitmq.message.KnowledgeBaseChunkUpdateMessage message);
 }

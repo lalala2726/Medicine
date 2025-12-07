@@ -20,6 +20,9 @@ import java.util.Date;
 @Builder
 public class DocumentSliceListVo {
 
+    @Schema(description = "id", example = "1")
+    private Long id;
+
     @Schema(description = "uuid", example = "496df75e-7f5d-46a8-b5d6-6a931d2f31c8")
     private String uuid;
 

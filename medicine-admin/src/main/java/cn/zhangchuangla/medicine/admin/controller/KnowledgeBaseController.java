@@ -158,6 +158,16 @@ public class KnowledgeBaseController extends BaseController {
     }
 
     /**
+     * 修改文档切片内容并触发向量重算
+     */
+    @PutMapping("/document/slice")
+    @Operation(summary = "修改文档切片")
+    public AjaxResult<Void> updateDocumentSlice(@Validated @RequestBody DocumentSliceUpdateRequest request) {
+        boolean result = knowledgeBaseService.updateDocumentChunk(request);
+        return toAjax(result);
+    }
+
+    /**
      * 获取知识库文档列表
      * <p>
      * 根据知识库ID获取该知识库下的文档列表

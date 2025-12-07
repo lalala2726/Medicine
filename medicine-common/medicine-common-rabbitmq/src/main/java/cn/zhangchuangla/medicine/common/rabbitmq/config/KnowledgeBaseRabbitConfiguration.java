@@ -56,4 +56,17 @@ public class KnowledgeBaseRabbitConfiguration {
                 .to(knowledgeBaseImportExchange)
                 .with(KnowledgeBaseQueueConstants.ROUTING_KB_DELETE);
     }
+
+    @Bean
+    public Queue knowledgeBaseChunkUpdateQueue() {
+        return QueueBuilder.durable(KnowledgeBaseQueueConstants.CHUNK_UPDATE_QUEUE).build();
+    }
+
+    @Bean
+    public Binding knowledgeBaseChunkUpdateBinding(Queue knowledgeBaseChunkUpdateQueue,
+                                                   DirectExchange knowledgeBaseImportExchange) {
+        return BindingBuilder.bind(knowledgeBaseChunkUpdateQueue)
+                .to(knowledgeBaseImportExchange)
+                .with(KnowledgeBaseQueueConstants.ROUTING_CHUNK_UPDATE);
+    }
 }

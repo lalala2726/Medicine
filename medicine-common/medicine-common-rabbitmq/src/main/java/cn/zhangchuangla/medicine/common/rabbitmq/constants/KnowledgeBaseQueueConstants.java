@@ -14,4 +14,7 @@ public interface KnowledgeBaseQueueConstants {
 
     String KB_DELETE_QUEUE = "kb.delete.queue";
     String ROUTING_KB_DELETE = "kb.delete";
+
+    String CHUNK_UPDATE_QUEUE = "kb.chunk.update.queue";
+    String ROUTING_CHUNK_UPDATE = "kb.chunk.update";
 }
