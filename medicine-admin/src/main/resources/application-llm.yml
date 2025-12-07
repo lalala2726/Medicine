@@ -16,4 +16,8 @@ spring:
           host: localhost
           port: 19530
         embedding-dimension: 1024
-        collection-name: medicine
+        collection-name: kb_8
+        database-name: medicine
+        index-type: IVF_FLAT
+        metric-type: COSINE
+        initialize-schema: true
