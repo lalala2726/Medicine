@@ -487,6 +487,7 @@ public class KnowledgeBaseServiceImpl extends ServiceImpl<KnowledgeBaseMapper, K
                     .createTime(now)
                     .uuid(UUIDUtils.simple())
                     .createBy(username)
+                    .updateBy(username)
                     .build();
             chunkEntities.add(chunk);
             chunkIndex++;
