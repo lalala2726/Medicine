@@ -11,4 +11,7 @@ public interface KnowledgeBaseQueueConstants {
 
     String VECTOR_DELETE_QUEUE = "kb.vector.delete.queue";
     String ROUTING_VECTOR_DELETE = "kb.vector.delete";
+
+    String KB_DELETE_QUEUE = "kb.delete.queue";
+    String ROUTING_KB_DELETE = "kb.delete";
 }

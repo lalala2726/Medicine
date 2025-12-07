@@ -17,6 +17,7 @@ import cn.zhangchuangla.medicine.common.core.utils.Assert;
 import cn.zhangchuangla.medicine.common.core.utils.UUIDUtils;
 import cn.zhangchuangla.medicine.common.milvus.config.MilvusProperties;
 import cn.zhangchuangla.medicine.common.milvus.service.MilvusKnowledgeBaseService;
+import cn.zhangchuangla.medicine.common.rabbitmq.publisher.KnowledgeBaseDeletePublisher;
 import cn.zhangchuangla.medicine.common.rabbitmq.publisher.KnowledgeBaseIngestPublisher;
 import cn.zhangchuangla.medicine.common.rabbitmq.publisher.KnowledgeBaseVectorDeletePublisher;
 import cn.zhangchuangla.medicine.common.security.base.BaseService;
@@ -101,6 +102,7 @@ public class KnowledgeBaseServiceImpl extends ServiceImpl<KnowledgeBaseMapper, K
     private final EmbeddingModel embeddingModel;
     private final MilvusProperties milvusProperties;
     private final KnowledgeBaseIngestPublisher knowledgeBaseIngestPublisher;
+    private final KnowledgeBaseDeletePublisher knowledgeBaseDeletePublisher;
     private final KnowledgeBaseVectorDeletePublisher knowledgeBaseVectorDeletePublisher;
 
     /**
@@ -360,7 +362,37 @@ public class KnowledgeBaseServiceImpl extends ServiceImpl<KnowledgeBaseMapper, K
 
         // 删除向量库集合，保证数据库和向量库一致
         milvusKnowledgeBaseService.dropKnowledgeBaseSpace(id);
-        return removeById(knowledgeBase.getId());
+        boolean removed = removeById(knowledgeBase.getId());
+        if (!removed) {
+            throw new ServiceException(ResponseCode.OPERATION_ERROR, "删除知识库失败");
+        }
+        // 异步删除知识库关联的文档与切片（分批）
+        knowledgeBaseDeletePublisher.publish(id, null);
+        return true;
+    }
+
+    /**
+     * 批量删除知识库关联的文档与切片，供 MQ 消费者调用。
+     */
+    @Override
+    public void deleteKnowledgeBaseData(Integer knowledgeBaseId, Integer batchSize) {
+        Assert.notNull(knowledgeBaseId, "知识库ID不能为空");
+        int size = (batchSize == null || batchSize <= 0) ? 500 : batchSize;
+        while (true) {
+            List<KbDocument> docs = kbDocumentService.lambdaQuery()
+                    .eq(KbDocument::getKbId, knowledgeBaseId)
+                    .orderByAsc(KbDocument::getId)
+                    .last("limit " + size)
+                    .list();
+            if (CollectionUtils.isEmpty(docs)) {
+                break;
+            }
+            List<Long> docIds = docs.stream().map(KbDocument::getId).toList();
+            kbDocumentChunkService.lambdaUpdate()
+                    .in(KbDocumentChunk::getDocId, docIds)
+                    .remove();
+            kbDocumentService.removeBatchByIds(docIds);
+        }
     }
 
     private boolean isNameDuplicated(String name, Integer excludeId) {

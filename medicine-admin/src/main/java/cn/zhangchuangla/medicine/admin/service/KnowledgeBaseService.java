@@ -104,4 +104,12 @@ public interface KnowledgeBaseService extends IService<KnowledgeBase> {
      * @return 文档切片列表
      */
     Page<DocumentSliceListVo> documentSliceList(Long documentId, DocumentSliceListRequest request);
+
+    /**
+     * 异步删除知识库关联的文档与切片数据（批量）。
+     *
+     * @param knowledgeBaseId 知识库ID
+     * @param batchSize       单批删除数量
+     */
+    void deleteKnowledgeBaseData(Integer knowledgeBaseId, Integer batchSize);
 }

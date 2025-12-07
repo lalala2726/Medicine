@@ -11,7 +11,7 @@ import org.apache.ibatis.annotations.Param;
 public interface KbDocumentChunkMapper extends BaseMapper<KbDocumentChunk> {
 
     Page<KbDocumentChunk> selectDocumentSlices(Page<KbDocumentChunk> page,
-                                               @Param("documentId") Long docId,
+                                               @Param("docId") Long docId,
                                                @Param("name") String name);
 }
 

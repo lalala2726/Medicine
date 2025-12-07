@@ -21,19 +21,20 @@
 
 
     <sql id="Base_Column_List">
-        id,`uuid`,doc_id,chunk_index,content,token_count,page_num,
-        vector_id,create_time,update_time,create_by,update_by
+        c.id, c.`uuid`, c.doc_id, c.chunk_index, c.content, c.token_count, c.page_num,
+        c.vector_id, c.create_time, c.update_time, c.create_by, c.update_by
     </sql>
 
     <select id="selectDocumentSlices" resultMap="BaseResultMap">
         select
         <include refid="Base_Column_List"/>
-        from kb_document_chunk
+        from kb_document_chunk c
         <where>
-            doc_id = #{documentId}
+            c.doc_id = #{docId}
             <if test="name != null and name != ''">
-                and content like concat('%',#{name},'%')
+                and c.content like concat('%',#{name},'%')
             </if>
         </where>
+        order by c.create_time desc
     </select>
 </mapper>

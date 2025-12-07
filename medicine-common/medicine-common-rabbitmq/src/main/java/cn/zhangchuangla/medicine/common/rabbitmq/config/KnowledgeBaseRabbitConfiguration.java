@@ -43,4 +43,17 @@ public class KnowledgeBaseRabbitConfiguration {
                 .to(knowledgeBaseImportExchange)
                 .with(KnowledgeBaseQueueConstants.ROUTING_VECTOR_DELETE);
     }
+
+    @Bean
+    public Queue knowledgeBaseDeleteQueue() {
+        return QueueBuilder.durable(KnowledgeBaseQueueConstants.KB_DELETE_QUEUE).build();
+    }
+
+    @Bean
+    public Binding knowledgeBaseDeleteBinding(Queue knowledgeBaseDeleteQueue,
+                                              DirectExchange knowledgeBaseImportExchange) {
+        return BindingBuilder.bind(knowledgeBaseDeleteQueue)
+                .to(knowledgeBaseImportExchange)
+                .with(KnowledgeBaseQueueConstants.ROUTING_KB_DELETE);
+    }
 }
