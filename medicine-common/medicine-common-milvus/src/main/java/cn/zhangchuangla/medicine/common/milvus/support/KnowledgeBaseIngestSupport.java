@@ -4,6 +4,9 @@ import cn.zhangchuangla.medicine.common.core.enums.ResponseCode;
 import cn.zhangchuangla.medicine.common.core.exception.ServiceException;
 import cn.zhangchuangla.medicine.common.milvus.config.MilvusProperties;
 import cn.zhangchuangla.medicine.common.milvus.service.MilvusKnowledgeBaseService;
+import cn.zhangchuangla.medicine.processing.FileTextExtractor;
+import cn.zhangchuangla.medicine.processing.model.FileParseResult;
+import cn.zhangchuangla.medicine.processing.model.PageTextResult;
 import io.milvus.client.MilvusServiceClient;
 import io.milvus.param.ConnectParam;
 import io.milvus.param.IndexType;
@@ -12,7 +15,6 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.ai.document.Document;
 import org.springframework.ai.embedding.EmbeddingModel;
-import org.springframework.ai.reader.tika.TikaDocumentReader;
 import org.springframework.ai.tokenizer.JTokkitTokenCountEstimator;
 import org.springframework.ai.tokenizer.TokenCountEstimator;
 import org.springframework.ai.transformer.splitter.TokenTextSplitter;
@@ -22,6 +24,8 @@ import org.springframework.stereotype.Component;
 import org.springframework.util.CollectionUtils;
 import org.springframework.util.StringUtils;
 
+import java.io.IOException;
+import java.io.InputStream;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -36,6 +40,7 @@ public class KnowledgeBaseIngestSupport {
     private final MilvusProperties milvusProperties;
     private final MilvusKnowledgeBaseService milvusKnowledgeBaseService;
     private final EmbeddingModel embeddingModel;
+    private final FileTextExtractor fileTextExtractor = new FileTextExtractor();
 
     /**
      * 构造标准切片器，按 token 控制切片。
@@ -62,13 +67,48 @@ public class KnowledgeBaseIngestSupport {
     }
 
     /**
-     * 使用 Tika 解析文件，合并文本与元数据。
+     * 使用 file-processing 模块解析文件，返回按页/节切分的 Document。
+     */
+    public List<Document> parseDocuments(Resource resource) {
+        String filename = resource.getFilename();
+        try (InputStream inputStream = resource.getInputStream()) {
+            FileParseResult result = fileTextExtractor.parse(filename, inputStream);
+            List<PageTextResult> pages = result.getPages();
+            if (CollectionUtils.isEmpty(pages)) {
+                throw new ServiceException(ResponseCode.OPERATION_ERROR, "未能读取到文件内容");
+            }
+            List<Document> documents = new ArrayList<>();
+            for (PageTextResult page : pages) {
+                if (!StringUtils.hasText(page.getText())) {
+                    continue;
+                }
+                Document.Builder builder = Document.builder()
+                        .text(page.getText());
+                if (page.getPageNumber() != null) {
+                    builder.metadata("pageNumber", page.getPageNumber());
+                }
+                if (StringUtils.hasText(page.getSectionLabel())) {
+                    builder.metadata("sectionLabel", page.getSectionLabel());
+                }
+                if (StringUtils.hasText(filename)) {
+                    builder.metadata("fileName", filename);
+                }
+                documents.add(builder.build());
+            }
+            if (CollectionUtils.isEmpty(documents)) {
+                throw new ServiceException(ResponseCode.OPERATION_ERROR, "文件内容为空，无法导入");
+            }
+            return documents;
+        } catch (IOException e) {
+            throw new ServiceException(ResponseCode.OPERATION_ERROR, "读取文件失败");
+        }
+    }
+
+    /**
+     * 兼容旧逻辑：合并文本返回单个 Document。
      */
     public Document parseDocument(Resource resource) {
-        List<Document> documents = new TikaDocumentReader(resource).get();
-        if (CollectionUtils.isEmpty(documents)) {
-            throw new ServiceException(ResponseCode.OPERATION_ERROR, "未能读取到文件内容");
-        }
+        List<Document> documents = parseDocuments(resource);
         String mergedText = documents.stream()
                 .map(Document::getText)
                 .filter(StringUtils::hasText)

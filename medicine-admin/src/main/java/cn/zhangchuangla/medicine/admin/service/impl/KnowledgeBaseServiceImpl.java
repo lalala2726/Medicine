@@ -533,12 +533,9 @@ public class KnowledgeBaseServiceImpl extends ServiceImpl<KnowledgeBaseMapper, K
         MinioFileObject fileObject = minioStorageService.fetchFileByUrl(fileUrl);
         long documentId = IdWorker.getId();
         Date now = new Date();
-        Document extracted;
+        List<Document> parsedDocuments;
         try {
-            extracted = knowledgeBaseIngestSupport.parseDocument(buildResource(fileObject));
-            if (!StringUtils.hasText(extracted.getText())) {
-                throw new ServiceException(ResponseCode.PARAM_ERROR, "未能解析出文本内容，请确认文件是否受支持或文本是否为空");
-            }
+            parsedDocuments = knowledgeBaseIngestSupport.parseDocuments(buildResource(fileObject));
         } catch (ServiceException ex) {
             log.warn("解析文档失败，标记异常，kbId={}, file={}", kbId, fileObject.getFilename(), ex);
             KbDocument failed = KbDocument.builder()
@@ -559,24 +556,28 @@ public class KnowledgeBaseServiceImpl extends ServiceImpl<KnowledgeBaseMapper, K
             return;
         }
         Map<String, Object> metadata = new HashMap<>();
-        if (!CollectionUtils.isEmpty(extracted.getMetadata())) {
-            metadata.putAll(extracted.getMetadata());
-        }
         metadata.put("kbId", kbId);
         metadata.put("docId", documentId);
         metadata.put("filename", fileObject.getFilename());
         metadata.put("objectPath", fileObject.getObjectName());
 
-        log.info("解析文本:{}", extracted.getText());
+        List<Document> documentsForSplit = parsedDocuments.stream().map(doc -> {
+            Document.Builder builder = Document.builder()
+                    .text(doc.getText());
+            if (!CollectionUtils.isEmpty(doc.getMetadata())) {
+                doc.getMetadata().forEach(builder::metadata);
+            }
+            metadata.forEach(builder::metadata);
+            return builder.build();
+        }).toList();
 
-        // 构造基础 Document（带文件元数据），便于切片后继承这些 metadata
-        Document baseDoc = Document.builder()
-                .id(String.valueOf(documentId))
-                .text(extracted.getText())
-                .metadata(metadata)
-                .build();
+        String mergedText = documentsForSplit.stream()
+                .map(Document::getText)
+                .filter(StringUtils::hasText)
+                .collect(Collectors.joining("\n\n"));
+        log.info("解析文本:{}", mergedText);
 
-        List<Document> splitDocuments = splitter.apply(List.of(baseDoc));
+        List<Document> splitDocuments = splitter.apply(documentsForSplit);
         splitDocuments = knowledgeBaseIngestSupport.sanitizeDocuments(splitDocuments, MAX_CHUNK_CHAR_LENGTH);
         if (splitDocuments.isEmpty()) {
             throw new ServiceException(ResponseCode.OPERATION_ERROR, "未能从文件中切分出有效文本");
@@ -602,8 +603,7 @@ public class KnowledgeBaseServiceImpl extends ServiceImpl<KnowledgeBaseMapper, K
                     .chunkIndex(chunkIndex)
                     .content(splitDocument.getText())
                     .tokenCount(tokenCountEstimator.estimate(splitDocument.getText()))
-                    // todo 如果是PDF这边需要标明PDF的页数
-                    .pageNum(null)
+                    .pageNum(resolvePageNumber(splitDocument))
                     .vectorId(vectorId)
                     .createTime(now)
                     .uuid(UUIDUtils.simple())
@@ -704,6 +704,24 @@ public class KnowledgeBaseServiceImpl extends ServiceImpl<KnowledgeBaseMapper, K
         long sizeInBytes = data == null ? 0 : data.length;
         double sizeInMb = sizeInBytes / (1024.0 * 1024.0);
         return String.format(Locale.ROOT, "%.2fMB", sizeInMb);
+    }
+
+    private Integer resolvePageNumber(Document document) {
+        if (document == null || CollectionUtils.isEmpty(document.getMetadata())) {
+            return null;
+        }
+        Object page = document.getMetadata().get("pageNumber");
+        if (page instanceof Number number) {
+            return number.intValue();
+        }
+        if (page instanceof String text && StringUtils.hasText(text)) {
+            try {
+                return Integer.parseInt(text);
+            } catch (NumberFormatException ignored) {
+                return null;
+            }
+        }
+        return null;
     }
 
 }

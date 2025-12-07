@@ -304,5 +304,6 @@
         <module>medicine-common/medicine-common-elasticsearch</module>
         <module>medicine-common/medicine-common-rabbitmq</module>
         <module>medicine-common/medicine-common-milvus</module>
+        <module>medicine-common/medicine-common-file-processing</module>
     </modules>
 </project>

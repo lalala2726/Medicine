@@ -36,6 +36,11 @@
             <artifactId>lombok</artifactId>
             <optional>true</optional>
         </dependency>
+        <dependency>
+            <groupId>cn.zhangchuangla.medicine</groupId>
+            <artifactId>medicine-common-file-processing</artifactId>
+            <version>${project.version}</version>
+        </dependency>
     </dependencies>
 
 </project>
