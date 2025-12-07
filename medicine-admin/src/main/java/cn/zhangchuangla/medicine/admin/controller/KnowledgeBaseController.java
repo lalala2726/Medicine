@@ -1,10 +1,8 @@
-
 package cn.zhangchuangla.medicine.admin.controller;
 
-import cn.zhangchuangla.medicine.admin.model.request.KnowledgeBaseAddRequest;
-import cn.zhangchuangla.medicine.admin.model.request.KnowledgeBaseImportRequest;
-import cn.zhangchuangla.medicine.admin.model.request.KnowledgeBaseListRequest;
-import cn.zhangchuangla.medicine.admin.model.request.KnowledgeBaseUpdateRequest;
+import cn.zhangchuangla.medicine.admin.model.request.*;
+import cn.zhangchuangla.medicine.admin.model.vo.DocumentSliceListVo;
+import cn.zhangchuangla.medicine.admin.model.vo.KnowledgeBaseDocumentVo;
 import cn.zhangchuangla.medicine.admin.model.vo.KnowledgeBaseListVo;
 import cn.zhangchuangla.medicine.admin.model.vo.KnowledgeBaseVo;
 import cn.zhangchuangla.medicine.admin.service.KnowledgeBaseService;
@@ -49,8 +47,8 @@ public class KnowledgeBaseController extends BaseController {
     @GetMapping("/list")
     @Operation(summary = "知识库列表")
     public AjaxResult<TableDataResult> knowledgeBaseList(KnowledgeBaseListRequest request) {
-        Page<KnowledgeBase> page = knowledgeBaseService.listKnowledgeBase(request);
-        return getTableData(page, copyListProperties(page, KnowledgeBaseListVo.class));
+        Page<KnowledgeBaseListVo> page = knowledgeBaseService.listKnowledgeBase(request);
+        return getTableData(page);
     }
 
     /**
@@ -122,11 +120,65 @@ public class KnowledgeBaseController extends BaseController {
      * @param request 导入请求参数，包含导入的文件信息
      * @return 导入操作的结果
      */
-    @PostMapping("/import")
-    @Operation(summary = "导入知识库")
+    @PostMapping("/document/import")
+    @Operation(summary = "导入文档到知识库")
     public AjaxResult<Void> importKnowledgeBase(@Validated @RequestBody KnowledgeBaseImportRequest request) {
         boolean result = knowledgeBaseService.importKnowledgeBase(request);
         return toAjax(result);
     }
 
+
+    /**
+     * 从知识库中删除文档
+     * <p>
+     * 根据文档ID从指定的知识库中删除文档
+     *
+     * @param request 文档删除请求参数，包含文档ID
+     * @return 删除操作的结果
+     */
+    @DeleteMapping("/document")
+    @Operation(summary = "从知识库删除文档")
+    public AjaxResult<Void> deleteDocument(@Validated @RequestBody DocumentDeleteRequest request) {
+        boolean result = knowledgeBaseService.deleteDocument(request);
+        return toAjax(result);
+    }
+
+    /**
+     * 获取知识库文档分片列表
+     *
+     * @param documentId 文档ID
+     * @param request    文档分片列表查询请求参数，包含分页信息和查询条件
+     * @return 包含文档分片列表的分页数据结果
+     */
+    @GetMapping("/document/{documentId:\\d+}/slice/list")
+    @Operation(summary = "获取知识库文档分片列表")
+    public AjaxResult<TableDataResult> documentSliceList(@PathVariable("documentId") Long documentId, DocumentSliceListRequest request) {
+        Page<DocumentSliceListVo> page = knowledgeBaseService.documentSliceList(documentId, request);
+        return getTableData(page);
+    }
+
+    /**
+     * 修改文档切片内容并触发向量重算
+     */
+    @PutMapping("/document/slice")
+    @Operation(summary = "修改文档切片")
+    public AjaxResult<Void> updateDocumentSlice(@Validated @RequestBody DocumentSliceUpdateRequest request) {
+        boolean result = knowledgeBaseService.updateDocumentChunk(request);
+        return toAjax(result);
+    }
+
+    /**
+     * 获取知识库文档列表
+     * <p>
+     * 根据知识库ID获取该知识库下的文档列表
+     *
+     * @param id 知识库ID，必须为数字类型
+     * @return 包含文档列表的分页数据结果
+     */
+    @GetMapping("/{id}/document/list")
+    @Operation(summary = "知识库文档列表")
+    public AjaxResult<TableDataResult> documentList(@PathVariable("id") Integer id, DocumentListRequest request) {
+        Page<KnowledgeBaseDocumentVo> page = knowledgeBaseService.documentList(id, request);
+        return getTableData(page);
+    }
 }

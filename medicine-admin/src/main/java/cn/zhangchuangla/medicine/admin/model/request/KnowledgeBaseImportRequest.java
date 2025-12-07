@@ -15,12 +15,10 @@ import java.util.List;
 @Schema(description = "知识库导入请求参数")
 public class KnowledgeBaseImportRequest {
 
-
     @NotNull(message = "知识库ID不能为空")
     @Schema(description = "知识库ID", requiredMode = Schema.RequiredMode.REQUIRED, example = "1")
     public Integer knowledgeBaseId;
 
     @Schema(description = "导入文件(文件地址)", example = "https://example.com/file.pdf")
     private List<String> fileUrls;
-
 }

@@ -1,5 +1,6 @@
 package cn.zhangchuangla.medicine.common.milvus.config;
 
+import io.milvus.param.MetricType;
 import io.milvus.v2.common.IndexParam;
 import lombok.Data;
 import org.springframework.boot.context.properties.ConfigurationProperties;
@@ -49,12 +50,26 @@ public class MilvusProperties {
      */
     private String metricType = "COSINE";
 
+    /**
+     * 默认知识库 ID，便于在调用方未传入时使用固定集合。
+     */
+    private Integer defaultKnowledgeBaseId = 8;
+
     public IndexParam.MetricType getMetricTypeEnum() {
         String type = StringUtils.hasText(metricType) ? metricType : "COSINE";
         try {
             return IndexParam.MetricType.valueOf(type.toUpperCase(Locale.ROOT));
         } catch (IllegalArgumentException ex) {
             return IndexParam.MetricType.COSINE;
+        }
+    }
+
+    public MetricType getMetricTypeV1() {
+        String type = StringUtils.hasText(metricType) ? metricType : "COSINE";
+        try {
+            return MetricType.valueOf(type.toUpperCase(Locale.ROOT));
+        } catch (IllegalArgumentException ex) {
+            return MetricType.COSINE;
         }
     }
 }

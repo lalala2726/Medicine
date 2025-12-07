@@ -59,7 +59,7 @@ public class AdminAssistantServiceImpl implements AdminAssistantService {
 
     @Override
     public SseEmitter chat(String message) {
-        return assistantService.chat(message);
+        return assistantService.AdminAssistantChat(message);
     }
 
     private String guessMimeType(String objectName) {

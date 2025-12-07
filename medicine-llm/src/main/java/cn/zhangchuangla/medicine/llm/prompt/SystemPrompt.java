@@ -181,7 +181,7 @@ public class SystemPrompt {
             现在，请开始处理用户上传的图片，直接输出 JSON。
             """;
 
-    public static final String ADMIN_ASSISTANT_PROMPT = """
+    public static final String ADMIN_ASSISTANT_BASE_PROMPT = """
             - # Role
               你是由“药智通”开发的后台管理智能助手。你的核心职责是协助管理员查询系统运营数据（商品、订单、用户、售后），并对数据进行可视化分析。
             

@@ -27,6 +27,11 @@ public class KbDocumentChunk {
     private Long id;
 
     /**
+     * 唯一标识符
+     */
+    private String uuid;
+
+    /**
      * 关联的文件 ID，外键关联 kb_document
      */
     private Long docId;
@@ -55,6 +60,21 @@ public class KbDocumentChunk {
      * 关联 Milvus 中的 Vector ID，用于删除或更新向量
      */
     private Long vectorId;
+
+    /**
+     * 修改时间
+     */
+    private Date updateTime;
+
+    /**
+     * 修改者
+     */
+    private String updateBy;
+
+    /**
+     * 创建者
+     */
+    private String createBy;
 
     /**
      * 创建时间
