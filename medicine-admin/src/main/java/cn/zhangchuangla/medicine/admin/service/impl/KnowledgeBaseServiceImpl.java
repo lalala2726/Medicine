@@ -93,6 +93,7 @@ public class KnowledgeBaseServiceImpl extends ServiceImpl<KnowledgeBaseMapper, K
     private static final int MAX_CHUNK_CHAR_LENGTH = 2000;
     private static final String STATUS_PROCESSING = "PROCESSING";
     private static final String STATUS_SUCCESS = "SUCCESS";
+    private static final String STATUS_EXCEPTION = "EXCEPTION";
 
     private final MilvusKnowledgeBaseService milvusKnowledgeBaseService;
     private final MinioStorageService minioStorageService;
@@ -530,12 +531,33 @@ public class KnowledgeBaseServiceImpl extends ServiceImpl<KnowledgeBaseMapper, K
         }
 
         MinioFileObject fileObject = minioStorageService.fetchFileByUrl(fileUrl);
-        Document extracted = knowledgeBaseIngestSupport.parseDocument(buildResource(fileObject));
-        if (!StringUtils.hasText(extracted.getText())) {
-            throw new ServiceException(ResponseCode.PARAM_ERROR, "未能解析出文本内容，请确认文件是否受支持或文本是否为空");
-        }
-
         long documentId = IdWorker.getId();
+        Date now = new Date();
+        Document extracted;
+        try {
+            extracted = knowledgeBaseIngestSupport.parseDocument(buildResource(fileObject));
+            if (!StringUtils.hasText(extracted.getText())) {
+                throw new ServiceException(ResponseCode.PARAM_ERROR, "未能解析出文本内容，请确认文件是否受支持或文本是否为空");
+            }
+        } catch (ServiceException ex) {
+            log.warn("解析文档失败，标记异常，kbId={}, file={}", kbId, fileObject.getFilename(), ex);
+            KbDocument failed = KbDocument.builder()
+                    .id(documentId)
+                    .kbId(kbId)
+                    .filename(fileObject.getFilename())
+                    .filePath(fileObject.getObjectName())
+                    .fileSize(formatFileSizeInMb(fileObject))
+                    .fileType(resolveFileType(fileObject))
+                    .chunkCount(0)
+                    .uploadTime(now)
+                    .updateTime(now)
+                    .uploadBy(username)
+                    .updateBy(username)
+                    .status(STATUS_EXCEPTION)
+                    .build();
+            kbDocumentService.save(failed);
+            return;
+        }
         Map<String, Object> metadata = new HashMap<>();
         if (!CollectionUtils.isEmpty(extracted.getMetadata())) {
             metadata.putAll(extracted.getMetadata());
@@ -544,6 +566,8 @@ public class KnowledgeBaseServiceImpl extends ServiceImpl<KnowledgeBaseMapper, K
         metadata.put("docId", documentId);
         metadata.put("filename", fileObject.getFilename());
         metadata.put("objectPath", fileObject.getObjectName());
+
+        log.info("解析文本:{}", extracted.getText());
 
         // 构造基础 Document（带文件元数据），便于切片后继承这些 metadata
         Document baseDoc = Document.builder()
@@ -561,7 +585,6 @@ public class KnowledgeBaseServiceImpl extends ServiceImpl<KnowledgeBaseMapper, K
         List<Document> vectorDocuments = new ArrayList<>(splitDocuments.size());
         List<KbDocumentChunk> chunkEntities = new ArrayList<>(splitDocuments.size());
         int chunkIndex = 0;
-        Date now = new Date();
         for (Document splitDocument : splitDocuments) {
             long vectorId = IdWorker.getId();
             // 向量存储的 Document 需要：唯一 id、正文、元数据（kbId/docId/chunkIndex）
