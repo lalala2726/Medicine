@@ -81,7 +81,7 @@ public interface MinioStorageService {
     /**
      * 根据完整的 MinIO 访问地址下载文件
      *
-     * @param fileUrl MinIO 中文件的完整 URL（例如 http://minio-host/bucket/path/example.txt）
+     * @param fileUrl MinIO 中文件的完整 URL（例如 <a href="http://minio-host/bucket/path/example.txt">...</a>）
      * @return 带桶名、对象路径、文件名、Content-Type 与二进制内容的封装对象
      */
     MinioFileObject fetchFileByUrl(String fileUrl);

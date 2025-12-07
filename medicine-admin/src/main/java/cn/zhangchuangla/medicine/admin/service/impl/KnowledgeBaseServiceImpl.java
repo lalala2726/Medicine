@@ -17,6 +17,7 @@ import cn.zhangchuangla.medicine.common.core.utils.Assert;
 import cn.zhangchuangla.medicine.common.core.utils.UUIDUtils;
 import cn.zhangchuangla.medicine.common.milvus.config.MilvusProperties;
 import cn.zhangchuangla.medicine.common.milvus.service.MilvusKnowledgeBaseService;
+import cn.zhangchuangla.medicine.common.milvus.support.KnowledgeBaseIngestSupport;
 import cn.zhangchuangla.medicine.common.rabbitmq.message.KnowledgeBaseChunkUpdateMessage;
 import cn.zhangchuangla.medicine.common.rabbitmq.publisher.KnowledgeBaseChunkUpdatePublisher;
 import cn.zhangchuangla.medicine.common.rabbitmq.publisher.KnowledgeBaseDeletePublisher;
@@ -32,15 +33,11 @@ import com.baomidou.mybatisplus.core.toolkit.IdWorker;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import io.milvus.client.MilvusServiceClient;
-import io.milvus.param.ConnectParam;
-import io.milvus.param.IndexType;
-import io.milvus.param.MetricType;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.jetbrains.annotations.NotNull;
 import org.springframework.ai.document.Document;
 import org.springframework.ai.embedding.EmbeddingModel;
-import org.springframework.ai.reader.tika.TikaDocumentReader;
 import org.springframework.ai.tokenizer.JTokkitTokenCountEstimator;
 import org.springframework.ai.tokenizer.TokenCountEstimator;
 import org.springframework.ai.transformer.splitter.TokenTextSplitter;
@@ -103,6 +100,7 @@ public class KnowledgeBaseServiceImpl extends ServiceImpl<KnowledgeBaseMapper, K
     private final KbDocumentChunkService kbDocumentChunkService;
     private final EmbeddingModel embeddingModel;
     private final MilvusProperties milvusProperties;
+    private final KnowledgeBaseIngestSupport knowledgeBaseIngestSupport;
     private final KnowledgeBaseIngestPublisher knowledgeBaseIngestPublisher;
     private final KnowledgeBaseDeletePublisher knowledgeBaseDeletePublisher;
     private final KnowledgeBaseChunkUpdatePublisher knowledgeBaseChunkUpdatePublisher;
@@ -236,20 +234,20 @@ public class KnowledgeBaseServiceImpl extends ServiceImpl<KnowledgeBaseMapper, K
         String operator = StringUtils.hasText(username) ? username : "system";
         // 预先准备好分片与 token 统计工具，保证所有文件使用一致策略
         // Spring AI 的 TokenTextSplitter 会按照 token 近似长度切片，避免过长文本直接入库
-        TokenTextSplitter splitter = TokenTextSplitter.builder()
-                .withChunkSize(DEFAULT_CHUNK_SIZE)
-                .withMinChunkSizeChars(MIN_CHUNK_SIZE_CHARS)
-                .withMinChunkLengthToEmbed(MIN_CHUNK_LENGTH_TO_EMBED)
-                .withMaxNumChunks(MAX_CHUNKS)
-                .withKeepSeparator(true)
-                .build();
-        TokenCountEstimator tokenCountEstimator = new JTokkitTokenCountEstimator();
+        TokenTextSplitter splitter = knowledgeBaseIngestSupport.buildSplitter(
+                DEFAULT_CHUNK_SIZE,
+                MIN_CHUNK_SIZE_CHARS,
+                MIN_CHUNK_LENGTH_TO_EMBED,
+                MAX_CHUNKS,
+                true
+        );
+        TokenCountEstimator tokenCountEstimator = knowledgeBaseIngestSupport.buildTokenEstimator();
 
         // 确保集合存在，但不再删除旧数据，避免导入时覆盖历史内容
         milvusKnowledgeBaseService.createKnowledgeBaseSpace(knowledgeBase.getId());
         // VectorStore 需要手动初始化 schema（未启用自动装配），因此手动构建客户端与集合
-        MilvusServiceClient milvusServiceClient = buildMilvusClient();
-        MilvusVectorStore vectorStore = buildVectorStore(milvusServiceClient, knowledgeBase.getId());
+        MilvusServiceClient milvusServiceClient = knowledgeBaseIngestSupport.buildMilvusClient();
+        MilvusVectorStore vectorStore = knowledgeBaseIngestSupport.buildVectorStore(milvusServiceClient, knowledgeBase.getId());
         try {
             vectorStore.afterPropertiesSet();
             for (String fileUrl : fileUrls) {
@@ -260,7 +258,7 @@ public class KnowledgeBaseServiceImpl extends ServiceImpl<KnowledgeBaseMapper, K
             throw ex instanceof ServiceException ? (ServiceException) ex
                     : new ServiceException(ResponseCode.OPERATION_ERROR, "知识库导入失败，请稍后重试");
         } finally {
-            closeQuietly(milvusServiceClient);
+            knowledgeBaseIngestSupport.closeQuietly(milvusServiceClient);
         }
     }
 
@@ -275,8 +273,8 @@ public class KnowledgeBaseServiceImpl extends ServiceImpl<KnowledgeBaseMapper, K
         if (CollectionUtils.isEmpty(vectorIds)) {
             return;
         }
-        MilvusServiceClient milvusServiceClient = buildMilvusClient();
-        MilvusVectorStore vectorStore = buildVectorStore(milvusServiceClient, knowledgeBaseId);
+        MilvusServiceClient milvusServiceClient = knowledgeBaseIngestSupport.buildMilvusClient();
+        MilvusVectorStore vectorStore = knowledgeBaseIngestSupport.buildVectorStore(milvusServiceClient, knowledgeBaseId);
         try {
             vectorStore.afterPropertiesSet();
             vectorStore.delete(vectorIds);
@@ -285,7 +283,7 @@ public class KnowledgeBaseServiceImpl extends ServiceImpl<KnowledgeBaseMapper, K
             throw ex instanceof ServiceException ? (ServiceException) ex
                     : new ServiceException(ResponseCode.OPERATION_ERROR, "向量删除失败，请稍后重试");
         } finally {
-            closeQuietly(milvusServiceClient);
+            knowledgeBaseIngestSupport.closeQuietly(milvusServiceClient);
         }
     }
 
@@ -315,8 +313,8 @@ public class KnowledgeBaseServiceImpl extends ServiceImpl<KnowledgeBaseMapper, K
                 .metadata("docId", message.getDocumentId())
                 .build();
 
-        MilvusServiceClient milvusServiceClient = buildMilvusClient();
-        MilvusVectorStore vectorStore = buildVectorStore(milvusServiceClient, message.getKnowledgeBaseId());
+        MilvusServiceClient milvusServiceClient = knowledgeBaseIngestSupport.buildMilvusClient();
+        MilvusVectorStore vectorStore = knowledgeBaseIngestSupport.buildVectorStore(milvusServiceClient, message.getKnowledgeBaseId());
         try {
             vectorStore.afterPropertiesSet();
             try {
@@ -330,7 +328,7 @@ public class KnowledgeBaseServiceImpl extends ServiceImpl<KnowledgeBaseMapper, K
             throw ex instanceof ServiceException ? (ServiceException) ex
                     : new ServiceException(ResponseCode.OPERATION_ERROR, "向量更新失败，请稍后重试");
         } finally {
-            closeQuietly(milvusServiceClient);
+            knowledgeBaseIngestSupport.closeQuietly(milvusServiceClient);
         }
     }
 
@@ -532,7 +530,7 @@ public class KnowledgeBaseServiceImpl extends ServiceImpl<KnowledgeBaseMapper, K
         }
 
         MinioFileObject fileObject = minioStorageService.fetchFileByUrl(fileUrl);
-        Document extracted = parseDocumentWithTika(fileObject);
+        Document extracted = knowledgeBaseIngestSupport.parseDocument(buildResource(fileObject));
         if (!StringUtils.hasText(extracted.getText())) {
             throw new ServiceException(ResponseCode.PARAM_ERROR, "未能解析出文本内容，请确认文件是否受支持或文本是否为空");
         }
@@ -555,7 +553,7 @@ public class KnowledgeBaseServiceImpl extends ServiceImpl<KnowledgeBaseMapper, K
                 .build();
 
         List<Document> splitDocuments = splitter.apply(List.of(baseDoc));
-        splitDocuments = sanitizeDocuments(splitDocuments);
+        splitDocuments = knowledgeBaseIngestSupport.sanitizeDocuments(splitDocuments, MAX_CHUNK_CHAR_LENGTH);
         if (splitDocuments.isEmpty()) {
             throw new ServiceException(ResponseCode.OPERATION_ERROR, "未能从文件中切分出有效文本");
         }
@@ -614,7 +612,7 @@ public class KnowledgeBaseServiceImpl extends ServiceImpl<KnowledgeBaseMapper, K
 
         try {
             // 先写向量，确保成功后再批量入库 chunk 记录；分批写入避免一次请求超量
-            addVectorsInBatches(vectorStore, vectorDocuments);
+            knowledgeBaseIngestSupport.addVectorsInBatches(vectorStore, vectorDocuments, EMBEDDING_BATCH_SIZE);
         } catch (Exception ex) {
             log.error("向量写入失败，kbId={}, file={}", kbId, fileObject.getFilename(), ex);
             throw new ServiceException(ResponseCode.OPERATION_ERROR, "向量写入失败，请稍后重试");
@@ -638,11 +636,8 @@ public class KnowledgeBaseServiceImpl extends ServiceImpl<KnowledgeBaseMapper, K
         }
     }
 
-    /**
-     * 使用 Tika 抽取多种格式的文本内容，并合并为单个 Document。
-     */
-    private Document parseDocumentWithTika(MinioFileObject fileObject) {
-        Resource resource = new ByteArrayResource(fileObject.getData()) {
+    private Resource buildResource(MinioFileObject fileObject) {
+        return new ByteArrayResource(fileObject.getData()) {
             @Override
             public String getFilename() {
                 return fileObject.getFilename();
@@ -654,29 +649,6 @@ public class KnowledgeBaseServiceImpl extends ServiceImpl<KnowledgeBaseMapper, K
                 return fileObject.getObjectName();
             }
         };
-
-        List<Document> documents = new TikaDocumentReader(resource).get();
-        if (CollectionUtils.isEmpty(documents)) {
-            throw new ServiceException(ResponseCode.OPERATION_ERROR, "未能读取到文件内容");
-        }
-
-        String mergedText = documents.stream()
-                .map(Document::getText)
-                .filter(StringUtils::hasText)
-                .collect(Collectors.joining("\n\n"));
-        if (!StringUtils.hasText(mergedText)) {
-            throw new ServiceException(ResponseCode.OPERATION_ERROR, "文件内容为空，无法导入");
-        }
-
-        Map<String, Object> mergedMetadata = new HashMap<>();
-        documents.stream()
-                .map(Document::getMetadata)
-                .forEach(meta -> meta.forEach(mergedMetadata::putIfAbsent));
-
-        return Document.builder()
-                .text(mergedText)
-                .metadata(mergedMetadata)
-                .build();
     }
 
     /**
@@ -711,130 +683,4 @@ public class KnowledgeBaseServiceImpl extends ServiceImpl<KnowledgeBaseMapper, K
         return String.format(Locale.ROOT, "%.2fMB", sizeInMb);
     }
 
-    /**
-     * 过滤/截断异常超长的切片，避免超出 Milvus VarChar 长度。
-     *
-     * @param splitDocuments 切片列表
-     * @return 处理后的切片列表
-     */
-    private List<Document> sanitizeDocuments(List<Document> splitDocuments) {
-        List<Document> sanitized = new ArrayList<>(splitDocuments.size());
-        for (Document doc : splitDocuments) {
-            String text = doc.getText();
-            if (!StringUtils.hasText(text)) {
-                continue;
-            }
-            if (text.length() > MAX_CHUNK_CHAR_LENGTH) {
-                Map<String, Object> meta = doc.getMetadata();
-                log.warn("切片长度过长，已截断。length={}, limit={}, kbId={}, docId={}",
-                        text.length(), MAX_CHUNK_CHAR_LENGTH,
-                        meta.get("kbId"),
-                        meta.get("docId"));
-                Document truncated = doc.mutate()
-                        .text(text.substring(0, MAX_CHUNK_CHAR_LENGTH))
-                        .metadata("truncated", true)
-                        .build();
-                sanitized.add(truncated);
-            } else {
-                sanitized.add(doc);
-            }
-        }
-        return sanitized;
-    }
-
-    /**
-     * 将向量分批写入，避免单次请求传入超过 EMBEDDING_BATCH_SIZE 的切片。
-     *
-     * @param vectorStore     向量存储
-     * @param vectorDocuments 待写入的向量文档
-     */
-    private void addVectorsInBatches(MilvusVectorStore vectorStore, List<Document> vectorDocuments) {
-        List<String> addedIds = new ArrayList<>();
-        for (int i = 0; i < vectorDocuments.size(); i += EMBEDDING_BATCH_SIZE) {
-            List<Document> batch = vectorDocuments.subList(i, Math.min(i + EMBEDDING_BATCH_SIZE, vectorDocuments.size()));
-            try {
-                vectorStore.add(batch);
-                addedIds.addAll(batch.stream().map(Document::getId).toList());
-            } catch (Exception ex) {
-                if (!addedIds.isEmpty()) {
-                    try {
-                        vectorStore.delete(addedIds);
-                    } catch (Exception cleanupEx) {
-                        log.warn("清理已写入的向量失败，ids={}", addedIds, cleanupEx);
-                    }
-                }
-                throw ex;
-            }
-        }
-    }
-
-    /**
-     * 构建 Milvus 客户端，读取配置校验 URI/token/database。
-     */
-    private MilvusServiceClient buildMilvusClient() {
-        if (!StringUtils.hasText(milvusProperties.getUri())) {
-            throw new ServiceException(ResponseCode.OPERATION_ERROR, "Milvus 连接地址未配置");
-        }
-        ConnectParam.Builder builder = ConnectParam.newBuilder()
-                .withUri(milvusProperties.getUri());
-        if (StringUtils.hasText(milvusProperties.getToken())) {
-            builder.withToken(milvusProperties.getToken());
-        }
-        if (StringUtils.hasText(milvusProperties.getDatabase())) {
-            builder.withDatabaseName(milvusProperties.getDatabase());
-        }
-        return new MilvusServiceClient(builder.build());
-    }
-
-    /**
-     * 构建 VectorStore，保持集合名/索引配置与 MilvusKnowledgeBaseService 一致。
-     */
-    private MilvusVectorStore buildVectorStore(MilvusServiceClient milvusServiceClient, Integer kbId) {
-        // 通过 Spring AI builder 手动指定集合名/维度/索引，确保与 MilvusKnowledgeBaseService 的 schema 保持一致
-        return MilvusVectorStore.builder(milvusServiceClient, embeddingModel)
-                .databaseName(milvusProperties.getDatabase())
-                .collectionName(milvusKnowledgeBaseService.buildCollectionName(kbId))
-                .iDFieldName(MilvusVectorStore.DOC_ID_FIELD_NAME)
-                .contentFieldName(MilvusVectorStore.CONTENT_FIELD_NAME)
-                .metadataFieldName(MilvusVectorStore.METADATA_FIELD_NAME)
-                .embeddingDimension(milvusProperties.getVectorDimension())
-                .indexType(IndexType.AUTOINDEX)
-                .metricType(resolveMetricType())
-                .autoId(false)
-                // 集合由 MilvusKnowledgeBaseService 创建，这里不再重新初始化，避免覆盖既有索引/数据
-                .initializeSchema(false)
-                .build();
-    }
-
-    /**
-     * 解析 Milvus 度量方式，缺省使用 COSINE。
-     */
-    private MetricType resolveMetricType() {
-        String metric = milvusProperties.getMetricType();
-        if (!StringUtils.hasText(metric)) {
-            return MetricType.COSINE;
-        }
-        try {
-            return MetricType.valueOf(metric.toUpperCase(Locale.ROOT));
-        } catch (IllegalArgumentException ex) {
-            return MetricType.COSINE;
-        }
-    }
-
-    /**
-     * 安全关闭 Milvus 客户端。
-     */
-    private void closeQuietly(MilvusServiceClient milvusServiceClient) {
-        if (milvusServiceClient == null) {
-            return;
-        }
-        try {
-            milvusServiceClient.close(5L);
-        } catch (InterruptedException e) {
-            Thread.currentThread().interrupt();
-            log.warn("Interrupted while closing Milvus client", e);
-        } catch (Exception ignored) {
-            log.warn("关闭 Milvus 客户端时出现异常", ignored);
-        }
-    }
 }
