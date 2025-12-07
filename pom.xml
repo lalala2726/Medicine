@@ -48,6 +48,20 @@
         <h2.version>2.3.232</h2.version>
         <exp4j.version>0.4.8</exp4j.version>
         <zxing.version>3.5.2</zxing.version>
+        <netty.version>4.2.5.Final</netty.version>
+        <poi.version>5.4.0</poi.version>
+        <minio.version>8.6.0</minio.version>
+        <nimbus-jose-jwt.version>10.0.2</nimbus-jose-jwt.version>
+        <grpc.version>1.75.0</grpc.version>
+        <spring.security.version>6.5.4</spring.security.version>
+        <spring.framework.version>6.2.11</spring.framework.version>
+        <poi.version>5.4.0</poi.version>
+        <minio.version>8.6.0</minio.version>
+        <nimbus-jose-jwt.version>10.0.2</nimbus-jose-jwt.version>
+        <grpc.version>1.75.0</grpc.version>
+        <spring.security.version>6.5.4</spring.security.version>
+        <spring.framework.version>6.2.11</spring.framework.version>
+        <tomcat.version>10.1.47</tomcat.version>
     </properties>
     <dependencyManagement>
         <dependencies>
@@ -145,11 +159,6 @@
                 <version>${springdoc.version}</version>
             </dependency>
             <dependency>
-                <groupId>io.minio</groupId>
-                <artifactId>minio</artifactId>
-                <version>${minio.version}</version>
-            </dependency>
-            <dependency>
                 <groupId>io.jsonwebtoken</groupId>
                 <artifactId>jjwt-api</artifactId>
                 <version>${jjwt.version}</version>
@@ -198,6 +207,54 @@
                 <groupId>io.milvus</groupId>
                 <artifactId>milvus-sdk-java</artifactId>
                 <version>${milvus-sdk.version}</version>
+            </dependency>
+            <!-- Pin Netty to 4.2.5.Final to address CVE-2025-58056/58057 -->
+            <dependency>
+                <groupId>io.netty</groupId>
+                <artifactId>netty-bom</artifactId>
+                <version>${netty.version}</version>
+                <type>pom</type>
+                <scope>import</scope>
+            </dependency>
+            <!-- Security updates -->
+            <dependency>
+                <groupId>com.nimbusds</groupId>
+                <artifactId>nimbus-jose-jwt</artifactId>
+                <version>${nimbus-jose-jwt.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.grpc</groupId>
+                <artifactId>grpc-netty-shaded</artifactId>
+                <version>${grpc.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.poi</groupId>
+                <artifactId>poi-ooxml</artifactId>
+                <version>${poi.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.minio</groupId>
+                <artifactId>minio</artifactId>
+                <version>${minio.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.springframework.security</groupId>
+                <artifactId>spring-security-bom</artifactId>
+                <version>${spring.security.version}</version>
+                <type>pom</type>
+                <scope>import</scope>
+            </dependency>
+            <dependency>
+                <groupId>org.springframework</groupId>
+                <artifactId>spring-framework-bom</artifactId>
+                <version>${spring.framework.version}</version>
+                <type>pom</type>
+                <scope>import</scope>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.tomcat.embed</groupId>
+                <artifactId>tomcat-embed-core</artifactId>
+                <version>${tomcat.version}</version>
             </dependency>
             <dependency>
                 <groupId>cn.zhangchuangla.medicine</groupId>
