@@ -21,19 +21,19 @@
 
     <select id="selectPageWithStats" resultType="cn.zhangchuangla.medicine.admin.model.dto.KnowledgeBaseStatsDto">
         SELECT
-            kb.id,
-            kb.name,
-            kb.cover,
-            kb.description,
-            kb.create_time AS createTime,
-            kb.update_time AS updateTime,
-            kb.create_by AS createBy,
-            kb.update_by AS updateBy,
-            COALESCE(doc.file_count, 0) AS fileCount,
-            COALESCE(doc.slice_count, 0) AS sliceCount
+        kb.id,
+        kb.name,
+        kb.cover,
+        kb.description,
+        kb.create_time AS createTime,
+        kb.update_time AS updateTime,
+        kb.create_by AS createBy,
+        kb.update_by AS updateBy,
+        COALESCE(doc.file_count, 0) AS fileCount,
+        COALESCE(doc.slice_count, 0) AS sliceCount
         FROM knowledge_base kb
         LEFT JOIN (
-            SELECT
+        SELECT
         kb_id,
         COUNT(*) AS file_count,
         COALESCE(SUM(chunk_count), 0) AS slice_count

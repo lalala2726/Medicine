@@ -53,7 +53,7 @@ public class MilvusProperties {
     /**
      * 默认知识库 ID，便于在调用方未传入时使用固定集合。
      */
-    private Integer defaultKnowledgeBaseId = 6;
+    private Integer defaultKnowledgeBaseId = 8;
 
     public IndexParam.MetricType getMetricTypeEnum() {
         String type = StringUtils.hasText(metricType) ? metricType : "COSINE";

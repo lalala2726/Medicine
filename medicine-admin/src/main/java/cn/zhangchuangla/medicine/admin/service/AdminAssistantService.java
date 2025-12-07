@@ -13,7 +13,19 @@ import java.util.List;
 public interface AdminAssistantService {
 
 
+    /**
+     * 解析图片中的药品信息
+     *
+     * @param imageUrls 图片地址
+     * @return 药品信息
+     */
     DrugInfoDto parseDrugInfoByImage(List<String> imageUrls);
 
+    /**
+     * 聊天
+     *
+     * @param message 消息
+     * @return sse
+     */
     SseEmitter chat(String message);
 }

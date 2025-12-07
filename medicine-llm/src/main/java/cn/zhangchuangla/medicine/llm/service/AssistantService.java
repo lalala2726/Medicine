@@ -10,7 +10,6 @@ import cn.zhangchuangla.medicine.llm.utils.SseStreamBridge;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.ai.chat.client.ChatClient;
-import org.springframework.ai.rag.advisor.RetrievalAugmentationAdvisor;
 import org.springframework.stereotype.Service;
 import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 import reactor.core.publisher.Flux;
@@ -34,7 +33,6 @@ public class AssistantService {
     private final SseMessageInjector sseMessageInjector;
     private final AdminAssistantTools adminAssistantTools;
     private final CommonTools commonTools;
-    private final RetrievalAugmentationAdvisor knowledgeBaseRetrievalAdvisor;
 
     public SseEmitter ClientConsultation(String question) {
         return simpleConsultationSession(question).emitter();
@@ -70,10 +68,9 @@ public class AssistantService {
      * @return SSE 会话
      */
     public SseEmitter AdminAssistantChat(String userMessage) {
-        Flux<ChatResponse> stream = chatClient.prompt()
+        Flux<ChatResponse> stream = chatClient.prompt("使用中文回答用户的问题,现在是开发阶段你必须遵循诚实回答用户的信息")
                 .tools(adminAssistantTools, commonTools)
                 .user(userMessage)
-                .advisors(knowledgeBaseRetrievalAdvisor)
                 .stream()
                 .content()
                 .map(this::toResponse)
