@@ -27,6 +27,27 @@ public class KbDocumentChunk {
     private Long id;
 
     /**
+     * 唯一标识符
+     */
+    private String uuid;
+
+    /**
+     * 修改时间
+     */
+    private Date updateTime;
+
+    /**
+     * 修改者
+     */
+    private String updateBy;
+
+    /**
+     * 创建者
+     */
+    private String createBy;
+
+
+    /**
      * 关联的文件 ID，外键关联 kb_document
      */
     private Long docId;
