@@ -21,3 +21,6 @@ spring:
         index-type: IVF_FLAT
         metric-type: COSINE
         initialize-schema: true
+logging:
+  level:
+    org.springframework.ai.chat.client.advisor: DEBUG

@@ -101,7 +101,6 @@ public class AssistantService {
                 .content()
                 .map(this::toResponse)
                 .contextCapture();
-        log.info("检索结果：{}", search);
         SseStreamBridge.SseSession session = sseStreamBridge.bridge(stream, sseMessageInjector::clear);
         sseMessageInjector.attach(session);
         return session.emitter();
