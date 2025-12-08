@@ -33,13 +33,13 @@ public class LLMParseImageService {
 
     private final OpenAiApi baseOpenAiApi;
 
+    //todo 后续能在线配置
+
     private static final String DASH_SCOPE_BASE_URL = "https://dashscope.aliyuncs.com/compatible-mode";
     private final OpenAiChatModel baseChatModel;
 
     public DrugInfoDto parseImage(List<String> imageBase64List) {
         Assert.notEmpty(imageBase64List, "图片不能为空");
-
-
         OpenAiApi qwenClient = baseOpenAiApi.mutate()
                 .baseUrl(DASH_SCOPE_BASE_URL)
                 .apiKey(System.getenv("DASHSCOPE_API_KEY"))
