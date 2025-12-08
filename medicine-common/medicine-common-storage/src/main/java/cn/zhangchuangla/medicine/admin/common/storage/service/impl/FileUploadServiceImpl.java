@@ -8,7 +8,6 @@ import cn.zhangchuangla.medicine.common.core.exception.ServiceException;
 import cn.zhangchuangla.medicine.model.vo.FileUploadVo;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.jetbrains.annotations.NotNull;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -86,7 +85,6 @@ public class FileUploadServiceImpl implements FileUploadService {
      *
      * @return 文件夹路径
      */
-    @NotNull
     private String generateYearMonthFolderPath() {
         LocalDate now = LocalDate.now();
         DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy/MM");
@@ -99,8 +97,7 @@ public class FileUploadServiceImpl implements FileUploadService {
      * @param originalFilename 原始文件名
      * @return 唯一文件名
      */
-    @NotNull
-    private String generateUniqueFileName(@NotNull String originalFilename) {
+    private String generateUniqueFileName(String originalFilename) {
         String fileExtension = "";
         if (originalFilename.contains(".")) {
             fileExtension = originalFilename.substring(originalFilename.lastIndexOf("."));
@@ -119,7 +116,6 @@ public class FileUploadServiceImpl implements FileUploadService {
         return allowedTypeSet.contains(contentType);
     }
 
-    @NotNull
     private String resolveBucketName() {
         String bucketName = minioConfig.getBucketName();
         if (bucketName == null || bucketName.isBlank()) {

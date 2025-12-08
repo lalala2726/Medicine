@@ -48,7 +48,6 @@
         <h2.version>2.3.232</h2.version>
         <exp4j.version>0.4.8</exp4j.version>
         <zxing.version>3.5.2</zxing.version>
-        <!-- 安全补丁 -->
         <netty.version>4.2.5.Final</netty.version>
         <poi.version>5.4.0</poi.version>
         <minio.version>8.6.0</minio.version>
