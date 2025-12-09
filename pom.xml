@@ -62,6 +62,7 @@
         <spring.security.version>6.5.4</spring.security.version>
         <spring.framework.version>6.2.11</spring.framework.version>
         <tomcat.version>10.1.47</tomcat.version>
+        <thumbnailator.version>0.4.20</thumbnailator.version>
     </properties>
     <dependencyManagement>
         <dependencies>
@@ -330,6 +331,11 @@
                 <groupId>com.google.zxing</groupId>
                 <artifactId>javase</artifactId>
                 <version>${zxing.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>net.coobird</groupId>
+                <artifactId>thumbnailator</artifactId>
+                <version>${thumbnailator.version}</version>
             </dependency>
             <dependency>
                 <groupId>org.projectlombok</groupId>

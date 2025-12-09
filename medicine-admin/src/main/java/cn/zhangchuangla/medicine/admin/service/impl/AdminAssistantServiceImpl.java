@@ -56,7 +56,7 @@ public class AdminAssistantServiceImpl implements AdminAssistantService {
             String originalMimeType = StringUtils.hasText(fileObject.getContentType())
                     ? fileObject.getContentType()
                     : guessMimeType(fileObject.getFilename());
-            ImageUtils.EncodedImage encoded = ImageUtils.ensureUnder1MB(fileObject.getData(), originalMimeType);
+            ImageUtils.EncodedImage encoded = ImageUtils.ensureUnderForText(fileObject.getData(), originalMimeType);
             String base64WithPrefix = "data:" + encoded.mimeType() + ";base64," + Base64.getEncoder().encodeToString(encoded.data());
             base64Images.add(base64WithPrefix);
         }
