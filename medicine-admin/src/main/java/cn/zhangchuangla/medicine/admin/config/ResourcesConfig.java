@@ -22,7 +22,6 @@ public class ResourcesConfig implements WebMvcConfigurer {
     @Override
     public void addResourceHandlers(@NotNull ResourceHandlerRegistry registry) {
         configureStaticResources(registry);
-        configureApiDocsResources(registry);
     }
 
     /**
@@ -31,16 +30,6 @@ public class ResourcesConfig implements WebMvcConfigurer {
     private void configureStaticResources(ResourceHandlerRegistry registry) {
         registry.addResourceHandler("/static/**")
                 .addResourceLocations("classpath:/static/");
-    }
-
-    /**
-     * 配置 API 文档（如 `knife4j`）的静态资源映射
-     */
-    private void configureApiDocsResources(ResourceHandlerRegistry registry) {
-        registry.addResourceHandler("/doc.html")
-                .addResourceLocations("classpath:/META-INF/resources/");
-        registry.addResourceHandler("/webjars/**")
-                .addResourceLocations("classpath:/META-INF/resources/webjars/");
     }
 
 }
