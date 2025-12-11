@@ -20,7 +20,7 @@ import org.springframework.web.multipart.MultipartFile;
 @RestController
 @RequestMapping("/common")
 @Slf4j
-@Tag(name = "通用接口")
+@Tag(name = "通用接口", description = "通用接口")
 public class CommonController extends BaseController {
 
     private final FileUploadService fileUploadService;

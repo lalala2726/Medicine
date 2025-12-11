@@ -21,7 +21,7 @@ import java.util.List;
  */
 @RestController
 @RequestMapping("/patient_profile")
-@Tag(name = "就诊人管理")
+@Tag(name = "就诊人管理",description = "就诊人管理")
 public class PatientProfileController extends BaseController {
 
     private final PatientProfileService patientProfileService;
