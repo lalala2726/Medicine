@@ -17,13 +17,19 @@ import java.util.List;
 @AllArgsConstructor
 public class FileParseResult {
 
-    /** 原始文件名（可选）。 */
+    /**
+     * 原始文件名（可选）。
+     */
     private String fileName;
 
-    /** 媒体类型（可选）。 */
+    /**
+     * 媒体类型（可选）。
+     */
     private String mediaType;
 
-    /** 按页/区段拆分的解析文本。 */
+    /**
+     * 按页/区段拆分的解析文本。
+     */
     @Builder.Default
     private List<PageTextResult> pages = Collections.emptyList();
 
