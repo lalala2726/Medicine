@@ -26,6 +26,7 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
 import java.util.HashMap;
+import java.util.Map;
 
 import static com.alibaba.cloud.ai.graph.action.AsyncEdgeAction.edge_async;
 
@@ -100,7 +101,7 @@ public class ExpertDiagnosisWorkflow {
                 .addConditionalEdges(
                         WorkflowStateKeys.NODE_INITIAL_INQUIRY,
                         edge_async(new InitialInquiryDispatcher()),
-                        java.util.Map.of(
+                        Map.of(
                                 WorkflowStateKeys.USER_INTENT_GENERAL_SERVICE, WorkflowStateKeys.NODE_GENERAL_SERVICE,
                                 WorkflowStateKeys.USER_INTENT_DIAGNOSIS, WorkflowStateKeys.NODE_PRE_DIAGNOSIS
                         )
@@ -113,7 +114,7 @@ public class ExpertDiagnosisWorkflow {
                 .addConditionalEdges(
                         WorkflowStateKeys.NODE_PRE_DIAGNOSIS,
                         edge_async(new DepartmentRoutingEdgeAction()),
-                        java.util.Map.of(
+                        Map.of(
                                 WorkflowStateKeys.ROUTE_INTERNAL_MEDICINE,
                                 WorkflowStateKeys.NODE_INTERNAL_MEDICINE_INQUIRY,
                                 WorkflowStateKeys.ROUTE_SURGERY,
@@ -129,7 +130,7 @@ public class ExpertDiagnosisWorkflow {
                 .addConditionalEdges(
                         WorkflowStateKeys.NODE_INTERNAL_MEDICINE_INQUIRY,
                         edge_async(new DiagnosisInfoCheckEdgeAction(WorkflowStateKeys.NODE_INTERNAL_MEDICINE_INQUIRY)),
-                        java.util.Map.of(
+                        Map.of(
                                 WorkflowStateKeys.INFO_CHECK_INSUFFICIENT,
                                 WorkflowStateKeys.NODE_INTERNAL_MEDICINE_INQUIRY,
                                 WorkflowStateKeys.INFO_CHECK_SUFFICIENT,
@@ -139,7 +140,7 @@ public class ExpertDiagnosisWorkflow {
                 .addConditionalEdges(
                         WorkflowStateKeys.NODE_SURGERY_INQUIRY,
                         edge_async(new DiagnosisInfoCheckEdgeAction(WorkflowStateKeys.NODE_SURGERY_INQUIRY)),
-                        java.util.Map.of(
+                        Map.of(
                                 WorkflowStateKeys.INFO_CHECK_INSUFFICIENT,
                                 WorkflowStateKeys.NODE_SURGERY_INQUIRY,
                                 WorkflowStateKeys.INFO_CHECK_SUFFICIENT,
@@ -149,7 +150,7 @@ public class ExpertDiagnosisWorkflow {
                 .addConditionalEdges(
                         WorkflowStateKeys.NODE_DERMATOLOGY_INQUIRY,
                         edge_async(new DiagnosisInfoCheckEdgeAction(WorkflowStateKeys.NODE_DERMATOLOGY_INQUIRY)),
-                        java.util.Map.of(
+                        Map.of(
                                 WorkflowStateKeys.INFO_CHECK_INSUFFICIENT,
                                 WorkflowStateKeys.NODE_DERMATOLOGY_INQUIRY,
                                 WorkflowStateKeys.INFO_CHECK_SUFFICIENT,
@@ -159,7 +160,7 @@ public class ExpertDiagnosisWorkflow {
                 .addConditionalEdges(
                         WorkflowStateKeys.NODE_GENERAL_EXPERT_INQUIRY,
                         edge_async(new DiagnosisInfoCheckEdgeAction(WorkflowStateKeys.NODE_GENERAL_EXPERT_INQUIRY)),
-                        java.util.Map.of(
+                        Map.of(
                                 WorkflowStateKeys.INFO_CHECK_INSUFFICIENT,
                                 WorkflowStateKeys.NODE_GENERAL_EXPERT_INQUIRY,
                                 WorkflowStateKeys.INFO_CHECK_SUFFICIENT,
