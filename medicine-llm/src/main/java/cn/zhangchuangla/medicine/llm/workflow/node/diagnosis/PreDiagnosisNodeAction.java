@@ -7,9 +7,11 @@ import cn.zhangchuangla.medicine.llm.workflow.support.WorkflowStateKeys;
 import com.alibaba.cloud.ai.graph.OverAllState;
 import com.alibaba.cloud.ai.graph.action.NodeAction;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.ai.chat.client.ChatClient;
 import org.springframework.stereotype.Component;
 
+import java.util.Locale;
 import java.util.Map;
 
 /**
@@ -19,39 +21,32 @@ import java.util.Map;
  */
 @Component
 @RequiredArgsConstructor
+@Slf4j
 public class PreDiagnosisNodeAction implements NodeAction {
 
     private final ChatClient chatClient;
 
     @Override
     public Map<String, Object> apply(OverAllState state) {
+        log.info("【工作流】进入节点：{}", WorkflowStateKeys.NODE_PRE_DIAGNOSIS);
         String userMessage = state.value(MedicineStateKeyEnum.USER_MESSAGE.getKey(), String.class).orElse("");
-        String summary = chatClient.prompt(DiagnosisWorkflowPrompt.SUMMARY_COLLATION_PROMPT)
-                .user(userMessage)
-                .call()
-                .content();
-        if (summary == null) {
-            throw new LLMParamException("基础问诊摘要为空");
-        }
-
         String route = chatClient.prompt(DiagnosisWorkflowPrompt.ROUTE_PROMPT)
-                .user(summary)
+                .user(userMessage)
                 .call()
                 .content();
         if (route == null) {
             throw new LLMParamException("科室路由结果为空");
         }
 
-        String normalizedRoute = route.trim().toUpperCase();
-        if (!WorkflowStateKeys.ROUTE_INTERNAL_MEDICINE.equals(normalizedRoute)
-                && !WorkflowStateKeys.ROUTE_SURGERY.equals(normalizedRoute)
-                && !WorkflowStateKeys.ROUTE_DERMATOLOGY.equals(normalizedRoute)
-                && !WorkflowStateKeys.ROUTE_GENERAL.equals(normalizedRoute)) {
-            normalizedRoute = WorkflowStateKeys.ROUTE_GENERAL;
-        }
-
+        String normalizedRoute = route.trim().toUpperCase(Locale.ROOT);
+        normalizedRoute = switch (normalizedRoute) {
+            case WorkflowStateKeys.ROUTE_INTERNAL_MEDICINE,
+                 WorkflowStateKeys.ROUTE_SURGERY,
+                 WorkflowStateKeys.ROUTE_DERMATOLOGY,
+                 WorkflowStateKeys.ROUTE_GENERAL -> normalizedRoute;
+            default -> WorkflowStateKeys.ROUTE_GENERAL;
+        };
         return Map.of(
-                WorkflowStateKeys.SUMMARY, summary,
                 WorkflowStateKeys.ROUTE, normalizedRoute,
                 WorkflowStateKeys.INQUIRY_ROUND, 0
         );

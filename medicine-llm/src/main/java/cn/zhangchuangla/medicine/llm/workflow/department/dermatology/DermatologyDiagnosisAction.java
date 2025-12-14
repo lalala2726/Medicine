@@ -5,6 +5,7 @@ import cn.zhangchuangla.medicine.llm.prompt.DiagnosisWorkflowPrompt;
 import cn.zhangchuangla.medicine.llm.workflow.support.DepartmentDiagnosisAction;
 import cn.zhangchuangla.medicine.llm.workflow.support.WorkflowStateKeys;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.ai.chat.client.ChatClient;
 import org.springframework.stereotype.Component;
 
@@ -15,6 +16,7 @@ import org.springframework.stereotype.Component;
  */
 @Component(WorkflowStateKeys.ROUTE_DERMATOLOGY)
 @RequiredArgsConstructor
+@Slf4j
 public class DermatologyDiagnosisAction implements DepartmentDiagnosisAction {
 
     private static final String PROMPT = DiagnosisWorkflowPrompt.DERMATOLOGY_EXPERT_PROMPT;
@@ -22,6 +24,7 @@ public class DermatologyDiagnosisAction implements DepartmentDiagnosisAction {
 
     @Override
     public String diagnose(String summary) {
+        log.info("【工作流】进入皮肤科诊断实现：{}", WorkflowStateKeys.ROUTE_DERMATOLOGY);
         String content = chatClient.prompt(PROMPT)
                 .user(summary)
                 .call()

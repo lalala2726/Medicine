@@ -61,9 +61,11 @@ public class WorkFlowTestController extends BaseController {
         if (isWaitingForInquiryAnswer(compiledGraph, runnableConfig)) {
             flux = Flux.defer(() -> {
                         try {
+                            Map<String, Object> updates = new HashMap<>();
+                            updates.put(WorkflowStateKeys.INQUIRY_ANSWER, request.getMessage());
                             RunnableConfig updatedConfig = compiledGraph.updateState(
                                     runnableConfig,
-                                    Map.of(WorkflowStateKeys.INQUIRY_ANSWER, request.getMessage())
+                                    updates
                             );
                             RunnableConfig resumeConfig = RunnableConfig.builder(updatedConfig)
                                     .addMetadata(RunnableConfig.HUMAN_FEEDBACK_METADATA_KEY, "placeholder")
@@ -94,11 +96,8 @@ public class WorkFlowTestController extends BaseController {
                             return Flux.just(resp);
                         }
                         if (output instanceof InterruptionMetadata interruption) {
-                            String questions = interruption.state()
-                                    .value(WorkflowStateKeys.INQUIRY_QUESTIONS, String.class)
-                                    .orElse("");
                             ChatResponse resp = new ChatResponse();
-                            resp.setContent(questions);
+                            resp.setContent("");
                             resp.setIsFinish(true);
                             return Flux.just(resp);
                         }

@@ -5,6 +5,7 @@ import cn.zhangchuangla.medicine.llm.prompt.DiagnosisWorkflowPrompt;
 import cn.zhangchuangla.medicine.llm.workflow.support.DepartmentDiagnosisAction;
 import cn.zhangchuangla.medicine.llm.workflow.support.WorkflowStateKeys;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.ai.chat.client.ChatClient;
 import org.springframework.stereotype.Component;
 
@@ -15,6 +16,7 @@ import org.springframework.stereotype.Component;
  */
 @Component(WorkflowStateKeys.ROUTE_GENERAL)
 @RequiredArgsConstructor
+@Slf4j
 public class GeneralExpertDiagnosisAction implements DepartmentDiagnosisAction {
 
     private static final String PROMPT = DiagnosisWorkflowPrompt.GENERAL_EXPERT_DIAGNOSIS_PROMPT;
@@ -22,6 +24,8 @@ public class GeneralExpertDiagnosisAction implements DepartmentDiagnosisAction {
 
     @Override
     public String diagnose(String summary) {
+        log.info("【工作流】进入综合诊断实现：{}", WorkflowStateKeys.ROUTE_GENERAL);
+
         String content = chatClient.prompt(PROMPT)
                 .user(summary)
                 .call()

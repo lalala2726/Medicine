@@ -5,6 +5,7 @@ import cn.zhangchuangla.medicine.llm.workflow.support.WorkflowStateKeys;
 import com.alibaba.cloud.ai.graph.OverAllState;
 import com.alibaba.cloud.ai.graph.action.NodeAction;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.ai.chat.client.ChatClient;
 import org.springframework.ai.chat.model.ChatResponse;
 import org.springframework.stereotype.Component;
@@ -19,6 +20,7 @@ import java.util.Map;
  */
 @Component
 @RequiredArgsConstructor
+@Slf4j
 public class DiagnosisReviewNodeAction implements NodeAction {
 
     private static final String PROMPT = DiagnosisWorkflowPrompt.REVIEW_PROMPT;
@@ -26,6 +28,7 @@ public class DiagnosisReviewNodeAction implements NodeAction {
 
     @Override
     public Map<String, Object> apply(OverAllState state) {
+        log.info("【工作流】进入节点：{}", WorkflowStateKeys.NODE_DIAGNOSIS_REVIEW);
         String diagnosisResult = state.value(WorkflowStateKeys.DIAGNOSIS_RESULT, String.class).orElse("");
         Flux<ChatResponse> responseFlux = chatClient.prompt(PROMPT)
                 .user(diagnosisResult)

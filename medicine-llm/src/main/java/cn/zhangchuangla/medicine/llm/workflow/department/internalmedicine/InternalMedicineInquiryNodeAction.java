@@ -1,13 +1,16 @@
 package cn.zhangchuangla.medicine.llm.workflow.department.internalmedicine;
 
-import cn.zhangchuangla.medicine.llm.exection.LLMParamException;
+import cn.zhangchuangla.medicine.common.core.enums.MedicineStateKeyEnum;
 import cn.zhangchuangla.medicine.llm.prompt.DiagnosisWorkflowPrompt;
 import cn.zhangchuangla.medicine.llm.workflow.support.WorkflowStateKeys;
 import com.alibaba.cloud.ai.graph.OverAllState;
 import com.alibaba.cloud.ai.graph.action.NodeAction;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.ai.chat.client.ChatClient;
+import org.springframework.ai.chat.model.ChatResponse;
 import org.springframework.stereotype.Component;
+import reactor.core.publisher.Flux;
 
 import java.util.Map;
 
@@ -18,6 +21,7 @@ import java.util.Map;
  */
 @Component
 @RequiredArgsConstructor
+@Slf4j
 public class InternalMedicineInquiryNodeAction implements NodeAction {
 
     private static final String PROMPT = DiagnosisWorkflowPrompt.INTERNAL_MEDICINE_INQUIRY_PROMPT;
@@ -25,18 +29,16 @@ public class InternalMedicineInquiryNodeAction implements NodeAction {
 
     @Override
     public Map<String, Object> apply(OverAllState state) {
-        String summary = state.value(WorkflowStateKeys.SUMMARY, String.class).orElse("");
-        String inquiryNotes = chatClient.prompt(PROMPT)
-                .user(summary)
-                .call()
-                .content();
-        if (inquiryNotes == null) {
-            throw new LLMParamException("内科追问结果为空");
-        }
+        log.info("【工作流】进入节点：{}", WorkflowStateKeys.NODE_INTERNAL_MEDICINE_INQUIRY);
+        String symptomInfo = state.value(MedicineStateKeyEnum.USER_MESSAGE.getKey(), String.class).orElse("");
+        Flux<ChatResponse> responseFlux = chatClient.prompt(PROMPT)
+                .user(symptomInfo)
+                .stream()
+                .chatResponse();
 
         int nextRound = nextRound(state);
         return Map.of(
-                WorkflowStateKeys.INQUIRY_QUESTIONS, inquiryNotes,
+                WorkflowStateKeys.FINAL_RESULT, responseFlux,
                 WorkflowStateKeys.INQUIRY_ROUND, nextRound
         );
     }

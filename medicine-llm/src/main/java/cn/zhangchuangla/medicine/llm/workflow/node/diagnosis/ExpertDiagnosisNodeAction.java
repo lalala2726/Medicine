@@ -1,10 +1,13 @@
 package cn.zhangchuangla.medicine.llm.workflow.node.diagnosis;
 
+import cn.zhangchuangla.medicine.common.core.enums.MedicineStateKeyEnum;
 import cn.zhangchuangla.medicine.llm.exection.LLMParamException;
+import cn.zhangchuangla.medicine.llm.workflow.support.DepartmentDiagnosisAction;
 import cn.zhangchuangla.medicine.llm.workflow.support.WorkflowStateKeys;
 import com.alibaba.cloud.ai.graph.OverAllState;
 import com.alibaba.cloud.ai.graph.action.NodeAction;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 
 import java.util.Map;
@@ -16,21 +19,23 @@ import java.util.Map;
  */
 @Component
 @RequiredArgsConstructor
+@Slf4j
 public class ExpertDiagnosisNodeAction implements NodeAction {
 
-    private final Map<String, cn.zhangchuangla.medicine.llm.workflow.support.DepartmentDiagnosisAction> diagnosisActions;
+    private final Map<String, DepartmentDiagnosisAction> diagnosisActions;
 
     @Override
     public Map<String, Object> apply(OverAllState state) throws Exception {
+        log.info("【工作流】进入节点：{}", WorkflowStateKeys.NODE_EXPERT_DIAGNOSIS);
         String route = state.value(WorkflowStateKeys.ROUTE, String.class).orElse(WorkflowStateKeys.ROUTE_GENERAL);
-        String summary = state.value(WorkflowStateKeys.SUMMARY, String.class).orElse("");
+        log.info("【工作流】诊断科室路由：{}", route);
+        String symptomInfo = state.value(MedicineStateKeyEnum.USER_MESSAGE.getKey(), String.class).orElse("");
         String inquiryAnswer = state.value(WorkflowStateKeys.INQUIRY_ANSWER, String.class).orElse(null);
         if (inquiryAnswer != null && !inquiryAnswer.isBlank()) {
-            summary = summary + "\n\n【用户补充回答】\n" + inquiryAnswer;
+            symptomInfo = symptomInfo + "\n\n【用户补充回答】\n" + inquiryAnswer;
         }
 
-        cn.zhangchuangla.medicine.llm.workflow.support.DepartmentDiagnosisAction diagnosisAction =
-                diagnosisActions.get(route);
+        DepartmentDiagnosisAction diagnosisAction = diagnosisActions.get(route);
         if (diagnosisAction == null) {
             diagnosisAction = diagnosisActions.get(WorkflowStateKeys.ROUTE_GENERAL);
         }
@@ -38,7 +43,7 @@ public class ExpertDiagnosisNodeAction implements NodeAction {
             throw new LLMParamException("未找到可用的科室诊断实现: " + route);
         }
 
-        String diagnosisResult = diagnosisAction.diagnose(summary);
+        String diagnosisResult = diagnosisAction.diagnose(symptomInfo);
         if (diagnosisResult == null) {
             throw new LLMParamException("专家诊断结果为空");
         }
