@@ -29,7 +29,8 @@
     </scm>
     <properties>
         <java.version>21</java.version>
-        <spring-ai.version>1.1.0</spring-ai.version>
+        <!-- Keep Spring AI version aligned with spring-ai-alibaba graph-core (1.1.0.0-M5 depends on Spring AI 1.1.0-M4) -->
+        <spring-ai.version>1.1.0-M4</spring-ai.version>
         <milvus-sdk.version>2.6.10</milvus-sdk.version>
         <mybatis-plus.version>3.5.12</mybatis-plus.version>
         <druid.version>1.2.24</druid.version>

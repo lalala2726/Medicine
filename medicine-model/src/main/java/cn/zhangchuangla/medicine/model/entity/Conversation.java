@@ -21,18 +21,18 @@ import java.util.Date;
 public class Conversation {
 
     /**
-     * 会话ID
+     * 会话 ID
      */
     @TableId(type = IdType.AUTO)
     private Long id;
 
     /**
-     * 会话UUID
+     * 会话 UUID
      */
     private String uuid;
 
     /**
-     * 用户ID
+     * 用户 ID
      */
     private Long userId;
 
