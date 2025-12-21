@@ -6,6 +6,7 @@ import cn.zhangchuangla.medicine.common.security.entity.AuthUser;
 import cn.zhangchuangla.medicine.common.security.entity.SysUserDetails;
 import cn.zhangchuangla.medicine.model.entity.User;
 import lombok.RequiredArgsConstructor;
+import org.jspecify.annotations.NonNull;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
@@ -25,7 +26,7 @@ public class ClientSecurityUserService implements UserDetailsService {
     private final UserService userService;
 
     @Override
-    public UserDetails loadUserByUsername(String username) {
+    public @NonNull UserDetails loadUserByUsername(@NonNull String username) {
         User user = userService.getUserByUsername(username);
         if (user == null) {
             throw new UsernameNotFoundException("用户不存在");

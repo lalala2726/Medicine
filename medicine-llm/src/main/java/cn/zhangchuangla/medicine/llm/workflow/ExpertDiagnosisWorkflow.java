@@ -1,12 +1,9 @@
 package cn.zhangchuangla.medicine.llm.workflow;
 
 import cn.zhangchuangla.medicine.common.core.enums.MedicineStateKeyEnum;
-import cn.zhangchuangla.medicine.llm.workflow.node.ReviewNode;
 import cn.zhangchuangla.medicine.llm.workflow.node.RouteNode;
 import cn.zhangchuangla.medicine.llm.workflow.node.expert.DermatologyExpertNode;
 import cn.zhangchuangla.medicine.llm.workflow.node.expert.InternalMedicineExpertNode;
-import cn.zhangchuangla.medicine.llm.workflow.node.expert.PsychologyExpertNode;
-import cn.zhangchuangla.medicine.llm.workflow.node.expert.SurgeryExpertNode;
 import com.alibaba.cloud.ai.graph.*;
 import com.alibaba.cloud.ai.graph.action.AsyncNodeAction;
 import com.alibaba.cloud.ai.graph.action.EdgeAction;
@@ -35,10 +32,7 @@ public class ExpertDiagnosisWorkflow {
 
     private final DermatologyExpertNode dermatologyExpertNode;
     private final InternalMedicineExpertNode internalMedicineExpertNode;
-    private final PsychologyExpertNode psychologyExpertNode;
-    private final SurgeryExpertNode surgeryExpertNode;
     private final RouteNode routeNode;
-    private final ReviewNode reviewNode;
 
 
     @Bean("llmExpertDiagnosisWorkflow")
@@ -52,7 +46,6 @@ public class ExpertDiagnosisWorkflow {
             keyStrategyHashMap.put(MedicineStateKeyEnum.SYSTEM_RESPONSE.getKey(), new ReplaceStrategy());
             keyStrategyHashMap.put("route", new ReplaceStrategy());
             keyStrategyHashMap.put("diagnosisResult", new ReplaceStrategy());
-            keyStrategyHashMap.put("finalResult", new ReplaceStrategy());
             return keyStrategyHashMap;
         };
 
@@ -61,31 +54,18 @@ public class ExpertDiagnosisWorkflow {
                 .addNode("RouteNode", AsyncNodeAction.node_async(routeNode))
                 .addNode("DermatologyExpertNode", AsyncNodeAction.node_async(dermatologyExpertNode))
                 .addNode("InternalMedicineExpertNode", AsyncNodeAction.node_async(internalMedicineExpertNode))
-                .addNode("PsychologyExpertNode", AsyncNodeAction.node_async(psychologyExpertNode))
-                .addNode("SurgeryExpertNode", AsyncNodeAction.node_async(surgeryExpertNode))
-                .addNode("ReviewNode", AsyncNodeAction.node_async(reviewNode))
-
                 // 开始 -> 路由
                 .addEdge(StateGraph.START, "RouteNode")
-
                 // 根据意图分发到具体专家
                 .addConditionalEdges("RouteNode", edge_async(new IntentDispatcher()),
                         Map.of(
                                 "DermatologyExpertNode", "DermatologyExpertNode",
-                                "InternalMedicineExpertNode", "InternalMedicineExpertNode",
-                                "PsychologyExpertNode", "PsychologyExpertNode",
-                                "SurgeryExpertNode", "SurgeryExpertNode",
-                                "ReviewNode", "ReviewNode"
+                                "InternalMedicineExpertNode", "InternalMedicineExpertNode"
                         )
                 )
-
-                // 专家意见 -> 质控审核 -> 结束
-                .addEdge("DermatologyExpertNode", "ReviewNode")
-                .addEdge("InternalMedicineExpertNode", "ReviewNode")
-                .addEdge("PsychologyExpertNode", "ReviewNode")
-                .addEdge("SurgeryExpertNode", "ReviewNode")
-                .addEdge("ReviewNode", StateGraph.END);
-
+                // 暂时取消 ReviewNode，专家节点直接结束
+                .addEdge("DermatologyExpertNode", StateGraph.END)
+                .addEdge("InternalMedicineExpertNode", StateGraph.END);
         // 输出 PlantUML 便于可视化调试
         GraphRepresentation representation = graph.getGraph(
                 GraphRepresentation.Type.PLANTUML,
@@ -98,16 +78,13 @@ public class ExpertDiagnosisWorkflow {
     static class IntentDispatcher implements EdgeAction {
         @Override
         public String apply(OverAllState state) {
-            String route = String.valueOf(state.value("route"));
-            String nextNode = switch (route) {
+            String route = state.value("route", "").trim();
+            return switch (route) {
                 case "DermatologyExpertNode" -> "DermatologyExpertNode";
                 case "InternalMedicineExpertNode" -> "InternalMedicineExpertNode";
-                case "PsychologyExpertNode" -> "PsychologyExpertNode";
-                case "SurgeryExpertNode" -> "SurgeryExpertNode";
-                default -> "ReviewNode";
+                default -> "InternalMedicineExpertNode";
             };
-            log.debug("意图分发: {} -> {}", route, nextNode);
-            return nextNode;
         }
     }
+
 }

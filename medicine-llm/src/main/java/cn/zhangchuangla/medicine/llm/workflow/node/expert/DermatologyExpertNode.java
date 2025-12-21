@@ -1,12 +1,13 @@
 package cn.zhangchuangla.medicine.llm.workflow.node.expert;
 
-import cn.zhangchuangla.medicine.llm.exection.LLMParamException;
 import cn.zhangchuangla.medicine.llm.prompt.DiagnosisWorkflowPrompt;
 import com.alibaba.cloud.ai.graph.OverAllState;
 import com.alibaba.cloud.ai.graph.action.NodeAction;
 import lombok.RequiredArgsConstructor;
 import org.springframework.ai.chat.client.ChatClient;
+import org.springframework.ai.chat.model.ChatResponse;
 import org.springframework.stereotype.Component;
+import reactor.core.publisher.Flux;
 
 import java.util.Map;
 
@@ -26,15 +27,12 @@ public class DermatologyExpertNode implements NodeAction {
     private final ChatClient chatClient;
 
     @Override
-    public Map<String, Object> apply(OverAllState state) throws Exception {
-        String summer = String.valueOf(state.value("summer"));
-        String content = chatClient.prompt(PROMPT)
-                .user(summer)
-                .call()
-                .content();
-        if (content == null) {
-            throw new LLMParamException("诊断为空");
-        }
-        return Map.of("diagnosisResult", content);
+    public Map<String, Object> apply(OverAllState state) {
+        String userMessage = state.value("userMessage", "");
+        Flux<ChatResponse> chatResponseFlux = chatClient.prompt(PROMPT)
+                .user(userMessage)
+                .stream()
+                .chatResponse();
+        return Map.of("diagnosisResult", chatResponseFlux);
     }
 }

@@ -30,10 +30,9 @@ public class MallOrderTimelineServiceImpl extends ServiceImpl<MallOrderTimelineM
      * </p>
      *
      * @param dto 时间线数据传输对象
-     * @return 是否添加成功
      */
     @Override
-    public boolean addTimeline(OrderTimelineDto dto) {
+    public void addTimeline(OrderTimelineDto dto) {
         // 参数校验
         Assert.notNull(dto, "时间线数据不能为空");
         Assert.notNull(dto.getOrderId(), "订单ID不能为空");
@@ -65,7 +64,6 @@ public class MallOrderTimelineServiceImpl extends ServiceImpl<MallOrderTimelineM
         if (saved) {
             log.info("订单时间线记录添加成功，orderId={}, eventType={}", dto.getOrderId(), dto.getEventType());
         }
-        return saved;
     }
 
     /**

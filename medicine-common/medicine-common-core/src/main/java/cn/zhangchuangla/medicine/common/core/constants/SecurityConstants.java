@@ -18,7 +18,6 @@ public class SecurityConstants {
             "/captcha",
             "/auth/register",
             "/auth/refresh",
-            "/druid/**",
     };
 
     /**

@@ -9,8 +9,7 @@ import io.minio.*;
 import io.minio.messages.Bucket;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.jetbrains.annotations.Contract;
-import org.jetbrains.annotations.NotNull;
+import org.springframework.lang.Contract;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
 import org.springframework.web.multipart.MultipartFile;
@@ -174,7 +173,6 @@ public class MinioStorageServiceImpl implements MinioStorageService {
         }
     }
 
-    @NotNull
     @Contract("null -> fail")
     private String normalizeEndpoint(String endpoint) {
         if (endpoint == null || endpoint.isBlank()) {

@@ -5,7 +5,7 @@
     <parent>
         <groupId>cn.zhangchuangla.medicine</groupId>
         <artifactId>medicine-common</artifactId>
-        <version>0.0.1-SNAPSHOT</version>
+        <version>0.1</version>
     </parent>
     <artifactId>medicine-common-storage</artifactId>
     <name>medicine-common-storage</name>
@@ -23,9 +23,15 @@
             <groupId>io.minio</groupId>
             <artifactId>minio</artifactId>
         </dependency>
+        <!-- MinIO SDK 依赖 OkHttp3，显式声明以满足编译 -->
+        <dependency>
+            <groupId>com.squareup.okhttp3</groupId>
+            <artifactId>okhttp</artifactId>
+            <version>4.12.0</version>
+        </dependency>
         <dependency>
             <groupId>org.springframework.boot</groupId>
-            <artifactId>spring-boot-starter-web</artifactId>
+            <artifactId>spring-boot-starter-webmvc</artifactId>
         </dependency>
         <dependency>
             <groupId>org.projectlombok</groupId>

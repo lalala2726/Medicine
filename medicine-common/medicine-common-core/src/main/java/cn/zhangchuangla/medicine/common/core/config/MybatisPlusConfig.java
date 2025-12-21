@@ -1,4 +1,4 @@
-package cn.zhangchuangla.medicine.client.config;
+package cn.zhangchuangla.medicine.common.core.config;
 
 import com.baomidou.mybatisplus.annotation.DbType;
 import com.baomidou.mybatisplus.extension.plugins.MybatisPlusInterceptor;

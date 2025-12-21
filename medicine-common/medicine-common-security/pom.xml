@@ -5,7 +5,7 @@
     <parent>
         <groupId>cn.zhangchuangla.medicine</groupId>
         <artifactId>medicine-common</artifactId>
-        <version>0.0.1-SNAPSHOT</version>
+        <version>0.1</version>
     </parent>
     <artifactId>medicine-common-security</artifactId>
     <name>medicine-common-security</name>
@@ -29,11 +29,11 @@
         </dependency>
         <dependency>
             <groupId>org.springframework.boot</groupId>
-            <artifactId>spring-boot-starter-web</artifactId>
+            <artifactId>spring-boot-starter-webmvc</artifactId>
         </dependency>
         <dependency>
             <groupId>org.springframework.boot</groupId>
-            <artifactId>spring-boot-starter-aop</artifactId>
+            <artifactId>spring-boot-starter-aspectj</artifactId>
         </dependency>
         <dependency>
             <groupId>io.jsonwebtoken</groupId>

@@ -5,6 +5,7 @@ import cn.zhangchuangla.medicine.common.core.base.AjaxResult;
 import cn.zhangchuangla.medicine.common.security.annotation.IsAdmin;
 import cn.zhangchuangla.medicine.common.security.base.BaseController;
 import cn.zhangchuangla.medicine.llm.model.dto.DrugInfoDto;
+import cn.zhangchuangla.medicine.llm.model.request.AssistantChatRequest;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -51,13 +52,10 @@ public class AssistantController extends BaseController {
     @PostMapping(value = "/chat", produces = "text/event-stream")
     @Operation(summary = "智能助手")
     public SseEmitter chat(@RequestBody AssistantChatRequest request) {
-        return assistantService.chat(request.message());
+        return assistantService.chat(request);
     }
 
     public record parseDrugInfoByImageRequest(List<String> imageUrl) {
-    }
-
-    public record AssistantChatRequest(String message) {
     }
 
 }

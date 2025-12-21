@@ -23,8 +23,7 @@ public interface KbDocumentChunkService extends IService<KbDocumentChunk> {
     /**
      * 文档切片列表。
      *
-     * @param knowledgeBaseId 知识库ID
-     * @param request         查询参数
+     * @param request 查询参数
      * @return 分页结果
      */
     Page<KbDocumentChunk> documentSliceList(Long documentId, DocumentSliceListRequest request);

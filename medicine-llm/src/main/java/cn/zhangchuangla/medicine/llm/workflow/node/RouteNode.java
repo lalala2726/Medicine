@@ -1,6 +1,5 @@
 package cn.zhangchuangla.medicine.llm.workflow.node;
 
-import cn.zhangchuangla.medicine.common.core.enums.MedicineStateKeyEnum;
 import cn.zhangchuangla.medicine.llm.exection.LLMParamException;
 import cn.zhangchuangla.medicine.llm.prompt.DiagnosisWorkflowPrompt;
 import com.alibaba.cloud.ai.graph.OverAllState;
@@ -24,8 +23,8 @@ public class RouteNode implements NodeAction {
     private final ChatClient chatClient;
 
     @Override
-    public Map<String, Object> apply(OverAllState state) throws Exception {
-        String summary = String.valueOf(state.value(MedicineStateKeyEnum.USER_MESSAGE.getKey()));
+    public Map<String, Object> apply(OverAllState state) {
+        String summary = state.value("userMessage", "");
         String content = chatClient.prompt(PROMPT)
                 .user(summary)
                 .call()

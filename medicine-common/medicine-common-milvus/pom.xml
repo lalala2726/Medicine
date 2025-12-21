@@ -6,7 +6,7 @@
     <parent>
         <groupId>cn.zhangchuangla.medicine</groupId>
         <artifactId>Medicine</artifactId>
-        <version>0.0.1-SNAPSHOT</version>
+        <version>0.1</version>
         <relativePath>../../pom.xml</relativePath>
     </parent>
 
@@ -35,6 +35,11 @@
             <groupId>org.projectlombok</groupId>
             <artifactId>lombok</artifactId>
             <optional>true</optional>
+        </dependency>
+        <dependency>
+            <groupId>cn.zhangchuangla.medicine</groupId>
+            <artifactId>medicine-common-file-processing</artifactId>
+            <version>${project.version}</version>
         </dependency>
     </dependencies>
 

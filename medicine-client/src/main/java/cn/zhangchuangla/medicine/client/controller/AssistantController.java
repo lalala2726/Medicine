@@ -7,6 +7,7 @@ import cn.zhangchuangla.medicine.client.service.MallOrderService;
 import cn.zhangchuangla.medicine.common.core.base.AjaxResult;
 import cn.zhangchuangla.medicine.common.core.base.TableDataResult;
 import cn.zhangchuangla.medicine.common.security.base.BaseController;
+import cn.zhangchuangla.medicine.llm.model.request.AssistantChatRequest;
 import cn.zhangchuangla.medicine.llm.service.AssistantService;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import io.swagger.v3.oas.annotations.Operation;
@@ -36,8 +37,8 @@ public class AssistantController extends BaseController {
 
     @PostMapping(value = "/chat", produces = "text/event-stream")
     @Operation(summary = "简单咨询", description = "简单的医疗咨询接口，返回 ChatResponse SSE 消息（文本或卡片）")
-    public SseEmitter simpleConsultation(@RequestBody ConsultationRequest request) {
-        return assistantService.ClientConsultation(request.question());
+    public SseEmitter simpleConsultation(@RequestBody AssistantChatRequest request) {
+        return assistantService.ClientConsultation(request.getMessage());
     }
 
 
@@ -56,13 +57,4 @@ public class AssistantController extends BaseController {
     }
 
 
-    /**
-     * 咨询请求参数
-     *
-     * @param question 咨询问题内容
-     */
-    public record ConsultationRequest(
-            String question
-    ) {
-    }
 }

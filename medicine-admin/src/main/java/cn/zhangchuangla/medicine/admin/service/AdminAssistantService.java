@@ -24,8 +24,8 @@ public interface AdminAssistantService {
     /**
      * 聊天
      *
-     * @param message 消息
+     * @param request 请求（包含消息与文件）
      * @return sse
      */
-    SseEmitter chat(String message);
+    SseEmitter chat(cn.zhangchuangla.medicine.llm.model.request.AssistantChatRequest request);
 }

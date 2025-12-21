@@ -1,7 +1,7 @@
 package cn.zhangchuangla.medicine.model.request.mall;
 
 import io.swagger.v3.oas.annotations.media.Schema;
-import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.NotBlank;
 import lombok.Data;
 
 /**
@@ -14,7 +14,7 @@ import lombok.Data;
 @Schema(description = "商城商品分类添加请求对象")
 public class MallCategoryAddRequest {
 
-    @NotNull(message = "分类名称不能为空")
+    @NotBlank(message = "分类名称不能为空")
     @Schema(description = "分类名称", example = "保健品", requiredMode = Schema.RequiredMode.REQUIRED)
     private String name;
 

@@ -5,7 +5,6 @@ import com.alibaba.cloud.ai.graph.OverAllState;
 import com.alibaba.cloud.ai.graph.action.NodeAction;
 import lombok.RequiredArgsConstructor;
 import org.springframework.ai.chat.client.ChatClient;
-import org.springframework.ai.chat.model.ChatResponse;
 import org.springframework.stereotype.Component;
 import reactor.core.publisher.Flux;
 
@@ -19,14 +18,14 @@ public class ReviewNode implements NodeAction {
     private final ChatClient chatClient;
 
     @Override
-    public Map<String, Object> apply(OverAllState state) throws Exception {
-        String diagnosisResult = String.valueOf(state.value("diagnosisResult"));
+    public Map<String, Object> apply(OverAllState state) {
+        String diagnosisResult = state.value("diagnosisResult", "");
 
-        Flux<ChatResponse> responseFlux = chatClient.prompt(PROMPT)
+        Flux<String> content = chatClient.prompt(PROMPT)
                 .user(diagnosisResult)
                 .stream()
-                .chatResponse();
+                .content();
 
-        return Map.of("finalResult", responseFlux);
+        return Map.of("finalResult", content);
     }
 }

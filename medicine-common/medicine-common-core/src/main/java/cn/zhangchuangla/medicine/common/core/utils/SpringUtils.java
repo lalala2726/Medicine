@@ -1,6 +1,7 @@
 package cn.zhangchuangla.medicine.common.core.utils;
 
 import lombok.Getter;
+import org.jspecify.annotations.NonNull;
 import org.springframework.beans.BeansException;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
@@ -43,7 +44,7 @@ public class SpringUtils implements ApplicationContextAware {
     }
 
     @Override
-    public void setApplicationContext(ApplicationContext applicationContext) throws BeansException {
+    public void setApplicationContext(@NonNull ApplicationContext applicationContext) throws BeansException {
         SpringUtils.applicationContext = applicationContext;
     }
 }
