@@ -16,7 +16,7 @@ import java.util.Locale;
 public class MilvusProperties {
 
     /**
-     * Milvus 服务地址，例如：http://localhost:19530
+     * Milvus 服务地址
      */
     private String uri;
 

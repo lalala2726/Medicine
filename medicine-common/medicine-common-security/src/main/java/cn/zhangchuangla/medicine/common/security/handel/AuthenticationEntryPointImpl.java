@@ -5,6 +5,7 @@ import cn.zhangchuangla.medicine.common.core.utils.ResponseUtils;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.extern.slf4j.Slf4j;
+import org.jspecify.annotations.NonNull;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.web.AuthenticationEntryPoint;
@@ -35,7 +36,7 @@ public class AuthenticationEntryPointImpl implements AuthenticationEntryPoint, S
      * @param authException 认证异常
      */
     @Override
-    public void commence(HttpServletRequest request, HttpServletResponse response, AuthenticationException authException) {
+    public void commence(HttpServletRequest request, @NonNull HttpServletResponse response, @NonNull AuthenticationException authException) {
         String format = String.format("请求访问:%s 认证失败，无法访问系统资源", request.getRequestURI());
         log.error(format);
         ResponseUtils.writeErrMsg(response, HttpStatus.OK, ResponseCode.UNAUTHORIZED, format);

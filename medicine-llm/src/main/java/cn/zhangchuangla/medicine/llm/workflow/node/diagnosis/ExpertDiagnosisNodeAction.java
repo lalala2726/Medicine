@@ -25,7 +25,7 @@ public class ExpertDiagnosisNodeAction implements NodeAction {
     private final Map<String, DepartmentDiagnosisAction> diagnosisActions;
 
     @Override
-    public Map<String, Object> apply(OverAllState state) throws Exception {
+    public Map<String, Object> apply(OverAllState state){
         log.info("【工作流】进入节点：{}", WorkflowStateKeys.NODE_EXPERT_DIAGNOSIS);
         String route = state.value(WorkflowStateKeys.ROUTE, String.class).orElse(WorkflowStateKeys.ROUTE_GENERAL);
         log.info("【工作流】诊断科室路由：{}", route);

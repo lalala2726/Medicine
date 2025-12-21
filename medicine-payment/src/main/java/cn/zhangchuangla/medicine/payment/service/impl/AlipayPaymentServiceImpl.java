@@ -99,7 +99,7 @@ public class AlipayPaymentServiceImpl implements AlipayPaymentService {
      * 调用支付宝开放平台退款接口，封装参数校验、异常处理以及日志记录。
      */
     @Override
-    public AlipayRefundVo refund(AlipayRefundRequest request) {
+    public void refund(AlipayRefundRequest request) {
         Assert.notNull(request, "request 不能为空");
         validateRefundParams(request);
 
@@ -119,7 +119,7 @@ public class AlipayPaymentServiceImpl implements AlipayPaymentService {
             if (!response.isSuccess()) {
                 throw new AlipayPaymentException("调用支付宝退款失败：" + response.getSubMsg());
             }
-            return AlipayRefundVo.builder()
+            AlipayRefundVo.builder()
                     .tradeNo(response.getTradeNo())
                     .outTradeNo(response.getOutTradeNo())
                     .buyerLogonId(response.getBuyerLogonId())

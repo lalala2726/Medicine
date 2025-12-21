@@ -28,8 +28,8 @@ public class MallAfterSaleTimelineServiceImpl extends ServiceImpl<MallAfterSaleT
         implements MallAfterSaleTimelineService {
 
     @Override
-    public boolean addTimeline(Long afterSaleId, String eventType, String eventStatus,
-                               String operatorType, Long operatorId, String description) {
+    public void addTimeline(Long afterSaleId, String eventType, String eventStatus,
+                            String operatorType, Long operatorId, String description) {
         MallAfterSaleTimeline timeline = MallAfterSaleTimeline.builder()
                 .afterSaleId(afterSaleId)
                 .eventType(eventType)
@@ -39,7 +39,7 @@ public class MallAfterSaleTimelineServiceImpl extends ServiceImpl<MallAfterSaleT
                 .description(description)
                 .createTime(new Date())
                 .build();
-        return save(timeline);
+        save(timeline);
     }
 
     @Override
