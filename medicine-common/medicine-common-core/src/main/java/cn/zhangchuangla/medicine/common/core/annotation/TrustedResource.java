@@ -2,7 +2,6 @@ package cn.zhangchuangla.medicine.common.core.annotation;
 
 import cn.zhangchuangla.medicine.common.core.validation.TrustedResourceValidator;
 import jakarta.validation.Constraint;
-import jakarta.validation.Payload;
 
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
@@ -17,17 +16,10 @@ import java.lang.annotation.Target;
 @Constraint(validatedBy = TrustedResourceValidator.class)
 public @interface TrustedResource {
 
+    /**
+     * 错误信息
+     */
     String message() default "资源地址不可信";
-
-    /**
-     * 校验分组，用于在不同业务场景下启用/禁用该校验。
-     */
-    Class<?>[] groups() default {};
-
-    /**
-     * 负载信息，通常用于携带元数据给校验框架或审计处理。
-     */
-    Class<? extends Payload>[] payload() default {};
 
     /**
      * 可信域名白名单（优先于配置）。
