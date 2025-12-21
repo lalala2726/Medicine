@@ -33,7 +33,7 @@
         <milvus-sdk.version>2.6.10</milvus-sdk.version>
         <mybatis-plus.version>3.5.15</mybatis-plus.version>
         <mysql.version>8.3.0</mysql.version>
-        <springdoc.version>2.8.3</springdoc.version>
+        <springdoc.version>3.0.0</springdoc.version>
         <minio.version>8.5.17</minio.version>
         <jjwt.version>0.11.5</jjwt.version>
         <guava.version>32.1.2-jre</guava.version>
