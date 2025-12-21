@@ -39,7 +39,8 @@ public class InitialInquiryNodeAction implements NodeAction {
 
         String normalizedIntent = content.trim().toUpperCase(Locale.ROOT);
         String intent = switch (normalizedIntent) {
-            case WorkflowStateKeys.USER_INTENT_GENERAL_SERVICE, WorkflowStateKeys.USER_INTENT_DIAGNOSIS -> normalizedIntent;
+            case WorkflowStateKeys.USER_INTENT_GENERAL_SERVICE, WorkflowStateKeys.USER_INTENT_DIAGNOSIS ->
+                    normalizedIntent;
             default -> WorkflowStateKeys.USER_INTENT_DIAGNOSIS;
         };
 

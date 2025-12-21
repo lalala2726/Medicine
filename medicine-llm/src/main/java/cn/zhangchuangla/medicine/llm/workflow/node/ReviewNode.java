@@ -18,7 +18,7 @@ public class ReviewNode implements NodeAction {
     private final ChatClient chatClient;
 
     @Override
-    public Map<String, Object> apply(OverAllState state){
+    public Map<String, Object> apply(OverAllState state) {
         String diagnosisResult = state.value("diagnosisResult", "");
 
         Flux<String> content = chatClient.prompt(PROMPT)

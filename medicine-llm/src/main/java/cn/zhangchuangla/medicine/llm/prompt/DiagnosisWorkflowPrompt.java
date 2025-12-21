@@ -158,7 +158,7 @@ public class DiagnosisWorkflowPrompt {
             1. **InternalMedicineExpertNode**
                - 适用范围：发热、感冒、头痛、腹痛、高血压、糖尿病、消化系统问题、呼吸系统问题、以及无法归类到其他科室的一般性身体不适。
                - 注意：如果患者是儿童且无皮肤科特征，请归类到此节点。
-
+            
             2. **DermatologyExpertNode**
                - 适用范围：皮疹、瘙痒、痘痘、脱发、皮肤过敏、体表斑块、蚊虫叮咬引起的皮肤反应。
             
