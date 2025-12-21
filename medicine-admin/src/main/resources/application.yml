@@ -1,27 +1,18 @@
 spring:
   profiles:
-    active: druid,llm,payment
+    active: llm,payment
   application:
-    name: Medical
+    name: MedicineClient
+  datasource:
+    url: jdbc:mysql://192.168.10.110:3306/medicine?useUnicode=true&characterEncoding=utf8&zeroDateTimeBehavior=convertToNull&useSSL=true&serverTimezone=GMT%2B8
+    username: root
+    password: zhangchuang2726
+    driver-class-name: com.mysql.cj.jdbc.Driver
   servlet:
     multipart:
       max-file-size: 50MB
       max-request-size: 50MB
-  data:
-    mongodb:
-      uri: mongodb://zhangchuang:zhangchuang2726@192.168.10.110:27017/medicine?authSource=admin&authMechanism=SCRAM-SHA-256
-      # 自动创建索引
-      auto-index-creation: true
-      # UUID表示方式
-      uuid-representation: standard
-    redis:
-      host: 192.168.10.110
-      port: 6379
-      database: 0
-      password: zhangchuang2726
-
-  #   elasticsearch 配置
-
+  #elasticsearch 配置
   elasticsearch:
     username: elastic
     password: zhangchuang2726
@@ -43,6 +34,21 @@ spring:
     publisher-returns: true
     template:
       mandatory: true
+  mongodb:
+    host: 192.168.10.110
+    database: medicine
+    username: zhangchuang
+    password: zhangchuang27726
+    authentication-database: admin
+    port: 27017
+    representation:
+      uuid: standard
+  data:
+    redis:
+      host: 192.168.10.110
+      port: 6379
+      password: zhangchuang2726
+      database: 0
 server:
   port: 8080
 mybatis-plus:
@@ -92,3 +98,4 @@ ip2region:
   enabled: true
   db-path: classpath:data/ip2region.xdb
   cache-enabled: true
+spring.mvc.apiversion.use.header: Api-Version

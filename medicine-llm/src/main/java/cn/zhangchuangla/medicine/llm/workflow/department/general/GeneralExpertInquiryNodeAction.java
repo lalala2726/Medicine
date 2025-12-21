@@ -1,7 +1,6 @@
 package cn.zhangchuangla.medicine.llm.workflow.department.general;
 
 import cn.zhangchuangla.medicine.common.core.enums.MedicineStateKeyEnum;
-import cn.zhangchuangla.medicine.llm.prompt.DiagnosisWorkflowPrompt;
 import cn.zhangchuangla.medicine.llm.workflow.support.WorkflowStateKeys;
 import com.alibaba.cloud.ai.graph.OverAllState;
 import com.alibaba.cloud.ai.graph.action.NodeAction;
@@ -24,14 +23,13 @@ import java.util.Map;
 @Slf4j
 public class GeneralExpertInquiryNodeAction implements NodeAction {
 
-    private static final String PROMPT = DiagnosisWorkflowPrompt.GENERAL_EXPERT_INQUIRY_PROMPT;
     private final ChatClient chatClient;
 
     @Override
     public Map<String, Object> apply(OverAllState state) {
         log.info("【工作流】进入节点：{}", WorkflowStateKeys.NODE_GENERAL_EXPERT_INQUIRY);
         String symptomInfo = state.value(MedicineStateKeyEnum.USER_MESSAGE.getKey(), String.class).orElse("");
-        Flux<ChatResponse> responseFlux = chatClient.prompt(PROMPT)
+        Flux<ChatResponse> responseFlux = chatClient.prompt()
                 .user(symptomInfo)
                 .stream()
                 .chatResponse();

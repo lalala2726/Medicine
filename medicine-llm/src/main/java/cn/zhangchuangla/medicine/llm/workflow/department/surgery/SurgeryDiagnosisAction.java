@@ -1,7 +1,6 @@
 package cn.zhangchuangla.medicine.llm.workflow.department.surgery;
 
 import cn.zhangchuangla.medicine.llm.exection.LLMParamException;
-import cn.zhangchuangla.medicine.llm.prompt.DiagnosisWorkflowPrompt;
 import cn.zhangchuangla.medicine.llm.workflow.support.DepartmentDiagnosisAction;
 import cn.zhangchuangla.medicine.llm.workflow.support.WorkflowStateKeys;
 import lombok.RequiredArgsConstructor;
@@ -19,13 +18,12 @@ import org.springframework.stereotype.Component;
 @Slf4j
 public class SurgeryDiagnosisAction implements DepartmentDiagnosisAction {
 
-    private static final String PROMPT = DiagnosisWorkflowPrompt.SURGERY_EXPERT_PROMPT;
     private final ChatClient chatClient;
 
     @Override
     public String diagnose(String summary) {
         log.info("【工作流】进入外科诊断实现：{}", WorkflowStateKeys.ROUTE_SURGERY);
-        String content = chatClient.prompt(PROMPT)
+        String content = chatClient.prompt()
                 .user(summary)
                 .call()
                 .content();

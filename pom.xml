@@ -5,7 +5,7 @@
     <parent>
         <groupId>org.springframework.boot</groupId>
         <artifactId>spring-boot-starter-parent</artifactId>
-        <version>3.5.5</version>
+        <version>4.0.1</version>
         <relativePath/>
     </parent>
     <groupId>cn.zhangchuangla.medicine</groupId>
@@ -29,11 +29,9 @@
     </scm>
     <properties>
         <java.version>21</java.version>
-        <!-- Keep Spring AI version aligned with spring-ai-alibaba graph-core (1.1.0.0-M5 depends on Spring AI 1.1.0-M4) -->
-        <spring-ai.version>1.1.0-M4</spring-ai.version>
+        <spring-ai.version>2.0.0-M1</spring-ai.version>
         <milvus-sdk.version>2.6.10</milvus-sdk.version>
-        <mybatis-plus.version>3.5.12</mybatis-plus.version>
-        <druid.version>1.2.24</druid.version>
+        <mybatis-plus.version>3.5.15</mybatis-plus.version>
         <mysql.version>8.3.0</mysql.version>
         <springdoc.version>2.8.3</springdoc.version>
         <minio.version>8.5.17</minio.version>
@@ -44,7 +42,7 @@
         <ip2region.version>2.7.0</ip2region.version>
         <swagger-annotations.version>2.2.27</swagger-annotations.version>
         <alipay-sdk.version>4.34.0.ALL</alipay-sdk.version>
-        <redisson.version>3.52.0</redisson.version>
+        <redisson.version>4.0.0</redisson.version>
         <lombok.version>1.18.34</lombok.version>
         <h2.version>2.3.232</h2.version>
         <exp4j.version>0.4.8</exp4j.version>
@@ -54,15 +52,10 @@
         <minio.version>8.6.0</minio.version>
         <nimbus-jose-jwt.version>10.0.2</nimbus-jose-jwt.version>
         <grpc.version>1.75.0</grpc.version>
-        <spring.security.version>6.5.4</spring.security.version>
-        <spring.framework.version>6.2.11</spring.framework.version>
         <poi.version>5.4.0</poi.version>
         <minio.version>8.6.0</minio.version>
         <nimbus-jose-jwt.version>10.0.2</nimbus-jose-jwt.version>
         <grpc.version>1.75.0</grpc.version>
-        <spring.security.version>6.5.4</spring.security.version>
-        <spring.framework.version>6.2.11</spring.framework.version>
-        <tomcat.version>10.1.47</tomcat.version>
         <thumbnailator.version>0.4.20</thumbnailator.version>
     </properties>
     <dependencyManagement>
@@ -73,6 +66,11 @@
                 <version>${spring-ai.version}</version>
                 <type>pom</type>
                 <scope>import</scope>
+            </dependency>
+            <dependency>
+                <groupId>org.springframework.boot</groupId>
+                <artifactId>spring-boot-starter-aspectj</artifactId>
+                <version>4.0.1</version>
             </dependency>
             <dependency>
                 <groupId>com.alibaba.cloud.ai</groupId>
@@ -132,7 +130,7 @@
             <!-- MyBatis-Plus JSqlParser，提供分页插件支持 -->
             <dependency>
                 <groupId>com.baomidou</groupId>
-                <artifactId>mybatis-plus-spring-boot3-starter</artifactId>
+                <artifactId>mybatis-plus-spring-boot4-starter</artifactId>
                 <version>${mybatis-plus.version}</version>
             </dependency>
             <dependency>
@@ -144,11 +142,6 @@
                 <groupId>com.baomidou</groupId>
                 <artifactId>mybatis-plus-extension</artifactId>
                 <version>${mybatis-plus.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>com.alibaba</groupId>
-                <artifactId>druid-spring-boot-3-starter</artifactId>
-                <version>${druid.version}</version>
             </dependency>
             <dependency>
                 <groupId>com.mysql</groupId>
@@ -240,25 +233,6 @@
                 <version>${minio.version}</version>
             </dependency>
             <dependency>
-                <groupId>org.springframework.security</groupId>
-                <artifactId>spring-security-bom</artifactId>
-                <version>${spring.security.version}</version>
-                <type>pom</type>
-                <scope>import</scope>
-            </dependency>
-            <dependency>
-                <groupId>org.springframework</groupId>
-                <artifactId>spring-framework-bom</artifactId>
-                <version>${spring.framework.version}</version>
-                <type>pom</type>
-                <scope>import</scope>
-            </dependency>
-            <dependency>
-                <groupId>org.apache.tomcat.embed</groupId>
-                <artifactId>tomcat-embed-core</artifactId>
-                <version>${tomcat.version}</version>
-            </dependency>
-            <dependency>
                 <groupId>cn.zhangchuangla.medicine</groupId>
                 <artifactId>medicine-payment</artifactId>
                 <version>${project.version}</version>
@@ -345,7 +319,7 @@
             </dependency>
             <dependency>
                 <groupId>org.redisson</groupId>
-                <artifactId>redisson</artifactId>
+                <artifactId>redisson-spring-boot-starter</artifactId>
                 <version>${redisson.version}</version>
             </dependency>
             <!-- Test Dependencies -->

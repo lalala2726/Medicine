@@ -2,7 +2,6 @@ package cn.zhangchuangla.medicine.llm.workflow.node.start;
 
 import cn.zhangchuangla.medicine.common.core.enums.MedicineStateKeyEnum;
 import cn.zhangchuangla.medicine.llm.exection.LLMParamException;
-import cn.zhangchuangla.medicine.llm.prompt.DiagnosisWorkflowPrompt;
 import cn.zhangchuangla.medicine.llm.workflow.support.WorkflowStateKeys;
 import com.alibaba.cloud.ai.graph.OverAllState;
 import com.alibaba.cloud.ai.graph.action.NodeAction;
@@ -24,14 +23,13 @@ import java.util.Map;
 @Slf4j
 public class InitialInquiryNodeAction implements NodeAction {
 
-    private static final String PROMPT = DiagnosisWorkflowPrompt.INITIAL_INQUIRY_PROMPT;
     private final ChatClient chatClient;
 
     @Override
     public Map<String, Object> apply(OverAllState state) {
         log.info("【工作流】进入节点：{}", WorkflowStateKeys.NODE_INITIAL_INQUIRY);
         String userMessage = state.value(MedicineStateKeyEnum.USER_MESSAGE.getKey(), String.class).orElse("");
-        String content = chatClient.prompt(PROMPT)
+        String content = chatClient.prompt()
                 .user(userMessage)
                 .call()
                 .content();

@@ -21,6 +21,11 @@ public class MilvusProperties {
     private String uri;
 
     /**
+     * 是否启用 Milvus 客户端
+     */
+    private boolean enabled = true;
+
+    /**
      * 认证 token，格式通常为 root:Milvus
      */
     private String token;
