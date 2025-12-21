@@ -27,6 +27,9 @@ public class MallCategoryTree {
     @Schema(description = "分类描述", example = "分类描述")
     private String description;
 
+    @Schema(description = "封面", example = "https://example.com/category-cover.png")
+    private String cover;
+
     @Schema(description = "排序", example = "1")
     private Integer sort;
 

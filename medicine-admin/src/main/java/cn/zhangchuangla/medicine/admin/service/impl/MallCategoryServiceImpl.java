@@ -171,6 +171,9 @@ public class MallCategoryServiceImpl extends ServiceImpl<MallCategoryMapper, Mal
                     if (!category.getDescription().isBlank()) {
                         tree.setDescription(category.getDescription());
                     }
+                    if (category.getCover() != null && !category.getCover().isBlank()) {
+                        tree.setCover(category.getCover());
+                    }
                     List<MallCategoryTree> mallCategoryTrees = buildTree(categories, category.getId());
                     if (!mallCategoryTrees.isEmpty()) {
                         tree.setChildren(mallCategoryTrees);
@@ -179,6 +182,5 @@ public class MallCategoryServiceImpl extends ServiceImpl<MallCategoryMapper, Mal
                 }).toList();
     }
 }
-
 
 

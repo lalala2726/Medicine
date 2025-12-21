@@ -24,6 +24,9 @@ public class MallCategoryAddRequest {
     @Schema(description = "分类描述", example = "保健品类分类")
     private String description;
 
+    @Schema(description = "封面", example = "https://example.com/category-cover.png")
+    private String cover;
+
     @Schema(description = "排序值，越小越靠前", example = "1")
     private Integer sort = 0;
 

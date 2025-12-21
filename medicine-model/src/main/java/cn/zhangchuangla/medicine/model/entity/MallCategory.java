@@ -42,6 +42,11 @@ public class MallCategory {
     private String description;
 
     /**
+     * 封面
+     */
+    private String cover;
+
+    /**
      * 排序值，越小越靠前
      */
     private Integer sort;
