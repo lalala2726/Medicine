@@ -6,6 +6,7 @@ import cn.zhangchuangla.medicine.common.milvus.service.MilvusKnowledgeBaseServic
 import io.milvus.v2.client.MilvusClientV2;
 import io.milvus.v2.common.DataType;
 import io.milvus.v2.common.IndexParam;
+import io.milvus.v2.service.collection.CollectionService;
 import io.milvus.v2.service.collection.request.AddFieldReq;
 import io.milvus.v2.service.collection.request.CreateCollectionReq;
 import io.milvus.v2.service.collection.request.DropCollectionReq;
@@ -56,8 +57,8 @@ public class MilvusKnowledgeBaseServiceImpl implements MilvusKnowledgeBaseServic
             return;
         }
 
-        // 构建集合 schema：文档主键（VarChar） + 嵌入向量 + 文本内容 + 元信息(JSON)
-        CreateCollectionReq.CollectionSchema schema = milvusClient.createSchema();
+        CreateCollectionReq.CollectionSchema schema =
+                CollectionService.createSchema();
         schema.addField(AddFieldReq.builder()
                 .fieldName(PRIMARY_FIELD)
                 .dataType(DataType.VarChar)

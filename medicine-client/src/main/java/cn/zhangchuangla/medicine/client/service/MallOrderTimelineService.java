@@ -18,9 +18,8 @@ public interface MallOrderTimelineService extends IService<MallOrderTimeline> {
      * </p>
      *
      * @param dto 时间线数据传输对象
-     * @return 是否添加成功
      */
-    boolean addTimeline(OrderTimelineDto dto);
+    void addTimeline(OrderTimelineDto dto);
 
     /**
      * 添加时间线记录（如果不存在）

@@ -101,10 +101,9 @@ public final class RedisCache {
      * 删除单个对象
      *
      * @param key 缓存键值
-     * @return true=删除成功；false=删除失败
      */
-    public boolean deleteObject(final String key) {
-        return redisTemplate.delete(key);
+    public void deleteObject(final String key) {
+        redisTemplate.delete(key);
     }
 
     /**

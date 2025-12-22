@@ -31,5 +31,5 @@ public enum DocumentChunkStrategy {
     /**
      * 自定义切分（用户可在配置中指定标识符、正则等）
      */
-    CUSTOM;
+    CUSTOM
 }

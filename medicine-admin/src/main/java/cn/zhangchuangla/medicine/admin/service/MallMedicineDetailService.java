@@ -24,9 +24,8 @@ public interface MallMedicineDetailService extends IService<DrugDetail> {
      * 更新药品详情
      *
      * @param drugDetail 药品详情
-     * @return 更新结果
      */
-    boolean updateMedicineDetail(DrugDetail drugDetail);
+    void updateMedicineDetail(DrugDetail drugDetail);
 
     /**
      * 根据商品ID删除药品详情
@@ -40,7 +39,6 @@ public interface MallMedicineDetailService extends IService<DrugDetail> {
      * 批量删除药品详情
      *
      * @param productIds 商品ID列表
-     * @return 删除结果
      */
-    boolean deleteMedicineDetailByProductIds(List<Long> productIds);
+    void deleteMedicineDetailByProductIds(List<Long> productIds);
 }

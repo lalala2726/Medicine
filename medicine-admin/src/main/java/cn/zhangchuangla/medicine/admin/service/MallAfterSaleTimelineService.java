@@ -23,10 +23,9 @@ public interface MallAfterSaleTimelineService extends IService<MallAfterSaleTime
      * @param operatorType 操作人类型
      * @param operatorId   操作人ID
      * @param description  事件描述
-     * @return 是否添加成功
      */
-    boolean addTimeline(Long afterSaleId, String eventType, String eventStatus,
-                        String operatorType, Long operatorId, String description);
+    void addTimeline(Long afterSaleId, String eventType, String eventStatus,
+                     String operatorType, Long operatorId, String description);
 
     /**
      * 获取售后时间线列表

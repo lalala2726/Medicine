@@ -21,18 +21,18 @@ import java.util.Date;
 public class MallCart {
 
     /**
-     * 购物车ID
+     * 购物车 ID
      */
     @TableId(type = IdType.AUTO)
     private Long id;
 
     /**
-     * 用户ID
+     * 用户 ID
      */
     private Long userId;
 
     /**
-     * 商品ID
+     * 商品 ID
      */
     private Long productId;
 

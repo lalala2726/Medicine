@@ -64,6 +64,7 @@ public class MallProductIndexMessageListener {
                 .name(payload.getName())
                 .categoryName(payload.getCategoryName())
                 .price(payload.getPrice())
+                .sales(payload.getSales() != null ? payload.getSales() : 0)
                 .prescription(payload.getPrescription())
                 .status(payload.getStatus())
                 .brand(payload.getBrand())

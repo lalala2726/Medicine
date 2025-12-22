@@ -3,7 +3,6 @@ package cn.zhangchuangla.medicine.payment.service;
 import cn.zhangchuangla.medicine.payment.model.AlipayPagePayRequest;
 import cn.zhangchuangla.medicine.payment.model.AlipayQrCodeRequest;
 import cn.zhangchuangla.medicine.payment.model.AlipayRefundRequest;
-import cn.zhangchuangla.medicine.payment.model.AlipayRefundVo;
 
 /**
  * 支付宝支付能力的核心出口。
@@ -26,9 +25,8 @@ public interface AlipayPaymentService {
      * 调用支付宝退款接口。
      *
      * @param request 退款请求参数
-     * @return 退款结果
      */
-    AlipayRefundVo refund(AlipayRefundRequest request);
+    void refund(AlipayRefundRequest request);
 
     /**
      * 生成支付宝当面付二维码图片，返回 Base64。

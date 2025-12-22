@@ -16,9 +16,14 @@ import java.util.Locale;
 public class MilvusProperties {
 
     /**
-     * Milvus 服务地址，例如：http://localhost:19530
+     * Milvus 服务地址
      */
     private String uri;
+
+    /**
+     * 是否启用 Milvus 客户端
+     */
+    private boolean enabled = true;
 
     /**
      * 认证 token，格式通常为 root:Milvus
