@@ -40,7 +40,7 @@
         <commons-lang3.version>3.18.0</commons-lang3.version>
         <fastjson.version>2.0.53</fastjson.version>
         <ip2region.version>2.7.0</ip2region.version>
-        <swagger-annotations.version>2.2.27</swagger-annotations.version>
+        <swagger-annotations.version>2.2.41</swagger-annotations.version>
         <alipay-sdk.version>4.34.0.ALL</alipay-sdk.version>
         <redisson.version>4.0.0</redisson.version>
         <lombok.version>1.18.34</lombok.version>
