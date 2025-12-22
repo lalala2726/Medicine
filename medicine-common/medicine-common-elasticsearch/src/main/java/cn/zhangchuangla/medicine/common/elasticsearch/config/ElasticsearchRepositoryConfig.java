@@ -1,5 +1,6 @@
 package cn.zhangchuangla.medicine.common.elasticsearch.config;
 
+import cn.zhangchuangla.medicine.common.elasticsearch.repository.support.NoIndexElasticsearchRepository;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.data.elasticsearch.repository.config.EnableElasticsearchRepositories;
 
@@ -8,7 +9,8 @@ import org.springframework.data.elasticsearch.repository.config.EnableElasticsea
  */
 @Configuration
 @EnableElasticsearchRepositories(
-        basePackages = "cn.zhangchuangla.medicine.common.elasticsearch.repository"
+        basePackages = "cn.zhangchuangla.medicine.common.elasticsearch.repository",
+        repositoryBaseClass = NoIndexElasticsearchRepository.class
 )
 public class ElasticsearchRepositoryConfig {
 }

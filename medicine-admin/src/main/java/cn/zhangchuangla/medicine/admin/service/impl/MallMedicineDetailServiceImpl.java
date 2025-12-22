@@ -51,7 +51,7 @@ public class MallMedicineDetailServiceImpl extends ServiceImpl<MallMedicineDetai
 
     @Override
     @Transactional(rollbackFor = Exception.class)
-    public boolean updateMedicineDetail(DrugDetail drugDetail) {
+    public void updateMedicineDetail(DrugDetail drugDetail) {
         if (drugDetail == null) {
             throw new ServiceException("药品详情不能为空");
         }
@@ -66,13 +66,14 @@ public class MallMedicineDetailServiceImpl extends ServiceImpl<MallMedicineDetai
 
         if (existingDetail == null) {
             // 不存在则新增
-            return addMedicineDetail(drugDetail);
+            addMedicineDetail(drugDetail);
+            return;
         }
 
         // 更新记录
         drugDetail.setId(existingDetail.getId());
         drugDetail.setUpdateTime(new Date());
-        return updateById(drugDetail);
+        updateById(drugDetail);
     }
 
     @Override
@@ -89,12 +90,12 @@ public class MallMedicineDetailServiceImpl extends ServiceImpl<MallMedicineDetai
 
     @Override
     @Transactional(rollbackFor = Exception.class)
-    public boolean deleteMedicineDetailByProductIds(List<Long> productIds) {
+    public void deleteMedicineDetailByProductIds(List<Long> productIds) {
         if (productIds == null || productIds.isEmpty()) {
-            return true;
+            return;
         }
 
-        return lambdaUpdate()
+        lambdaUpdate()
                 .in(DrugDetail::getProductId, productIds)
                 .remove();
     }

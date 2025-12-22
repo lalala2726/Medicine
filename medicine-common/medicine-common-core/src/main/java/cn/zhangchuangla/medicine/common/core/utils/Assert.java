@@ -4,7 +4,7 @@ package cn.zhangchuangla.medicine.common.core.utils;
 import cn.zhangchuangla.medicine.common.core.enums.ResponseCode;
 import cn.zhangchuangla.medicine.common.core.exception.ParamException;
 import cn.zhangchuangla.medicine.common.core.exception.ServiceException;
-import jakarta.validation.constraints.NotNull;
+import org.jspecify.annotations.NonNull;
 
 /**
  * @author Chuang
@@ -74,7 +74,7 @@ public class Assert extends org.springframework.util.Assert {
      * @param collection   要断言不为空的集合。
      * @param errorMessage 集合为空时抛出的错误消息。
      */
-    public static void notEmpty(java.util.Collection<?> collection, @NotNull String errorMessage) {
+    public static void notEmpty(java.util.Collection<?> collection, @NonNull String errorMessage) {
         isParamTrue(collection != null && !collection.isEmpty(), errorMessage);
     }
 
@@ -84,7 +84,7 @@ public class Assert extends org.springframework.util.Assert {
      * @param array        要断言不为空的数组。
      * @param errorMessage 数组为空时抛出的错误消息。
      */
-    public static void notEmpty(Object[] array, @NotNull String errorMessage) {
+    public static void notEmpty(Object[] array, @NonNull String errorMessage) {
         isParamTrue(array != null && array.length > 0, errorMessage);
     }
 

@@ -21,7 +21,7 @@ import java.util.Date;
 public class MallCategory {
 
     /**
-     * 分类ID
+     * 分类 ID
      */
     @TableId(type = IdType.AUTO)
     private Long id;
