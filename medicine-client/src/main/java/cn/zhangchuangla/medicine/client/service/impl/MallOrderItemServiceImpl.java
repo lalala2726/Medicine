@@ -40,6 +40,13 @@ public class MallOrderItemServiceImpl extends ServiceImpl<MallOrderItemMapper, M
         }
         return stats.stream().collect(Collectors.toMap(ProductSalesDto::getProductId, ProductSalesDto::getSales));
     }
-}
 
+    @Override
+    public Integer getCompletedSalesByProductId(Long productId) {
+        if (productId == null) {
+            return 0;
+        }
+        return getCompletedSalesByProductIds(List.of(productId)).getOrDefault(productId, 0);
+    }
+}
 

@@ -36,6 +36,37 @@ public class MallCategoryServiceImpl extends ServiceImpl<MallCategoryMapper, Mal
         return buildTree(categories, 0L);
     }
 
+    @Override
+    public List<MallCategoryTree> categoryChildren(Long parentId) {
+        LambdaQueryWrapper<MallCategory> queryWrapper = new LambdaQueryWrapper<>();
+        queryWrapper.eq(MallCategory::getStatus, 0)
+                .orderByAsc(MallCategory::getSort)
+                .orderByAsc(MallCategory::getId);
+
+        List<MallCategory> categories = list(queryWrapper);
+        if (categories.isEmpty()) {
+            return List.of();
+        }
+        return buildTree(categories, parentId);
+    }
+
+    @Override
+    public List<MallCategoryTree> categorySiblings(Long parentId) {
+        LambdaQueryWrapper<MallCategory> queryWrapper = new LambdaQueryWrapper<>();
+        queryWrapper.eq(MallCategory::getStatus, 0)
+                .eq(MallCategory::getParentId, parentId)
+                .orderByAsc(MallCategory::getSort)
+                .orderByAsc(MallCategory::getId);
+
+        List<MallCategory> categories = list(queryWrapper);
+        if (categories.isEmpty()) {
+            return List.of();
+        }
+        return categories.stream()
+                .map(this::toTreeNode)
+                .toList();
+    }
+
     private List<MallCategoryTree> buildTree(List<MallCategory> categories, Long parentId) {
         Comparator<MallCategory> comparator = Comparator
                 .comparing(MallCategory::getSort, Comparator.nullsLast(Integer::compareTo))
@@ -45,18 +76,7 @@ public class MallCategoryServiceImpl extends ServiceImpl<MallCategoryMapper, Mal
                 .filter(category -> Objects.equals(category.getParentId(), parentId))
                 .sorted(comparator)
                 .map(category -> {
-                    MallCategoryTree tree = new MallCategoryTree();
-                    tree.setId(category.getId());
-                    tree.setName(category.getName());
-                    tree.setParentId(category.getParentId());
-                    tree.setSort(category.getSort());
-                    tree.setStatus(category.getStatus());
-                    if (StringUtils.hasText(category.getDescription())) {
-                        tree.setDescription(category.getDescription());
-                    }
-                    if (StringUtils.hasText(category.getCover())) {
-                        tree.setCover(category.getCover());
-                    }
+                    MallCategoryTree tree = toTreeNode(category);
                     List<MallCategoryTree> children = buildTree(categories, category.getId());
                     if (!children.isEmpty()) {
                         tree.setChildren(children);
@@ -64,5 +84,21 @@ public class MallCategoryServiceImpl extends ServiceImpl<MallCategoryMapper, Mal
                     return tree;
                 })
                 .toList();
+    }
+
+    private MallCategoryTree toTreeNode(MallCategory category) {
+        MallCategoryTree tree = new MallCategoryTree();
+        tree.setId(category.getId());
+        tree.setName(category.getName());
+        tree.setParentId(category.getParentId());
+        tree.setSort(category.getSort());
+        tree.setStatus(category.getStatus());
+        if (StringUtils.hasText(category.getDescription())) {
+            tree.setDescription(category.getDescription());
+        }
+        if (StringUtils.hasText(category.getCover())) {
+            tree.setCover(category.getCover());
+        }
+        return tree;
     }
 }

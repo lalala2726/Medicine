@@ -69,4 +69,9 @@ public interface MallProductService extends IService<MallProduct> {
      */
     boolean deleteMallProduct(List<Long> ids);
 
+    /**
+     * 分批同步上架商品索引（仅发布 MQ 消息）。
+     */
+    void reindexOnShelfBatch();
+
 }

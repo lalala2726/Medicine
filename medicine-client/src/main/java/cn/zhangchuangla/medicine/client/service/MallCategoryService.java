@@ -19,4 +19,20 @@ public interface MallCategoryService extends IService<MallCategory> {
      * @return 分类树
      */
     List<MallCategoryTree> categoryTree();
+
+    /**
+     * 获取指定父分类下的子分类树（仅启用分类）
+     *
+     * @param parentId 父分类ID
+     * @return 子分类树
+     */
+    List<MallCategoryTree> categoryChildren(Long parentId);
+
+    /**
+     * 获取指定父分类下的同级分类（不包含子级）
+     *
+     * @param parentId 父分类ID
+     * @return 同级分类列表
+     */
+    List<MallCategoryTree> categorySiblings(Long parentId);
 }

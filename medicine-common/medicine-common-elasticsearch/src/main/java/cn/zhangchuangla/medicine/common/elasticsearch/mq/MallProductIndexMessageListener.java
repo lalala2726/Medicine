@@ -19,6 +19,8 @@ import java.util.List;
 
 /**
  * 订阅商品索引事件，落库至 Elasticsearch。
+ *
+ * @see cn.zhangchuangla.medicine.admin.task.MallProductSearchIndexer
  */
 @Slf4j
 @Component
@@ -42,7 +44,6 @@ public class MallProductIndexMessageListener {
 
     private void handleUpsert(ProductIndexPayload payload) {
         if (payload == null || payload.getId() == null) {
-
             log.warn("跳过商品索引更新操作，payload 为空");
             return;
         }
@@ -71,6 +72,8 @@ public class MallProductIndexMessageListener {
                 .brandSuggest(completion(payload.getBrand()))
                 .commonNameSuggest(completion(payload.getCommonName()))
                 .efficacy(payload.getEfficacy())
+                .sales(payload.getSales())
+                .instruction(payload.getInstruction())
                 .coverImage(payload.getCoverImage())
                 .build();
     }

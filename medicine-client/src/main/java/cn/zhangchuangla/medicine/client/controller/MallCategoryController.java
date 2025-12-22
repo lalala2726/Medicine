@@ -9,6 +9,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
@@ -36,5 +37,31 @@ public class MallCategoryController extends BaseController {
     public AjaxResult<List<MallCategoryTree>> categoryTree() {
         List<MallCategoryTree> tree = mallCategoryService.categoryTree();
         return success(tree);
+    }
+
+    /**
+     * 获取指定父分类下的子分类树（仅启用分类）
+     *
+     * @param parentId 父分类ID
+     * @return 子分类树
+     */
+    @GetMapping("/children")
+    @Operation(summary = "获取指定父分类下的子分类树")
+    public AjaxResult<List<MallCategoryTree>> categoryChildren(@RequestParam("parentId") Long parentId) {
+        List<MallCategoryTree> children = mallCategoryService.categoryChildren(parentId);
+        return success(children);
+    }
+
+    /**
+     * 获取指定父分类下的同级分类（不包含子级）
+     *
+     * @param parentId 父分类ID
+     * @return 同级分类列表
+     */
+    @GetMapping("/siblings")
+    @Operation(summary = "获取指定父分类下的同级分类（不包含子级）")
+    public AjaxResult<List<MallCategoryTree>> categorySiblings(@RequestParam("parentId") Long parentId) {
+        List<MallCategoryTree> siblings = mallCategoryService.categorySiblings(parentId);
+        return success(siblings);
     }
 }

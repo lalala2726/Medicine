@@ -210,4 +210,57 @@
           AND p.id = #{id}
         ORDER BY p.id
     </select>
+
+    <!-- 分批读取上架商品，用于索引同步 -->
+    <select id="listOnShelfForIndex" resultMap="MallProductDtoMap">
+        SELECT
+        p.id,
+        p.name,
+        p.category_id,
+        p.unit,
+        p.price,
+        p.stock,
+        p.sort,
+        p.status,
+        p.delivery_type,
+        p.version,
+        p.create_time,
+        p.update_time,
+        p.create_by,
+        p.update_by,
+        c.name AS category_name,
+        NULL AS image_url,
+        md.common_name AS med_common_name,
+        md.composition AS med_composition,
+        md.characteristics AS med_characteristics,
+        md.packaging AS med_packaging,
+        md.validity_period AS med_validity_period,
+        md.storage_conditions AS med_storage_conditions,
+        md.production_unit AS med_production_unit,
+        md.approval_number AS med_approval_number,
+        md.executive_standard AS med_executive_standard,
+        md.origin_type AS med_origin_type,
+        md.is_outpatient_medicine AS med_is_outpatient_medicine,
+        md.warm_tips AS med_warm_tips,
+        md.brand AS med_brand,
+        md.prescription AS med_prescription,
+        md.efficacy AS med_efficacy,
+        md.usage_method AS med_usage_method,
+        md.adverse_reactions AS med_adverse_reactions,
+        md.precautions AS med_precautions,
+        md.taboo AS med_taboo,
+        md.instruction AS med_instruction
+        FROM mall_product p
+        LEFT JOIN mall_category c ON p.category_id = c.id
+        LEFT JOIN drug_detail md ON p.id = md.product_id AND (md.is_deleted IS NULL OR md.is_deleted = 0)
+        <where>
+            (p.is_deleted IS NULL OR p.is_deleted = 0)
+            AND p.status = 1
+            <if test="lastId != null">
+                AND p.id &gt; #{lastId}
+            </if>
+        </where>
+        ORDER BY p.id ASC
+        LIMIT #{limit}
+    </select>
 </mapper>

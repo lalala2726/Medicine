@@ -26,4 +26,20 @@ public interface MallOrderItemService extends IService<MallOrderItem> {
      * @return 商品销售信息列表
      */
     List<ProductSalesDto> getProductSales();
+
+    /**
+     * 获取指定商品的已完成订单销量。
+     *
+     * @param productId 商品ID
+     * @return 已完成订单销量
+     */
+    Integer getCompletedSalesByProductId(Long productId);
+
+    /**
+     * 获取指定商品的已完成订单销量汇总。
+     *
+     * @param productIds 商品ID列表
+     * @return 商品销量映射
+     */
+    java.util.Map<Long, Integer> getCompletedSalesByProductIds(List<Long> productIds);
 }
