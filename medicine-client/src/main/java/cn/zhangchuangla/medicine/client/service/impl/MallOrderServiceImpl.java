@@ -7,12 +7,18 @@ import cn.zhangchuangla.medicine.client.model.request.*;
 import cn.zhangchuangla.medicine.client.model.vo.*;
 import cn.zhangchuangla.medicine.client.service.*;
 import cn.zhangchuangla.medicine.client.task.OrderDelayProducer;
+import cn.zhangchuangla.medicine.common.core.constants.RedisConstants;
 import cn.zhangchuangla.medicine.common.core.enums.ResponseCode;
 import cn.zhangchuangla.medicine.common.core.exception.ServiceException;
 import cn.zhangchuangla.medicine.common.core.utils.BeanCotyUtils;
+import cn.zhangchuangla.medicine.common.rabbitmq.message.ProductIndexPayload;
+import cn.zhangchuangla.medicine.common.rabbitmq.publisher.ProductIndexMessagePublisher;
+import cn.zhangchuangla.medicine.common.redis.core.RedisCache;
 import cn.zhangchuangla.medicine.common.security.base.BaseService;
 import cn.zhangchuangla.medicine.common.security.utils.SecurityUtils;
 import cn.zhangchuangla.medicine.model.dto.AlipayNotifyDTO;
+import cn.zhangchuangla.medicine.model.dto.DrugDetailDto;
+import cn.zhangchuangla.medicine.model.dto.MallProductDetailDto;
 import cn.zhangchuangla.medicine.model.dto.MallProductWithImageDto;
 import cn.zhangchuangla.medicine.model.dto.OrderTimelineDto;
 import cn.zhangchuangla.medicine.model.entity.*;
@@ -31,6 +37,8 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.time.DateUtils;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.support.TransactionSynchronization;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
 import org.springframework.util.StringUtils;
 
 import java.lang.reflect.Field;
@@ -57,6 +65,7 @@ public class MallOrderServiceImpl extends ServiceImpl<MallOrderMapper, MallOrder
     private static final String ORDER_STATUS_WAIT_SHIPMENT = OrderStatusEnum.PENDING_SHIPMENT.getType();
     private static final String PAY_TYPE_ALIPAY = ALIPAY.getType();
     private static final String WAIT_PAY = PayTypeEnum.WAIT_PAY.getType();
+    private static final int SALES_SYNC_THRESHOLD = 5;
 
     private final MallProductService mallProductService;
     private final MallOrderItemService mallOrderItemService;
@@ -68,6 +77,8 @@ public class MallOrderServiceImpl extends ServiceImpl<MallOrderMapper, MallOrder
     private final MallOrderShippingService mallOrderShippingService;
     private final MallCartService mallCartService;
     private final UserAddressService userAddressService;
+    private final RedisCache redisCache;
+    private final ProductIndexMessagePublisher productIndexMessagePublisher;
 
 
     /**
@@ -826,6 +837,15 @@ public class MallOrderServiceImpl extends ServiceImpl<MallOrderMapper, MallOrder
                 .build();
         mallOrderTimelineService.addTimelineIfNotExists(timelineDto);
 
+        // 订单完成后按销量增量阈值刷新商品索引
+        runAfterCommit(() -> {
+            try {
+                syncSalesIndexIfNeeded(orderId);
+            } catch (Exception ex) {
+                log.warn("订单{}销量索引同步失败: {}", orderId, ex.getMessage(), ex);
+            }
+        });
+
         log.info("用户{}确认收货成功，订单号：{}", username, mallOrder.getOrderNo());
         return true;
     }
@@ -1477,5 +1497,96 @@ public class MallOrderServiceImpl extends ServiceImpl<MallOrderMapper, MallOrder
             case SELF_PICKUP -> "下单后可到店自提";
             default -> "未知";
         };
+    }
+
+    private void syncSalesIndexIfNeeded(Long orderId) {
+        if (orderId == null) {
+            return;
+        }
+        List<MallOrderItem> orderItems = mallOrderItemService.getOrderItemByOrderId(orderId);
+        if (orderItems == null || orderItems.isEmpty()) {
+            return;
+        }
+
+        Map<Long, Integer> incrementMap = orderItems.stream()
+                .filter(item -> item.getProductId() != null && item.getQuantity() != null)
+                .collect(Collectors.toMap(
+                        MallOrderItem::getProductId,
+                        MallOrderItem::getQuantity,
+                        Integer::sum
+                ));
+        if (incrementMap.isEmpty()) {
+            return;
+        }
+
+        List<Long> productIdsToSync = new ArrayList<>();
+        for (Map.Entry<Long, Integer> entry : incrementMap.entrySet()) {
+            Integer increment = entry.getValue();
+            if (increment == null || increment <= 0) {
+                continue;
+            }
+            String counterKey = String.format(RedisConstants.MallProductIndex.SALES_SYNC_COUNTER_KEY, entry.getKey());
+            Long counter = redisCache.redisTemplate.opsForValue().increment(counterKey, increment);
+            long current = counter != null ? counter : increment;
+            if (current >= SALES_SYNC_THRESHOLD) {
+                long remainder = current % SALES_SYNC_THRESHOLD;
+                redisCache.setCacheObject(counterKey, remainder);
+                productIdsToSync.add(entry.getKey());
+            }
+        }
+
+        if (productIdsToSync.isEmpty()) {
+            return;
+        }
+
+        Map<Long, Integer> salesMap = mallOrderItemService.getCompletedSalesByProductIds(productIdsToSync);
+        for (Long productId : productIdsToSync) {
+            try {
+                MallProductDetailDto detail = mallProductService.getProductAndDrugInfoById(productId);
+                if (detail == null) {
+                    continue;
+                }
+                detail.setSales(salesMap.getOrDefault(productId, 0));
+                ProductIndexPayload payload = toIndexPayload(detail);
+                productIndexMessagePublisher.publishUpsert(payload);
+            } catch (Exception ex) {
+                log.warn("商品{}销量索引同步失败: {}", productId, ex.getMessage(), ex);
+            }
+        }
+    }
+
+    private ProductIndexPayload toIndexPayload(MallProductDetailDto detail) {
+        if (detail == null) {
+            return null;
+        }
+        DrugDetailDto drugDetail = detail.getDrugDetail();
+        String coverImage = detail.getImages() != null && !detail.getImages().isEmpty() ? detail.getImages().getFirst() : null;
+        return ProductIndexPayload.builder()
+                .id(detail.getId())
+                .name(detail.getName())
+                .categoryName(detail.getCategoryName())
+                .price(detail.getPrice())
+                .sales(detail.getSales())
+                .status(detail.getStatus())
+                .brand(drugDetail != null ? drugDetail.getBrand() : null)
+                .commonName(drugDetail != null ? drugDetail.getCommonName() : null)
+                .efficacy(drugDetail != null ? drugDetail.getEfficacy() : null)
+                .instruction(drugDetail != null ? drugDetail.getInstruction() : null)
+                .prescription(drugDetail != null ? drugDetail.getPrescription() : null)
+                .coverImage(coverImage)
+                .build();
+    }
+
+    private void runAfterCommit(Runnable task) {
+        if (TransactionSynchronizationManager.isActualTransactionActive()) {
+            TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
+                @Override
+                public void afterCommit() {
+                    task.run();
+                }
+            });
+        } else {
+            task.run();
+        }
     }
 }

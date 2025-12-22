@@ -1,6 +1,8 @@
 package cn.zhangchuangla.medicine.admin.task;
 
+import cn.zhangchuangla.medicine.admin.mapper.MallOrderItemMapper;
 import cn.zhangchuangla.medicine.admin.mapper.MallProductMapper;
+import cn.zhangchuangla.medicine.admin.model.dto.ProductSalesDto;
 import cn.zhangchuangla.medicine.common.rabbitmq.message.ProductIndexPayload;
 import cn.zhangchuangla.medicine.common.rabbitmq.publisher.ProductIndexMessagePublisher;
 import cn.zhangchuangla.medicine.model.dto.MallProductDetailDto;
@@ -11,6 +13,11 @@ import org.springframework.stereotype.Component;
 import org.springframework.util.CollectionUtils;
 
 import java.util.Collection;
+import java.util.Collections;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.stream.Collectors;
 
 /**
  * 将后台商品数据异步同步至 Elasticsearch 的任务。
@@ -21,6 +28,7 @@ import java.util.Collection;
 public class MallProductSearchIndexer {
 
     private final MallProductMapper mallProductMapper;
+    private final MallOrderItemMapper mallOrderItemMapper;
     private final ProductIndexMessagePublisher productIndexMessagePublisher;
 
     /**
@@ -36,6 +44,8 @@ public class MallProductSearchIndexer {
             log.warn("跳过重建索引，商品 {} 未找到", productId);
             return;
         }
+        Map<Long, Integer> salesMap = fetchSalesMap(List.of(productId));
+        detail.setSales(salesMap.getOrDefault(productId, 0));
         ProductIndexPayload payload = toPayload(detail);
         productIndexMessagePublisher.publishUpsert(payload);
 
@@ -62,6 +72,17 @@ public class MallProductSearchIndexer {
         if (CollectionUtils.isEmpty(products)) {
             return;
         }
+        List<Long> productIds = products.stream()
+                .map(MallProductDetailDto::getId)
+                .filter(Objects::nonNull)
+                .toList();
+        Map<Long, Integer> salesMap = fetchSalesMap(productIds);
+        products.forEach(product -> {
+            if (product == null || product.getId() == null) {
+                return;
+            }
+            product.setSales(salesMap.getOrDefault(product.getId(), 0));
+        });
         products.stream()
                 .map(this::toPayload)
                 .filter(payload -> payload != null && payload.getId() != null)
@@ -78,6 +99,7 @@ public class MallProductSearchIndexer {
                 .id(mallProductDetailDto.getId())
                 .name(mallProductDetailDto.getName())
                 .price(mallProductDetailDto.getPrice())
+                .sales(mallProductDetailDto.getSales())
                 .status(mallProductDetailDto.getStatus())
                 // 可能为null的字段
                 .categoryName(mallProductDetailDto.getCategoryName())
@@ -88,5 +110,22 @@ public class MallProductSearchIndexer {
                 .instruction(mallProductDetailDto.getDrugDetail() != null ? mallProductDetailDto.getDrugDetail().getInstruction() : null)
                 .coverImage(mallProductDetailDto.getImages() != null && !mallProductDetailDto.getImages().isEmpty() ? mallProductDetailDto.getImages().getFirst() : null)
                 .build();
+    }
+
+    private Map<Long, Integer> fetchSalesMap(List<Long> productIds) {
+        if (CollectionUtils.isEmpty(productIds)) {
+            return Collections.emptyMap();
+        }
+        List<ProductSalesDto> salesList = mallOrderItemMapper.getProductSalesByIds(productIds);
+        if (CollectionUtils.isEmpty(salesList)) {
+            return Collections.emptyMap();
+        }
+        return salesList.stream()
+                .filter(item -> item.getProductId() != null)
+                .collect(Collectors.toMap(
+                        ProductSalesDto::getProductId,
+                        item -> item.getSales() != null ? item.getSales() : 0,
+                        (left, right) -> right
+                ));
     }
 }

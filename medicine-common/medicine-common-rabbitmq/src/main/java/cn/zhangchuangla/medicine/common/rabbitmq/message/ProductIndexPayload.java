@@ -37,6 +37,11 @@ public class ProductIndexPayload {
     private BigDecimal price;
 
     /**
+     * 商品销量
+     */
+    private Integer sales;
+
+    /**
      * 商品状态
      */
     private Integer status;

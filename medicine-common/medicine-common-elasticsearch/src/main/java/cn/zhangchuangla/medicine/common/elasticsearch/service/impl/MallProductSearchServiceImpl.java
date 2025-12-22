@@ -10,6 +10,7 @@ import co.elastic.clients.elasticsearch.core.search.Suggester;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort;
 import org.springframework.data.elasticsearch.client.elc.NativeQuery;
 import org.springframework.data.elasticsearch.core.ElasticsearchOperations;
 import org.springframework.data.elasticsearch.core.SearchHits;
@@ -21,6 +22,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.util.CollectionUtils;
 import org.springframework.util.StringUtils;
 
+import java.math.BigDecimal;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Objects;
@@ -87,9 +89,14 @@ public class MallProductSearchServiceImpl implements MallProductSearchService {
         } else {
             criteria = criteria.and(new Criteria("status").is(1));
         }
+        criteria = applyPriceCriteria(criteria, request);
 
         CriteriaQuery query = new CriteriaQuery(criteria);
         query.setPageable(PageRequest.of(pageNum - 1, pageSize));
+        Sort sort = buildSort(request);
+        if (sort.isSorted()) {
+            query.addSort(sort);
+        }
 
         return elasticsearchOperations.search(query, MallProductDocument.class);
     }
@@ -199,5 +206,52 @@ public class MallProductSearchServiceImpl implements MallProductSearchService {
             combined = combined.or(criteriaArr[i]);
         }
         return combined;
+    }
+
+    private Criteria applyPriceCriteria(Criteria criteria, MallProductSearchRequest request) {
+        if (request.getPrice() != null) {
+            return criteria.and(new Criteria("price").is(request.getPrice()));
+        }
+        BigDecimal minPrice = request.getMinPrice();
+        BigDecimal maxPrice = request.getMaxPrice();
+        if (minPrice != null && maxPrice != null && minPrice.compareTo(maxPrice) > 0) {
+            throw new ServiceException(ResponseCode.PARAM_ERROR, "最低价格不能大于最高价格");
+        }
+        if (minPrice != null) {
+            criteria = criteria.and(new Criteria("price").greaterThanEqual(minPrice));
+        }
+        if (maxPrice != null) {
+            criteria = criteria.and(new Criteria("price").lessThanEqual(maxPrice));
+        }
+        return criteria;
+    }
+
+    private Sort buildSort(MallProductSearchRequest request) {
+        Sort.Direction priceDirection = parseDirection(request.getPriceSort());
+        Sort.Direction salesDirection = parseDirection(request.getSalesSort());
+        if (priceDirection != null && salesDirection != null) {
+            return Sort.by(new Sort.Order(priceDirection, "price"), new Sort.Order(salesDirection, "sales"));
+        }
+        if (priceDirection != null) {
+            return Sort.by(new Sort.Order(priceDirection, "price"));
+        }
+        if (salesDirection != null) {
+            return Sort.by(new Sort.Order(salesDirection, "sales"));
+        }
+        return Sort.unsorted();
+    }
+
+    private Sort.Direction parseDirection(String direction) {
+        if (!StringUtils.hasText(direction)) {
+            return null;
+        }
+        String normalized = direction.trim().toLowerCase();
+        if ("asc".equals(normalized)) {
+            return Sort.Direction.ASC;
+        }
+        if ("desc".equals(normalized)) {
+            return Sort.Direction.DESC;
+        }
+        return null;
     }
 }
