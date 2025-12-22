@@ -8,6 +8,7 @@ import cn.zhangchuangla.medicine.admin.task.MallProductSearchIndexer;
 import cn.zhangchuangla.medicine.common.core.constants.RedisConstants;
 import cn.zhangchuangla.medicine.common.core.exception.ServiceException;
 import cn.zhangchuangla.medicine.common.core.utils.Assert;
+import cn.zhangchuangla.medicine.common.redis.core.RedisCache;
 import cn.zhangchuangla.medicine.common.security.base.BaseService;
 import cn.zhangchuangla.medicine.common.security.utils.SecurityUtils;
 import cn.zhangchuangla.medicine.model.dto.MallProductDetailDto;
@@ -51,6 +52,8 @@ import java.util.stream.Collectors;
 public class MallProductServiceImpl extends ServiceImpl<MallProductMapper, MallProduct>
         implements MallProductService, BaseService {
 
+    private static final int DEFAULT_INDEX_BATCH_SIZE = 500;
+
     private final MallProductMapper mallProductMapper;
     private final MallCategoryService mallCategoryService;
     private final MallProductImageService mallProductImageService;
@@ -58,6 +61,7 @@ public class MallProductServiceImpl extends ServiceImpl<MallProductMapper, MallP
     private final MallProductStatsService mallProductStatsService;
     private final MallOrderItemMapper mallOrderItemMapper;
     private final MallProductSearchIndexer mallProductSearchIndexer;
+    private final RedisCache redisCache;
 
     @Override
     public Page<MallProduct> listMallProduct(MallProductListQueryRequest request) {
@@ -269,6 +273,39 @@ public class MallProductServiceImpl extends ServiceImpl<MallProductMapper, MallP
             runAfterCommit(() -> mallProductSearchIndexer.removeAsync(ids));
         }
         return removed;
+    }
+
+    @Override
+    public void reindexOnShelfBatch() {
+        int limit = DEFAULT_INDEX_BATCH_SIZE;
+        Long cursor = redisCache.getCacheObject(RedisConstants.MallProductIndex.INDEX_CURSOR_KEY);
+        if (cursor == null || cursor < 0) {
+            cursor = 0L;
+        }
+
+        // 分批读取上架商品，避免一次性拉取全量数据
+        List<MallProductDetailDto> batch = mallProductMapper.listOnShelfForIndex(cursor, limit);
+        if (batch.isEmpty()) {
+            // 没有更多数据时重置游标，方便下次重新全量同步
+            redisCache.setCacheObject(RedisConstants.MallProductIndex.INDEX_CURSOR_KEY, 0L);
+            return;
+        }
+
+        List<Long> productIds = batch.stream().map(MallProduct::getId).toList();
+        Map<Long, String> coverImageMap = mallProductImageService.getFirstImageByProductIds(productIds)
+                .stream()
+                .collect(Collectors.toMap(MallProductImage::getProductId, MallProductImage::getImageUrl));
+
+        batch.forEach(product -> {
+            String cover = coverImageMap.get(product.getId());
+            product.setImages(cover == null ? List.of() : List.of(cover));
+        });
+
+        // 只发布 MQ 消息，索引工作由消费者完成
+        mallProductSearchIndexer.reindexBatch(batch);
+
+        Long nextCursor = batch.getLast().getId();
+        redisCache.setCacheObject(RedisConstants.MallProductIndex.INDEX_CURSOR_KEY, nextCursor);
     }
 
     /**

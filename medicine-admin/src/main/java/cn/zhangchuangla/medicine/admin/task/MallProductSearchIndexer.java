@@ -55,6 +55,21 @@ public class MallProductSearchIndexer {
         log.info("向 RabbitMQ 发布 {} 个商品的删除事件", productIds.size());
     }
 
+    /**
+     * 批量发布商品索引事件（只发 MQ 消息，不直接操作 ES）。
+     */
+    public void reindexBatch(Collection<MallProductDetailDto> products) {
+        if (CollectionUtils.isEmpty(products)) {
+            return;
+        }
+        products.stream()
+                .map(this::toPayload)
+                .filter(payload -> payload != null && payload.getId() != null)
+                .forEach(productIndexMessagePublisher::publishUpsert);
+
+        log.info("向 RabbitMQ 发布 {} 个商品的索引事件", products.size());
+    }
+
     private ProductIndexPayload toPayload(MallProductDetailDto mallProductDetailDto) {
         if (mallProductDetailDto == null) {
             return null;

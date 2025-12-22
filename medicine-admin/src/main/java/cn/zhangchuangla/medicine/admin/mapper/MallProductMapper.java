@@ -37,4 +37,13 @@ public interface MallProductMapper extends BaseMapper<MallProduct> {
      * @return 商城商品详情
      */
     MallProductDetailDto getMallProductDetailById(@Param("id") Long id);
+
+    /**
+     * 分批读取上架商品，用于批量同步索引（避免一次性拉取全量数据）。
+     *
+     * @param lastId 上一次读取的最后一条商品ID
+     * @param limit  本次读取数量
+     * @return 商品详情列表
+     */
+    java.util.List<MallProductDetailDto> listOnShelfForIndex(@Param("lastId") Long lastId, @Param("limit") int limit);
 }
