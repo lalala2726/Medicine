@@ -22,7 +22,7 @@ public class MallCategoryTree {
     private Long parentId;
 
     @Schema(description = "分类名称", example = "分类名称")
-    private String categoryName;
+    private String name;
 
     @Schema(description = "分类描述", example = "分类描述")
     private String description;

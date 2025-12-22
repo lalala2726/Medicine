@@ -75,6 +75,26 @@ public class MallCategoryServiceImpl extends ServiceImpl<MallCategoryMapper, Mal
             throw new ServiceException("分类名称已存在");
         }
 
+        Long parentId = request.getParentId();
+        if (parentId != null && parentId != 0L) {
+            int depth = 1;
+            MallCategory parent = getById(parentId);
+            if (parent == null) {
+                throw new ServiceException("父分类不存在");
+            }
+            depth++;
+            while (parent.getParentId() != null && parent.getParentId() != 0L) {
+                parent = getById(parent.getParentId());
+                if (parent == null) {
+                    throw new ServiceException("父分类不存在");
+                }
+                depth++;
+                if (depth > 3) {
+                    throw new ServiceException("分类层级不能超过3级");
+                }
+            }
+        }
+
         MallCategory category = new MallCategory();
         BeanUtils.copyProperties(request, category);
         category.setStatus(0); // 默认启用
@@ -164,7 +184,7 @@ public class MallCategoryServiceImpl extends ServiceImpl<MallCategoryMapper, Mal
                 .map(category -> {
                     MallCategoryTree tree = new MallCategoryTree();
                     tree.setId(category.getId());
-                    tree.setCategoryName(category.getName());
+                    tree.setName(category.getName());
                     tree.setParentId(category.getParentId());
                     tree.setSort(category.getSort());
                     tree.setStatus(category.getStatus());
@@ -182,5 +202,4 @@ public class MallCategoryServiceImpl extends ServiceImpl<MallCategoryMapper, Mal
                 }).toList();
     }
 }
-
 
