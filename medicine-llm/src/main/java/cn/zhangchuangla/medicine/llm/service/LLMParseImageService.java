@@ -31,11 +31,10 @@ import java.util.List;
 @RequiredArgsConstructor
 public class LLMParseImageService {
 
-    private final OpenAiApi baseOpenAiApi;
+    private static final String DASH_SCOPE_BASE_URL = "https://dashscope.aliyuncs.com/compatible-mode";
 
     //todo 后续能在线配置
-
-    private static final String DASH_SCOPE_BASE_URL = "https://dashscope.aliyuncs.com/compatible-mode";
+    private final OpenAiApi baseOpenAiApi;
     private final OpenAiChatModel baseChatModel;
 
     public DrugInfoDto parseImage(List<String> imageBase64List) {

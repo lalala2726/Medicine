@@ -164,7 +164,7 @@ public class MallCategoryServiceImpl extends ServiceImpl<MallCategoryMapper, Mal
                 .map(category -> {
                     MallCategoryTree tree = new MallCategoryTree();
                     tree.setId(category.getId());
-                    tree.setCategoryName(category.getName());
+                    tree.setName(category.getName());
                     tree.setParentId(category.getParentId());
                     tree.setSort(category.getSort());
                     tree.setStatus(category.getStatus());

@@ -14,13 +14,19 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 public class PageTextResult {
 
-    /** 页码（从 1 开始），无可靠分页时为 null。 */
+    /**
+     * 页码（从 1 开始），无可靠分页时为 null。
+     */
     private Integer pageNumber;
 
-    /** 区段标签，可用于标注表格 Sheet 名或幻灯片标题。 */
+    /**
+     * 区段标签，可用于标注表格 Sheet 名或幻灯片标题。
+     */
     private String sectionLabel;
 
-    /** 当前页/区段的纯文本。 */
+    /**
+     * 当前页/区段的纯文本。
+     */
     private String text;
 }
 
