@@ -188,7 +188,7 @@ public class MallCategoryServiceImpl extends ServiceImpl<MallCategoryMapper, Mal
                     tree.setParentId(category.getParentId());
                     tree.setSort(category.getSort());
                     tree.setStatus(category.getStatus());
-                    if (!category.getDescription().isBlank()) {
+                    if (category.getDescription() != null && !category.getDescription().isBlank()) {
                         tree.setDescription(category.getDescription());
                     }
                     if (category.getCover() != null && !category.getCover().isBlank()) {
