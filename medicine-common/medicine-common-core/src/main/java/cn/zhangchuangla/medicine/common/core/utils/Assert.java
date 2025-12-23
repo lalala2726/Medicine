@@ -4,7 +4,7 @@ package cn.zhangchuangla.medicine.common.core.utils;
 import cn.zhangchuangla.medicine.common.core.enums.ResponseCode;
 import cn.zhangchuangla.medicine.common.core.exception.ParamException;
 import cn.zhangchuangla.medicine.common.core.exception.ServiceException;
-import org.jspecify.annotations.NonNull;
+import org.springframework.lang.NonNull;
 
 /**
  * @author Chuang

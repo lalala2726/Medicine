@@ -8,10 +8,8 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.data.redis.cache.RedisCacheConfiguration;
 import org.springframework.data.redis.cache.RedisCacheManager;
 import org.springframework.data.redis.connection.RedisConnectionFactory;
-import org.springframework.data.redis.serializer.JacksonJsonRedisSerializer;
+import org.springframework.data.redis.serializer.GenericJackson2JsonRedisSerializer;
 import org.springframework.data.redis.serializer.RedisSerializationContext;
-import org.springframework.data.redis.serializer.RedisSerializer;
-import tools.jackson.databind.json.JsonMapper;
 
 import java.time.Duration;
 import java.util.HashMap;
@@ -25,17 +23,12 @@ import java.util.Map;
 public class RedisCacheConfig {
 
     @Bean
-    public RedisCacheConfiguration redisCacheConfiguration(JsonMapper jsonMapper) {
-        RedisSerializer<Object> serializer =
-                new JacksonJsonRedisSerializer<>(jsonMapper, Object.class);
+    public RedisCacheConfiguration redisCacheConfiguration() {
+        GenericJackson2JsonRedisSerializer serializer = new GenericJackson2JsonRedisSerializer();
         return RedisCacheConfiguration.defaultCacheConfig()
-                .serializeValuesWith(
-                        RedisSerializationContext.SerializationPair
-                                .fromSerializer(serializer)
-                )
+                .serializeValuesWith(RedisSerializationContext.SerializationPair.fromSerializer(serializer))
                 .disableCachingNullValues();
     }
-
 
     @Bean
     public CacheManager cacheManager(RedisConnectionFactory redisConnectionFactory,

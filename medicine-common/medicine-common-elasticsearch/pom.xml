@@ -17,7 +17,6 @@
             <groupId>cn.zhangchuangla.medicine</groupId>
             <artifactId>medicine-model</artifactId>
         </dependency>
-
         <dependency>
             <groupId>org.projectlombok</groupId>
             <artifactId>lombok</artifactId>
