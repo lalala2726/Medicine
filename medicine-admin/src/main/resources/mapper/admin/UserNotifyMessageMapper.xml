@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="cn.zhangchuangla.medicine.admin.mapper.UserNotifyMessageMapper">
+
+    <resultMap id="BaseResultMap" type="cn.zhangchuangla.medicine.model.entity.UserNotifyMessage">
+        <id property="id" column="id"/>
+        <result property="notifyId" column="notify_id"/>
+        <result property="userId" column="user_id"/>
+        <result property="isRead" column="is_read"/>
+        <result property="readTime" column="read_time"/>
+        <result property="isDeleted" column="is_deleted"/>
+        <result property="createTime" column="create_time"/>
+    </resultMap>
+
+    <sql id="Base_Column_List">
+        id,notify_id,user_id,is_read,read_time,is_deleted,
+        create_time
+    </sql>
+</mapper>
