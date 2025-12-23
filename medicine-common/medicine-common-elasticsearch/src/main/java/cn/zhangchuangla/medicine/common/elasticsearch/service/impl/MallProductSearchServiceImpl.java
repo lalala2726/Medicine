@@ -6,18 +6,15 @@ import cn.zhangchuangla.medicine.common.elasticsearch.document.MallProductDocume
 import cn.zhangchuangla.medicine.common.elasticsearch.model.request.MallProductSearchRequest;
 import cn.zhangchuangla.medicine.common.elasticsearch.repository.MallProductSearchRepository;
 import cn.zhangchuangla.medicine.common.elasticsearch.service.MallProductSearchService;
-import co.elastic.clients.elasticsearch.core.search.Suggester;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
-import org.springframework.data.elasticsearch.client.elc.NativeQuery;
 import org.springframework.data.elasticsearch.core.ElasticsearchOperations;
+import org.springframework.data.elasticsearch.core.SearchHit;
 import org.springframework.data.elasticsearch.core.SearchHits;
 import org.springframework.data.elasticsearch.core.query.Criteria;
 import org.springframework.data.elasticsearch.core.query.CriteriaQuery;
-import org.springframework.data.elasticsearch.core.suggest.response.CompletionSuggestion;
-import org.springframework.data.elasticsearch.core.suggest.response.Suggest;
 import org.springframework.stereotype.Service;
 import org.springframework.util.CollectionUtils;
 import org.springframework.util.StringUtils;
@@ -109,65 +106,37 @@ public class MallProductSearchServiceImpl implements MallProductSearchService {
         int limit = Math.max(1, Math.min(size, MAX_SUGGEST_SIZE));
         String normalizedKeyword = keyword.trim();
 
-        Suggester suggester = Suggester.of(builder -> builder
-                .text(normalizedKeyword)
-                .suggesters("name-suggest",
-                        fs -> fs.completion(c -> c
-                                .field("nameSuggest")
-                                .skipDuplicates(true)
-                                .size(limit)
-                        )
-                )
-                .suggesters("common-name-suggest",
-                        fs -> fs.completion(c -> c
-                                .field("commonNameSuggest")
-                                .skipDuplicates(true)
-                                .size(limit)
-                        )
-                )
-                .suggesters("brand-suggest",
-                        fs -> fs.completion(c -> c
-                                .field("brandSuggest")
-                                .skipDuplicates(true)
-                                .size(limit)
-                        )
-                )
-        );
+        Criteria criteria = new Criteria("name").startsWith(normalizedKeyword)
+                .or(new Criteria("categoryName").startsWith(normalizedKeyword))
+                .or(new Criteria("name").matches(normalizedKeyword));
 
-
-        NativeQuery query = NativeQuery.builder()
-                .withSuggester(suggester)
-                .withMaxResults(0)
-                .build();
+        CriteriaQuery query = new CriteriaQuery(criteria);
+        int fetchSize = Math.min(Math.max(limit * 2, limit), MAX_PAGE_SIZE);
+        query.setPageable(PageRequest.of(0, fetchSize));
 
         SearchHits<MallProductDocument> searchHits = elasticsearchOperations.search(query, MallProductDocument.class);
-        Suggest suggest = searchHits.getSuggest();
-        if (suggest == null) {
+        if (searchHits.isEmpty()) {
             return List.of();
         }
 
         Set<String> suggestions = new LinkedHashSet<>();
-        collectSuggestionTexts(suggest, "name-suggest", suggestions, limit);
-        collectSuggestionTexts(suggest, "common-name-suggest", suggestions, limit);
-        collectSuggestionTexts(suggest, "brand-suggest", suggestions, limit);
+        for (SearchHit<MallProductDocument> hit : searchHits) {
+            MallProductDocument content = hit.getContent();
+            addSuggestion(content.getName(), suggestions, limit);
+            addSuggestion(content.getCategoryName(), suggestions, limit);
+            if (suggestions.size() >= limit) {
+                break;
+            }
+        }
 
         return suggestions.stream().limit(limit).toList();
     }
 
-    private void collectSuggestionTexts(Suggest suggest, String key, Set<String> accumulator, int limit) {
-        Suggest.Suggestion<?> rawSuggestion = suggest.getSuggestion(key);
-        if (!(rawSuggestion instanceof CompletionSuggestion<?> completionSuggestion)) {
+    private void addSuggestion(String value, Set<String> suggestions, int limit) {
+        if (!StringUtils.hasText(value) || suggestions.size() >= limit) {
             return;
         }
-
-        for (CompletionSuggestion.Entry<?> entry : completionSuggestion.getEntries()) {
-            for (CompletionSuggestion.Entry.Option<?> option : entry.getOptions()) {
-                accumulator.add(option.getText());
-                if (accumulator.size() >= limit) {
-                    return;
-                }
-            }
-        }
+        suggestions.add(value.trim());
     }
 
 
