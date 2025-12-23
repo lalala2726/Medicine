@@ -11,7 +11,7 @@ import org.springframework.data.elasticsearch.core.suggest.Completion;
 import java.math.BigDecimal;
 
 /**
- * ES 商品索引（完整版）
+ * ES 商品索引
  * 支持：
  * - IK + 拼音全文搜索
  * - Completion Suggest（自动补全）
@@ -56,6 +56,12 @@ public class MallProductDocument {
      */
     @Field(type = FieldType.Scaled_Float, scalingFactor = 100)
     private BigDecimal price;
+
+    /**
+     * 商品销量
+     */
+    @Field(type = FieldType.Integer)
+    private Integer sales;
 
     /**
      * 状态

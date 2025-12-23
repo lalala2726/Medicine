@@ -89,8 +89,7 @@ public class MallProductController extends BaseController {
      */
     @GetMapping("/{id:\\d+}")
     @Operation(summary = "获取商品详情")
-    public AjaxResult<MallProductVo> getMallProductById(@Min(value = 1, message = "商品ID不能小于1")
-                                                        @PathVariable("id") Long id) {
+    public AjaxResult<MallProductVo> getMallProductById(@PathVariable @Min(value = 1, message = "商品ID不能小于1") Long id) {
         // 查询商品详情（包含图片和药品详情）
         MallProductVo mallProductVo = mallProductService.getMallProductDetail(id);
         // 记录商品浏览量
@@ -110,8 +109,7 @@ public class MallProductController extends BaseController {
     @GetMapping("/{id}/views")
     @Operation(summary = "查询商品浏览量")
     @Anonymous
-    public AjaxResult<Long> getProductViews(@Min(value = 1, message = "商品ID不能小于1")
-                                            @PathVariable("id") Long id,
+    public AjaxResult<Long> getProductViews(@PathVariable @Min(value = 1, message = "商品ID不能小于1") Long id,
                                             @Parameter(description = "统计周期（hour、day、week、month、total）")
                                             @RequestParam(value = "period", required = false, defaultValue = "total")
                                             String period) {

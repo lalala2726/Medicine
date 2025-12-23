@@ -143,5 +143,19 @@ public interface RedisConstants {
         long CACHE_TTL_SECONDS = 30 * 60;
     }
 
+    /**
+     * 商品索引批量同步相关缓存
+     */
+    interface MallProductIndex {
+        /**
+         * 上次批量索引的游标 key
+         */
+        String INDEX_CURSOR_KEY = "mall:product:index:cursor";
+
+        /**
+         * 商品销量增量计数 key（每满固定阈值触发 ES 刷新）
+         */
+        String SALES_SYNC_COUNTER_KEY = "mall:product:index:sales:delta:%s";
+    }
 
 }

@@ -130,8 +130,7 @@ public class MallProductServiceImpl extends ServiceImpl<MallProductMapper, MallP
             throw new ServiceException(ResponseCode.RESULT_IS_NULL, "商品不存在");
         }
 
-        Map<Long, Integer> salesMap = mallOrderItemService.getCompletedSalesByProductIds(List.of(id));
-        productWithImages.setSales(salesMap.getOrDefault(id, 0));
+        productWithImages.setSales(mallOrderItemService.getCompletedSalesByProductId(id));
 
         // 构建返回VO
         cn.zhangchuangla.medicine.client.model.vo.MallProductVo productVo =
@@ -164,8 +163,7 @@ public class MallProductServiceImpl extends ServiceImpl<MallProductMapper, MallP
         if (product == null) {
             return null;
         }
-        Map<Long, Integer> salesMap = mallOrderItemService.getCompletedSalesByProductIds(List.of(id));
-        product.setSales(salesMap.getOrDefault(id, 0));
+        product.setSales(mallOrderItemService.getCompletedSalesByProductId(id));
         return product;
     }
 
@@ -247,6 +245,7 @@ public class MallProductServiceImpl extends ServiceImpl<MallProductMapper, MallP
         if (mallProductDetailDto == null) {
             throw new ServiceException(ResponseCode.RESULT_IS_NULL, "商品不存在");
         }
+        mallProductDetailDto.setSales(mallOrderItemService.getCompletedSalesByProductId(id));
         List<String> imageUrls = mallProductImageService.lambdaQuery()
                 .eq(MallProductImage::getProductId, id)
                 .orderByAsc(MallProductImage::getSort)

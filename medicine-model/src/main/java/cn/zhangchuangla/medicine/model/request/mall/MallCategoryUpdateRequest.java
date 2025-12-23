@@ -41,6 +41,10 @@ public class MallCategoryUpdateRequest {
     @Schema(description = "分类描述", example = "保健品类分类")
     private String description;
 
+    @NotBlank(message = "封面不能为空")
+    @Schema(description = "封面", example = "https://example.com/category-cover.png", requiredMode = Schema.RequiredMode.REQUIRED)
+    private String cover;
+
     /**
      * 排序值，越小越靠前
      */

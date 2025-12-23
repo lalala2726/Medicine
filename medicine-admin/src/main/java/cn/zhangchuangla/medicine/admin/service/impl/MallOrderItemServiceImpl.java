@@ -13,7 +13,10 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.util.CollectionUtils;
 
+import java.util.Collections;
 import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 /**
  * @author Chuang
@@ -41,8 +44,33 @@ public class MallOrderItemServiceImpl extends ServiceImpl<MallOrderItemMapper, M
     public List<ProductSalesDto> getProductSales() {
         return mallOrderItemMapper.getProductSales();
     }
-}
 
+    @Override
+    public Integer getCompletedSalesByProductId(Long productId) {
+        if (productId == null) {
+            return 0;
+        }
+        return getCompletedSalesByProductIds(List.of(productId)).getOrDefault(productId, 0);
+    }
+
+    @Override
+    public Map<Long, Integer> getCompletedSalesByProductIds(List<Long> productIds) {
+        if (CollectionUtils.isEmpty(productIds)) {
+            return Collections.emptyMap();
+        }
+        List<ProductSalesDto> sales = mallOrderItemMapper.getProductSalesByIds(productIds);
+        if (CollectionUtils.isEmpty(sales)) {
+            return Collections.emptyMap();
+        }
+        return sales.stream()
+                .filter(item -> item.getProductId() != null)
+                .collect(Collectors.toMap(
+                        ProductSalesDto::getProductId,
+                        item -> item.getSales() != null ? item.getSales() : 0,
+                        (left, right) -> right
+                ));
+    }
+}
 
 
 

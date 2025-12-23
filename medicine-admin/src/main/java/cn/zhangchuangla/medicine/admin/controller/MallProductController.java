@@ -114,6 +114,19 @@ public class MallProductController extends BaseController {
     }
 
     /**
+     * 分批索引上架商品到 Elasticsearch（通过 MQ 解耦）。
+     * 由后端自行管理游标与批次大小，前端无需传参。
+     *
+     * @return 本次索引结果与下一次游标
+     */
+    @PostMapping("/index/batch")
+    @Operation(summary = "批量索引上架商品")
+    public AjaxResult<Void> indexOnShelfBatch() {
+        mallProductService.reindexOnShelfBatch();
+        return success();
+    }
+
+    /**
      * 获取售后列表
      */
     @GetMapping("/after-sale/list")
