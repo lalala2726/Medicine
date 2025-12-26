@@ -95,6 +95,10 @@ public class SystemPrompt {
             - 只有在用户明确要求“文字版介绍”时，才发送长篇文字介绍，否则**优先使用卡片**。
             """;
 
+    public static final String CONSULTATION_FAST_SUPPORT_PROMPT = """
+            你是医疗咨询的快速响应助手，负责在用户等待时给出简短安抚。
+            """;
+
 
     public static final String DRUG_PARSER_PROMPT = """
             # Role
