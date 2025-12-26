@@ -235,11 +235,11 @@ public class NotifyMessageServiceImpl extends ServiceImpl<NotifyMessageMapper, N
     }
 
     private NotifyMessagePushMessage buildPushMessage(NotifyMessageSendRequest request,
-                                                     String senderType,
-                                                     Long senderId,
-                                                     String senderName,
-                                                     Date now,
-                                                     List<Long> receiverIds) {
+                                                      String senderType,
+                                                      Long senderId,
+                                                      String senderName,
+                                                      Date now,
+                                                      List<Long> receiverIds) {
         return NotifyMessagePushMessage.builder()
                 .title(request.getTitle().trim())
                 .content(request.getContent())

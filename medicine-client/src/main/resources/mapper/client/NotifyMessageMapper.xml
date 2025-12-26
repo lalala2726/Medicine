@@ -26,56 +26,56 @@
     <!-- 广播消息与指定消息合并查询，统一过滤用户删除状态 -->
     <select id="selectUserMessagePage" resultMap="BaseResultMap">
         SELECT t.id,
-               t.title,
-               t.content,
-               t.sender_type,
-               t.sender_id,
-               t.sender_name,
-               t.receiver_type,
-               t.type,
-               t.publish_time,
-               t.is_deleted,
-               t.create_time
+        t.title,
+        t.content,
+        t.sender_type,
+        t.sender_id,
+        t.sender_name,
+        t.receiver_type,
+        t.type,
+        t.publish_time,
+        t.is_deleted,
+        t.create_time
         FROM (
-                 SELECT nm.id           AS id,
-                        nm.title        AS title,
-                        SUBSTRING(nm.content, 1, 25) AS content,
-                        nm.sender_type  AS sender_type,
-                        nm.sender_id    AS sender_id,
-                        nm.sender_name  AS sender_name,
-                        nm.receiver_type AS receiver_type,
-                        nm.type         AS type,
-                        nm.publish_time AS publish_time,
-                        nm.is_deleted   AS is_deleted,
-                        nm.create_time  AS create_time,
-                        COALESCE(unm.is_read, 0) AS is_read
-                 FROM notify_message nm
-                          LEFT JOIN user_notify_message unm
-                                    ON nm.id = unm.notify_id
-                                        AND unm.user_id = #{userId}
-                 WHERE nm.is_deleted = 0
-                   AND nm.receiver_type = 'ALL_USER'
-                   AND (unm.is_deleted IS NULL OR unm.is_deleted = 0)
-                 UNION ALL
-                 SELECT nm.id           AS id,
-                        nm.title        AS title,
-                        SUBSTRING(nm.content, 1, 25) AS content,
-                        nm.sender_type  AS sender_type,
-                        nm.sender_id    AS sender_id,
-                        nm.sender_name  AS sender_name,
-                        nm.receiver_type AS receiver_type,
-                        nm.type         AS type,
-                        nm.publish_time AS publish_time,
-                        nm.is_deleted   AS is_deleted,
-                        nm.create_time  AS create_time,
-                        unm.is_read     AS is_read
-                 FROM user_notify_message unm
-                          INNER JOIN notify_message nm ON nm.id = unm.notify_id
-                 WHERE unm.user_id = #{userId}
-                   AND unm.is_deleted = 0
-                   AND nm.is_deleted = 0
-                   AND nm.receiver_type = 'DESIGNATED_USER'
-             ) t
+        SELECT nm.id AS id,
+        nm.title AS title,
+        SUBSTRING(nm.content, 1, 25) AS content,
+        nm.sender_type AS sender_type,
+        nm.sender_id AS sender_id,
+        nm.sender_name AS sender_name,
+        nm.receiver_type AS receiver_type,
+        nm.type AS type,
+        nm.publish_time AS publish_time,
+        nm.is_deleted AS is_deleted,
+        nm.create_time AS create_time,
+        COALESCE(unm.is_read, 0) AS is_read
+        FROM notify_message nm
+        LEFT JOIN user_notify_message unm
+        ON nm.id = unm.notify_id
+        AND unm.user_id = #{userId}
+        WHERE nm.is_deleted = 0
+        AND nm.receiver_type = 'ALL_USER'
+        AND (unm.is_deleted IS NULL OR unm.is_deleted = 0)
+        UNION ALL
+        SELECT nm.id AS id,
+        nm.title AS title,
+        SUBSTRING(nm.content, 1, 25) AS content,
+        nm.sender_type AS sender_type,
+        nm.sender_id AS sender_id,
+        nm.sender_name AS sender_name,
+        nm.receiver_type AS receiver_type,
+        nm.type AS type,
+        nm.publish_time AS publish_time,
+        nm.is_deleted AS is_deleted,
+        nm.create_time AS create_time,
+        unm.is_read AS is_read
+        FROM user_notify_message unm
+        INNER JOIN notify_message nm ON nm.id = unm.notify_id
+        WHERE unm.user_id = #{userId}
+        AND unm.is_deleted = 0
+        AND nm.is_deleted = 0
+        AND nm.receiver_type = 'DESIGNATED_USER'
+        ) t
         WHERE 1 = 1
         <if test="request.title != null and request.title != ''">
             AND t.title LIKE CONCAT('%', #{request.title}, '%')
