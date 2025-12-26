@@ -8,7 +8,6 @@ import cn.zhangchuangla.medicine.common.core.base.AjaxResult;
 import cn.zhangchuangla.medicine.common.core.base.TableDataResult;
 import cn.zhangchuangla.medicine.common.security.base.BaseController;
 import cn.zhangchuangla.medicine.llm.model.request.AssistantChatRequest;
-import cn.zhangchuangla.medicine.llm.service.AssistantService;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -31,14 +30,13 @@ import java.util.List;
 @Tag(name = "咨询管理", description = "咨询管理接口")
 public class AssistantController extends BaseController {
 
-    private final AssistantService assistantService;
     private final MallOrderService mallOrderService;
 
 
     @PostMapping(value = "/chat", produces = "text/event-stream")
     @Operation(summary = "简单咨询", description = "简单的医疗咨询接口，返回 ChatResponse SSE 消息（文本或卡片）")
     public SseEmitter simpleConsultation(@RequestBody AssistantChatRequest request) {
-        return assistantService.ClientConsultation(request.getMessage());
+        return null;
     }
 
 
