@@ -3,18 +3,20 @@ package cn.zhangchuangla.medicine.model.entity;
 import com.baomidou.mybatisplus.annotation.IdType;
 import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableName;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Data;
+import lombok.NoArgsConstructor;
 
 import java.util.Date;
 
-/**
- * 用户通知消息表
- *
- * @TableName user_notify_message
- */
 @TableName(value = "user_notify_message")
 @Data
+@Builder
+@NoArgsConstructor
+@AllArgsConstructor
 public class UserNotifyMessage {
+
     /**
      * ID
      */

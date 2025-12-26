@@ -7,10 +7,7 @@ import cn.zhangchuangla.medicine.admin.model.vo.UserDetailVo;
 import cn.zhangchuangla.medicine.admin.model.vo.UserWalletFlowInfoVo;
 import cn.zhangchuangla.medicine.admin.model.vo.UserWalletVo;
 import cn.zhangchuangla.medicine.admin.service.UserService;
-import cn.zhangchuangla.medicine.common.core.base.AjaxResult;
-import cn.zhangchuangla.medicine.common.core.base.PageRequest;
-import cn.zhangchuangla.medicine.common.core.base.PageResult;
-import cn.zhangchuangla.medicine.common.core.base.TableDataResult;
+import cn.zhangchuangla.medicine.common.core.base.*;
 import cn.zhangchuangla.medicine.common.security.annotation.IsAdmin;
 import cn.zhangchuangla.medicine.common.security.base.BaseController;
 import cn.zhangchuangla.medicine.model.entity.User;
@@ -33,7 +30,7 @@ import java.util.List;
  * created on 2025/9/3
  */
 @RestController
-@RequestMapping("/user")
+@RequestMapping("/system/user")
 @RequiredArgsConstructor
 @Tag(name = "用户接口", description = "提供用户的增删改查")
 @IsAdmin
@@ -64,7 +61,7 @@ public class UserController extends BaseController {
      */
     @GetMapping("/{id:\\d+}/detail")
     @Operation(summary = "用户详情")
-    public AjaxResult<UserDetailVo> getUserById(@PathVariable("id") Long id) {
+    public AjaxResult<UserDetailVo> getUserById(@PathVariable Long id) {
         UserDetailVo userDetailVo = userService.getUserDetailById(id);
         return success(userDetailVo);
     }
@@ -72,9 +69,9 @@ public class UserController extends BaseController {
     /**
      * 获取用户钱包流水
      */
-    @GetMapping("/{userId}/wallet-flow")
+    @GetMapping("/{userId:\\d+}/wallet-flow")
     @Operation(summary = "获取用户钱包流水")
-    public AjaxResult<TableDataResult> getUserWalletFlow(@PathVariable("userId") Long userId, PageRequest request) {
+    public AjaxResult<TableDataResult> getUserWalletFlow(@PathVariable Long userId, PageRequest request) {
         PageResult<UserWalletFlowInfoVo> userWalletLogPage = userService.getUserWalletFlow(userId, request);
         return getTableData(userWalletLogPage);
     }
@@ -82,9 +79,9 @@ public class UserController extends BaseController {
     /**
      * 获取消费信息
      */
-    @GetMapping("/{userId}/consume-info")
+    @GetMapping("/{userId:\\d+}/consume-info")
     @Operation(summary = "获取消费信息")
-    public AjaxResult<TableDataResult> getConsumeInfo(@PathVariable("userId") Long userId, PageRequest request) {
+    public AjaxResult<TableDataResult> getConsumeInfo(@PathVariable Long userId, PageRequest request) {
         PageResult<UserConsumeInfo> consumeInfo = userService.getConsumeInfo(userId, request);
         return getTableData(consumeInfo);
     }
@@ -118,13 +115,13 @@ public class UserController extends BaseController {
     /**
      * 删除用户
      *
-     * @param userId 用户ID
+     * @param ids 用户ID
      * @return 删除结果
      */
     @DeleteMapping("/{ids}")
     @Operation(summary = "删除用户")
-    public AjaxResult<Void> deleteUser(@PathVariable("ids") List<Long> userId) {
-        boolean result = userService.deleteUser(userId);
+    public AjaxResult<Void> deleteUser(@PathVariable List<Long> ids) {
+        boolean result = userService.deleteUser(ids);
         return toAjax(result);
     }
 
@@ -134,9 +131,9 @@ public class UserController extends BaseController {
      * @param userId 用户ID
      * @return 钱包金额
      */
-    @GetMapping("/{userId}/wallet")
+    @GetMapping("/{userId:\\d+}/wallet")
     @Operation(summary = "获取用户钱包金额")
-    public AjaxResult<UserWalletVo> getUserWalletBalance(@PathVariable("userId") Long userId) {
+    public AjaxResult<UserWalletVo> getUserWalletBalance(@PathVariable Long userId) {
         UserWalletVo userWalletVo = userService.getUserWallet(userId);
         return success(userWalletVo);
     }
@@ -150,7 +147,7 @@ public class UserController extends BaseController {
      */
     @PostMapping("/wallet/open/{userId}")
     @Operation(summary = "开通用户钱包")
-    public AjaxResult<Void> openUserWallet(@PathVariable("userId") Long userId) {
+    public AjaxResult<Void> openUserWallet(@PathVariable Long userId) {
         boolean result = userService.openUserWallet(userId);
         return toAjax(result);
     }
@@ -193,6 +190,19 @@ public class UserController extends BaseController {
     public AjaxResult<Void> rechargeUserWallet(@Validated @RequestBody WalletChangeRequest request) {
         boolean result = userService.walletAmountChange(request);
         return toAjax(result);
+    }
+
+    /**
+     * 批量获取用户ID与用户名映射
+     *
+     * @param userIds 用户ID列表
+     * @return 用户选项列表
+     */
+    @PostMapping("/options")
+    @Operation(summary = "批量获取用户选项")
+    public AjaxResult<List<Option<Long>>> listUserOptions(@RequestBody List<Long> userIds) {
+        List<Option<Long>> options = userService.listUserOptionsByIds(userIds);
+        return success(options);
     }
 
 }

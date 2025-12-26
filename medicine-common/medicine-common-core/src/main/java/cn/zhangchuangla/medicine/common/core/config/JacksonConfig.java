@@ -6,13 +6,17 @@ import com.fasterxml.jackson.databind.json.JsonMapper;
 import com.fasterxml.jackson.databind.module.SimpleModule;
 import com.fasterxml.jackson.databind.ser.std.ToStringSerializer;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
+import com.fasterxml.jackson.datatype.jsr310.deser.LocalDateDeserializer;
 import com.fasterxml.jackson.datatype.jsr310.deser.LocalDateTimeDeserializer;
+import com.fasterxml.jackson.datatype.jsr310.ser.LocalDateSerializer;
 import com.fasterxml.jackson.datatype.jsr310.ser.LocalDateTimeSerializer;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
 import java.math.BigDecimal;
 import java.math.BigInteger;
+import java.text.SimpleDateFormat;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.TimeZone;
@@ -28,7 +32,7 @@ public class JacksonConfig {
     @Bean
     public JsonMapper jsonMapper() {
         DateTimeFormatter dateTimeFormatter =
-                DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
+                DateTimeFormatter.ofPattern("yyyy-MM-dd");
 
         JavaTimeModule javaTimeModule = new JavaTimeModule();
         javaTimeModule.addSerializer(
@@ -38,6 +42,14 @@ public class JacksonConfig {
         javaTimeModule.addDeserializer(
                 LocalDateTime.class,
                 new LocalDateTimeDeserializer(dateTimeFormatter)
+        );
+        javaTimeModule.addSerializer(
+                LocalDate.class,
+                new LocalDateSerializer(dateTimeFormatter)
+        );
+        javaTimeModule.addDeserializer(
+                LocalDate.class,
+                new LocalDateDeserializer(dateTimeFormatter)
         );
 
         SimpleModule numberToStringModule = new SimpleModule();
@@ -55,6 +67,7 @@ public class JacksonConfig {
                 .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false)
                 // 时区
                 .defaultTimeZone(TimeZone.getTimeZone("GMT+8"))
+                .defaultDateFormat(new SimpleDateFormat("yyyy-MM-dd"))
                 .build();
     }
 }
