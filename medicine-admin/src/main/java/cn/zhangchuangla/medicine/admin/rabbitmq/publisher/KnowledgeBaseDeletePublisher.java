@@ -1,7 +1,7 @@
-package cn.zhangchuangla.medicine.common.rabbitmq.publisher;
+package cn.zhangchuangla.medicine.admin.rabbitmq.publisher;
 
 import cn.zhangchuangla.medicine.common.rabbitmq.constants.KnowledgeBaseQueueConstants;
-import cn.zhangchuangla.medicine.common.rabbitmq.message.KnowledgeBaseDeleteMessage;
+import cn.zhangchuangla.medicine.model.mq.message.KnowledgeBaseDeleteMessage;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
@@ -36,4 +36,3 @@ public class KnowledgeBaseDeletePublisher {
         );
     }
 }
-

@@ -2,7 +2,7 @@ package cn.zhangchuangla.medicine.admin.listener;
 
 import cn.zhangchuangla.medicine.admin.service.NotifyMessageService;
 import cn.zhangchuangla.medicine.common.rabbitmq.constants.NotifyMessageQueueConstants;
-import cn.zhangchuangla.medicine.common.rabbitmq.message.NotifyMessagePushMessage;
+import cn.zhangchuangla.medicine.model.mq.message.NotifyMessagePushMessage;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.amqp.rabbit.annotation.RabbitListener;

@@ -5,8 +5,8 @@ import cn.zhangchuangla.medicine.admin.model.request.NotifyMessageSendRequest;
 import cn.zhangchuangla.medicine.admin.model.request.NotifyMessageSystemPushRequest;
 import cn.zhangchuangla.medicine.admin.model.request.NotifyMessageUpdateRequest;
 import cn.zhangchuangla.medicine.admin.model.vo.NotifyMessageDetailVo;
-import cn.zhangchuangla.medicine.common.rabbitmq.message.NotifyMessagePushMessage;
 import cn.zhangchuangla.medicine.model.entity.NotifyMessage;
+import cn.zhangchuangla.medicine.model.mq.message.NotifyMessagePushMessage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.IService;
 

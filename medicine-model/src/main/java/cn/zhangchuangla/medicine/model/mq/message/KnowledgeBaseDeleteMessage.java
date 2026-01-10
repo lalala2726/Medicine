@@ -1,4 +1,4 @@
-package cn.zhangchuangla.medicine.common.rabbitmq.message;
+package cn.zhangchuangla.medicine.model.mq.message;
 
 import lombok.Builder;
 import lombok.Data;
@@ -26,4 +26,3 @@ public class KnowledgeBaseDeleteMessage implements Serializable {
      */
     private Integer batchSize;
 }
-

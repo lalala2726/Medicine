@@ -2,7 +2,7 @@ package cn.zhangchuangla.medicine.admin.listener;
 
 import cn.zhangchuangla.medicine.admin.service.KnowledgeBaseService;
 import cn.zhangchuangla.medicine.common.rabbitmq.constants.KnowledgeBaseQueueConstants;
-import cn.zhangchuangla.medicine.common.rabbitmq.message.KnowledgeBaseChunkUpdateMessage;
+import cn.zhangchuangla.medicine.model.mq.message.KnowledgeBaseChunkUpdateMessage;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.amqp.rabbit.annotation.RabbitListener;

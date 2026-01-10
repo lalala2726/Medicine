@@ -125,5 +125,5 @@ public interface KnowledgeBaseService extends IService<KnowledgeBase> {
      *
      * @param message 切片更新消息
      */
-    void updateDocumentChunkVector(cn.zhangchuangla.medicine.common.rabbitmq.message.KnowledgeBaseChunkUpdateMessage message);
+    void updateDocumentChunkVector(cn.zhangchuangla.medicine.model.mq.message.KnowledgeBaseChunkUpdateMessage message);
 }
