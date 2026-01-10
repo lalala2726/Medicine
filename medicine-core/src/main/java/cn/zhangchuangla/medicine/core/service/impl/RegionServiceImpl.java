@@ -1,10 +1,10 @@
-package cn.zhangchuangla.medicine.common.mongodb.service.impl;
+package cn.zhangchuangla.medicine.core.service.impl;
 
-import cn.zhangchuangla.medicine.common.mongodb.constants.MongoCollections;
-import cn.zhangchuangla.medicine.common.mongodb.core.MongoCache;
-import cn.zhangchuangla.medicine.common.mongodb.entity.Region;
-import cn.zhangchuangla.medicine.common.mongodb.enums.RegionLevel;
-import cn.zhangchuangla.medicine.common.mongodb.service.RegionService;
+import cn.zhangchuangla.medicine.core.constants.MongoCollections;
+import cn.zhangchuangla.medicine.core.entity.Region;
+import cn.zhangchuangla.medicine.core.enums.RegionLevel;
+import cn.zhangchuangla.medicine.core.mongodb.MongoCache;
+import cn.zhangchuangla.medicine.core.service.RegionService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.data.mongodb.core.query.Criteria;
@@ -163,4 +163,3 @@ public class RegionServiceImpl implements RegionService {
         return mongoCache.find(query, Region.class, MongoCollections.REGIONS);
     }
 }
-

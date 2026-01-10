@@ -1,4 +1,4 @@
-package cn.zhangchuangla.medicine.common.mongodb.vo;
+package cn.zhangchuangla.medicine.core.vo;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
@@ -19,4 +19,3 @@ public class RegionVo {
     @Schema(description = "行政区划层级, 1=省级, 2=市级, 3=区县级, 5=街道/村级", example = "1")
     private Integer level;
 }
-

@@ -1,4 +1,4 @@
-package cn.zhangchuangla.medicine.common.mongodb.constants;
+package cn.zhangchuangla.medicine.core.constants;
 
 /**
  * MongoDB集合名称常量类
@@ -38,4 +38,3 @@ public final class MongoCollections {
         // 工具类,禁止实例化
     }
 }
-

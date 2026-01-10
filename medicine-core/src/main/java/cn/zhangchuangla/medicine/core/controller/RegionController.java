@@ -1,11 +1,11 @@
-package cn.zhangchuangla.medicine.admin.controller;
+package cn.zhangchuangla.medicine.core.controller;
 
 import cn.zhangchuangla.medicine.common.core.base.AjaxResult;
 import cn.zhangchuangla.medicine.common.core.utils.BeanCotyUtils;
-import cn.zhangchuangla.medicine.common.mongodb.entity.Region;
-import cn.zhangchuangla.medicine.common.mongodb.service.RegionService;
-import cn.zhangchuangla.medicine.common.mongodb.vo.RegionVo;
 import cn.zhangchuangla.medicine.common.security.base.BaseController;
+import cn.zhangchuangla.medicine.core.entity.Region;
+import cn.zhangchuangla.medicine.core.service.RegionService;
+import cn.zhangchuangla.medicine.core.vo.RegionVo;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -18,7 +18,7 @@ import java.util.List;
 import java.util.Set;
 
 /**
- * Admin端地址管理Controller
+ * 地址管理Controller
  * 提供省市区街道地址查询功能
  *
  * @author Chuang

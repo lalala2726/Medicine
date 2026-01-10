@@ -25,6 +25,10 @@
         </dependency>
         <dependency>
             <groupId>cn.zhangchuangla.medicine</groupId>
+            <artifactId>medicine-core</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>cn.zhangchuangla.medicine</groupId>
             <artifactId>medicine-payment</artifactId>
         </dependency>
         <dependency>

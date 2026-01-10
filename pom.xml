@@ -113,6 +113,11 @@
             </dependency>
             <dependency>
                 <groupId>cn.zhangchuangla.medicine</groupId>
+                <artifactId>medicine-core</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>cn.zhangchuangla.medicine</groupId>
                 <artifactId>medicine-llm</artifactId>
                 <version>${project.version}</version>
             </dependency>
@@ -352,6 +357,7 @@
 
     <modules>
         <module>medicine-common</module>
+        <module>medicine-core</module>
         <module>medicine-model</module>
         <module>medicine-admin</module>
         <module>medicine-client</module>

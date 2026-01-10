@@ -1,4 +1,4 @@
-package cn.zhangchuangla.medicine.common.mongodb.enums;
+package cn.zhangchuangla.medicine.core.enums;
 
 import lombok.Getter;
 
@@ -56,4 +56,3 @@ public enum RegionLevel {
         return null;
     }
 }
-

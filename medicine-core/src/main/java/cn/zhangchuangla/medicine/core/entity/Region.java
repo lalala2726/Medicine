@@ -1,4 +1,4 @@
-package cn.zhangchuangla.medicine.common.mongodb.entity;
+package cn.zhangchuangla.medicine.core.entity;
 
 import lombok.Data;
 import org.springframework.data.annotation.Id;
@@ -74,4 +74,3 @@ public class Region implements Serializable {
     @Field("level")
     private Integer level;
 }
-

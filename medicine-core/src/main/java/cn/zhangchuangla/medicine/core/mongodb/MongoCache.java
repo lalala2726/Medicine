@@ -1,4 +1,4 @@
-package cn.zhangchuangla.medicine.common.mongodb.core;
+package cn.zhangchuangla.medicine.core.mongodb;
 
 import com.mongodb.client.result.DeleteResult;
 import com.mongodb.client.result.UpdateResult;
@@ -309,4 +309,3 @@ public final class MongoCache {
         }
     }
 }
-

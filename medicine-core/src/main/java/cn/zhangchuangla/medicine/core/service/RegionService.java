@@ -1,6 +1,6 @@
-package cn.zhangchuangla.medicine.common.mongodb.service;
+package cn.zhangchuangla.medicine.core.service;
 
-import cn.zhangchuangla.medicine.common.mongodb.entity.Region;
+import cn.zhangchuangla.medicine.core.entity.Region;
 
 import java.util.List;
 
@@ -91,4 +91,3 @@ public interface RegionService {
      */
     List<Region> searchByPinyinPrefix(String prefix);
 }
-
