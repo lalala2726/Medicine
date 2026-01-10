@@ -1,4 +1,4 @@
-package cn.zhangchuangla.medicine.common.milvus.service;
+package cn.zhangchuangla.medicine.llm.milvus.service;
 
 /**
  * 知识库向量空间管理

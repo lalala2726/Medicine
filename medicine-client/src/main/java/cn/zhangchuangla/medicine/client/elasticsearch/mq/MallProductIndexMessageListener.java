@@ -1,7 +1,7 @@
-package cn.zhangchuangla.medicine.common.elasticsearch.mq;
+package cn.zhangchuangla.medicine.client.elasticsearch.mq;
 
-import cn.zhangchuangla.medicine.common.elasticsearch.document.MallProductDocument;
-import cn.zhangchuangla.medicine.common.elasticsearch.service.MallProductSearchService;
+import cn.zhangchuangla.medicine.client.elasticsearch.document.MallProductDocument;
+import cn.zhangchuangla.medicine.client.elasticsearch.service.MallProductSearchService;
 import cn.zhangchuangla.medicine.common.rabbitmq.constants.ProductIndexQueueConstants;
 import cn.zhangchuangla.medicine.model.mq.message.ProductIndexMessage;
 import cn.zhangchuangla.medicine.model.mq.message.ProductIndexOperation;

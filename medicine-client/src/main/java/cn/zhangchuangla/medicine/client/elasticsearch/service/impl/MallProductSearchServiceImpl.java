@@ -1,11 +1,11 @@
-package cn.zhangchuangla.medicine.common.elasticsearch.service.impl;
+package cn.zhangchuangla.medicine.client.elasticsearch.service.impl;
 
+import cn.zhangchuangla.medicine.client.elasticsearch.document.MallProductDocument;
+import cn.zhangchuangla.medicine.client.elasticsearch.repository.MallProductSearchRepository;
+import cn.zhangchuangla.medicine.client.elasticsearch.service.MallProductSearchService;
+import cn.zhangchuangla.medicine.client.model.request.MallProductSearchRequest;
 import cn.zhangchuangla.medicine.common.core.enums.ResponseCode;
 import cn.zhangchuangla.medicine.common.core.exception.ServiceException;
-import cn.zhangchuangla.medicine.common.elasticsearch.document.MallProductDocument;
-import cn.zhangchuangla.medicine.common.elasticsearch.model.request.MallProductSearchRequest;
-import cn.zhangchuangla.medicine.common.elasticsearch.repository.MallProductSearchRepository;
-import cn.zhangchuangla.medicine.common.elasticsearch.service.MallProductSearchService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.PageRequest;
@@ -138,7 +138,6 @@ public class MallProductSearchServiceImpl implements MallProductSearchService {
         }
         suggestions.add(value.trim());
     }
-
 
     /**
      * 构建检索条件：名称（含拼音）、分类名、品牌、通用名、功效均可命中。

@@ -1,4 +1,4 @@
-package cn.zhangchuangla.medicine.common.elasticsearch.document;
+package cn.zhangchuangla.medicine.client.elasticsearch.document;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;

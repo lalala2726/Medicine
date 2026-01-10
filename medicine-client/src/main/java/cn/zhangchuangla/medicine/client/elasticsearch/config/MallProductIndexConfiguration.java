@@ -1,6 +1,6 @@
-package cn.zhangchuangla.medicine.common.elasticsearch.config;
+package cn.zhangchuangla.medicine.client.elasticsearch.config;
 
-import cn.zhangchuangla.medicine.common.elasticsearch.document.MallProductDocument;
+import cn.zhangchuangla.medicine.client.elasticsearch.document.MallProductDocument;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.CommandLineRunner;

@@ -1,8 +1,8 @@
-package cn.zhangchuangla.medicine.common.milvus.service.impl;
+package cn.zhangchuangla.medicine.llm.milvus.service.impl;
 
 import cn.zhangchuangla.medicine.common.core.exception.ServiceException;
 import cn.zhangchuangla.medicine.common.milvus.config.MilvusProperties;
-import cn.zhangchuangla.medicine.common.milvus.service.MilvusKnowledgeBaseService;
+import cn.zhangchuangla.medicine.llm.milvus.service.MilvusKnowledgeBaseService;
 import io.milvus.v2.client.MilvusClientV2;
 import io.milvus.v2.common.DataType;
 import io.milvus.v2.common.IndexParam;

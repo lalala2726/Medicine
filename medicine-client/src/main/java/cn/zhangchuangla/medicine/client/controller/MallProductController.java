@@ -1,13 +1,13 @@
 package cn.zhangchuangla.medicine.client.controller;
 
 import cn.zhangchuangla.medicine.client.enums.ProductViewPeriod;
+import cn.zhangchuangla.medicine.client.model.request.MallProductSearchRequest;
 import cn.zhangchuangla.medicine.client.model.vo.MallProductSearchVo;
 import cn.zhangchuangla.medicine.client.model.vo.MallProductVo;
 import cn.zhangchuangla.medicine.client.service.MallProductService;
 import cn.zhangchuangla.medicine.common.core.base.AjaxResult;
 import cn.zhangchuangla.medicine.common.core.base.PageResult;
 import cn.zhangchuangla.medicine.common.core.base.TableDataResult;
-import cn.zhangchuangla.medicine.common.elasticsearch.model.request.MallProductSearchRequest;
 import cn.zhangchuangla.medicine.common.security.annotation.Anonymous;
 import cn.zhangchuangla.medicine.common.security.base.BaseController;
 import cn.zhangchuangla.medicine.model.vo.mall.RecommendListVo;

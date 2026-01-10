@@ -1,9 +1,9 @@
-package cn.zhangchuangla.medicine.common.milvus.support;
+package cn.zhangchuangla.medicine.llm.milvus.support;
 
 import cn.zhangchuangla.medicine.common.core.enums.ResponseCode;
 import cn.zhangchuangla.medicine.common.core.exception.ServiceException;
 import cn.zhangchuangla.medicine.common.milvus.config.MilvusProperties;
-import cn.zhangchuangla.medicine.common.milvus.service.MilvusKnowledgeBaseService;
+import cn.zhangchuangla.medicine.llm.milvus.service.MilvusKnowledgeBaseService;
 import cn.zhangchuangla.medicine.processing.FileTextExtractor;
 import cn.zhangchuangla.medicine.processing.model.FileParseResult;
 import cn.zhangchuangla.medicine.processing.model.PageTextResult;
@@ -245,4 +245,3 @@ public class KnowledgeBaseIngestSupport {
         }
     }
 }
-

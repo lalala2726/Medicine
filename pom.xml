@@ -126,6 +126,11 @@
                 <artifactId>medicine-common-milvus</artifactId>
                 <version>${project.version}</version>
             </dependency>
+            <dependency>
+                <groupId>cn.zhangchuangla.medicine</groupId>
+                <artifactId>medicine-common-file-processing</artifactId>
+                <version>${project.version}</version>
+            </dependency>
             <!-- MyBatis-Plus JSqlParser，提供分页插件支持 -->
             <dependency>
                 <groupId>com.baomidou</groupId>

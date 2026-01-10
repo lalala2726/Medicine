@@ -33,6 +33,10 @@
         </dependency>
         <dependency>
             <groupId>cn.zhangchuangla.medicine</groupId>
+            <artifactId>medicine-common-rabbitmq</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>cn.zhangchuangla.medicine</groupId>
             <artifactId>medicine-common-security</artifactId>
         </dependency>
         <dependency>

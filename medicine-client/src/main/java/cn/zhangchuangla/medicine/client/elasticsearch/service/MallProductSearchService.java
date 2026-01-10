@@ -1,7 +1,7 @@
-package cn.zhangchuangla.medicine.common.elasticsearch.service;
+package cn.zhangchuangla.medicine.client.elasticsearch.service;
 
-import cn.zhangchuangla.medicine.common.elasticsearch.document.MallProductDocument;
-import cn.zhangchuangla.medicine.common.elasticsearch.model.request.MallProductSearchRequest;
+import cn.zhangchuangla.medicine.client.elasticsearch.document.MallProductDocument;
+import cn.zhangchuangla.medicine.client.model.request.MallProductSearchRequest;
 import org.springframework.data.elasticsearch.core.SearchHits;
 
 import java.util.List;
@@ -43,5 +43,4 @@ public interface MallProductSearchService {
      * 搜索建议，仅命中名称/通用名/品牌（支持拼音）。
      */
     List<String> suggest(String keyword, int size);
-
 }

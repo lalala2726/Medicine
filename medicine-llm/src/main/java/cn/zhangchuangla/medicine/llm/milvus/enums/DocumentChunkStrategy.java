@@ -1,4 +1,4 @@
-package cn.zhangchuangla.medicine.common.milvus.enums;
+package cn.zhangchuangla.medicine.llm.milvus.enums;
 
 /**
  * 文档切分策略类型

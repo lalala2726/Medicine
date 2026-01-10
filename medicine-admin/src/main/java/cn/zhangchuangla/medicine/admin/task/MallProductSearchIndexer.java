@@ -19,7 +19,7 @@ import java.util.Objects;
 /**
  * 将后台商品数据异步同步至 Elasticsearch 的任务。
  *
- * @see cn.zhangchuangla.medicine.common.elasticsearch.mq.MallProductIndexMessageListener
+ * @see cn.zhangchuangla.medicine.client.elasticsearch.mq.MallProductIndexMessageListener
  */
 @Slf4j
 @Component

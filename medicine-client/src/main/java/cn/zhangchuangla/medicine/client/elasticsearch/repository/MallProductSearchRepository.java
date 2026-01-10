@@ -1,6 +1,6 @@
-package cn.zhangchuangla.medicine.common.elasticsearch.repository;
+package cn.zhangchuangla.medicine.client.elasticsearch.repository;
 
-import cn.zhangchuangla.medicine.common.elasticsearch.document.MallProductDocument;
+import cn.zhangchuangla.medicine.client.elasticsearch.document.MallProductDocument;
 import org.springframework.data.elasticsearch.repository.ElasticsearchRepository;
 import org.springframework.stereotype.Repository;
 
