@@ -4,6 +4,7 @@ import cn.zhangchuangla.medicine.common.core.enums.ResponseCode;
 import cn.zhangchuangla.medicine.common.core.exception.ServiceException;
 import com.alibaba.fastjson2.JSON;
 import com.alibaba.fastjson2.JSONObject;
+import lombok.extern.slf4j.Slf4j;
 import okhttp3.Interceptor;
 import okhttp3.MediaType;
 import okhttp3.Response;
@@ -18,6 +19,7 @@ import java.io.IOException;
  * FastAPI 统一响应体拦截器，提取 data 字段并处理错误码。
  */
 @Component
+@Slf4j
 public class AgentResponseInterceptor implements Interceptor {
 
     private static final String CODE_FIELD = "code";
@@ -65,6 +67,7 @@ public class AgentResponseInterceptor implements Interceptor {
         if (code != null && code != SUCCESS) {
             String message = jsonObject.getString(MESSAGE_FIELD);
             String errorMessage = StringUtils.hasText(message) ? message : "Agent接口连接失败！请稍后再试～！";
+            log.error("Agent接口连接失败！响应码：{}，响应体：{}", code, bodyText);
             throw new ServiceException(ResponseCode.OPERATION_ERROR, errorMessage);
         }
 
