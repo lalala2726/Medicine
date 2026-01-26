@@ -29,6 +29,9 @@ public class AgentResponseInterceptor implements Interceptor {
     private static final MediaType DEFAULT_MEDIA_TYPE = MediaType.get("application/json; charset=utf-8");
 
 
+    /**
+     * 响应拦截器
+     */
     @NotNull
     @Override
     public Response intercept(Chain chain) throws IOException {
@@ -55,9 +58,7 @@ public class AgentResponseInterceptor implements Interceptor {
                     .build();
         }
 
-        if (jsonObject == null
-                || !jsonObject.containsKey(CODE_FIELD)
-                || !jsonObject.containsKey(DATA_FIELD)) {
+        if (jsonObject == null) {
             return response.newBuilder()
                     .body(ResponseBody.create(bodyText, contentType))
                     .build();
