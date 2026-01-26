@@ -123,6 +123,11 @@
             </dependency>
             <dependency>
                 <groupId>cn.zhangchuangla.medicine</groupId>
+                <artifactId>medicine-ai-agent</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>cn.zhangchuangla.medicine</groupId>
                 <artifactId>medicine-common-milvus</artifactId>
                 <version>${project.version}</version>
             </dependency>
@@ -372,5 +377,6 @@
         <module>medicine-common/medicine-common-rabbitmq</module>
         <module>medicine-common/medicine-common-milvus</module>
         <module>medicine-common/medicine-common-file-processing</module>
+        <module>medicine-ai-agent</module>
     </modules>
 </project>

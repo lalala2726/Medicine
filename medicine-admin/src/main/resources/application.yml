@@ -91,4 +91,7 @@ ip2region:
   enabled: true
   db-path: classpath:data/ip2region.xdb
   cache-enabled: true
-spring.mvc.apiversion.use.header: Api-Version
+# 智能体配置
+agent:
+  url: http://localhost:8000
+
