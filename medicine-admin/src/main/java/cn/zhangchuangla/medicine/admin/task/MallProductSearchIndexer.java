@@ -1,10 +1,10 @@
 package cn.zhangchuangla.medicine.admin.task;
 
 import cn.zhangchuangla.medicine.admin.mapper.MallProductMapper;
+import cn.zhangchuangla.medicine.admin.rabbitmq.publisher.ProductIndexMessagePublisher;
 import cn.zhangchuangla.medicine.admin.service.MallOrderItemService;
-import cn.zhangchuangla.medicine.common.rabbitmq.message.ProductIndexPayload;
-import cn.zhangchuangla.medicine.common.rabbitmq.publisher.ProductIndexMessagePublisher;
 import cn.zhangchuangla.medicine.model.dto.MallProductDetailDto;
+import cn.zhangchuangla.medicine.model.mq.message.ProductIndexPayload;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.scheduling.annotation.Async;
@@ -19,7 +19,7 @@ import java.util.Objects;
 /**
  * 将后台商品数据异步同步至 Elasticsearch 的任务。
  *
- * @see cn.zhangchuangla.medicine.common.elasticsearch.mq.MallProductIndexMessageListener
+ * @see cn.zhangchuangla.medicine.client.elasticsearch.mq.MallProductIndexMessageListener
  */
 @Slf4j
 @Component

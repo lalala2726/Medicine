@@ -12,6 +12,7 @@ import cn.zhangchuangla.medicine.admin.service.MallOrderService;
 import cn.zhangchuangla.medicine.admin.service.UserService;
 import cn.zhangchuangla.medicine.admin.service.UserWalletLogService;
 import cn.zhangchuangla.medicine.admin.service.UserWalletService;
+import cn.zhangchuangla.medicine.common.core.base.Option;
 import cn.zhangchuangla.medicine.common.core.base.PageRequest;
 import cn.zhangchuangla.medicine.common.core.base.PageResult;
 import cn.zhangchuangla.medicine.common.core.constants.RolesConstant;
@@ -363,6 +364,34 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User>
     public UserWalletVo getUserWallet(Long userId) {
         UserWallet wallet = userWalletService.getUserWalletByUserId(userId);
         return BeanCotyUtils.copyProperties(wallet, UserWalletVo.class);
+    }
+
+    @Override
+    public List<Option<Long>> listUserOptionsByIds(List<Long> userIds) {
+        if (userIds == null || userIds.isEmpty()) {
+            return List.of();
+        }
+        Set<Long> normalized = userIds.stream()
+                .filter(id -> id != null && id > 0)
+                .collect(Collectors.toCollection(LinkedHashSet::new));
+        if (normalized.isEmpty()) {
+            return List.of();
+        }
+        List<User> users = lambdaQuery()
+                .select(User::getId, User::getUsername)
+                .in(User::getId, normalized)
+                .list();
+        Map<Long, String> userMap = users.stream()
+                .filter(user -> user.getId() != null && StringUtils.isNotBlank(user.getUsername()))
+                .collect(Collectors.toMap(User::getId, User::getUsername, (left, right) -> left));
+        List<Option<Long>> options = new ArrayList<>();
+        for (Long userId : normalized) {
+            String username = userMap.get(userId);
+            if (username != null) {
+                options.add(new Option<>(userId, username));
+            }
+        }
+        return options;
     }
 
 

@@ -8,7 +8,6 @@ import cn.zhangchuangla.medicine.common.core.exception.ServiceException;
 import cn.zhangchuangla.medicine.common.core.utils.ImageUtils;
 import cn.zhangchuangla.medicine.llm.model.dto.DrugInfoDto;
 import cn.zhangchuangla.medicine.llm.model.request.AssistantChatRequest;
-import cn.zhangchuangla.medicine.llm.service.AssistantService;
 import cn.zhangchuangla.medicine.llm.service.LLMParseImageService;
 import lombok.RequiredArgsConstructor;
 import org.jetbrains.annotations.NotNull;
@@ -36,7 +35,6 @@ public class AdminAssistantServiceImpl implements AdminAssistantService {
 
     private final MinioStorageService minioStorageService;
     private final LLMParseImageService llmParseImageService;
-    private final AssistantService assistantService;
 
 
     @Override
@@ -71,7 +69,8 @@ public class AdminAssistantServiceImpl implements AdminAssistantService {
             throw new ServiceException(ResponseCode.PARAM_ERROR, "消息或文件至少提供一项");
         }
         String enriched = buildMessageWithFiles(request.getMessage(), request.getFileUrls());
-        return assistantService.AdminAssistantChat(enriched);
+        // todo 管理端对话等客户端开发完毕再处理这边的
+        return null;
     }
 
     private String guessMimeType(String objectName) {

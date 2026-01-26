@@ -57,7 +57,6 @@ public class ClientConsultationTools {
             """)
     @ToolCallStage(start = "正在搜索商城药品", end = "商城药品搜索完成")
     public List<SearchMallProductTool> searchMallProducts(
-            @ToolParam(description = "<思维链>：请用一句话解释为什么现在需要搜索药品（例如：用户说头痛，需要查找止痛药）。此参数仅用于辅助思考，不影响逻辑。") String explanation,
             @ToolParam(description = "搜索关键字。可以是具体的症状（如'感冒'）或药品名。") String keyword,
             @ToolParam(description = "最大返回数量，默认为10") int limit) {
 
@@ -85,10 +84,8 @@ public class ClientConsultationTools {
      */
     @Tool(name = "sendSymptomSelector", description = """
             <功能>：发送一个交互式症状选择卡片供用户点击。
-            
             <何时使用>：
             - <关键>：当用户描述了一个笼统的病情（如“我发烧了”），你需要进一步确认具体表现（如“体温多少？”、“有无乏力？”）时，**必须优先使用此工具**，而不是让用户打字。
-            
             <目标>：
             - 获取结构化的症状信息，以便进行更精准的药品推荐。
             """)

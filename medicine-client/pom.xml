@@ -25,7 +25,15 @@
         </dependency>
         <dependency>
             <groupId>cn.zhangchuangla.medicine</groupId>
+            <artifactId>medicine-core</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>cn.zhangchuangla.medicine</groupId>
             <artifactId>medicine-common-elasticsearch</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>cn.zhangchuangla.medicine</groupId>
+            <artifactId>medicine-common-rabbitmq</artifactId>
         </dependency>
         <dependency>
             <groupId>cn.zhangchuangla.medicine</groupId>
@@ -36,24 +44,12 @@
             <artifactId>medicine-payment</artifactId>
         </dependency>
         <dependency>
-            <groupId>org.springframework.boot</groupId>
-            <artifactId>spring-boot-starter-web</artifactId>
+            <groupId>cn.zhangchuangla.medicine</groupId>
+            <artifactId>medicine-common-storage</artifactId>
         </dependency>
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-oauth2-client</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>com.baomidou</groupId>
-            <artifactId>mybatis-plus-spring-boot3-starter</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>org.springframework.boot</groupId>
-            <artifactId>spring-boot-starter-data-redis</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>com.baomidou</groupId>
-            <artifactId>mybatis-plus-jsqlparser</artifactId>
         </dependency>
         <dependency>
             <groupId>org.projectlombok</groupId>
@@ -71,10 +67,6 @@
         <dependency>
             <groupId>org.springdoc</groupId>
             <artifactId>springdoc-openapi-starter-webmvc-ui</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>cn.zhangchuangla.medicine</groupId>
-            <artifactId>medicine-common-storage</artifactId>
         </dependency>
         <dependency>
             <groupId>cn.zhangchuangla.medicine</groupId>

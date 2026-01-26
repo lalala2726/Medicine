@@ -1,8 +1,11 @@
 package cn.zhangchuangla.medicine.client.service.impl;
 
+import cn.zhangchuangla.medicine.client.elasticsearch.document.MallProductDocument;
+import cn.zhangchuangla.medicine.client.elasticsearch.service.MallProductSearchService;
 import cn.zhangchuangla.medicine.client.enums.ProductViewPeriod;
 import cn.zhangchuangla.medicine.client.mapper.MallProductMapper;
 import cn.zhangchuangla.medicine.client.model.dto.RecommendProductDto;
+import cn.zhangchuangla.medicine.client.model.request.MallProductSearchRequest;
 import cn.zhangchuangla.medicine.client.model.vo.MallProductSearchVo;
 import cn.zhangchuangla.medicine.client.model.vo.MallProductVo;
 import cn.zhangchuangla.medicine.client.service.MallOrderItemService;
@@ -13,9 +16,6 @@ import cn.zhangchuangla.medicine.common.core.base.PageResult;
 import cn.zhangchuangla.medicine.common.core.enums.ResponseCode;
 import cn.zhangchuangla.medicine.common.core.exception.ServiceException;
 import cn.zhangchuangla.medicine.common.core.utils.Assert;
-import cn.zhangchuangla.medicine.common.elasticsearch.document.MallProductDocument;
-import cn.zhangchuangla.medicine.common.elasticsearch.model.request.MallProductSearchRequest;
-import cn.zhangchuangla.medicine.common.elasticsearch.service.MallProductSearchService;
 import cn.zhangchuangla.medicine.common.security.base.BaseService;
 import cn.zhangchuangla.medicine.llm.model.tool.client.SearchMallProductTool;
 import cn.zhangchuangla.medicine.model.dto.MallProductDetailDto;
