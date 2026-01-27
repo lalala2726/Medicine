@@ -3,6 +3,7 @@ package cn.zhangchuangla.agent.service.impl;
 import cn.zhangchuangla.agent.config.AgentProperties;
 import cn.zhangchuangla.agent.constanst.URLConstant;
 import cn.zhangchuangla.agent.service.AgentImageParseService;
+import cn.zhangchuangla.agent.util.RequestClient;
 import cn.zhangchuangla.medicine.admin.common.storage.model.MinioFileObject;
 import cn.zhangchuangla.medicine.admin.common.storage.service.MinioStorageService;
 import cn.zhangchuangla.medicine.common.core.enums.ResponseCode;
@@ -12,11 +13,9 @@ import cn.zhangchuangla.medicine.llm.model.dto.DrugInfoDto;
 import com.alibaba.fastjson2.JSON;
 import com.alibaba.fastjson2.JSONObject;
 import lombok.RequiredArgsConstructor;
-import okhttp3.*;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
 
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Base64;
 import java.util.List;
@@ -31,10 +30,7 @@ import java.util.Map;
 @RequiredArgsConstructor
 public class AgentImageParseServiceImpl implements AgentImageParseService {
 
-    private static final MediaType JSON_MEDIA_TYPE = MediaType.get("application/json; charset=utf-8");
-
     private final MinioStorageService minioStorageService;
-    private final OkHttpClient okHttpClient;
     private final AgentProperties agentProperties;
 
     @Override
@@ -62,27 +58,11 @@ public class AgentImageParseServiceImpl implements AgentImageParseService {
 
     private DrugInfoDto parseDrugInfoByFastApi(List<String> base64Images) {
         String payload = JSON.toJSONString(Map.of("images", base64Images));
-        String requestUrl = buildRequestUrl();
-        Request request = new Request.Builder()
-                .url(requestUrl)
-                .post(RequestBody.create(payload, JSON_MEDIA_TYPE))
-                .build();
-        try (Response response = okHttpClient.newCall(request).execute()) {
-            if (!response.isSuccessful()) {
-                throw new ServiceException(ResponseCode.OPERATION_ERROR, "图片解析失败");
-            }
-            ResponseBody responseBody = response.body();
-            if (responseBody == null) {
-                throw new ServiceException(ResponseCode.OPERATION_ERROR, "图片解析失败");
-            }
-            String responseText = responseBody.string();
-            if (!StringUtils.hasText(responseText)) {
-                throw new ServiceException(ResponseCode.OPERATION_ERROR, "图片解析结果为空");
-            }
-            return parseDrugInfoResponse(responseText);
-        } catch (IOException ex) {
-            throw new ServiceException(ResponseCode.OPERATION_ERROR, "图片解析服务不可用");
+        String responseText = RequestClient.post(buildRequestUrl(), payload);
+        if (!StringUtils.hasText(responseText)) {
+            throw new ServiceException(ResponseCode.OPERATION_ERROR, "图片解析结果为空");
         }
+        return parseDrugInfoResponse(responseText);
     }
 
     private DrugInfoDto parseDrugInfoResponse(String responseText) {
