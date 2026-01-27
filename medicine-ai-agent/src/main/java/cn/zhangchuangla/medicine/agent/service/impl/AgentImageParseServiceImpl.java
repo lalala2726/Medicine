@@ -9,9 +9,10 @@ import cn.zhangchuangla.medicine.agent.util.RequestClient;
 import cn.zhangchuangla.medicine.common.core.enums.ResponseCode;
 import cn.zhangchuangla.medicine.common.core.exception.ServiceException;
 import cn.zhangchuangla.medicine.common.core.utils.ImageUtils;
+import cn.zhangchuangla.medicine.common.core.utils.JSONUtils;
 import cn.zhangchuangla.medicine.llm.model.dto.DrugInfoDto;
-import com.alibaba.fastjson2.JSON;
-import com.alibaba.fastjson2.JSONObject;
+import com.google.gson.JsonElement;
+import com.google.gson.JsonObject;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
@@ -57,7 +58,7 @@ public class AgentImageParseServiceImpl implements AgentImageParseService {
     }
 
     private DrugInfoDto parseDrugInfoByFastApi(List<String> base64Images) {
-        String payload = JSON.toJSONString(Map.of("images", base64Images));
+        String payload = JSONUtils.toJson(Map.of("images", base64Images));
         String responseText = RequestClient.post(buildRequestUrl(), payload);
         if (!StringUtils.hasText(responseText)) {
             throw new ServiceException(ResponseCode.OPERATION_ERROR, "图片解析结果为空");
@@ -67,14 +68,14 @@ public class AgentImageParseServiceImpl implements AgentImageParseService {
 
     private DrugInfoDto parseDrugInfoResponse(String responseText) {
         try {
-            JSONObject jsonObject = JSON.parseObject(responseText);
-            if (jsonObject == null) {
-                throw new ServiceException(ResponseCode.OPERATION_ERROR, "图片解析结果为空");
+            JsonElement element = JSONUtils.parse(responseText);
+            if (element.isJsonObject()) {
+                JsonObject jsonObject = element.getAsJsonObject();
+                if (jsonObject.has("data") && !jsonObject.get("data").isJsonNull()) {
+                    return JSONUtils.fromJson(jsonObject.get("data"), DrugInfoDto.class);
+                }
             }
-            if (jsonObject.containsKey("data")) {
-                return jsonObject.getObject("data", DrugInfoDto.class);
-            }
-            return jsonObject.to(DrugInfoDto.class);
+            return JSONUtils.fromJson(responseText, DrugInfoDto.class);
         } catch (Exception ex) {
             throw new ServiceException(ResponseCode.OPERATION_ERROR, "图片解析响应解析失败");
         }

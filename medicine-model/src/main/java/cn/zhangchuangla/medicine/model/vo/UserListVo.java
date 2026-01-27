@@ -1,6 +1,6 @@
 package cn.zhangchuangla.medicine.model.vo;
 
-import com.alibaba.fastjson2.annotation.JSONField;
+import com.fasterxml.jackson.annotation.JsonFormat;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 
@@ -31,7 +31,7 @@ public class UserListVo {
     @Schema(description = "状态", example = "1")
     private Integer status;
 
-    @JSONField(format = "yyyy-MM-dd HH:mm:ss")
+    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
     @Schema(description = "创建时间", example = "2023-01-01 00:00:00")
     private Date createTime;
 

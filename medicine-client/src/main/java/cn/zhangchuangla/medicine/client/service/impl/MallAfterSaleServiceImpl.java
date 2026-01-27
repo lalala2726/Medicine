@@ -8,6 +8,7 @@ import cn.zhangchuangla.medicine.client.service.MallOrderItemService;
 import cn.zhangchuangla.medicine.client.service.MallOrderTimelineService;
 import cn.zhangchuangla.medicine.common.core.enums.ResponseCode;
 import cn.zhangchuangla.medicine.common.core.exception.ServiceException;
+import cn.zhangchuangla.medicine.common.core.utils.JSONUtils;
 import cn.zhangchuangla.medicine.common.security.base.BaseService;
 import cn.zhangchuangla.medicine.model.dto.OrderTimelineDto;
 import cn.zhangchuangla.medicine.model.entity.MallAfterSale;
@@ -18,7 +19,6 @@ import cn.zhangchuangla.medicine.model.enums.*;
 import cn.zhangchuangla.medicine.model.vo.mall.AfterSaleDetailVo;
 import cn.zhangchuangla.medicine.model.vo.mall.AfterSaleListVo;
 import cn.zhangchuangla.medicine.model.vo.mall.AfterSaleTimelineVo;
-import com.alibaba.fastjson2.JSON;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import lombok.RequiredArgsConstructor;
@@ -111,7 +111,7 @@ public class MallAfterSaleServiceImpl extends ServiceImpl<MallAfterSaleMapper, M
         // 7. 组装通用字段
         Date now = new Date();
         String evidenceImagesJson = request.getEvidenceImages() != null && !request.getEvidenceImages().isEmpty()
-                ? JSON.toJSONString(request.getEvidenceImages())
+                ? JSONUtils.toJson(request.getEvidenceImages())
                 : null;
         ReceiveStatusEnum receiveStatusEnum = ReceiveStatusEnum.fromCode(request.getReceiveStatus());
         if (receiveStatusEnum == null) {
@@ -342,7 +342,7 @@ public class MallAfterSaleServiceImpl extends ServiceImpl<MallAfterSaleMapper, M
         }
 
         String evidenceImagesJson = request.getEvidenceImages() != null && !request.getEvidenceImages().isEmpty()
-                ? JSON.toJSONString(request.getEvidenceImages())
+                ? JSONUtils.toJson(request.getEvidenceImages())
                 : null;
 
         Date now = new Date();
@@ -502,7 +502,7 @@ public class MallAfterSaleServiceImpl extends ServiceImpl<MallAfterSaleMapper, M
 
         List<String> evidenceImages = null;
         if (afterSale.getEvidenceImages() != null && !afterSale.getEvidenceImages().isEmpty()) {
-            evidenceImages = JSON.parseArray(afterSale.getEvidenceImages(), String.class);
+            evidenceImages = JSONUtils.parseStringList(afterSale.getEvidenceImages());
         }
 
         AfterSaleDetailVo.ProductInfo productInfo = null;

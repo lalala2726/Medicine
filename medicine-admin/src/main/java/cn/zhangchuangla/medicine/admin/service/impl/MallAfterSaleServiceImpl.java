@@ -7,6 +7,7 @@ import cn.zhangchuangla.medicine.admin.model.request.AfterSaleProcessRequest;
 import cn.zhangchuangla.medicine.admin.service.*;
 import cn.zhangchuangla.medicine.common.core.enums.ResponseCode;
 import cn.zhangchuangla.medicine.common.core.exception.ServiceException;
+import cn.zhangchuangla.medicine.common.core.utils.JSONUtils;
 import cn.zhangchuangla.medicine.common.security.utils.SecurityUtils;
 import cn.zhangchuangla.medicine.model.dto.OrderTimelineDto;
 import cn.zhangchuangla.medicine.model.entity.MallAfterSale;
@@ -19,7 +20,6 @@ import cn.zhangchuangla.medicine.model.vo.mall.AfterSaleListVo;
 import cn.zhangchuangla.medicine.model.vo.mall.AfterSaleTimelineVo;
 import cn.zhangchuangla.medicine.payment.model.AlipayRefundRequest;
 import cn.zhangchuangla.medicine.payment.service.AlipayPaymentService;
-import com.alibaba.fastjson2.JSON;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import lombok.RequiredArgsConstructor;
@@ -82,7 +82,7 @@ public class MallAfterSaleServiceImpl extends ServiceImpl<MallAfterSaleMapper, M
 
         List<String> evidenceImages = null;
         if (afterSale.getEvidenceImages() != null && !afterSale.getEvidenceImages().isEmpty()) {
-            evidenceImages = JSON.parseArray(afterSale.getEvidenceImages(), String.class);
+            evidenceImages = JSONUtils.parseStringList(afterSale.getEvidenceImages());
         }
 
         AfterSaleDetailVo.ProductInfo productInfo = null;

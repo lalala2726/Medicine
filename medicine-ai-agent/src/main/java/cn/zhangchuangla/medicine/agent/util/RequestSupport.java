@@ -2,8 +2,7 @@ package cn.zhangchuangla.medicine.agent.util;
 
 import cn.zhangchuangla.medicine.common.core.enums.ResponseCode;
 import cn.zhangchuangla.medicine.common.core.exception.ServiceException;
-import com.alibaba.fastjson2.JSON;
-import com.alibaba.fastjson2.JSONObject;
+import cn.zhangchuangla.medicine.common.core.utils.JSONUtils;
 import okhttp3.*;
 
 import java.io.IOException;
@@ -81,7 +80,7 @@ public final class RequestSupport {
     }
 
     public static RequestBody jsonBody(Object body) {
-        String json = body instanceof String ? (String) body : JSON.toJSONString(body);
+        String json = body instanceof String ? (String) body : JSONUtils.toJson(body);
         return RequestBody.create(json, JSON_MEDIA_TYPE);
     }
 
@@ -111,22 +110,8 @@ public final class RequestSupport {
     }
 
     public static Map<String, Object> toMap(Object query) {
-        if (query instanceof Map<?, ?> map) {
-            Map<String, Object> result = new LinkedHashMap<>();
-            for (Map.Entry<?, ?> entry : map.entrySet()) {
-                if (entry.getKey() != null) {
-                    result.put(String.valueOf(entry.getKey()), entry.getValue());
-                }
-            }
-            return result;
-        }
-        JSONObject jsonObject = JSON.parseObject(JSON.toJSONString(query));
         Map<String, Object> result = new LinkedHashMap<>();
-        if (jsonObject != null) {
-            for (String key : jsonObject.keySet()) {
-                result.put(key, jsonObject.get(key));
-            }
-        }
+        result.putAll(JSONUtils.toMap(query));
         return result;
     }
 

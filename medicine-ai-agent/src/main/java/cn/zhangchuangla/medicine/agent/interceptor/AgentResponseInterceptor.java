@@ -2,8 +2,9 @@ package cn.zhangchuangla.medicine.agent.interceptor;
 
 import cn.zhangchuangla.medicine.common.core.enums.ResponseCode;
 import cn.zhangchuangla.medicine.common.core.exception.ServiceException;
-import com.alibaba.fastjson2.JSON;
-import com.alibaba.fastjson2.JSONObject;
+import cn.zhangchuangla.medicine.common.core.utils.JSONUtils;
+import com.google.gson.JsonElement;
+import com.google.gson.JsonObject;
 import lombok.extern.slf4j.Slf4j;
 import okhttp3.Interceptor;
 import okhttp3.MediaType;
@@ -49,9 +50,9 @@ public class AgentResponseInterceptor implements Interceptor {
                     .build();
         }
 
-        JSONObject jsonObject;
+        JsonObject jsonObject;
         try {
-            jsonObject = JSON.parseObject(bodyText);
+            jsonObject = JSONUtils.parseObject(bodyText);
         } catch (Exception ex) {
             return response.newBuilder()
                     .body(ResponseBody.create(bodyText, contentType))
@@ -64,19 +65,48 @@ public class AgentResponseInterceptor implements Interceptor {
                     .build();
         }
 
-        Integer code = jsonObject.getInteger(CODE_FIELD);
+        Integer code = readInt(jsonObject, CODE_FIELD);
         if (code != null && code != SUCCESS) {
-            String message = jsonObject.getString(MESSAGE_FIELD);
+            String message = readString(jsonObject, MESSAGE_FIELD);
             String errorMessage = StringUtils.hasText(message) ? message : "Agent接口连接失败！请稍后再试～！";
             log.error("Agent接口连接失败！响应码：{}，响应体：{}", code, bodyText);
             throw new ServiceException(ResponseCode.OPERATION_ERROR, errorMessage);
         }
 
-        Object data = jsonObject.get(DATA_FIELD);
-        String dataText = data == null ? "" : JSON.toJSONString(data);
+        JsonElement data = jsonObject.get(DATA_FIELD);
+        String dataText = data == null || data.isJsonNull() ? "" : JSONUtils.toJson(data);
         MediaType resolvedType = contentType != null ? contentType : DEFAULT_MEDIA_TYPE;
         return response.newBuilder()
                 .body(ResponseBody.create(dataText, resolvedType))
                 .build();
+    }
+
+    private Integer readInt(JsonObject jsonObject, String field) {
+        JsonElement element = jsonObject.get(field);
+        if (element == null || element.isJsonNull()) {
+            return null;
+        }
+        if (element.isJsonPrimitive() && element.getAsJsonPrimitive().isNumber()) {
+            return element.getAsInt();
+        }
+        if (element.isJsonPrimitive() && element.getAsJsonPrimitive().isString()) {
+            try {
+                return Integer.parseInt(element.getAsString());
+            } catch (NumberFormatException ignored) {
+                return null;
+            }
+        }
+        return null;
+    }
+
+    private String readString(JsonObject jsonObject, String field) {
+        JsonElement element = jsonObject.get(field);
+        if (element == null || element.isJsonNull()) {
+            return null;
+        }
+        if (element.isJsonPrimitive()) {
+            return element.getAsString();
+        }
+        return JSONUtils.toJson(element);
     }
 }
