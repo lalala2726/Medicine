@@ -6,7 +6,7 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.scheduling.annotation.EnableAsync;
 import org.springframework.transaction.annotation.EnableTransactionManagement;
 
-@SpringBootApplication(scanBasePackages = {"cn.zhangchuangla.medicine", "cn.zhangchuangla.agent"})
+@SpringBootApplication(scanBasePackages = {"cn.zhangchuangla.medicine"})
 @MapperScan("cn.zhangchuangla.medicine.admin.mapper")
 @EnableTransactionManagement
 @EnableAsync

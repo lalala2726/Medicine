@@ -1,4 +1,4 @@
-package cn.zhangchuangla.agent.util;
+package cn.zhangchuangla.medicine.agent.util;
 
 import cn.zhangchuangla.medicine.common.core.enums.ResponseCode;
 import cn.zhangchuangla.medicine.common.core.exception.ServiceException;

@@ -1,4 +1,4 @@
-package cn.zhangchuangla.agent.service;
+package cn.zhangchuangla.medicine.agent.service;
 
 import cn.zhangchuangla.medicine.llm.model.dto.DrugInfoDto;
 

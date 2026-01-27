@@ -1,6 +1,6 @@
 package cn.zhangchuangla.medicine.admin.controller;
 
-import cn.zhangchuangla.agent.service.AgentImageParseService;
+import cn.zhangchuangla.medicine.agent.service.AgentImageParseService;
 import cn.zhangchuangla.medicine.common.core.base.AjaxResult;
 import cn.zhangchuangla.medicine.common.security.annotation.IsAdmin;
 import cn.zhangchuangla.medicine.common.security.base.BaseController;

@@ -1,4 +1,4 @@
-package cn.zhangchuangla.agent.interceptor;
+package cn.zhangchuangla.medicine.agent.interceptor;
 
 import cn.zhangchuangla.medicine.common.core.enums.ResponseCode;
 import cn.zhangchuangla.medicine.common.core.exception.ServiceException;

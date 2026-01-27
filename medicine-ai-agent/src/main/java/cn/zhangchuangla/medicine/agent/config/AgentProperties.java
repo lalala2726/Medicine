@@ -1,4 +1,4 @@
-package cn.zhangchuangla.agent.config;
+package cn.zhangchuangla.medicine.agent.config;
 
 import lombok.Data;
 import org.springframework.boot.context.properties.ConfigurationProperties;

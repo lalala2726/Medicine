@@ -1,11 +1,11 @@
-package cn.zhangchuangla.agent.service.impl;
+package cn.zhangchuangla.medicine.agent.service.impl;
 
-import cn.zhangchuangla.agent.config.AgentProperties;
-import cn.zhangchuangla.agent.constanst.URLConstant;
-import cn.zhangchuangla.agent.service.AgentImageParseService;
-import cn.zhangchuangla.agent.util.RequestClient;
 import cn.zhangchuangla.medicine.admin.common.storage.model.MinioFileObject;
 import cn.zhangchuangla.medicine.admin.common.storage.service.MinioStorageService;
+import cn.zhangchuangla.medicine.agent.config.AgentProperties;
+import cn.zhangchuangla.medicine.agent.constanst.URLConstant;
+import cn.zhangchuangla.medicine.agent.service.AgentImageParseService;
+import cn.zhangchuangla.medicine.agent.util.RequestClient;
 import cn.zhangchuangla.medicine.common.core.enums.ResponseCode;
 import cn.zhangchuangla.medicine.common.core.exception.ServiceException;
 import cn.zhangchuangla.medicine.common.core.utils.ImageUtils;

@@ -1,6 +1,6 @@
-package cn.zhangchuangla.agent.util;
+package cn.zhangchuangla.medicine.agent.util;
 
-import cn.zhangchuangla.agent.interceptor.AgentResponseInterceptor;
+import cn.zhangchuangla.medicine.agent.interceptor.AgentResponseInterceptor;
 import okhttp3.OkHttpClient;
 
 /**

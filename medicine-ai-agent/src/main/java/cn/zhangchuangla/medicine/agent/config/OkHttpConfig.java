@@ -1,7 +1,7 @@
-package cn.zhangchuangla.agent.config;
+package cn.zhangchuangla.medicine.agent.config;
 
-import cn.zhangchuangla.agent.interceptor.AgentResponseInterceptor;
-import cn.zhangchuangla.agent.util.RequestSupport;
+import cn.zhangchuangla.medicine.agent.interceptor.AgentResponseInterceptor;
+import cn.zhangchuangla.medicine.agent.util.RequestSupport;
 import okhttp3.OkHttpClient;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;

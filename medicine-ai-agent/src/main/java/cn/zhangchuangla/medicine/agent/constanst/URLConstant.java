@@ -1,4 +1,4 @@
-package cn.zhangchuangla.agent.constanst;
+package cn.zhangchuangla.medicine.agent.constanst;
 
 /**
  * @author Chuang
