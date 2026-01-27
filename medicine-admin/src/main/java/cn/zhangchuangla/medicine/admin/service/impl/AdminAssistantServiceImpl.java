@@ -5,10 +5,7 @@ import cn.zhangchuangla.medicine.admin.common.storage.service.MinioStorageServic
 import cn.zhangchuangla.medicine.admin.service.AdminAssistantService;
 import cn.zhangchuangla.medicine.common.core.enums.ResponseCode;
 import cn.zhangchuangla.medicine.common.core.exception.ServiceException;
-import cn.zhangchuangla.medicine.common.core.utils.ImageUtils;
-import cn.zhangchuangla.medicine.llm.model.dto.DrugInfoDto;
 import cn.zhangchuangla.medicine.llm.model.request.AssistantChatRequest;
-import cn.zhangchuangla.medicine.llm.service.LLMParseImageService;
 import lombok.RequiredArgsConstructor;
 import org.jetbrains.annotations.NotNull;
 import org.springframework.ai.document.Document;
@@ -18,8 +15,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
 import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 
-import java.util.ArrayList;
-import java.util.Base64;
 import java.util.List;
 import java.util.Objects;
 import java.util.stream.Collectors;
@@ -34,33 +29,6 @@ import java.util.stream.Collectors;
 public class AdminAssistantServiceImpl implements AdminAssistantService {
 
     private final MinioStorageService minioStorageService;
-    private final LLMParseImageService llmParseImageService;
-
-
-    @Override
-    public DrugInfoDto parseDrugInfoByImage(List<String> imageUrls) {
-        if (imageUrls == null || imageUrls.isEmpty()) {
-            throw new ServiceException(ResponseCode.PARAM_ERROR, "图片地址不能为空");
-        }
-
-        List<String> base64Images = new ArrayList<>(imageUrls.size());
-        for (String imageUrl : imageUrls) {
-            if (imageUrl == null || imageUrl.isBlank()) {
-                throw new ServiceException(ResponseCode.PARAM_ERROR, "图片地址不能为空");
-            }
-
-            // 复用公共存储工具从 MinIO 拉取文件，避免各处重复解析 URL
-            MinioFileObject fileObject = minioStorageService.fetchFileByUrl(imageUrl);
-            String originalMimeType = StringUtils.hasText(fileObject.getContentType())
-                    ? fileObject.getContentType()
-                    : guessMimeType(fileObject.getFilename());
-            ImageUtils.EncodedImage encoded = ImageUtils.ensureUnderForText(fileObject.getData(), originalMimeType);
-            String base64WithPrefix = "data:" + encoded.mimeType() + ";base64," + Base64.getEncoder().encodeToString(encoded.data());
-            base64Images.add(base64WithPrefix);
-        }
-        // 将带 data URI 前缀的 Base64 列表传给大模型
-        return llmParseImageService.parseImage(base64Images);
-    }
 
     @Override
     public SseEmitter chat(AssistantChatRequest request) {
@@ -71,20 +39,6 @@ public class AdminAssistantServiceImpl implements AdminAssistantService {
         String enriched = buildMessageWithFiles(request.getMessage(), request.getFileUrls());
         // todo 管理端对话等客户端开发完毕再处理这边的
         return null;
-    }
-
-    private String guessMimeType(String objectName) {
-        String lower = objectName == null ? "" : objectName.toLowerCase();
-        if (lower.endsWith(".png")) {
-            return "image/png";
-        }
-        if (lower.endsWith(".webp")) {
-            return "image/webp";
-        }
-        if (lower.endsWith(".jpeg") || lower.endsWith(".jpg")) {
-            return "image/jpeg";
-        }
-        return "image/jpeg";
     }
 
     /**
