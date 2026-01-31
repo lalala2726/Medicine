@@ -10,7 +10,7 @@
         <relativePath>../../pom.xml</relativePath>
     </parent>
 
-    <artifactId>medicine-http-client</artifactId>
+    <artifactId>medicine-common-http-client</artifactId>
 
     <properties>
         <maven.compiler.source>21</maven.compiler.source>

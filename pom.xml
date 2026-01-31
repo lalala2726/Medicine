@@ -95,6 +95,11 @@
             </dependency>
             <dependency>
                 <groupId>cn.zhangchuangla.medicine</groupId>
+                <artifactId>medicine-common-http-client</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>cn.zhangchuangla.medicine</groupId>
                 <artifactId>medicine-model</artifactId>
                 <version>${project.version}</version>
             </dependency>
@@ -347,6 +352,6 @@
         <module>medicine-common/medicine-common-elasticsearch</module>
         <module>medicine-common/medicine-common-rabbitmq</module>
         <module>medicine-ai-agent</module>
-        <module>medicine-common/medicine-http-client</module>
+        <module>medicine-common/medicine-common-http-client</module>
     </modules>
 </project>
