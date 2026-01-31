@@ -12,6 +12,9 @@ public class URLConstant {
      */
     public static final String DRUG_IMAGE_PARSE = "/api/image/parse/drug";
 
-    private URLConstant() {
-    }
+    /**
+     * 知识库服务接口基础路径。
+     */
+    public static final String KNOWLEDGE_BASE_BASE_URL = "/api/knowledge_base";
+
 }

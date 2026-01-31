@@ -24,7 +24,8 @@ public class KnowledgeBaseIngestPublisher {
         publish(knowledgeBaseId, fileUrls, null);
     }
 
-    public void publish(Integer knowledgeBaseId, List<String> fileUrls, String username) {
+    public void
+    publish(Integer knowledgeBaseId, List<String> fileUrls, String username) {
         if (knowledgeBaseId == null || CollectionUtils.isEmpty(fileUrls)) {
             log.warn("Skip publish knowledge base ingest event, invalid payload. kbId={}, files={}", knowledgeBaseId, fileUrls);
             return;
