@@ -6,7 +6,7 @@ import cn.zhangchuangla.medicine.admin.model.request.NotifyMessageSendRequest;
 import cn.zhangchuangla.medicine.admin.model.request.NotifyMessageSystemPushRequest;
 import cn.zhangchuangla.medicine.admin.model.request.NotifyMessageUpdateRequest;
 import cn.zhangchuangla.medicine.admin.model.vo.NotifyMessageDetailVo;
-import cn.zhangchuangla.medicine.admin.rabbitmq.publisher.NotifyMessagePublisher;
+import cn.zhangchuangla.medicine.admin.publisher.NotifyMessagePublisher;
 import cn.zhangchuangla.medicine.admin.service.NotifyMessageService;
 import cn.zhangchuangla.medicine.admin.service.UserNotifyMessageService;
 import cn.zhangchuangla.medicine.common.core.enums.ResponseCode;

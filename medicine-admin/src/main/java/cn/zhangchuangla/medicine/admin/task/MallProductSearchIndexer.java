@@ -1,7 +1,7 @@
 package cn.zhangchuangla.medicine.admin.task;
 
 import cn.zhangchuangla.medicine.admin.mapper.MallProductMapper;
-import cn.zhangchuangla.medicine.admin.rabbitmq.publisher.ProductIndexMessagePublisher;
+import cn.zhangchuangla.medicine.admin.publisher.ProductIndexMessagePublisher;
 import cn.zhangchuangla.medicine.admin.service.MallOrderItemService;
 import cn.zhangchuangla.medicine.model.dto.MallProductDetailDto;
 import cn.zhangchuangla.medicine.model.mq.message.ProductIndexPayload;

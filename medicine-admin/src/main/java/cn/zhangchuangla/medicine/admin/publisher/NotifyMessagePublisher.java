@@ -1,4 +1,4 @@
-package cn.zhangchuangla.medicine.admin.rabbitmq.publisher;
+package cn.zhangchuangla.medicine.admin.publisher;
 
 import cn.zhangchuangla.medicine.common.rabbitmq.constants.NotifyMessageQueueConstants;
 import cn.zhangchuangla.medicine.model.mq.message.NotifyMessagePushMessage;
