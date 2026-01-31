@@ -347,5 +347,6 @@
         <module>medicine-common/medicine-common-elasticsearch</module>
         <module>medicine-common/medicine-common-rabbitmq</module>
         <module>medicine-ai-agent</module>
+        <module>medicine-common/medicine-http-client</module>
     </modules>
 </project>
