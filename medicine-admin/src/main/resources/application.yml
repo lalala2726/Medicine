@@ -1,6 +1,6 @@
 spring:
   profiles:
-    active: druid,llm,payment
+    active: druid,payment
   application:
     name: Medical
     version: 0.1

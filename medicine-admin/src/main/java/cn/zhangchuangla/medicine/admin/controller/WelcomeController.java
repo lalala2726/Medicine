@@ -16,7 +16,7 @@ import org.springframework.web.bind.annotation.RestController;
 @RestController
 @RequestMapping("/")
 @Tag(name = "首页")
-public class IndexController extends BaseController {
+public class WelcomeController extends BaseController {
 
 
     @GetMapping

@@ -1,6 +1,6 @@
 package cn.zhangchuangla.medicine.agent.service;
 
-import cn.zhangchuangla.medicine.llm.model.dto.DrugInfoDto;
+import cn.zhangchuangla.medicine.model.dto.DrugInfoDto;
 
 import java.util.List;
 

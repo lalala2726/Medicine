@@ -10,7 +10,7 @@ import cn.zhangchuangla.medicine.common.core.enums.ResponseCode;
 import cn.zhangchuangla.medicine.common.core.exception.ServiceException;
 import cn.zhangchuangla.medicine.common.core.utils.ImageUtils;
 import cn.zhangchuangla.medicine.common.core.utils.JSONUtils;
-import cn.zhangchuangla.medicine.llm.model.dto.DrugInfoDto;
+import cn.zhangchuangla.medicine.model.dto.DrugInfoDto;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import lombok.RequiredArgsConstructor;

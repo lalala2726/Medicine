@@ -7,14 +7,14 @@ import cn.zhangchuangla.medicine.client.service.MallOrderService;
 import cn.zhangchuangla.medicine.common.core.base.AjaxResult;
 import cn.zhangchuangla.medicine.common.core.base.TableDataResult;
 import cn.zhangchuangla.medicine.common.security.base.BaseController;
-import cn.zhangchuangla.medicine.llm.model.request.AssistantChatRequest;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.web.bind.annotation.*;
-import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
 
@@ -31,13 +31,6 @@ import java.util.List;
 public class AssistantController extends BaseController {
 
     private final MallOrderService mallOrderService;
-
-
-    @PostMapping(value = "/chat", produces = "text/event-stream")
-    @Operation(summary = "简单咨询", description = "简单的医疗咨询接口，返回 ChatResponse SSE 消息（文本或卡片）")
-    public SseEmitter simpleConsultation(@RequestBody AssistantChatRequest request) {
-        return null;
-    }
 
 
     /**

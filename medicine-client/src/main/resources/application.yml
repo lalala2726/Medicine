@@ -1,6 +1,6 @@
 spring:
   profiles:
-    active: druid,llm,payment
+    active: druid,payment
   application:
     name: MedicineClient
   servlet:
@@ -59,16 +59,6 @@ mybatis-plus:
       logic-delete-field: isDeleted  # 全局逻辑删除字段名
       logic-delete-value: 1         # 逻辑已删除值
       logic-not-delete-value: 0     # 逻辑未删除值
-
-milvus:
-  uri: http://localhost:19530
-  database: medicine
-  collection-prefix: kb_
-  # 与嵌入模型维度保持一致（当前 text-embedding-v3 配置为 1024 维）
-  vector-dimension: 1024
-  content-max-length: 2048
-  metric-type: COSINE
-  default-knowledge-base-id: 6
 
 # 安全配置
 security:
