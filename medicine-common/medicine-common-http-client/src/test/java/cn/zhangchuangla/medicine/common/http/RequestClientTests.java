@@ -1,7 +1,7 @@
 package cn.zhangchuangla.medicine.common.http;
 
+import cn.zhangchuangla.medicine.common.http.model.ClientRequest;
 import cn.zhangchuangla.medicine.common.http.model.HttpMethod;
-import cn.zhangchuangla.medicine.common.http.model.HttpRequest;
 import cn.zhangchuangla.medicine.common.http.model.HttpResult;
 import okhttp3.Headers;
 import okhttp3.HttpUrl;
@@ -40,7 +40,7 @@ class RequestClientTests {
         Headers headers = new Headers.Builder()
                 .add("Content-Type", "text/plain")
                 .build();
-        HttpRequest request = HttpRequest.builder()
+        ClientRequest request = ClientRequest.builder()
                 .method(HttpMethod.POST)
                 .url(url)
                 .headers(headers)
@@ -63,7 +63,7 @@ class RequestClientTests {
                 .setHeader("Content-Type", "application/json")
                 .setBody("{\"name\":\"Alice\",\"age\":30}"));
         HttpUrl url = server.url("/user");
-        HttpRequest request = HttpRequest.builder()
+        ClientRequest request = ClientRequest.builder()
                 .method(HttpMethod.GET)
                 .url(url)
                 .build();
@@ -81,7 +81,7 @@ class RequestClientTests {
         server.enqueue(new MockResponse()
                 .setResponseCode(200)
                 .setBody("OK"));
-        HttpRequest request = HttpRequest.builder()
+        ClientRequest request = ClientRequest.builder()
                 .method(HttpMethod.GET)
                 .url(server.url("/search").toString())
                 .addQueryParameter("q", "medicine")

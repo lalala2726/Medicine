@@ -1,6 +1,7 @@
 package cn.zhangchuangla.medicine.admin.service;
 
 import cn.zhangchuangla.medicine.model.dto.MedicineInfoDto;
+import cn.zhangchuangla.medicine.model.request.ParserMedicineInfoRequest;
 
 /**
  * @author Chuang
@@ -14,5 +15,5 @@ public interface ImageParserService {
      *
      * @return 解析药品图片信息
      */
-    MedicineInfoDto parserMedicineInfo();
+    MedicineInfoDto parserMedicineInfo(ParserMedicineInfoRequest request);
 }

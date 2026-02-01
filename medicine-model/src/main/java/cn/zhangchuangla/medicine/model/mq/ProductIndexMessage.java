@@ -1,4 +1,4 @@
-package cn.zhangchuangla.medicine.model.mq.message;
+package cn.zhangchuangla.medicine.model.mq;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;

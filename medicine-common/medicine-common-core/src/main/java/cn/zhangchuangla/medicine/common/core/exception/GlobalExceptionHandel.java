@@ -2,6 +2,10 @@ package cn.zhangchuangla.medicine.common.core.exception;
 
 import cn.zhangchuangla.medicine.common.core.base.AjaxResult;
 import cn.zhangchuangla.medicine.common.core.enums.ResponseCode;
+import com.fasterxml.jackson.core.JsonParseException;
+import com.fasterxml.jackson.databind.JsonMappingException;
+import com.fasterxml.jackson.databind.exc.InvalidFormatException;
+import com.fasterxml.jackson.databind.exc.MismatchedInputException;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -14,6 +18,10 @@ import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 import org.springframework.web.servlet.resource.NoResourceFoundException;
+
+import java.util.Collection;
+import java.util.List;
+import java.util.Map;
 
 /**
  * 全局异常处理
@@ -64,7 +72,8 @@ public class GlobalExceptionHandel {
     @ExceptionHandler(HttpMessageNotReadableException.class)
     public AjaxResult<Void> httpMessageNotReadableExceptionHandel(HttpMessageNotReadableException exception) {
         log.error("请求参数非法: ", exception);
-        return AjaxResult.error(ResponseCode.PARAM_ERROR);
+        String message = resolveReadableMessage(exception);
+        return AjaxResult.error(ResponseCode.PARAM_ERROR, message);
     }
 
     /**
@@ -238,5 +247,92 @@ public class GlobalExceptionHandel {
         return AjaxResult.error(ResponseCode.SERVER_ERROR, exception.getMessage());
     }
 
+    private String resolveReadableMessage(HttpMessageNotReadableException exception) {
+        Throwable root = exception.getMostSpecificCause();
+        switch (root) {
+            case JsonParseException jsonParseException -> {
+                return "请求体 JSON 格式错误";
+            }
+            case InvalidFormatException invalidFormatException -> {
+                String field = buildPath(invalidFormatException.getPath());
+                String target = friendlyType(invalidFormatException.getTargetType());
+                String value = invalidFormatException.getValue() == null ? "null" : String.valueOf(invalidFormatException.getValue());
+                if (field.isBlank()) {
+                    return String.format("请求体字段类型不匹配，期望 %s，实际值: %s", target, value);
+                }
+                return String.format("参数 '%s' 类型不匹配，期望 %s，实际值: %s", field, target, value);
+            }
+            case MismatchedInputException mismatchedInputException -> {
+                String field = buildPath(mismatchedInputException.getPath());
+                String target = friendlyType(mismatchedInputException.getTargetType());
+                String actual = resolveActualType(mismatchedInputException);
+                if (field.isBlank()) {
+                    return actual == null
+                            ? String.format("请求体字段类型不匹配，期望 %s", target)
+                            : String.format("请求体字段类型不匹配，期望 %s，实际为 %s", target, actual);
+                }
+                return actual == null
+                        ? String.format("参数 '%s' 类型不匹配，期望 %s", field, target)
+                        : String.format("参数 '%s' 类型不匹配，期望 %s，实际为 %s", field, target, actual);
+            }
+            default -> {
+            }
+        }
+        return "请求体 JSON 解析失败";
+    }
+
+    private String buildPath(List<JsonMappingException.Reference> path) {
+        if (path == null || path.isEmpty()) {
+            return "";
+        }
+        StringBuilder builder = new StringBuilder();
+        for (JsonMappingException.Reference reference : path) {
+            if (reference.getFieldName() != null) {
+                if (!builder.isEmpty()) {
+                    builder.append('.');
+                }
+                builder.append(reference.getFieldName());
+            } else if (reference.getIndex() >= 0) {
+                builder.append('[').append(reference.getIndex()).append(']');
+            }
+        }
+        return builder.toString();
+    }
+
+    private String friendlyType(Class<?> targetType) {
+        if (targetType == null) {
+            return "未知类型";
+        }
+        if (Collection.class.isAssignableFrom(targetType) || targetType.isArray()) {
+            return "数组";
+        }
+        if (Map.class.isAssignableFrom(targetType)) {
+            return "对象";
+        }
+        return targetType.getSimpleName();
+    }
+
+    private String resolveActualType(MismatchedInputException exception) {
+        String message = exception.getOriginalMessage();
+        if (message == null) {
+            return null;
+        }
+        if (message.contains("from String value")) {
+            return "字符串";
+        }
+        if (message.contains("from Array value")) {
+            return "数组";
+        }
+        if (message.contains("from Object value")) {
+            return "对象";
+        }
+        if (message.contains("from Number value")) {
+            return "数字";
+        }
+        if (message.contains("from Boolean value")) {
+            return "布尔值";
+        }
+        return null;
+    }
 
 }

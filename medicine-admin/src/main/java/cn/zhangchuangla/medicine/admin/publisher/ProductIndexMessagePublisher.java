@@ -1,9 +1,9 @@
 package cn.zhangchuangla.medicine.admin.publisher;
 
 import cn.zhangchuangla.medicine.common.rabbitmq.constants.ProductIndexQueueConstants;
-import cn.zhangchuangla.medicine.model.mq.message.ProductIndexMessage;
-import cn.zhangchuangla.medicine.model.mq.message.ProductIndexOperation;
-import cn.zhangchuangla.medicine.model.mq.message.ProductIndexPayload;
+import cn.zhangchuangla.medicine.model.mq.ProductIndexMessage;
+import cn.zhangchuangla.medicine.model.mq.ProductIndexOperation;
+import cn.zhangchuangla.medicine.model.mq.ProductIndexPayload;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;

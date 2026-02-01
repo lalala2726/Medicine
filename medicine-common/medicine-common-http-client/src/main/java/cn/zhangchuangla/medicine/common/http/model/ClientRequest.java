@@ -12,7 +12,7 @@ import okhttp3.HttpUrl;
  */
 @Getter
 @Builder(builderClassName = "Builder", buildMethodName = "buildInternal")
-public final class HttpRequest {
+public final class ClientRequest {
 
     private final HttpMethod method;
     private final HttpUrl url;
@@ -59,9 +59,9 @@ public final class HttpRequest {
         }
 
         /**
-         * 构建 HttpRequest，确保 url 与 headers 最终一致。
+         * 构建 ClientRequest，确保 url 与 headers 最终一致。
          */
-        public HttpRequest build() {
+        public ClientRequest build() {
             if (urlBuilder != null) {
                 this.url = urlBuilder.build();
             }

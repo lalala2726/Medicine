@@ -1,4 +1,4 @@
-package cn.zhangchuangla.medicine.core.controller;
+package cn.zhangchuangla.medicine.client.controller;
 
 import cn.zhangchuangla.medicine.admin.common.storage.service.FileUploadService;
 import cn.zhangchuangla.medicine.common.core.base.AjaxResult;

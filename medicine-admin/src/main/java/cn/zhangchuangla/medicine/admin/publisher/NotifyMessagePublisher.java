@@ -1,7 +1,7 @@
 package cn.zhangchuangla.medicine.admin.publisher;
 
 import cn.zhangchuangla.medicine.common.rabbitmq.constants.NotifyMessageQueueConstants;
-import cn.zhangchuangla.medicine.model.mq.message.NotifyMessagePushMessage;
+import cn.zhangchuangla.medicine.model.mq.NotifyMessagePushMessage;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;

@@ -2,8 +2,8 @@ package cn.zhangchuangla.medicine.common.http;
 
 import cn.zhangchuangla.medicine.common.core.utils.JSONUtils;
 import cn.zhangchuangla.medicine.common.http.exception.HttpClientException;
+import cn.zhangchuangla.medicine.common.http.model.ClientRequest;
 import cn.zhangchuangla.medicine.common.http.model.HttpMethod;
-import cn.zhangchuangla.medicine.common.http.model.HttpRequest;
 import cn.zhangchuangla.medicine.common.http.model.HttpResult;
 import okhttp3.*;
 
@@ -47,21 +47,21 @@ public final class RequestClient {
      * GET 请求，按指定类型解析响应体。
      */
     public static <T> HttpResult<T> get(String url, Class<T> dataClass) {
-        HttpRequest request = buildRequest(url, HttpMethod.GET, null);
+        ClientRequest request = buildRequest(url, HttpMethod.GET, null);
         return get(request, dataClass);
     }
 
     /**
-     * GET 请求，外部传入 HttpRequest，method 会被强制为 GET。
+     * GET 请求，外部传入 ClientRequest，method 会被强制为 GET。
      */
-    public static HttpResult<String> get(HttpRequest request) {
+    public static HttpResult<String> get(ClientRequest request) {
         return get(request, String.class);
     }
 
     /**
-     * GET 请求，外部传入 HttpRequest，method 会被强制为 GET。
+     * GET 请求，外部传入 ClientRequest，method 会被强制为 GET。
      */
-    public static <T> HttpResult<T> get(HttpRequest request, Class<T> dataClass) {
+    public static <T> HttpResult<T> get(ClientRequest request, Class<T> dataClass) {
         return execute(request, dataClass, HttpMethod.GET);
     }
 
@@ -76,21 +76,21 @@ public final class RequestClient {
      * POST 请求，按指定类型解析响应体。
      */
     public static <T> HttpResult<T> post(String url, String body, Class<T> dataClass) {
-        HttpRequest request = buildRequest(url, HttpMethod.POST, body);
+        ClientRequest request = buildRequest(url, HttpMethod.POST, body);
         return post(request, dataClass);
     }
 
     /**
-     * POST 请求，外部传入 HttpRequest，method 会被强制为 POST。
+     * POST 请求，外部传入 ClientRequest，method 会被强制为 POST。
      */
-    public static HttpResult<String> post(HttpRequest request) {
+    public static HttpResult<String> post(ClientRequest request) {
         return post(request, String.class);
     }
 
     /**
-     * POST 请求，外部传入 HttpRequest，method 会被强制为 POST。
+     * POST 请求，外部传入 ClientRequest，method 会被强制为 POST。
      */
-    public static <T> HttpResult<T> post(HttpRequest request, Class<T> dataClass) {
+    public static <T> HttpResult<T> post(ClientRequest request, Class<T> dataClass) {
         return execute(request, dataClass, HttpMethod.POST);
     }
 
@@ -105,21 +105,21 @@ public final class RequestClient {
      * PUT 请求，按指定类型解析响应体。
      */
     public static <T> HttpResult<T> put(String url, String body, Class<T> dataClass) {
-        HttpRequest request = buildRequest(url, HttpMethod.PUT, body);
+        ClientRequest request = buildRequest(url, HttpMethod.PUT, body);
         return put(request, dataClass);
     }
 
     /**
-     * PUT 请求，外部传入 HttpRequest，method 会被强制为 PUT。
+     * PUT 请求，外部传入 ClientRequest，method 会被强制为 PUT。
      */
-    public static HttpResult<String> put(HttpRequest request) {
+    public static HttpResult<String> put(ClientRequest request) {
         return put(request, String.class);
     }
 
     /**
-     * PUT 请求，外部传入 HttpRequest，method 会被强制为 PUT。
+     * PUT 请求，外部传入 ClientRequest，method 会被强制为 PUT。
      */
-    public static <T> HttpResult<T> put(HttpRequest request, Class<T> dataClass) {
+    public static <T> HttpResult<T> put(ClientRequest request, Class<T> dataClass) {
         return execute(request, dataClass, HttpMethod.PUT);
     }
 
@@ -148,46 +148,46 @@ public final class RequestClient {
      * DELETE 请求，按指定类型解析响应体。
      */
     public static <T> HttpResult<T> delete(String url, String body, Class<T> dataClass) {
-        HttpRequest request = buildRequest(url, HttpMethod.DELETE, body);
+        ClientRequest request = buildRequest(url, HttpMethod.DELETE, body);
         return delete(request, dataClass);
     }
 
     /**
-     * DELETE 请求，外部传入 HttpRequest，method 会被强制为 DELETE。
+     * DELETE 请求，外部传入 ClientRequest，method 会被强制为 DELETE。
      */
-    public static HttpResult<String> delete(HttpRequest request) {
+    public static HttpResult<String> delete(ClientRequest request) {
         return delete(request, String.class);
     }
 
     /**
-     * DELETE 请求，外部传入 HttpRequest，method 会被强制为 DELETE。
+     * DELETE 请求，外部传入 ClientRequest，method 会被强制为 DELETE。
      */
-    public static <T> HttpResult<T> delete(HttpRequest request, Class<T> dataClass) {
+    public static <T> HttpResult<T> delete(ClientRequest request, Class<T> dataClass) {
         return execute(request, dataClass, HttpMethod.DELETE);
     }
 
     /**
      * 执行请求并返回原始文本。
      */
-    public static HttpResult<String> execute(HttpRequest request) {
+    public static HttpResult<String> execute(ClientRequest request) {
         return execute(request, String.class, null);
     }
 
     /**
      * 执行请求并按 Class 解析响应体。
      */
-    public static <T> HttpResult<T> execute(HttpRequest request, Class<T> dataClass) {
+    public static <T> HttpResult<T> execute(ClientRequest request, Class<T> dataClass) {
         return execute(request, dataClass, null);
     }
 
     /**
      * 执行请求并按 Type 解析响应体（支持泛型）。
      */
-    public static <T> HttpResult<T> execute(HttpRequest request, Type dataType) {
+    public static <T> HttpResult<T> execute(ClientRequest request, Type dataType) {
         return executeInternal(request, null, body -> parseBody(body, dataType));
     }
 
-    private static <T> HttpResult<T> execute(HttpRequest request, Class<T> dataClass, HttpMethod methodOverride) {
+    private static <T> HttpResult<T> execute(ClientRequest request, Class<T> dataClass, HttpMethod methodOverride) {
         return executeInternal(request, methodOverride, body -> parseBody(body, (Type) dataClass));
     }
 
@@ -195,12 +195,12 @@ public final class RequestClient {
      * 核心执行逻辑：统一发起请求并封装响应。
      */
     private static <T> HttpResult<T> executeInternal(
-            HttpRequest request,
+            ClientRequest request,
             HttpMethod methodOverride,
             BodyParser<T> parser
     ) {
         if (request == null) {
-            throw new HttpClientException("HttpRequest must not be null");
+            throw new HttpClientException("ClientRequest must not be null");
         }
         Request okRequest = buildRequest(request, methodOverride);
         try (Response response = CLIENT.newCall(okRequest).execute()) {
@@ -220,12 +220,12 @@ public final class RequestClient {
     }
 
     /**
-     * 构建 OkHttp Request：优先使用 methodOverride，若为空则使用 HttpRequest.method。
+     * 构建 OkHttp Request：优先使用 methodOverride，若为空则使用 ClientRequest.method。
      */
-    private static Request buildRequest(HttpRequest request, HttpMethod methodOverride) {
+    private static Request buildRequest(ClientRequest request, HttpMethod methodOverride) {
         HttpUrl url = request.getUrl();
         if (url == null) {
-            throw new HttpClientException("HttpRequest.url must not be null");
+            throw new HttpClientException("ClientRequest.url must not be null");
         }
         HttpMethod method = methodOverride != null ? methodOverride : request.getMethod();
         if (method == null) {
@@ -247,9 +247,9 @@ public final class RequestClient {
         return builder.build();
     }
 
-    private static HttpRequest buildRequest(String url, HttpMethod method, String body) {
+    private static ClientRequest buildRequest(String url, HttpMethod method, String body) {
         try {
-            return HttpRequest.builder()
+            return ClientRequest.builder()
                     .method(method)
                     .url(url)
                     .body(body)

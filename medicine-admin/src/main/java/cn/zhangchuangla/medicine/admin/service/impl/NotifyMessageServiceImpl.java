@@ -15,7 +15,7 @@ import cn.zhangchuangla.medicine.common.core.utils.Assert;
 import cn.zhangchuangla.medicine.common.security.utils.SecurityUtils;
 import cn.zhangchuangla.medicine.model.entity.NotifyMessage;
 import cn.zhangchuangla.medicine.model.entity.UserNotifyMessage;
-import cn.zhangchuangla.medicine.model.mq.message.NotifyMessagePushMessage;
+import cn.zhangchuangla.medicine.model.mq.NotifyMessagePushMessage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import lombok.RequiredArgsConstructor;

@@ -1,4 +1,4 @@
-package cn.zhangchuangla.medicine.core.controller;
+package cn.zhangchuangla.medicine.admin.controller;
 
 import cn.zhangchuangla.medicine.common.core.base.AjaxResult;
 import cn.zhangchuangla.medicine.common.core.utils.BeanCotyUtils;

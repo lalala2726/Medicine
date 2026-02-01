@@ -1,4 +1,4 @@
-package cn.zhangchuangla.medicine.model.mq.message;
+package cn.zhangchuangla.medicine.model.mq;
 
 /**
  * 商品索引的操作类型。
