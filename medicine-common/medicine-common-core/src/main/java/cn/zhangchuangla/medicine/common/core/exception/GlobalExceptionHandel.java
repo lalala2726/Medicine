@@ -2,7 +2,6 @@ package cn.zhangchuangla.medicine.common.core.exception;
 
 import cn.zhangchuangla.medicine.common.core.base.AjaxResult;
 import cn.zhangchuangla.medicine.common.core.enums.ResponseCode;
-import com.fasterxml.jackson.core.JsonParseException;
 import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.exc.InvalidFormatException;
 import com.fasterxml.jackson.databind.exc.MismatchedInputException;
@@ -139,12 +138,11 @@ public class GlobalExceptionHandel {
     /**
      * 认证失败异常
      *
-     * @param request   请求
      * @param exception 认证失败异常
      * @return 响应认证失败
      */
     @ExceptionHandler(AuthorizationDeniedException.class)
-    public AjaxResult<Void> authorizationDeniedExceptionHandel(HttpServletRequest request, AuthorizationDeniedException exception) {
+    public AjaxResult<Void> authorizationDeniedExceptionHandel(AuthorizationDeniedException exception) {
         log.error("授权失败", exception);
         return AjaxResult.error(ResponseCode.FORBIDDEN.getCode(), "您没有权限访问此资源!");
     }
@@ -250,9 +248,6 @@ public class GlobalExceptionHandel {
     private String resolveReadableMessage(HttpMessageNotReadableException exception) {
         Throwable root = exception.getMostSpecificCause();
         switch (root) {
-            case JsonParseException jsonParseException -> {
-                return "请求体 JSON 格式错误";
-            }
             case InvalidFormatException invalidFormatException -> {
                 String field = buildPath(invalidFormatException.getPath());
                 String target = friendlyType(invalidFormatException.getTargetType());
