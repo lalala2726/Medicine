@@ -2,6 +2,7 @@ package cn.zhangchuangla.medicine.common.core.exception;
 
 import cn.zhangchuangla.medicine.common.core.base.AjaxResult;
 import cn.zhangchuangla.medicine.common.core.enums.ResponseCode;
+import com.fasterxml.jackson.core.JsonParseException;
 import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.exc.InvalidFormatException;
 import com.fasterxml.jackson.databind.exc.MismatchedInputException;
@@ -246,8 +247,14 @@ public class GlobalExceptionHandel {
     }
 
     private String resolveReadableMessage(HttpMessageNotReadableException exception) {
+        if (isMissingRequestBody(exception)) {
+            return "请求体不能为空";
+        }
         Throwable root = exception.getMostSpecificCause();
         switch (root) {
+            case JsonParseException ignored -> {
+                return "请求体 JSON 格式错误";
+            }
             case InvalidFormatException invalidFormatException -> {
                 String field = buildPath(invalidFormatException.getPath());
                 String target = friendlyType(invalidFormatException.getTargetType());
@@ -274,6 +281,11 @@ public class GlobalExceptionHandel {
             }
         }
         return "请求体 JSON 解析失败";
+    }
+
+    private boolean isMissingRequestBody(HttpMessageNotReadableException exception) {
+        String message = exception.getMessage();
+        return message != null && message.contains("Required request body is missing");
     }
 
     private String buildPath(List<JsonMappingException.Reference> path) {
