@@ -1,13 +1,16 @@
 package cn.zhangchuangla.medicine.admin.controller;
 
+import cn.zhangchuangla.medicine.admin.model.request.MallOrderListRequest;
+import cn.zhangchuangla.medicine.admin.model.vo.MallOrderListVo;
 import cn.zhangchuangla.medicine.admin.model.vo.MallProductVo;
 import cn.zhangchuangla.medicine.admin.service.AgentToolsService;
 import cn.zhangchuangla.medicine.common.core.base.AjaxResult;
 import cn.zhangchuangla.medicine.common.core.base.TableDataResult;
 import cn.zhangchuangla.medicine.common.security.base.BaseController;
 import cn.zhangchuangla.medicine.model.dto.MallProductDetailDto;
+import cn.zhangchuangla.medicine.model.dto.OrderWithProductDto;
 import cn.zhangchuangla.medicine.model.entity.User;
-import cn.zhangchuangla.medicine.model.request.AgentSearchRequest;
+import cn.zhangchuangla.medicine.model.request.MallProductListQueryRequest;
 import cn.zhangchuangla.medicine.model.vo.UserVo;
 import cn.zhangchuangla.medicine.model.vo.mall.MallProductListVo;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
@@ -52,7 +55,7 @@ public class AgentToolsController extends BaseController {
 
     @GetMapping("/products/search")
     @Operation(summary = "搜索商品", description = "根据关键词和分类搜索商品")
-    public AjaxResult<TableDataResult> searchProducts(AgentSearchRequest request) {
+    public AjaxResult<TableDataResult> searchProducts(MallProductListQueryRequest request) {
         Page<MallProductDetailDto> page = agentToolsService.searchProducts(request);
         List<MallProductListVo> mallProductListVos = page.getRecords().stream()
                 .map(product -> {
@@ -75,6 +78,50 @@ public class AgentToolsController extends BaseController {
         MallProductDetailDto product = agentToolsService.getProductDetail(productId);
         MallProductVo productVo = copyProperties(product, MallProductVo.class);
         return success(productVo);
+    }
+
+    /**
+     * 获取订单列表
+     */
+    @GetMapping("/orders/list")
+    @Operation(summary = "获取订单列表", description = "分页获取订单列表，默认按创建时间倒序")
+    public AjaxResult<TableDataResult> getOrderList(MallOrderListRequest request) {
+        Page<OrderWithProductDto> orderPage = agentToolsService.getOrderList(request);
+        List<MallOrderListVo> orderListVos = orderPage.getRecords().stream()
+                .map(this::buildOrderListVo)
+                .toList();
+        return getTableData(orderPage, orderListVos);
+    }
+
+
+    /**
+     * 获取订单详情
+     */
+    @GetMapping("/orders/{orderId}")
+    @Operation(summary = "获取订单详情", description = "根据订单ID获取详细信息")
+    public AjaxResult<MallOrderListVo> getOrderDetail(
+            @Parameter(description = "订单ID")
+            @PathVariable Long orderId
+    ) {
+        MallOrderListVo orderVo = agentToolsService.getOrderDetail(orderId);
+        return success(orderVo);
+    }
+
+    private MallOrderListVo buildOrderListVo(OrderWithProductDto source) {
+        MallOrderListVo target = copyProperties(source, MallOrderListVo.class);
+        if (target == null) {
+            return null;
+        }
+        if (source.getProductId() == null) {
+            return target;
+        }
+        MallOrderListVo.ProductInfo productInfo = MallOrderListVo.ProductInfo.builder()
+                .productName(source.getProductName())
+                .productImage(source.getProductImage())
+                .quantity(source.getProductQuantity())
+                .build();
+        target.setProductInfo(productInfo);
+        return target;
     }
 
 }

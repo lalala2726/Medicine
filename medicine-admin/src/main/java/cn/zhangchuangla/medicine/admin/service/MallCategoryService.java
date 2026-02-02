@@ -2,8 +2,8 @@ package cn.zhangchuangla.medicine.admin.service;
 
 import cn.zhangchuangla.medicine.common.core.base.Option;
 import cn.zhangchuangla.medicine.model.entity.MallCategory;
-import cn.zhangchuangla.medicine.model.request.mall.MallCategoryAddRequest;
-import cn.zhangchuangla.medicine.model.request.mall.MallCategoryUpdateRequest;
+import cn.zhangchuangla.medicine.model.request.MallCategoryAddRequest;
+import cn.zhangchuangla.medicine.model.request.MallCategoryUpdateRequest;
 import cn.zhangchuangla.medicine.model.vo.mall.MallCategoryTree;
 import com.baomidou.mybatisplus.extension.service.IService;
 

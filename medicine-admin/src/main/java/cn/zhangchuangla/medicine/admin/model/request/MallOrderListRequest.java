@@ -14,6 +14,7 @@ import lombok.EqualsAndHashCode;
 @Schema(description = "订单列表查询参数")
 @Data
 public class MallOrderListRequest extends PageRequest {
+
     @Schema(description = "订单编号")
     private String orderNo;
 
