@@ -115,7 +115,7 @@ public class RoleController extends BaseController {
      * @param ids 角色ID集合
      * @return 操作结果
      */
-    @DeleteMapping("/{ids:\\d+(,\\d+)*}")
+    @DeleteMapping("/{ids:\\d+(?:,\\d+)*}")
     @Operation(summary = "删除角色")
     @PreAuthorize("hasAuthority('system:role:delete') or hasRole('super_admin')")
     @OperationLog(module = "角色管理", action = "删除角色", type = OperationType.DELETE)

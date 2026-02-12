@@ -106,7 +106,7 @@ public class PermissionController extends BaseController {
      * @param ids 权限ID集合
      * @return 操作结果
      */
-    @DeleteMapping("/{ids:\\d+(,\\d+)*}")
+    @DeleteMapping("/{ids:\\d+(?:,\\d+)*}")
     @Operation(summary = "删除权限")
     @PreAuthorize("hasAuthority('system:permission:delete') or hasRole('super_admin')")
     @OperationLog(module = "权限管理", action = "删除权限", type = OperationType.DELETE)
