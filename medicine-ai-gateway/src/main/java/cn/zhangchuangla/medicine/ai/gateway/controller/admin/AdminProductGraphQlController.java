@@ -7,7 +7,6 @@ import cn.zhangchuangla.medicine.common.security.base.BaseController;
 import cn.zhangchuangla.medicine.model.entity.MallProduct;
 import cn.zhangchuangla.medicine.model.request.graphql.GraphQLProductQuery;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
-import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Positive;
 import org.springframework.graphql.data.method.annotation.Argument;
@@ -37,7 +36,7 @@ public class AdminProductGraphQlController extends BaseController {
      * 商品分页查询。
      */
     @QueryMapping(name = "adminProducts")
-    public TableDataResult adminProducts(@Argument @Valid GraphQLProductQuery query) {
+    public TableDataResult adminProducts(@Argument @Validated GraphQLProductQuery query) {
         Page<MallProduct> page = adminProductQueryService.searchProducts(query);
         return getTableData(page, page.getRecords()).getData();
     }
