@@ -1,5 +1,6 @@
 package cn.zhangchuangla.medicine.admin.service.impl;
 
+import cn.zhangchuangla.medicine.admin.publisher.LoginLogPublisher;
 import cn.zhangchuangla.medicine.admin.service.PermissionService;
 import cn.zhangchuangla.medicine.admin.service.UserService;
 import cn.zhangchuangla.medicine.common.core.constants.RolesConstant;
@@ -10,8 +11,10 @@ import cn.zhangchuangla.medicine.common.security.token.RedisTokenStore;
 import cn.zhangchuangla.medicine.common.security.token.TokenService;
 import cn.zhangchuangla.medicine.model.dto.LoginSessionDTO;
 import cn.zhangchuangla.medicine.model.entity.User;
+import cn.zhangchuangla.medicine.model.mq.LoginLogMessage;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Spy;
@@ -49,10 +52,17 @@ class AuthServiceImplTests {
     @Mock
     private PermissionService permissionService;
 
+    @Mock
+    private LoginLogPublisher loginLogPublisher;
+
     @Spy
     @InjectMocks
     private AuthServiceImpl authService;
 
+    /**
+     * 验证具备 admin 角色的用户可以登录成功，
+     * 并且会发布 admin 来源的登录成功日志。
+     */
     @Test
     void login_WhenHasAdminRole_ShouldReturnToken() {
         Authentication authentication = new UsernamePasswordAuthenticationToken(
@@ -73,8 +83,19 @@ class AuthServiceImplTests {
         assertEquals("access", token.getAccessToken());
         assertEquals("refresh", token.getRefreshToken());
         verify(tokenService).createToken(authentication);
+
+        ArgumentCaptor<LoginLogMessage> captor = ArgumentCaptor.forClass(LoginLogMessage.class);
+        verify(loginLogPublisher).publish(captor.capture());
+        LoginLogMessage message = captor.getValue();
+        assertEquals("admin", message.getLoginSource());
+        assertEquals(1, message.getLoginStatus());
+        assertEquals("password", message.getLoginType());
     }
 
+    /**
+     * 验证非管理员角色登录 admin 端会被拒绝，
+     * 同时仍会发布登录失败日志用于审计。
+     */
     @Test
     void login_WhenNoAdminRole_ShouldThrowLoginException() {
         Authentication authentication = new UsernamePasswordAuthenticationToken(
@@ -85,8 +106,17 @@ class AuthServiceImplTests {
         when(authenticationManager.authenticate(any(UsernamePasswordAuthenticationToken.class))).thenReturn(authentication);
 
         assertThrows(LoginException.class, () -> authService.login("user", "123456"));
+
+        ArgumentCaptor<LoginLogMessage> captor = ArgumentCaptor.forClass(LoginLogMessage.class);
+        verify(loginLogPublisher).publish(captor.capture());
+        LoginLogMessage message = captor.getValue();
+        assertEquals("admin", message.getLoginSource());
+        assertEquals(0, message.getLoginStatus());
     }
 
+    /**
+     * 验证当前用户信息接口会聚合用户基础信息与角色集合返回。
+     */
     @Test
     void currentUserInfo_ShouldReturnUserWithRoles() {
         User user = new User();
@@ -105,6 +135,9 @@ class AuthServiceImplTests {
         verify(userService).getUserRolesByUserId(10L);
     }
 
+    /**
+     * 验证当前用户权限查询接口会委托权限服务按用户 ID 获取权限码。
+     */
     @Test
     void currentUserPermissions_ShouldDelegateToPermissionService() {
         doReturn(7L).when(authService).getUserId();

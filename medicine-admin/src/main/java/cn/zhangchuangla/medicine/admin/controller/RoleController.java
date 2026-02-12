@@ -12,6 +12,8 @@ import cn.zhangchuangla.medicine.admin.service.RoleService;
 import cn.zhangchuangla.medicine.common.core.base.AjaxResult;
 import cn.zhangchuangla.medicine.common.core.base.Option;
 import cn.zhangchuangla.medicine.common.core.base.TableDataResult;
+import cn.zhangchuangla.medicine.common.log.annotation.OperationLog;
+import cn.zhangchuangla.medicine.common.log.enums.OperationType;
 import cn.zhangchuangla.medicine.common.security.base.BaseController;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -88,6 +90,7 @@ public class RoleController extends BaseController {
     @PostMapping
     @Operation(summary = "添加角色")
     @PreAuthorize("hasAuthority('system:role:add') or hasRole('super_admin')")
+    @OperationLog(module = "角色管理", action = "新增角色", type = OperationType.ADD)
     public AjaxResult<Void> postRole(@Validated @RequestBody RoleAddRequest request) {
         return toAjax(roleService.addRole(request));
     }
@@ -101,6 +104,7 @@ public class RoleController extends BaseController {
     @PutMapping
     @Operation(summary = "修改角色")
     @PreAuthorize("hasAuthority('system:role:update') or hasRole('super_admin')")
+    @OperationLog(module = "角色管理", action = "修改角色", type = OperationType.UPDATE)
     public AjaxResult<Void> putRole(@Validated @RequestBody RoleUpdateRequest request) {
         return toAjax(roleService.updateRoleById(request));
     }
@@ -114,6 +118,7 @@ public class RoleController extends BaseController {
     @DeleteMapping("/{ids:\\d+(,\\d+)*}")
     @Operation(summary = "删除角色")
     @PreAuthorize("hasAuthority('system:role:delete') or hasRole('super_admin')")
+    @OperationLog(module = "角色管理", action = "删除角色", type = OperationType.DELETE)
     public AjaxResult<Void> deleteRole(@PathVariable List<Long> ids) {
         return toAjax(roleService.deleteRoleByIds(ids));
     }
@@ -142,6 +147,7 @@ public class RoleController extends BaseController {
     @PutMapping("/permission")
     @Operation(summary = "更新角色权限")
     @PreAuthorize("hasAuthority('system:role:update') or hasRole('super_admin')")
+    @OperationLog(module = "角色管理", action = "更新角色权限", type = OperationType.UPDATE)
     public AjaxResult<Void> updateRolePermission(@Validated @RequestBody RolePermissionUpdateRequest request) {
         return toAjax(roleService.updateRolePermission(request));
     }

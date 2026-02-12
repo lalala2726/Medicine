@@ -7,6 +7,8 @@ import cn.zhangchuangla.medicine.admin.model.vo.PermissionVo;
 import cn.zhangchuangla.medicine.admin.service.PermissionService;
 import cn.zhangchuangla.medicine.common.core.base.AjaxResult;
 import cn.zhangchuangla.medicine.common.core.base.Option;
+import cn.zhangchuangla.medicine.common.log.annotation.OperationLog;
+import cn.zhangchuangla.medicine.common.log.enums.OperationType;
 import cn.zhangchuangla.medicine.common.security.base.BaseController;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -67,6 +69,7 @@ public class PermissionController extends BaseController {
     @PostMapping
     @Operation(summary = "添加权限")
     @PreAuthorize("hasAuthority('system:permission:add') or hasRole('super_admin')")
+    @OperationLog(module = "权限管理", action = "新增权限", type = OperationType.ADD)
     public AjaxResult<Void> addPermission(@Validated @RequestBody PermissionAddRequest request) {
         return toAjax(permissionService.addPermission(request));
     }
@@ -92,6 +95,7 @@ public class PermissionController extends BaseController {
     @PutMapping
     @Operation(summary = "修改权限")
     @PreAuthorize("hasAuthority('system:permission:update') or hasRole('super_admin')")
+    @OperationLog(module = "权限管理", action = "修改权限", type = OperationType.UPDATE)
     public AjaxResult<Void> updatePermission(@Validated @RequestBody PermissionUpdateRequest request) {
         return toAjax(permissionService.updatePermissionById(request));
     }
@@ -105,6 +109,7 @@ public class PermissionController extends BaseController {
     @DeleteMapping("/{ids:\\d+(,\\d+)*}")
     @Operation(summary = "删除权限")
     @PreAuthorize("hasAuthority('system:permission:delete') or hasRole('super_admin')")
+    @OperationLog(module = "权限管理", action = "删除权限", type = OperationType.DELETE)
     public AjaxResult<Void> deletePermission(@PathVariable List<Long> ids) {
         return toAjax(permissionService.deletePermissionByIds(ids));
     }
