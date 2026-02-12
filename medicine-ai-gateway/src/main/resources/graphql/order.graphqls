@@ -47,5 +47,4 @@ type MallOrder {
     createBy: String
     updateBy: String
     remark: String
-    isDeleted: Int
 }

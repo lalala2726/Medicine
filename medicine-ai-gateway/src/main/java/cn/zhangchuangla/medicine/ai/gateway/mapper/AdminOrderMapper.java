@@ -18,7 +18,6 @@ public interface AdminOrderMapper {
      * 分页查询订单。
      *
      * @param page    分页参数
-     * @param request 查询条件
      * @return 订单分页列表
      */
     Page<MallOrder> listOrderPage(Page<MallOrder> page,

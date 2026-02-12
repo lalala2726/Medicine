@@ -38,5 +38,4 @@ type MallProduct {
     updateTime: DateTime
     createBy: String
     updateBy: String
-    isDeleted: Int
 }

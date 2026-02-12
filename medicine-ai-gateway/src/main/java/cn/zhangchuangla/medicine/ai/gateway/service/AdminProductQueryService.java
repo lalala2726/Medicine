@@ -16,7 +16,6 @@ public interface AdminProductQueryService {
     /**
      * 分页查询商品列表。
      *
-     * @param request 查询条件
      * @return 分页结果
      */
     Page<MallProduct> searchProducts(GraphQLProductQuery query);
