@@ -9,7 +9,7 @@ import org.apache.ibatis.annotations.Param;
 /**
  * 系统操作日志 Mapper。
  */
-public interface SysOperationLogMapper extends BaseMapper<SysOperationLog> {
+public interface OperationLogMapper extends BaseMapper<SysOperationLog> {
 
     /**
      * 分页查询操作日志列表。

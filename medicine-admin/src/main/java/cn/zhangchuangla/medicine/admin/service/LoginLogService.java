@@ -8,7 +8,7 @@ import com.baomidou.mybatisplus.extension.service.IService;
 /**
  * 系统登录日志服务。
  */
-public interface SysLoginLogService extends IService<SysLoginLog> {
+public interface LoginLogService extends IService<SysLoginLog> {
 
     /**
      * 分页查询登录日志列表。

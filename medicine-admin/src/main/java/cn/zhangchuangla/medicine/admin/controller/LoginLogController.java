@@ -3,7 +3,7 @@ package cn.zhangchuangla.medicine.admin.controller;
 import cn.zhangchuangla.medicine.admin.model.request.LoginLogQueryRequest;
 import cn.zhangchuangla.medicine.admin.model.vo.LoginLogListVo;
 import cn.zhangchuangla.medicine.admin.model.vo.LoginLogVo;
-import cn.zhangchuangla.medicine.admin.service.SysLoginLogService;
+import cn.zhangchuangla.medicine.admin.service.LoginLogService;
 import cn.zhangchuangla.medicine.common.core.base.AjaxResult;
 import cn.zhangchuangla.medicine.common.core.base.TableDataResult;
 import cn.zhangchuangla.medicine.common.log.annotation.OperationLog;
@@ -22,12 +22,12 @@ import org.springframework.web.bind.annotation.*;
  * </p>
  */
 @RestController
-@RequestMapping("/system/login-log")
+@RequestMapping("/system/login_log")
 @RequiredArgsConstructor
 @Tag(name = "登录日志", description = "提供登录日志查询与清空接口")
-public class SysLoginLogController extends BaseController {
+public class LoginLogController extends BaseController {
 
-    private final SysLoginLogService sysLoginLogService;
+    private final LoginLogService loginLogService;
 
     /**
      * 分页查询登录日志列表。
@@ -39,7 +39,7 @@ public class SysLoginLogController extends BaseController {
     @Operation(summary = "登录日志列表")
     @PreAuthorize("hasAuthority('system:login-log:list') or hasRole('super_admin')")
     public AjaxResult<TableDataResult> logList(LoginLogQueryRequest request) {
-        var page = sysLoginLogService.logList(request);
+        var page = loginLogService.logList(request);
         var rows = copyListProperties(page, LoginLogListVo.class);
         return getTableData(page, rows);
     }
@@ -54,7 +54,7 @@ public class SysLoginLogController extends BaseController {
     @Operation(summary = "登录日志详情")
     @PreAuthorize("hasAuthority('system:login-log:query') or hasRole('super_admin')")
     public AjaxResult<LoginLogVo> getLogById(@PathVariable Long id) {
-        var log = sysLoginLogService.getLogById(id);
+        var log = loginLogService.getLogById(id);
         var vo = copyProperties(log, LoginLogVo.class);
         return success(vo);
     }
@@ -69,7 +69,7 @@ public class SysLoginLogController extends BaseController {
     @PreAuthorize("hasAuthority('system:login-log:delete') or hasRole('super_admin')")
     @OperationLog(module = "登录日志", action = "清空登录日志", type = OperationType.DELETE)
     public AjaxResult<Void> clearLog() {
-        boolean result = sysLoginLogService.clearLogs();
+        boolean result = loginLogService.clearLogs();
         return toAjax(result);
     }
 }

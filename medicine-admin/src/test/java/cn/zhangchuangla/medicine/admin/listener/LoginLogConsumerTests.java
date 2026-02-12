@@ -1,6 +1,6 @@
 package cn.zhangchuangla.medicine.admin.listener;
 
-import cn.zhangchuangla.medicine.admin.service.SysLoginLogService;
+import cn.zhangchuangla.medicine.admin.service.LoginLogService;
 import cn.zhangchuangla.medicine.model.entity.SysLoginLog;
 import cn.zhangchuangla.medicine.model.mq.LoginLogMessage;
 import org.junit.jupiter.api.Test;
@@ -19,7 +19,7 @@ import static org.mockito.Mockito.verify;
 class LoginLogConsumerTests {
 
     @Mock
-    private SysLoginLogService sysLoginLogService;
+    private LoginLogService loginLogService;
 
     @InjectMocks
     private LoginLogConsumer loginLogConsumer;
@@ -44,7 +44,7 @@ class LoginLogConsumerTests {
         loginLogConsumer.handle(message);
 
         ArgumentCaptor<SysLoginLog> captor = ArgumentCaptor.forClass(SysLoginLog.class);
-        verify(sysLoginLogService).save(captor.capture());
+        verify(loginLogService).save(captor.capture());
         SysLoginLog log = captor.getValue();
         assertEquals(1L, log.getUserId());
         assertEquals("admin", log.getUsername());

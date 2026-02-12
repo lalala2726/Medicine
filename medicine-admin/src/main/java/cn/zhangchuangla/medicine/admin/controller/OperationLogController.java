@@ -3,7 +3,7 @@ package cn.zhangchuangla.medicine.admin.controller;
 import cn.zhangchuangla.medicine.admin.model.request.OperationLogQueryRequest;
 import cn.zhangchuangla.medicine.admin.model.vo.OperationLogListVo;
 import cn.zhangchuangla.medicine.admin.model.vo.OperationLogVo;
-import cn.zhangchuangla.medicine.admin.service.SysOperationLogService;
+import cn.zhangchuangla.medicine.admin.service.OperationLogService;
 import cn.zhangchuangla.medicine.common.core.base.AjaxResult;
 import cn.zhangchuangla.medicine.common.core.base.TableDataResult;
 import cn.zhangchuangla.medicine.common.log.annotation.OperationLog;
@@ -22,12 +22,12 @@ import org.springframework.web.bind.annotation.*;
  * </p>
  */
 @RestController
-@RequestMapping("/system/operation-log")
+@RequestMapping("/system/operation_log")
 @RequiredArgsConstructor
 @Tag(name = "操作日志", description = "提供操作日志查询与清空接口")
-public class SysOperationLogController extends BaseController {
+public class OperationLogController extends BaseController {
 
-    private final SysOperationLogService sysOperationLogService;
+    private final OperationLogService operationLogService;
 
     /**
      * 分页查询操作日志列表。
@@ -39,7 +39,7 @@ public class SysOperationLogController extends BaseController {
     @Operation(summary = "操作日志列表")
     @PreAuthorize("hasAuthority('system:operation-log:list') or hasRole('super_admin')")
     public AjaxResult<TableDataResult> logList(OperationLogQueryRequest request) {
-        var page = sysOperationLogService.logList(request);
+        var page = operationLogService.logList(request);
         var rows = copyListProperties(page, OperationLogListVo.class);
         return getTableData(page, rows);
     }
@@ -54,7 +54,7 @@ public class SysOperationLogController extends BaseController {
     @Operation(summary = "操作日志详情")
     @PreAuthorize("hasAuthority('system:operation-log:query') or hasRole('super_admin')")
     public AjaxResult<OperationLogVo> getLogById(@PathVariable Long id) {
-        var log = sysOperationLogService.getLogById(id);
+        var log = operationLogService.getLogById(id);
         var vo = copyProperties(log, OperationLogVo.class);
         return success(vo);
     }
@@ -69,7 +69,7 @@ public class SysOperationLogController extends BaseController {
     @PreAuthorize("hasAuthority('system:operation-log:delete') or hasRole('super_admin')")
     @OperationLog(module = "操作日志", action = "清空操作日志", type = OperationType.DELETE)
     public AjaxResult<Void> clearLog() {
-        boolean result = sysOperationLogService.clearLogs();
+        boolean result = operationLogService.clearLogs();
         return toAjax(result);
     }
 }

@@ -9,7 +9,7 @@ import org.apache.ibatis.annotations.Param;
 /**
  * 系统登录日志 Mapper。
  */
-public interface SysLoginLogMapper extends BaseMapper<SysLoginLog> {
+public interface LoginLogMapper extends BaseMapper<SysLoginLog> {
 
     /**
      * 分页查询登录日志列表。

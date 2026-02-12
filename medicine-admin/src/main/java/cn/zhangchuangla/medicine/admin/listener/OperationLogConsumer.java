@@ -1,6 +1,6 @@
 package cn.zhangchuangla.medicine.admin.listener;
 
-import cn.zhangchuangla.medicine.admin.service.SysOperationLogService;
+import cn.zhangchuangla.medicine.admin.service.OperationLogService;
 import cn.zhangchuangla.medicine.common.rabbitmq.constants.OperationLogQueueConstants;
 import cn.zhangchuangla.medicine.model.entity.SysOperationLog;
 import cn.zhangchuangla.medicine.model.mq.OperationLogMessage;
@@ -17,7 +17,7 @@ import java.util.Date;
 @RequiredArgsConstructor
 public class OperationLogConsumer {
 
-    private final SysOperationLogService sysOperationLogService;
+    private final OperationLogService operationLogService;
 
     /**
      * 消费操作日志消息并持久化。
@@ -45,6 +45,6 @@ public class OperationLogConsumer {
                 .errorMsg(message.getErrorMsg())
                 .createTime(message.getCreateTime() == null ? new Date() : message.getCreateTime())
                 .build();
-        sysOperationLogService.save(log);
+        operationLogService.save(log);
     }
 }

@@ -1,8 +1,8 @@
 package cn.zhangchuangla.medicine.admin.service.impl;
 
-import cn.zhangchuangla.medicine.admin.mapper.SysOperationLogMapper;
+import cn.zhangchuangla.medicine.admin.mapper.OperationLogMapper;
 import cn.zhangchuangla.medicine.admin.model.request.OperationLogQueryRequest;
-import cn.zhangchuangla.medicine.admin.service.SysOperationLogService;
+import cn.zhangchuangla.medicine.admin.service.OperationLogService;
 import cn.zhangchuangla.medicine.common.core.utils.Assert;
 import cn.zhangchuangla.medicine.model.entity.SysOperationLog;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
@@ -14,8 +14,8 @@ import org.springframework.stereotype.Service;
  * 系统操作日志服务实现。
  */
 @Service
-public class SysOperationLogServiceImpl extends ServiceImpl<SysOperationLogMapper, SysOperationLog>
-        implements SysOperationLogService {
+public class OperationLogServiceImpl extends ServiceImpl<OperationLogMapper, SysOperationLog>
+        implements OperationLogService {
 
     @Override
     public Page<SysOperationLog> logList(OperationLogQueryRequest query) {

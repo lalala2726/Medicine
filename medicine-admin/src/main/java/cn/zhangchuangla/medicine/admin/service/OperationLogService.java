@@ -8,7 +8,7 @@ import com.baomidou.mybatisplus.extension.service.IService;
 /**
  * 系统操作日志服务。
  */
-public interface SysOperationLogService extends IService<SysOperationLog> {
+public interface OperationLogService extends IService<SysOperationLog> {
 
     /**
      * 分页查询操作日志列表。

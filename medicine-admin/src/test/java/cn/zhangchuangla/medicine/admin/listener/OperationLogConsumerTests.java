@@ -1,6 +1,6 @@
 package cn.zhangchuangla.medicine.admin.listener;
 
-import cn.zhangchuangla.medicine.admin.service.SysOperationLogService;
+import cn.zhangchuangla.medicine.admin.service.OperationLogService;
 import cn.zhangchuangla.medicine.model.entity.SysOperationLog;
 import cn.zhangchuangla.medicine.model.mq.OperationLogMessage;
 import org.junit.jupiter.api.Test;
@@ -19,7 +19,7 @@ import static org.mockito.Mockito.verify;
 class OperationLogConsumerTests {
 
     @Mock
-    private SysOperationLogService sysOperationLogService;
+    private OperationLogService operationLogService;
 
     @InjectMocks
     private OperationLogConsumer operationLogConsumer;
@@ -46,7 +46,7 @@ class OperationLogConsumerTests {
         operationLogConsumer.handle(message);
 
         ArgumentCaptor<SysOperationLog> captor = ArgumentCaptor.forClass(SysOperationLog.class);
-        verify(sysOperationLogService).save(captor.capture());
+        verify(operationLogService).save(captor.capture());
         SysOperationLog log = captor.getValue();
         assertEquals("用户管理", log.getModule());
         assertEquals("新增用户", log.getAction());

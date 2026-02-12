@@ -1,6 +1,6 @@
 package cn.zhangchuangla.medicine.admin.service.impl;
 
-import cn.zhangchuangla.medicine.admin.mapper.SysLoginLogMapper;
+import cn.zhangchuangla.medicine.admin.mapper.LoginLogMapper;
 import cn.zhangchuangla.medicine.admin.model.request.LoginLogQueryRequest;
 import cn.zhangchuangla.medicine.common.core.exception.ParamException;
 import cn.zhangchuangla.medicine.model.entity.SysLoginLog;
@@ -19,17 +19,17 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
-class SysLoginLogServiceImplTests {
+class LoginLogServiceImplTests {
 
     @Mock
-    private SysLoginLogMapper sysLoginLogMapper;
+    private LoginLogMapper loginLogMapper;
 
     @InjectMocks
-    private SysLoginLogServiceImpl sysLoginLogService;
+    private LoginLogServiceImpl sysLoginLogService;
 
     @BeforeEach
     void setUp() {
-        ReflectionTestUtils.setField(sysLoginLogService, "baseMapper", sysLoginLogMapper);
+        ReflectionTestUtils.setField(sysLoginLogService, "baseMapper", loginLogMapper);
     }
 
     /**
@@ -40,12 +40,12 @@ class SysLoginLogServiceImplTests {
     void logList_ShouldDelegateToMapper() {
         LoginLogQueryRequest query = new LoginLogQueryRequest();
         Page<SysLoginLog> page = new Page<>(1, 10, 1);
-        when(sysLoginLogMapper.logList(any(Page.class), any(LoginLogQueryRequest.class))).thenReturn(page);
+        when(loginLogMapper.logList(any(Page.class), any(LoginLogQueryRequest.class))).thenReturn(page);
 
         var result = sysLoginLogService.logList(query);
 
         assertEquals(page, result);
-        verify(sysLoginLogMapper).logList(any(Page.class), any(LoginLogQueryRequest.class));
+        verify(loginLogMapper).logList(any(Page.class), any(LoginLogQueryRequest.class));
     }
 
     /**
@@ -64,7 +64,7 @@ class SysLoginLogServiceImplTests {
     void getLogById_ShouldReturnEntity() {
         SysLoginLog log = new SysLoginLog();
         log.setId(1L);
-        when(sysLoginLogMapper.selectById(1L)).thenReturn(log);
+        when(loginLogMapper.selectById(1L)).thenReturn(log);
 
         var result = sysLoginLogService.getLogById(1L);
 
@@ -77,11 +77,11 @@ class SysLoginLogServiceImplTests {
      */
     @Test
     void clearLogs_ShouldReturnTrue() {
-        when(sysLoginLogMapper.delete(any())).thenReturn(1);
+        when(loginLogMapper.delete(any())).thenReturn(1);
 
         boolean result = sysLoginLogService.clearLogs();
 
         assertTrue(result);
-        verify(sysLoginLogMapper).delete(any());
+        verify(loginLogMapper).delete(any());
     }
 }

@@ -1,8 +1,8 @@
 package cn.zhangchuangla.medicine.admin.controller;
 
-import cn.zhangchuangla.medicine.admin.model.request.LoginLogQueryRequest;
-import cn.zhangchuangla.medicine.admin.service.SysLoginLogService;
-import cn.zhangchuangla.medicine.model.entity.SysLoginLog;
+import cn.zhangchuangla.medicine.admin.model.request.OperationLogQueryRequest;
+import cn.zhangchuangla.medicine.admin.service.OperationLogService;
+import cn.zhangchuangla.medicine.model.entity.SysOperationLog;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -20,55 +20,55 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
-class SysLoginLogControllerTests {
+class OperationLogControllerTests {
 
     @Mock
-    private SysLoginLogService sysLoginLogService;
+    private OperationLogService operationLogService;
 
     @InjectMocks
-    private SysLoginLogController controller;
+    private OperationLogController controller;
 
     /**
-     * 验证登录日志列表接口会透传查询参数并返回分页结果。
+     * 验证操作日志列表接口会调用 service 并返回分页结构。
      */
     @Test
     void logList_ShouldReturnPagedResult() {
-        LoginLogQueryRequest request = new LoginLogQueryRequest();
-        Page<SysLoginLog> page = new Page<>(1, 10, 1);
-        SysLoginLog log = new SysLoginLog();
+        OperationLogQueryRequest request = new OperationLogQueryRequest();
+        Page<SysOperationLog> page = new Page<>(1, 10, 1);
+        SysOperationLog log = new SysOperationLog();
         log.setId(1L);
-        log.setUsername("admin");
+        log.setModule("用户管理");
         page.setRecords(List.of(log));
-        when(sysLoginLogService.logList(request)).thenReturn(page);
+        when(operationLogService.logList(request)).thenReturn(page);
 
         var result = controller.logList(request);
 
         assertEquals(200, result.getCode());
-        verify(sysLoginLogService).logList(request);
+        verify(operationLogService).logList(request);
     }
 
     /**
-     * 验证清空登录日志接口会调用 service 清理逻辑并返回成功响应。
+     * 验证清空操作日志接口会委托 service 执行清理。
      */
     @Test
     void clearLog_ShouldDelegateToService() {
-        when(sysLoginLogService.clearLogs()).thenReturn(true);
+        when(operationLogService.clearLogs()).thenReturn(true);
 
         var result = controller.clearLog();
 
         assertEquals(200, result.getCode());
-        verify(sysLoginLogService).clearLogs();
+        verify(operationLogService).clearLogs();
     }
 
     /**
-     * 验证登录日志相关接口都声明了权限注解，
-     * 防止未授权用户访问审计数据。
+     * 验证操作日志控制器关键接口具备权限注解，
+     * 保障审计数据访问受 RBAC 控制。
      */
     @Test
     void methods_ShouldHavePreAuthorizeAnnotations() throws NoSuchMethodException {
-        Method listMethod = SysLoginLogController.class.getMethod("logList", LoginLogQueryRequest.class);
-        Method getMethod = SysLoginLogController.class.getMethod("getLogById", Long.class);
-        Method clearMethod = SysLoginLogController.class.getMethod("clearLog");
+        Method listMethod = OperationLogController.class.getMethod("logList", OperationLogQueryRequest.class);
+        Method getMethod = OperationLogController.class.getMethod("getLogById", Long.class);
+        Method clearMethod = OperationLogController.class.getMethod("clearLog");
 
         assertTrue(listMethod.isAnnotationPresent(PreAuthorize.class));
         assertTrue(getMethod.isAnnotationPresent(PreAuthorize.class));

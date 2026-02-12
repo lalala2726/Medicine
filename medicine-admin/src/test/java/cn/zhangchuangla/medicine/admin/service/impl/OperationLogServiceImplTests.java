@@ -1,6 +1,6 @@
 package cn.zhangchuangla.medicine.admin.service.impl;
 
-import cn.zhangchuangla.medicine.admin.mapper.SysOperationLogMapper;
+import cn.zhangchuangla.medicine.admin.mapper.OperationLogMapper;
 import cn.zhangchuangla.medicine.admin.model.request.OperationLogQueryRequest;
 import cn.zhangchuangla.medicine.common.core.exception.ParamException;
 import cn.zhangchuangla.medicine.model.entity.SysOperationLog;
@@ -19,17 +19,17 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
-class SysOperationLogServiceImplTests {
+class OperationLogServiceImplTests {
 
     @Mock
-    private SysOperationLogMapper sysOperationLogMapper;
+    private OperationLogMapper operationLogMapper;
 
     @InjectMocks
-    private SysOperationLogServiceImpl sysOperationLogService;
+    private OperationLogServiceImpl sysOperationLogService;
 
     @BeforeEach
     void setUp() {
-        ReflectionTestUtils.setField(sysOperationLogService, "baseMapper", sysOperationLogMapper);
+        ReflectionTestUtils.setField(sysOperationLogService, "baseMapper", operationLogMapper);
     }
 
     /**
@@ -39,12 +39,12 @@ class SysOperationLogServiceImplTests {
     void logList_ShouldDelegateToMapper() {
         OperationLogQueryRequest query = new OperationLogQueryRequest();
         Page<SysOperationLog> page = new Page<>(1, 10, 1);
-        when(sysOperationLogMapper.logList(any(Page.class), any(OperationLogQueryRequest.class))).thenReturn(page);
+        when(operationLogMapper.logList(any(Page.class), any(OperationLogQueryRequest.class))).thenReturn(page);
 
         var result = sysOperationLogService.logList(query);
 
         assertEquals(page, result);
-        verify(sysOperationLogMapper).logList(any(Page.class), any(OperationLogQueryRequest.class));
+        verify(operationLogMapper).logList(any(Page.class), any(OperationLogQueryRequest.class));
     }
 
     /**
@@ -63,7 +63,7 @@ class SysOperationLogServiceImplTests {
     void getLogById_ShouldReturnEntity() {
         SysOperationLog log = new SysOperationLog();
         log.setId(1L);
-        when(sysOperationLogMapper.selectById(1L)).thenReturn(log);
+        when(operationLogMapper.selectById(1L)).thenReturn(log);
 
         var result = sysOperationLogService.getLogById(1L);
 
@@ -76,11 +76,11 @@ class SysOperationLogServiceImplTests {
      */
     @Test
     void clearLogs_ShouldReturnTrue() {
-        when(sysOperationLogMapper.delete(any())).thenReturn(1);
+        when(operationLogMapper.delete(any())).thenReturn(1);
 
         boolean result = sysOperationLogService.clearLogs();
 
         assertTrue(result);
-        verify(sysOperationLogMapper).delete(any());
+        verify(operationLogMapper).delete(any());
     }
 }

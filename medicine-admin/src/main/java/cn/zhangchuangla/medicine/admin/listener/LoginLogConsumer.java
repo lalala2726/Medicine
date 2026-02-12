@@ -1,6 +1,6 @@
 package cn.zhangchuangla.medicine.admin.listener;
 
-import cn.zhangchuangla.medicine.admin.service.SysLoginLogService;
+import cn.zhangchuangla.medicine.admin.service.LoginLogService;
 import cn.zhangchuangla.medicine.common.rabbitmq.constants.LoginLogQueueConstants;
 import cn.zhangchuangla.medicine.model.entity.SysLoginLog;
 import cn.zhangchuangla.medicine.model.mq.LoginLogMessage;
@@ -17,7 +17,7 @@ import java.util.Date;
 @RequiredArgsConstructor
 public class LoginLogConsumer {
 
-    private final SysLoginLogService sysLoginLogService;
+    private final LoginLogService loginLogService;
 
     /**
      * 消费登录日志消息并持久化。
@@ -42,6 +42,6 @@ public class LoginLogConsumer {
                 .browser(message.getBrowser())
                 .loginTime(message.getLoginTime() == null ? new Date() : message.getLoginTime())
                 .build();
-        sysLoginLogService.save(log);
+        loginLogService.save(log);
     }
 }
