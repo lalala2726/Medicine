@@ -3,6 +3,8 @@ package cn.zhangchuangla.medicine.model.request;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 
+import java.util.Set;
+
 /**
  * 用户
  */
@@ -25,10 +27,10 @@ public class UserUpdateRequest {
     @Schema(description = "密码", example = "123456")
     private String password;
 
-    @Schema(description = "角色", example = "admin")
-    private String roles;
+    @Schema(description = "角色ID集合", example = "[1,2]")
+    private Set<Long> roles;
 
-    @Schema(description = "状态", example = "1")
+    @Schema(description = "状态", example = "0")
     private Integer status;
 
     @Schema(description = "身份证号码", example = "123456789012345678")
@@ -39,5 +41,4 @@ public class UserUpdateRequest {
 
     @Schema(description = "真实姓名", example = "张三")
     private String realName;
-
 }

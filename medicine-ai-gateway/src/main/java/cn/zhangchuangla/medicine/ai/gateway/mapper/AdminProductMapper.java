@@ -17,7 +17,7 @@ public interface AdminProductMapper {
     /**
      * 分页查询商品。
      *
-     * @param page    分页参数
+     * @param page 分页参数
      * @return 商品分页列表
      */
     Page<MallProduct> listProductPage(Page<MallProduct> page,

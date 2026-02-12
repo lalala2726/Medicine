@@ -27,10 +27,10 @@ public class UserAddRequest {
     @NotBlank(message = "密码不能为空")
     private String password;
 
-    @Schema(description = "角色", example = "admin")
-    private Set<String> roles;
+    @Schema(description = "角色ID集合", example = "[1,2]")
+    private Set<Long> roles;
 
-    @Schema(description = "状态", example = "1")
+    @Schema(description = "状态", example = "0")
     private Integer status;
 
     @Schema(description = "邮箱", example = "zhangsan@example.com")
@@ -47,5 +47,4 @@ public class UserAddRequest {
 
     @Schema(description = "真实姓名", example = "张三")
     private String realName;
-
 }

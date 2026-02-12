@@ -1,5 +1,7 @@
 package cn.zhangchuangla.medicine.admin.security;
 
+import cn.zhangchuangla.medicine.admin.service.PermissionService;
+import cn.zhangchuangla.medicine.admin.service.RoleService;
 import cn.zhangchuangla.medicine.admin.service.UserService;
 import cn.zhangchuangla.medicine.common.core.constants.Constants;
 import cn.zhangchuangla.medicine.common.security.entity.AuthUser;
@@ -7,11 +9,13 @@ import cn.zhangchuangla.medicine.common.security.entity.SysUserDetails;
 import cn.zhangchuangla.medicine.model.entity.User;
 import lombok.RequiredArgsConstructor;
 import org.jspecify.annotations.NonNull;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
 
+import java.util.HashSet;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
@@ -24,6 +28,8 @@ import java.util.Set;
 public class AdminSecurityUserService implements UserDetailsService {
 
     private final UserService userService;
+    private final RoleService roleService;
+    private final PermissionService permissionService;
 
     @Override
     public @NonNull UserDetails loadUserByUsername(@NonNull String username) {
@@ -31,7 +37,10 @@ public class AdminSecurityUserService implements UserDetailsService {
         if (user == null) {
             throw new UsernameNotFoundException("用户不存在");
         }
-        Set<String> roles = Optional.ofNullable(userService.getUserRolesByUserId(user.getId()))
+        Set<String> roles = Optional.ofNullable(roleService.getUserRoleByUserId(user.getId()))
+                .filter(set -> !set.isEmpty())
+                .orElseGet(java.util.Collections::emptySet);
+        Set<String> permissions = Optional.ofNullable(permissionService.getPermissionCodesByUserId(user.getId()))
                 .filter(set -> !set.isEmpty())
                 .orElseGet(java.util.Collections::emptySet);
 
@@ -48,6 +57,20 @@ public class AdminSecurityUserService implements UserDetailsService {
                 .accountNonExpired(true)
                 .credentialsNonExpired(true)
                 .build();
-        return new SysUserDetails(authUser);
+        Set<SimpleGrantedAuthority> authorities = new HashSet<>();
+        roles.stream()
+                .filter(Objects::nonNull)
+                .map(String::trim)
+                .filter(role -> !role.isEmpty())
+                .forEach(role -> authorities.add(new SimpleGrantedAuthority("ROLE_" + role)));
+        permissions.stream()
+                .filter(Objects::nonNull)
+                .map(String::trim)
+                .filter(permission -> !permission.isEmpty())
+                .forEach(permission -> authorities.add(new SimpleGrantedAuthority(permission)));
+
+        SysUserDetails userDetails = new SysUserDetails(authUser);
+        userDetails.setAuthorities(authorities);
+        return userDetails;
     }
 }

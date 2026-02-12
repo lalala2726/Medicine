@@ -1,6 +1,8 @@
 package cn.zhangchuangla.medicine.admin.service.impl;
 
 import cn.zhangchuangla.medicine.admin.service.AuthService;
+import cn.zhangchuangla.medicine.admin.service.PermissionService;
+import cn.zhangchuangla.medicine.admin.service.UserService;
 import cn.zhangchuangla.medicine.common.core.constants.RolesConstant;
 import cn.zhangchuangla.medicine.common.core.enums.ResponseCode;
 import cn.zhangchuangla.medicine.common.core.exception.LoginException;
@@ -11,6 +13,7 @@ import cn.zhangchuangla.medicine.common.security.entity.OnlineLoginUser;
 import cn.zhangchuangla.medicine.common.security.token.JwtTokenProvider;
 import cn.zhangchuangla.medicine.common.security.token.RedisTokenStore;
 import cn.zhangchuangla.medicine.common.security.token.TokenService;
+import cn.zhangchuangla.medicine.model.vo.CurrentUserInfoVo;
 import io.jsonwebtoken.Claims;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -23,6 +26,9 @@ import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 
+import java.util.Locale;
+import java.util.Set;
+
 import static cn.zhangchuangla.medicine.common.core.constants.SecurityConstants.CLAIM_KEY_SESSION_ID;
 
 @Service
@@ -34,6 +40,8 @@ public class AuthServiceImpl implements AuthService, BaseService {
     private final TokenService tokenService;
     private final RedisTokenStore redisTokenStore;
     private final JwtTokenProvider jwtTokenProvider;
+    private final UserService userService;
+    private final PermissionService permissionService;
 
 
     @Override
@@ -47,7 +55,10 @@ public class AuthServiceImpl implements AuthService, BaseService {
             authentication = authenticationManager.authenticate(token);
             boolean hasAdminRole = authentication.getAuthorities().stream()
                     .map(GrantedAuthority::getAuthority)
-                    .anyMatch(RolesConstant.ADMIN::equalsIgnoreCase);
+                    .filter(StringUtils::isNotBlank)
+                    .map(this::normalizeRole)
+                    .anyMatch(role -> RolesConstant.ADMIN.equalsIgnoreCase(role)
+                            || RolesConstant.SUPER_ADMIN.equalsIgnoreCase(role));
             if (!hasAdminRole) {
                 throw new LoginException(ResponseCode.OPERATION_ERROR, "账号不存在!");
             }
@@ -115,5 +126,29 @@ public class AuthServiceImpl implements AuthService, BaseService {
             // 即使发生异常，也要确保清空Security上下文
             SecurityContextHolder.clearContext();
         }
+    }
+
+    @Override
+    public CurrentUserInfoVo currentUserInfo() {
+        var user = userService.getUserById(getUserId());
+        if (user == null) {
+            throw new LoginException(ResponseCode.USER_EXIST);
+        }
+        CurrentUserInfoVo vo = copyProperties(user, CurrentUserInfoVo.class);
+        vo.setRoles(userService.getUserRolesByUserId(getUserId()));
+        return vo;
+    }
+
+    @Override
+    public Set<String> currentUserPermissions() {
+        return permissionService.getPermissionCodesByUserId(getUserId());
+    }
+
+    private String normalizeRole(String authority) {
+        String trimmed = authority.trim();
+        if (trimmed.regionMatches(true, 0, "ROLE_", 0, "ROLE_".length())) {
+            return trimmed.substring("ROLE_".length());
+        }
+        return trimmed.toLowerCase(Locale.ROOT);
     }
 }

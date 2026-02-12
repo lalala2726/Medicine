@@ -26,10 +26,10 @@ import java.util.ArrayList;
 import java.util.concurrent.atomic.AtomicLong;
 
 /**
- * 用户信息管理
- *
- * @author Chuang
- * created on 2025/11/12
+ * 客户端用户控制器。
+ * <p>
+ * 提供个人资料、当前用户信息、钱包与订单统计相关接口。
+ * </p>
  */
 @Slf4j
 @RestController
@@ -68,7 +68,7 @@ public class UserController extends BaseController {
     }
 
     /**
-     * 获取当前用户信息
+     * 获取当前登录用户信息（包含角色集合）。
      *
      * @return 当前用户信息
      */
@@ -78,6 +78,7 @@ public class UserController extends BaseController {
         Long userId = SecurityUtils.getUserId();
         User user = userService.getUserById(userId);
         CurrentUserInfoVo vo = BeanCotyUtils.copyProperties(user, CurrentUserInfoVo.class);
+        vo.setRoles(userService.getUserRolesByUserId(userId));
         return success(vo);
     }
 
@@ -134,4 +135,3 @@ public class UserController extends BaseController {
         return getTableData(walletLogPage, userWalletBillVos);
     }
 }
-

@@ -101,7 +101,14 @@ public class TokenService {
         }
 
         String username = refreshClaims.get(SecurityConstants.CLAIM_KEY_USERNAME, String.class);
-        AuthUser authUser = loadAuthUser(username);
+        SysUserDetails userDetails = loadUserDetails(username);
+        AuthUser authUser = userDetails.getUser();
+        if (authUser == null) {
+            throw new AuthorizationException(ResponseCode.REFRESH_TOKEN_INVALID, "无法加载用户信息");
+        }
+        Set<String> authorities = userDetails.getAuthorities().stream()
+                .map(GrantedAuthority::getAuthority)
+                .collect(Collectors.toSet());
 
         String accessTokenSessionId = UUIDUtils.simple();
         String accessToken = jwtTokenProvider.createJwt(accessTokenSessionId, username);
@@ -116,7 +123,7 @@ public class TokenService {
                 .userId(authUser.getId())
                 .username(username)
                 .user(authUser)
-                .roles(authUser.getRoles())
+                .roles(authorities)
                 .ip(ipAddress)
                 .location(region)
                 .build();
@@ -130,14 +137,11 @@ public class TokenService {
                 .build();
     }
 
-    private AuthUser loadAuthUser(String username) {
+    private SysUserDetails loadUserDetails(String username) {
         UserDetailsService userDetailsService = resolveUserDetailsService();
         UserDetails userDetails = userDetailsService.loadUserByUsername(username);
         if (userDetails instanceof SysUserDetails sysUserDetails) {
-            AuthUser authUser = sysUserDetails.getUser();
-            if (authUser != null) {
-                return authUser;
-            }
+            return sysUserDetails;
         }
         throw new AuthorizationException(ResponseCode.REFRESH_TOKEN_INVALID, "无法加载用户信息");
     }

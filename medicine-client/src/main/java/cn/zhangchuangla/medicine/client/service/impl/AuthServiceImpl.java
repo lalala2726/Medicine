@@ -1,5 +1,6 @@
 package cn.zhangchuangla.medicine.client.service.impl;
 
+import cn.zhangchuangla.medicine.client.mapper.UserMapper;
 import cn.zhangchuangla.medicine.client.service.AuthService;
 import cn.zhangchuangla.medicine.client.service.UserService;
 import cn.zhangchuangla.medicine.client.task.AsyncUserLogService;
@@ -29,9 +30,6 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 
-import java.util.HashSet;
-import java.util.Set;
-
 import static cn.zhangchuangla.medicine.common.core.constants.SecurityConstants.CLAIM_KEY_SESSION_ID;
 
 @Service
@@ -46,6 +44,7 @@ public class AuthServiceImpl implements AuthService {
     private final RedisTokenStore redisTokenStore;
     private final JwtTokenProvider jwtTokenProvider;
     private final AsyncUserLogService asyncUserLogService;
+    private final UserMapper userMapper;
 
     @Override
     public Long register(String username, String password) {
@@ -58,11 +57,15 @@ public class AuthServiceImpl implements AuthService {
         }
         User user = new User();
         user.setUsername(username.trim());
-        Set<String> roles = new HashSet<>();
-        roles.add(RolesConstant.USER);
-        user.setRoles(roles.toString());
         user.setPassword(passwordEncoder.encode(password.trim()));
         userService.save(user);
+
+        Long roleId = userMapper.selectRoleIdByRoleCode(RolesConstant.USER);
+        if (roleId == null) {
+            throw new ServiceException("默认用户角色不存在，请先初始化RBAC数据");
+        }
+        userMapper.insertUserRole(user.getId(), roleId);
+
         return user.getId();
     }
 

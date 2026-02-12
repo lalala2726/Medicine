@@ -8,7 +8,6 @@ import cn.zhangchuangla.medicine.admin.model.vo.UserWalletFlowInfoVo;
 import cn.zhangchuangla.medicine.admin.model.vo.UserWalletVo;
 import cn.zhangchuangla.medicine.admin.service.UserService;
 import cn.zhangchuangla.medicine.common.core.base.*;
-import cn.zhangchuangla.medicine.common.security.annotation.IsAdmin;
 import cn.zhangchuangla.medicine.common.security.base.BaseController;
 import cn.zhangchuangla.medicine.model.entity.User;
 import cn.zhangchuangla.medicine.model.request.UserAddRequest;
@@ -19,21 +18,22 @@ import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
 /**
- * @author Chuang
+ * 管理端用户控制器。
  * <p>
- * created on 2025/9/3
+ * 提供后台用户、钱包、消费统计等管理能力。
+ * </p>
  */
 @RestController
 @RequestMapping("/system/user")
 @RequiredArgsConstructor
 @Tag(name = "用户接口", description = "提供用户的增删改查")
-@IsAdmin
 public class UserController extends BaseController {
 
     private final UserService userService;
@@ -46,6 +46,7 @@ public class UserController extends BaseController {
      */
     @GetMapping("/list")
     @Operation(summary = "用户列表")
+    @PreAuthorize("hasAuthority('system:user:list') or hasRole('super_admin')")
     public AjaxResult<TableDataResult> listUser(UserListQueryRequest request) {
         Page<User> userPage = userService.listUser(request);
         List<UserListVo> userListVos = copyListProperties(userPage, UserListVo.class);
@@ -61,6 +62,7 @@ public class UserController extends BaseController {
      */
     @GetMapping("/{id:\\d+}/detail")
     @Operation(summary = "用户详情")
+    @PreAuthorize("hasAuthority('system:user:query') or hasRole('super_admin')")
     public AjaxResult<UserDetailVo> getUserById(@PathVariable Long id) {
         UserDetailVo userDetailVo = userService.getUserDetailById(id);
         return success(userDetailVo);
@@ -71,6 +73,7 @@ public class UserController extends BaseController {
      */
     @GetMapping("/{userId:\\d+}/wallet-flow")
     @Operation(summary = "获取用户钱包流水")
+    @PreAuthorize("hasAuthority('system:user:query') or hasRole('super_admin')")
     public AjaxResult<TableDataResult> getUserWalletFlow(@PathVariable Long userId, PageRequest request) {
         PageResult<UserWalletFlowInfoVo> userWalletLogPage = userService.getUserWalletFlow(userId, request);
         return getTableData(userWalletLogPage);
@@ -81,6 +84,7 @@ public class UserController extends BaseController {
      */
     @GetMapping("/{userId:\\d+}/consume-info")
     @Operation(summary = "获取消费信息")
+    @PreAuthorize("hasAuthority('system:user:query') or hasRole('super_admin')")
     public AjaxResult<TableDataResult> getConsumeInfo(@PathVariable Long userId, PageRequest request) {
         PageResult<UserConsumeInfo> consumeInfo = userService.getConsumeInfo(userId, request);
         return getTableData(consumeInfo);
@@ -94,6 +98,7 @@ public class UserController extends BaseController {
      */
     @PostMapping
     @Operation(summary = "添加用户")
+    @PreAuthorize("hasAuthority('system:user:add') or hasRole('super_admin')")
     public AjaxResult<Void> addUser(@RequestBody UserAddRequest request) {
         boolean result = userService.addUser(request);
         return toAjax(result);
@@ -107,6 +112,7 @@ public class UserController extends BaseController {
      */
     @PutMapping
     @Operation(summary = "修改用户")
+    @PreAuthorize("hasAuthority('system:user:update') or hasRole('super_admin')")
     public AjaxResult<Void> updateUser(@RequestBody UserUpdateRequest request) {
         boolean result = userService.updateUser(request);
         return toAjax(result);
@@ -120,6 +126,7 @@ public class UserController extends BaseController {
      */
     @DeleteMapping("/{ids}")
     @Operation(summary = "删除用户")
+    @PreAuthorize("hasAuthority('system:user:delete') or hasRole('super_admin')")
     public AjaxResult<Void> deleteUser(@PathVariable List<Long> ids) {
         boolean result = userService.deleteUser(ids);
         return toAjax(result);
@@ -133,6 +140,7 @@ public class UserController extends BaseController {
      */
     @GetMapping("/{userId:\\d+}/wallet")
     @Operation(summary = "获取用户钱包金额")
+    @PreAuthorize("hasAuthority('system:user:query') or hasRole('super_admin')")
     public AjaxResult<UserWalletVo> getUserWalletBalance(@PathVariable Long userId) {
         UserWalletVo userWalletVo = userService.getUserWallet(userId);
         return success(userWalletVo);
@@ -147,6 +155,7 @@ public class UserController extends BaseController {
      */
     @PostMapping("/wallet/open/{userId}")
     @Operation(summary = "开通用户钱包")
+    @PreAuthorize("hasAuthority('system:user:update') or hasRole('super_admin')")
     public AjaxResult<Void> openUserWallet(@PathVariable Long userId) {
         boolean result = userService.openUserWallet(userId);
         return toAjax(result);
@@ -160,6 +169,7 @@ public class UserController extends BaseController {
      */
     @PostMapping("/wallet/freeze")
     @Operation(summary = "冻结用户钱包")
+    @PreAuthorize("hasAuthority('system:user:update') or hasRole('super_admin')")
     public AjaxResult<Void> freezeUserWallet(@Validated @RequestBody FreezeOrUnUserWalletRequest request) {
         boolean result = userService.freezeUserWallet(request);
         return toAjax(result);
@@ -173,6 +183,7 @@ public class UserController extends BaseController {
      */
     @PostMapping("/wallet/unfreeze")
     @Operation(summary = "解冻用户钱包")
+    @PreAuthorize("hasAuthority('system:user:update') or hasRole('super_admin')")
     public AjaxResult<Void> unfreezeUserWallet(@Validated @RequestBody FreezeOrUnUserWalletRequest request) {
         boolean result = userService.unfreezeUserWallet(request);
         return toAjax(result);
@@ -187,6 +198,7 @@ public class UserController extends BaseController {
      */
     @PostMapping("/wallet/change")
     @Operation(summary = "钱包充值/扣款")
+    @PreAuthorize("hasAuthority('system:user:update') or hasRole('super_admin')")
     public AjaxResult<Void> rechargeUserWallet(@Validated @RequestBody WalletChangeRequest request) {
         boolean result = userService.walletAmountChange(request);
         return toAjax(result);
@@ -200,6 +212,7 @@ public class UserController extends BaseController {
      */
     @PostMapping("/options")
     @Operation(summary = "批量获取用户选项")
+    @PreAuthorize("hasAuthority('system:user:query') or hasRole('super_admin')")
     public AjaxResult<List<Option<Long>>> listUserOptions(@RequestBody List<Long> userIds) {
         List<Option<Long>> options = userService.listUserOptionsByIds(userIds);
         return success(options);

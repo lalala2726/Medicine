@@ -3,6 +3,7 @@ package cn.zhangchuangla.medicine.common.security.config;
 import cn.zhangchuangla.medicine.common.core.constants.SecurityConstants;
 import cn.zhangchuangla.medicine.common.security.annotation.Anonymous;
 import cn.zhangchuangla.medicine.common.security.filter.TokenAuthenticationFilter;
+import cn.zhangchuangla.medicine.common.security.handel.AccessDeniedHandlerImpl;
 import cn.zhangchuangla.medicine.common.security.handel.AuthenticationEntryPointImpl;
 import jakarta.servlet.DispatcherType;
 import org.springframework.beans.factory.annotation.Qualifier;
@@ -11,6 +12,7 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.core.annotation.AnnotationUtils;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
+import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
 import org.springframework.security.config.http.SessionCreationPolicy;
@@ -32,15 +34,19 @@ import java.util.Set;
 /**
  * @author Chuang
  */
+@EnableMethodSecurity
 @Configuration
 public class SecurityConfig {
 
     private final AuthenticationEntryPointImpl authenticationEntryPoint;
+    private final AccessDeniedHandlerImpl accessDeniedHandler;
     private final RequestMappingHandlerMapping requestMappingHandlerMapping;
 
     public SecurityConfig(AuthenticationEntryPointImpl authenticationEntryPoint,
+                          AccessDeniedHandlerImpl accessDeniedHandler,
                           @Qualifier("requestMappingHandlerMapping") RequestMappingHandlerMapping requestMappingHandlerMapping) {
         this.authenticationEntryPoint = authenticationEntryPoint;
+        this.accessDeniedHandler = accessDeniedHandler;
         this.requestMappingHandlerMapping = requestMappingHandlerMapping;
     }
 
@@ -57,7 +63,8 @@ public class SecurityConfig {
                 .cors(cors -> cors.configurationSource(corsConfigurationSource()))
                 // 统一异常处理：未认证和访问拒绝
                 .exceptionHandling(ex -> ex
-                        .authenticationEntryPoint(authenticationEntryPoint))
+                        .authenticationEntryPoint(authenticationEntryPoint)
+                        .accessDeniedHandler(accessDeniedHandler))
                 // 无状态会话
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 // 关闭 CSRF、表单登录、Basic Auth

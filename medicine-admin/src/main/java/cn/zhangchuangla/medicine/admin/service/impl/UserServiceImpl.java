@@ -8,10 +8,7 @@ import cn.zhangchuangla.medicine.admin.model.vo.UserConsumeInfo;
 import cn.zhangchuangla.medicine.admin.model.vo.UserDetailVo;
 import cn.zhangchuangla.medicine.admin.model.vo.UserWalletFlowInfoVo;
 import cn.zhangchuangla.medicine.admin.model.vo.UserWalletVo;
-import cn.zhangchuangla.medicine.admin.service.MallOrderService;
-import cn.zhangchuangla.medicine.admin.service.UserService;
-import cn.zhangchuangla.medicine.admin.service.UserWalletLogService;
-import cn.zhangchuangla.medicine.admin.service.UserWalletService;
+import cn.zhangchuangla.medicine.admin.service.*;
 import cn.zhangchuangla.medicine.common.core.base.Option;
 import cn.zhangchuangla.medicine.common.core.base.PageRequest;
 import cn.zhangchuangla.medicine.common.core.base.PageResult;
@@ -21,18 +18,16 @@ import cn.zhangchuangla.medicine.common.core.exception.ServiceException;
 import cn.zhangchuangla.medicine.common.core.utils.Assert;
 import cn.zhangchuangla.medicine.common.core.utils.BeanCotyUtils;
 import cn.zhangchuangla.medicine.common.security.base.BaseService;
-import cn.zhangchuangla.medicine.common.security.utils.SecurityUtils;
-import cn.zhangchuangla.medicine.model.entity.MallOrder;
-import cn.zhangchuangla.medicine.model.entity.User;
-import cn.zhangchuangla.medicine.model.entity.UserWallet;
-import cn.zhangchuangla.medicine.model.entity.UserWalletLog;
+import cn.zhangchuangla.medicine.model.entity.*;
 import cn.zhangchuangla.medicine.model.enums.WalletChangeTypeEnum;
 import cn.zhangchuangla.medicine.model.request.UserAddRequest;
 import cn.zhangchuangla.medicine.model.request.UserListQueryRequest;
 import cn.zhangchuangla.medicine.model.request.UserUpdateRequest;
+import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.extension.conditions.query.LambdaQueryChainWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
+import lombok.RequiredArgsConstructor;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -46,18 +41,15 @@ import java.util.stream.Collectors;
  * @author Chuang
  */
 @Service
+@RequiredArgsConstructor
 public class UserServiceImpl extends ServiceImpl<UserMapper, User>
         implements UserService, BaseService {
 
     private final UserWalletLogService userWalletLogService;
     private final MallOrderService mallOrderService;
     private final UserWalletService userWalletService;
-
-    public UserServiceImpl(UserWalletLogService userWalletLogService, MallOrderService mallOrderService, UserWalletService userWalletService) {
-        this.userWalletLogService = userWalletLogService;
-        this.mallOrderService = mallOrderService;
-        this.userWalletService = userWalletService;
-    }
+    private final RoleService roleService;
+    private final UserRoleService userRoleService;
 
     /**
      * 根据用户ID查询用户信息
@@ -129,9 +121,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User>
      */
     @Override
     public Set<String> getUserRolesByUserId(Long userId) {
-        LambdaQueryChainWrapper<User> eq = lambdaQuery().eq(User::getId, userId);
-        User user = eq.one();
-        return extractRoles(user);
+        return roleService.getUserRoleByUserId(userId);
     }
 
     /**
@@ -142,27 +132,11 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User>
      */
     @Override
     public Set<String> getUserRolesByUserName(String username) {
-        LambdaQueryChainWrapper<User> eq = lambdaQuery().eq(User::getUsername, username);
-        User user = eq.one();
-        return extractRoles(user);
-    }
-
-    private Set<String> extractRoles(User user) {
-        if (user == null || StringUtils.isBlank(user.getRoles())) {
-            return Collections.emptySet();
+        User user = getUserByUsername(username);
+        if (user == null) {
+            return Set.of();
         }
-        String rawRoles = user.getRoles().trim();
-        if (rawRoles.startsWith("[") && rawRoles.endsWith("]")) {
-            rawRoles = rawRoles.substring(1, rawRoles.length() - 1);
-        }
-        if (StringUtils.isBlank(rawRoles)) {
-            return Collections.emptySet();
-        }
-        return Arrays.stream(rawRoles.split(","))
-                .map(String::trim)
-                .map(role -> StringUtils.remove(role, '"'))
-                .filter(StringUtils::isNotBlank)
-                .collect(Collectors.toSet());
+        return roleService.getUserRoleByUserId(user.getId());
     }
 
     /**
@@ -191,28 +165,11 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User>
 
         // 转换请求对象为实体对象
         User user = BeanCotyUtils.copyProperties(request, User.class);
-
-        // 检查角色是否合法
-        if (!request.getRoles().isEmpty()) {
-            // 检查角色是否都是有效的角色
-            boolean hasInvalidRole = request.getRoles().stream()
-                    .anyMatch(role -> !RolesConstant.ADMIN.equals(role) && !RolesConstant.USER.equals(role));
-            if (hasInvalidRole) {
-                throw new ServiceException(ResponseCode.OPERATION_ERROR, "角色系统不存在");
-            }
-        }
-
-        // 设置默认角色
-        if (request.getRoles().isEmpty()) {
-            user.setRoles("[" + RolesConstant.USER + "]");
-        } else {
-            // 设置角色信息
-            String roles = request.getRoles().toString();
-            user.setRoles(roles);
-        }
+        // 切表后不再写入 user.roles 字段
+        user.setRoles(null);
 
         // 加密密码
-        String encryptPassword = SecurityUtils.encryptPassword(request.getPassword());
+        String encryptPassword = encryptPassword(request.getPassword());
         user.setPassword(encryptPassword);
 
         // 保存用户信息
@@ -220,6 +177,10 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User>
         if (!result) {
             throw new ServiceException(ResponseCode.OPERATION_ERROR, "添加用户失败");
         }
+
+        // 建立用户与角色关联，若前端未传角色则默认分配 user
+        Set<Long> roleIds = resolveRoleIdsForCreate(request.getRoles());
+        userRoleService.updateUserRole(user.getId(), roleIds);
 
         // 开通钱包
         userWalletService.openWallet(user.getId());
@@ -235,14 +196,23 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User>
      */
     @Override
     public boolean updateUser(UserUpdateRequest request) {
+        Assert.notNull(request, "用户修改请求对象不能为空");
+        Assert.notNull(request.getId(), "用户ID不能为空");
         User user = BeanCotyUtils.copyProperties(request, User.class);
+        // 切表后不再写入 user.roles 字段
+        user.setRoles(null);
 
         if (request.getPassword() != null) {
             String password = request.getPassword();
-            String encryptPassword = SecurityUtils.encryptPassword(password);
+            String encryptPassword = encryptPassword(password);
             user.setPassword(encryptPassword);
         }
-        return updateById(user);
+        boolean updated = updateById(user);
+        if (updated && request.getRoles() != null) {
+            roleService.isRoleExistById(request.getRoles());
+            userRoleService.updateUserRole(request.getId(), request.getRoles());
+        }
+        return updated;
     }
 
     /**
@@ -253,6 +223,11 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User>
      */
     @Override
     public boolean deleteUser(List<Long> userId) {
+        Assert.notEmpty(userId, "用户ID不能为空");
+        if (userId.contains(RolesConstant.SUPER_ADMIN_USER_ID)) {
+            throw new ServiceException(ResponseCode.OPERATION_ERROR, "超级管理员账号禁止删除");
+        }
+        userRoleService.remove(new LambdaQueryWrapper<UserRole>().in(UserRole::getUserId, userId));
         return removeByIds(userId);
     }
 
@@ -407,6 +382,22 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User>
             return Integer.MIN_VALUE;
         }
         return (int) count;
+    }
+
+    private Set<Long> resolveRoleIdsForCreate(Set<Long> roles) {
+        if (roles != null && !roles.isEmpty()) {
+            roleService.isRoleExistById(roles);
+            return roles;
+        }
+
+        Role userRole = roleService.lambdaQuery()
+                .eq(Role::getRoleCode, RolesConstant.USER)
+                .eq(Role::getStatus, 0)
+                .one();
+        if (userRole == null || userRole.getId() == null) {
+            throw new ServiceException(ResponseCode.OPERATION_ERROR, "默认用户角色不存在，请先初始化RBAC数据");
+        }
+        return Set.of(userRole.getId());
     }
 
 }
