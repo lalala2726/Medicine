@@ -1,10 +1,10 @@
 package cn.zhangchuangla.medicine.admin.task;
 
 import cn.zhangchuangla.medicine.admin.mapper.MallProductMapper;
-import cn.zhangchuangla.medicine.admin.rabbitmq.publisher.ProductIndexMessagePublisher;
+import cn.zhangchuangla.medicine.admin.publisher.ProductIndexMessagePublisher;
 import cn.zhangchuangla.medicine.admin.service.MallOrderItemService;
 import cn.zhangchuangla.medicine.model.dto.MallProductDetailDto;
-import cn.zhangchuangla.medicine.model.mq.message.ProductIndexPayload;
+import cn.zhangchuangla.medicine.model.mq.ProductIndexPayload;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.scheduling.annotation.Async;

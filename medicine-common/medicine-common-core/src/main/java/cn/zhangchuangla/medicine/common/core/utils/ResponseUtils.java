@@ -2,7 +2,6 @@ package cn.zhangchuangla.medicine.common.core.utils;
 
 import cn.zhangchuangla.medicine.common.core.base.AjaxResult;
 import cn.zhangchuangla.medicine.common.core.enums.ResponseCode;
-import com.alibaba.fastjson.JSON;
 import jakarta.servlet.http.HttpServletResponse;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -49,11 +48,11 @@ public class ResponseUtils {
         try (PrintWriter writer = response.getWriter()) {
             String jsonResponse;
             if (resultCode != null && message != null) {
-                jsonResponse = JSON.toJSONString(AjaxResult.error(resultCode, message));
+                jsonResponse = JSONUtils.toJson(AjaxResult.error(resultCode, message));
             } else if (resultCode != null) {
-                jsonResponse = JSON.toJSONString(AjaxResult.error(resultCode));
+                jsonResponse = JSONUtils.toJson(AjaxResult.error(resultCode));
             } else {
-                jsonResponse = JSON.toJSONString(AjaxResult.error(message));
+                jsonResponse = JSONUtils.toJson(AjaxResult.error(message));
             }
             writer.print(jsonResponse);
             writer.flush(); // 确保将响应内容写入到输出流

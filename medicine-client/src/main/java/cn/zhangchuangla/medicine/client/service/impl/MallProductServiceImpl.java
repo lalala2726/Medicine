@@ -17,7 +17,6 @@ import cn.zhangchuangla.medicine.common.core.enums.ResponseCode;
 import cn.zhangchuangla.medicine.common.core.exception.ServiceException;
 import cn.zhangchuangla.medicine.common.core.utils.Assert;
 import cn.zhangchuangla.medicine.common.security.base.BaseService;
-import cn.zhangchuangla.medicine.llm.model.tool.client.SearchMallProductTool;
 import cn.zhangchuangla.medicine.model.dto.MallProductDetailDto;
 import cn.zhangchuangla.medicine.model.dto.MallProductWithImageDto;
 import cn.zhangchuangla.medicine.model.entity.MallProduct;
@@ -216,26 +215,6 @@ public class MallProductServiceImpl extends ServiceImpl<MallProductMapper, MallP
             return Collections.emptyList();
         }
         return mallProductSearchService.suggest(keyword.trim(), 10);
-    }
-
-
-    @Override
-    public List<SearchMallProductTool> SearchDetail(String keyword, int limit) {
-        SearchHits<MallProductDocument> searchHits = mallProductSearchService.search(new MallProductSearchRequest(keyword, limit));
-        if (searchHits == null || searchHits.isEmpty()) {
-            return Collections.emptyList();
-        }
-        return searchHits.getSearchHits().stream()
-                .map(SearchHit::getContent)
-                .map(content -> SearchMallProductTool.builder()
-                        .commonName(content.getCommonName())
-                        .categoryName(content.getCategoryName())
-                        .name(content.getName())
-                        .efficacy(content.getEfficacy())
-                        .id(content.getId())
-                        .prescription(content.getPrescription())
-                        .build())
-                .toList();
     }
 
     @Override
