@@ -14,7 +14,6 @@
         <result property="birthday" column="birthday"/>
         <result property="username" column="username"/>
         <result property="password" column="password"/>
-        <result property="roles" column="roles"/>
         <result property="status" column="status"/>
         <result property="realName" column="real_name"/>
         <result property="idCard" column="id_card"/>
@@ -32,7 +31,7 @@
     <sql id="Base_Column_List">
         id
         ,nickname,avatar,email,phone_number,gender,
-        birthday,username,password,roles,status,real_name,id_card,
+        birthday,username,password,status,real_name,id_card,
         last_login_time,last_login_ip,last_login_location,
         create_time,update_time,create_by,update_by,delete_time,
         is_delete

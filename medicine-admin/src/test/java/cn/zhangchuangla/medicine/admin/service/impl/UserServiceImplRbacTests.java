@@ -43,6 +43,9 @@ class UserServiceImplRbacTests {
     @InjectMocks
     private UserServiceImpl userService;
 
+    /**
+     * 验证新增用户成功后会写入 user_role 关联并自动开通钱包。
+     */
     @Test
     void addUser_ShouldWriteUserRoleAndOpenWallet() {
         UserAddRequest request = new UserAddRequest();
@@ -67,9 +70,11 @@ class UserServiceImplRbacTests {
         ArgumentCaptor<User> captor = ArgumentCaptor.forClass(User.class);
         verify(userService).save(captor.capture());
         assertEquals("ENC-PWD", captor.getValue().getPassword());
-        assertNull(captor.getValue().getRoles());
     }
 
+    /**
+     * 验证更新用户且携带角色ID时，会同步更新 user_role 关联关系。
+     */
     @Test
     void updateUser_WhenContainsRoles_ShouldUpdateUserRoleRelation() {
         UserUpdateRequest request = new UserUpdateRequest();
@@ -88,16 +93,21 @@ class UserServiceImplRbacTests {
 
         ArgumentCaptor<User> captor = ArgumentCaptor.forClass(User.class);
         verify(userService).updateById(captor.capture());
-        assertNull(captor.getValue().getRoles());
         assertEquals("ENC-ABC", captor.getValue().getPassword());
     }
 
+    /**
+     * 验证超级管理员账号删除保护：包含超级管理员ID时直接拒绝。
+     */
     @Test
     void deleteUser_WhenContainsSuperAdmin_ShouldThrowException() {
         assertThrows(ServiceException.class,
                 () -> userService.deleteUser(List.of(RolesConstant.SUPER_ADMIN_USER_ID)));
     }
 
+    /**
+     * 验证按用户ID查询角色时会委托 RBAC 角色服务返回角色码集合。
+     */
     @Test
     void getUserRolesByUserId_ShouldDelegateToRoleService() {
         when(roleService.getUserRoleByUserId(100L)).thenReturn(Set.of("admin"));

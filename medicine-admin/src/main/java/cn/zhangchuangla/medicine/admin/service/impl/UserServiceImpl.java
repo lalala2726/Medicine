@@ -165,8 +165,6 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User>
 
         // 转换请求对象为实体对象
         User user = BeanCotyUtils.copyProperties(request, User.class);
-        // 切表后不再写入 user.roles 字段
-        user.setRoles(null);
 
         // 加密密码
         String encryptPassword = encryptPassword(request.getPassword());
@@ -199,8 +197,6 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User>
         Assert.notNull(request, "用户修改请求对象不能为空");
         Assert.notNull(request.getId(), "用户ID不能为空");
         User user = BeanCotyUtils.copyProperties(request, User.class);
-        // 切表后不再写入 user.roles 字段
-        user.setRoles(null);
 
         if (request.getPassword() != null) {
             String password = request.getPassword();

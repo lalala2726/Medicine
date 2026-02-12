@@ -1,6 +1,5 @@
 package cn.zhangchuangla.medicine.common.security.utils;
 
-import cn.zhangchuangla.medicine.common.core.constants.RolesConstant;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -17,6 +16,9 @@ class SecurityUtilsTests {
         SecurityContextHolder.clearContext();
     }
 
+    /**
+     * 验证角色提取只返回角色码，不会把权限码误识别为角色。
+     */
     @Test
     void getRoles_ShouldOnlyReturnRoleAuthorities() {
         var authentication = new UsernamePasswordAuthenticationToken(
@@ -33,19 +35,24 @@ class SecurityUtilsTests {
         assertFalse(roles.contains("system:user:list"));
     }
 
+    /**
+     * 验证超级管理员角色在 ROLE_ 前缀场景下可被正确识别。
+     */
     @Test
-    void isAdmin_ShouldRecognizeSuperAdminRole() {
+    void isSuperAdmin_ShouldRecognizeSuperAdminRole() {
         var authentication = new UsernamePasswordAuthenticationToken(
                 "tester",
                 null,
-                createAuthorityList("ROLE_" + RolesConstant.SUPER_ADMIN)
+                createAuthorityList("ROLE_super_admin")
         );
         SecurityContextHolder.getContext().setAuthentication(authentication);
 
-        assertTrue(SecurityUtils.isAdmin());
         assertTrue(SecurityUtils.isSuperAdmin());
     }
 
+    /**
+     * 验证 hasRole 仅支持归一化后的角色码匹配。
+     */
     @Test
     void hasRole_ShouldSupportNormalizedRole() {
         var authentication = new UsernamePasswordAuthenticationToken(

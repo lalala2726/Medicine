@@ -28,9 +28,9 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 
 import java.util.Set;
 
-import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.eq;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
@@ -66,11 +66,11 @@ class AuthServiceImplTests {
     @InjectMocks
     private AuthServiceImpl authService;
 
-    @SuppressWarnings("unchecked")
     /**
      * 验证注册时会为新用户绑定默认 user 角色，
-     * 并且不再写入旧的 user.roles 字段。
+     * 并通过 user_role 关系表完成角色归属。
      */
+    @SuppressWarnings("unchecked")
     @Test
     void register_ShouldInsertDefaultUserRole() {
         LambdaQueryChainWrapper<User> query = mock(LambdaQueryChainWrapper.class, RETURNS_SELF);
@@ -96,14 +96,13 @@ class AuthServiceImplTests {
         verify(userService).save(userCaptor.capture());
         assertEquals("alice", userCaptor.getValue().getUsername());
         assertEquals("ENC", userCaptor.getValue().getPassword());
-        assertNull(userCaptor.getValue().getRoles());
     }
 
-    @SuppressWarnings("unchecked")
     /**
      * 验证默认角色缺失时注册会失败并抛出业务异常，
      * 防止创建没有角色关联的无权限用户。
      */
+    @SuppressWarnings("unchecked")
     @Test
     void register_WhenDefaultRoleMissing_ShouldThrowException() {
         LambdaQueryChainWrapper<User> query = mock(LambdaQueryChainWrapper.class, RETURNS_SELF);
@@ -149,7 +148,7 @@ class AuthServiceImplTests {
 
         assertEquals("access", result.getAccessToken());
         assertEquals("refresh", result.getRefreshToken());
-        verify(asyncUserLogService).recordUserLoginLog(eq(9L), anyString());
+        verify(asyncUserLogService).recordUserLoginLog(eq(9L), nullable(String.class));
         ArgumentCaptor<LoginLogMessage> captor = ArgumentCaptor.forClass(LoginLogMessage.class);
         verify(loginLogPublisher).publish(captor.capture());
         LoginLogMessage message = captor.getValue();

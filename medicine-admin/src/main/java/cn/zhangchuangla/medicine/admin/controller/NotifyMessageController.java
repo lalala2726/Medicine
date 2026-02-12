@@ -8,13 +8,13 @@ import cn.zhangchuangla.medicine.admin.model.vo.NotifyMessageListVo;
 import cn.zhangchuangla.medicine.admin.service.NotifyMessageService;
 import cn.zhangchuangla.medicine.common.core.base.AjaxResult;
 import cn.zhangchuangla.medicine.common.core.base.TableDataResult;
-import cn.zhangchuangla.medicine.common.security.annotation.IsAdmin;
 import cn.zhangchuangla.medicine.common.security.base.BaseController;
 import cn.zhangchuangla.medicine.model.entity.NotifyMessage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
@@ -26,7 +26,7 @@ import java.util.List;
 @RestController
 @RequestMapping("/notify/message")
 @RequiredArgsConstructor
-@IsAdmin
+@PreAuthorize("hasRole('admin') or hasRole('super_admin')")
 @Tag(name = "通知消息管理", description = "管理端通知消息维护接口")
 public class NotifyMessageController extends BaseController {
 

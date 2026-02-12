@@ -25,6 +25,7 @@ import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.stream.Collectors;
 
 /**
  * 管理端用户控制器。
@@ -51,7 +52,16 @@ public class UserController extends BaseController {
     @PreAuthorize("hasAuthority('system:user:list') or hasRole('super_admin')")
     public AjaxResult<TableDataResult> listUser(UserListQueryRequest request) {
         Page<User> userPage = userService.listUser(request);
-        List<UserListVo> userListVos = copyListProperties(userPage, UserListVo.class);
+        List<UserListVo> userListVos = userPage.getRecords().stream()
+                .map(user -> {
+                    UserListVo vo = copyProperties(user, UserListVo.class);
+                    String roles = userService.getUserRolesByUserId(user.getId()).stream()
+                            .sorted()
+                            .collect(Collectors.joining(","));
+                    vo.setRoles(roles);
+                    return vo;
+                })
+                .toList();
         return getTableData(userPage, userListVos);
     }
 

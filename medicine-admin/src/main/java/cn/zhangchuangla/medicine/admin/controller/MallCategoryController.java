@@ -3,7 +3,6 @@ package cn.zhangchuangla.medicine.admin.controller;
 import cn.zhangchuangla.medicine.admin.service.MallCategoryService;
 import cn.zhangchuangla.medicine.common.core.base.AjaxResult;
 import cn.zhangchuangla.medicine.common.core.base.Option;
-import cn.zhangchuangla.medicine.common.security.annotation.IsAdmin;
 import cn.zhangchuangla.medicine.common.security.base.BaseController;
 import cn.zhangchuangla.medicine.model.entity.MallCategory;
 import cn.zhangchuangla.medicine.model.request.MallCategoryAddRequest;
@@ -13,6 +12,7 @@ import cn.zhangchuangla.medicine.model.vo.mall.MallCategoryVo;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
@@ -31,7 +31,7 @@ import java.util.List;
 @RequestMapping("/mall/category")
 @RequiredArgsConstructor
 @Tag(name = "商城商品分类接口", description = "提供商城商品分类的增删改查")
-@IsAdmin
+@PreAuthorize("hasRole('admin') or hasRole('super_admin')")
 public class MallCategoryController extends BaseController {
 
     private final MallCategoryService mallCategoryService;

@@ -2,7 +2,6 @@ package cn.zhangchuangla.medicine.ai.gateway.controller.admin;
 
 import cn.zhangchuangla.medicine.ai.gateway.service.AdminProductQueryService;
 import cn.zhangchuangla.medicine.common.core.base.TableDataResult;
-import cn.zhangchuangla.medicine.common.security.annotation.IsAdmin;
 import cn.zhangchuangla.medicine.common.security.base.BaseController;
 import cn.zhangchuangla.medicine.model.entity.MallProduct;
 import cn.zhangchuangla.medicine.model.request.graphql.GraphQLProductQuery;
@@ -11,6 +10,7 @@ import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Positive;
 import org.springframework.graphql.data.method.annotation.Argument;
 import org.springframework.graphql.data.method.annotation.QueryMapping;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Controller;
 import org.springframework.validation.annotation.Validated;
 
@@ -23,7 +23,7 @@ import org.springframework.validation.annotation.Validated;
  */
 @Controller
 @Validated
-@IsAdmin
+@PreAuthorize("hasRole('admin') or hasRole('super_admin')")
 public class AdminProductGraphQlController extends BaseController {
 
     private final AdminProductQueryService adminProductQueryService;

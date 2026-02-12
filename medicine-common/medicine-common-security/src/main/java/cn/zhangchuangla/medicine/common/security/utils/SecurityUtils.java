@@ -127,17 +127,6 @@ public class SecurityUtils {
     }
 
     /**
-     * 判断当前用户是否具备管理员或超级管理员权限
-     */
-    public static boolean isAdmin() {
-        // 读取权限集合，兼容 ROLE_ 前缀通过 getRoles 已经去除
-        Set<String> roles = getRoles();
-        return roles.stream()
-                .anyMatch(role -> role.equalsIgnoreCase(RolesConstant.ADMIN)
-                        || role.equalsIgnoreCase(RolesConstant.SUPER_ADMIN));
-    }
-
-    /**
      * 判断当前请求是否已认证
      */
     public static boolean isAuthenticated() {

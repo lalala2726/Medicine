@@ -7,7 +7,6 @@ import cn.zhangchuangla.medicine.admin.service.MallOrderTimelineService;
 import cn.zhangchuangla.medicine.common.core.base.AjaxResult;
 import cn.zhangchuangla.medicine.common.core.base.TableDataResult;
 import cn.zhangchuangla.medicine.common.core.utils.BeanCotyUtils;
-import cn.zhangchuangla.medicine.common.security.annotation.IsAdmin;
 import cn.zhangchuangla.medicine.common.security.base.BaseController;
 import cn.zhangchuangla.medicine.model.dto.OrderWithProductDto;
 import cn.zhangchuangla.medicine.model.entity.MallOrderTimeline;
@@ -16,6 +15,7 @@ import cn.zhangchuangla.medicine.model.vo.mall.OrderShippingVo;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.util.CollectionUtils;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
@@ -30,7 +30,7 @@ import java.util.List;
 @RestController
 @RequestMapping("/mall/order")
 @Tag(name = "订单管理", description = "订单管理")
-@IsAdmin
+@PreAuthorize("hasRole('admin') or hasRole('super_admin')")
 public class MallOrderController extends BaseController {
 
     private final MallOrderService mallOrderService;

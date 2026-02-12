@@ -4,7 +4,6 @@ import cn.zhangchuangla.medicine.admin.model.vo.MallProductVo;
 import cn.zhangchuangla.medicine.admin.service.MallProductService;
 import cn.zhangchuangla.medicine.common.core.base.AjaxResult;
 import cn.zhangchuangla.medicine.common.core.base.TableDataResult;
-import cn.zhangchuangla.medicine.common.security.annotation.IsAdmin;
 import cn.zhangchuangla.medicine.common.security.base.BaseController;
 import cn.zhangchuangla.medicine.model.dto.MallProductDetailDto;
 import cn.zhangchuangla.medicine.model.request.MallProductAddRequest;
@@ -15,6 +14,7 @@ import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
@@ -32,7 +32,7 @@ import java.util.List;
 @RestController
 @RequestMapping("/mall/product")
 @RequiredArgsConstructor
-@IsAdmin
+@PreAuthorize("hasRole('admin') or hasRole('super_admin')")
 @Tag(name = "商城商品接口", description = "提供商城商品的增删改查")
 public class MallProductController extends BaseController {
 

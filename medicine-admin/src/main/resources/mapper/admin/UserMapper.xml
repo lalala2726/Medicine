@@ -8,7 +8,6 @@
         <id property="id" column="id"/>
         <result property="username" column="username"/>
         <result property="password" column="password"/>
-        <result property="roles" column="roles"/>
         <result property="nickname" column="nickname"/>
         <result property="avatar" column="avatar"/>
         <result property="status" column="status"/>
@@ -33,15 +32,8 @@
 
     <select id="listUser" resultMap="BaseResultMap">
         SELECT
-        <include refid="Base_Column_List"/>,
-        COALESCE(urc.roles, '') AS roles
+        <include refid="Base_Column_List"/>
         FROM user u
-        LEFT JOIN (
-        SELECT ur.user_id, GROUP_CONCAT(DISTINCT r.role_code ORDER BY r.id SEPARATOR ',') AS roles
-        FROM user_role ur
-        JOIN role r ON ur.role_id = r.id
-        GROUP BY ur.user_id
-        ) urc ON u.id = urc.user_id
         <where>
             u.is_delete = 0
             <if test="request.id != null">
