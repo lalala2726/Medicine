@@ -2,6 +2,8 @@ package cn.zhangchuangla.medicine.admin.service.impl;
 
 import cn.zhangchuangla.medicine.admin.mapper.PermissionMapper;
 import cn.zhangchuangla.medicine.admin.model.request.RolePermissionUpdateRequest;
+import cn.zhangchuangla.medicine.common.core.constants.RolesConstant;
+import cn.zhangchuangla.medicine.common.core.exception.ServiceException;
 import cn.zhangchuangla.medicine.model.entity.Permission;
 import cn.zhangchuangla.medicine.model.entity.RolePermission;
 import com.baomidou.mybatisplus.extension.conditions.query.LambdaQueryChainWrapper;
@@ -15,8 +17,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.util.List;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyCollection;
 import static org.mockito.Mockito.*;
@@ -54,14 +55,14 @@ class RolePermissionServiceImplTests {
     @Test
     void updateRolePermission_ShouldFilterNonExistingPermissionIds() {
         RolePermissionUpdateRequest request = new RolePermissionUpdateRequest();
-        request.setRoleId(1L);
+        request.setRoleId(2L);
         request.setPermissionIds(List.of(11L, 22L));
 
         Permission permission = new Permission();
         permission.setId(22L);
 
         doReturn(true).when(rolePermissionService).remove(any());
-        when(permissionMapper.selectBatchIds(List.of(11L, 22L))).thenReturn(List.of(permission));
+        when(permissionMapper.selectList(any())).thenReturn(List.of(permission));
         doReturn(true).when(rolePermissionService).saveBatch(any());
 
         boolean updated = rolePermissionService.updateRolePermission(request);
@@ -70,14 +71,14 @@ class RolePermissionServiceImplTests {
         ArgumentCaptor<List<RolePermission>> captor = ArgumentCaptor.forClass(List.class);
         verify(rolePermissionService).saveBatch(captor.capture());
         assertEquals(1, captor.getValue().size());
-        assertEquals(1L, captor.getValue().getFirst().getRoleId());
+        assertEquals(2L, captor.getValue().getFirst().getRoleId());
         assertEquals(22L, captor.getValue().getFirst().getPermissionId());
     }
 
     @Test
     void updateRolePermission_WhenPermissionIdsEmpty_ShouldOnlyClearRelation() {
         RolePermissionUpdateRequest request = new RolePermissionUpdateRequest();
-        request.setRoleId(1L);
+        request.setRoleId(2L);
         request.setPermissionIds(List.of());
         doReturn(true).when(rolePermissionService).remove(any());
 
@@ -85,5 +86,27 @@ class RolePermissionServiceImplTests {
 
         assertTrue(updated);
         verify(rolePermissionService).remove(any());
+    }
+
+    @Test
+    void updateRolePermission_WhenSuperAdminRole_ShouldThrowException() {
+        RolePermissionUpdateRequest request = new RolePermissionUpdateRequest();
+        request.setRoleId(RolesConstant.SUPER_ADMIN_ROLE_ID);
+        request.setPermissionIds(List.of(1L, 2L));
+
+        assertThrows(ServiceException.class, () -> rolePermissionService.updateRolePermission(request));
+    }
+
+    @Test
+    void getAllPermissionIds_ShouldReturnAllPermissionIds() {
+        Permission p1 = new Permission();
+        p1.setId(101L);
+        Permission p2 = new Permission();
+        p2.setId(202L);
+        when(permissionMapper.selectList(any())).thenReturn(List.of(p1, p2));
+
+        List<Long> permissionIds = rolePermissionService.getAllPermissionIds();
+
+        assertEquals(List.of(101L, 202L), permissionIds);
     }
 }

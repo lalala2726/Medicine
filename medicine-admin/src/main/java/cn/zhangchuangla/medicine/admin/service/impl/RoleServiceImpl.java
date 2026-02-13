@@ -63,6 +63,9 @@ public class RoleServiceImpl extends ServiceImpl<RoleMapper, Role>
     public boolean updateRoleById(RoleUpdateRequest request) {
         Assert.notNull(request, "角色信息不能为空");
         Assert.isPositive(request.getId(), "角色ID必须大于0");
+        if (RolesConstant.SUPER_ADMIN_ROLE_ID.equals(request.getId())) {
+            throw new ServiceException(ResponseCode.OPERATION_ERROR, "超级管理员角色禁止修改");
+        }
         checkRoleCodeUnique(request.getRoleCode(), request.getId());
         checkRoleNameUnique(request.getRoleName(), request.getId());
         Role role = copyProperties(request, Role.class);
@@ -112,11 +115,19 @@ public class RoleServiceImpl extends ServiceImpl<RoleMapper, Role>
 
     @Override
     public List<Long> getRolePermission(Long id) {
+        isRoleExistById(id);
+        if (RolesConstant.SUPER_ADMIN_ROLE_ID.equals(id)) {
+            return rolePermissionService.getAllPermissionIds();
+        }
         return rolePermissionService.getRolePermission(id);
     }
 
     @Override
     public boolean updateRolePermission(RolePermissionUpdateRequest request) {
+        Assert.notNull(request, "角色权限信息不能为空");
+        if (RolesConstant.SUPER_ADMIN_ROLE_ID.equals(request.getRoleId())) {
+            throw new ServiceException(ResponseCode.OPERATION_ERROR, "超级管理员角色禁止修改");
+        }
         return rolePermissionService.updateRolePermission(request);
     }
 

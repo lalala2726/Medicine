@@ -19,6 +19,11 @@ public interface RolePermissionService extends IService<RolePermission> {
     List<Long> getRolePermission(List<Long> ids);
 
     /**
+     * 获取全部权限ID
+     */
+    List<Long> getAllPermissionIds();
+
+    /**
      * 更新角色权限
      */
     boolean updateRolePermission(RolePermissionUpdateRequest request);
