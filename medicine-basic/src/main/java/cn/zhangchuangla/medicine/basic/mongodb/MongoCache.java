@@ -1,4 +1,4 @@
-package cn.zhangchuangla.medicine.core.mongodb;
+package cn.zhangchuangla.medicine.basic.mongodb;
 
 import com.mongodb.client.result.DeleteResult;
 import com.mongodb.client.result.UpdateResult;

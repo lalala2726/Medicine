@@ -1,4 +1,4 @@
-package cn.zhangchuangla.medicine.core.constants;
+package cn.zhangchuangla.medicine.basic.constants;
 
 /**
  * MongoDB集合名称常量类

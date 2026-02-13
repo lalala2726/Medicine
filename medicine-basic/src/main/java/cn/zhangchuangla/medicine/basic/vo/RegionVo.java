@@ -1,4 +1,4 @@
-package cn.zhangchuangla.medicine.core.vo;
+package cn.zhangchuangla.medicine.basic.vo;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;

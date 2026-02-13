@@ -1,6 +1,6 @@
-package cn.zhangchuangla.medicine.core.service;
+package cn.zhangchuangla.medicine.basic.service;
 
-import cn.zhangchuangla.medicine.core.entity.Region;
+import cn.zhangchuangla.medicine.basic.entity.Region;
 
 import java.util.List;
 

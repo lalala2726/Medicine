@@ -1,4 +1,4 @@
-package cn.zhangchuangla.medicine.core.enums;
+package cn.zhangchuangla.medicine.basic.enums;
 
 import lombok.Getter;
 

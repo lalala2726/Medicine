@@ -29,7 +29,7 @@
         </dependency>
         <dependency>
             <groupId>cn.zhangchuangla.medicine</groupId>
-            <artifactId>medicine-core</artifactId>
+            <artifactId>medicine-basic</artifactId>
         </dependency>
         <dependency>
             <groupId>cn.zhangchuangla.medicine</groupId>

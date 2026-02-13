@@ -1,4 +1,4 @@
-package cn.zhangchuangla.medicine.core.entity;
+package cn.zhangchuangla.medicine.basic.entity;
 
 import lombok.Data;
 import org.springframework.data.annotation.Id;

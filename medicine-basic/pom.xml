@@ -7,8 +7,8 @@
         <artifactId>Medicine</artifactId>
         <version>0.1</version>
     </parent>
-    <artifactId>medicine-core</artifactId>
-    <name>medicine-core</name>
+    <artifactId>medicine-basic</artifactId>
+    <name>medicine-basic</name>
 
     <dependencies>
         <dependency>

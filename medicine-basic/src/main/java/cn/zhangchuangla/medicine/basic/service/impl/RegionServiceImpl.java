@@ -1,10 +1,10 @@
-package cn.zhangchuangla.medicine.core.service.impl;
+package cn.zhangchuangla.medicine.basic.service.impl;
 
-import cn.zhangchuangla.medicine.core.constants.MongoCollections;
-import cn.zhangchuangla.medicine.core.entity.Region;
-import cn.zhangchuangla.medicine.core.enums.RegionLevel;
-import cn.zhangchuangla.medicine.core.mongodb.MongoCache;
-import cn.zhangchuangla.medicine.core.service.RegionService;
+import cn.zhangchuangla.medicine.basic.constants.MongoCollections;
+import cn.zhangchuangla.medicine.basic.entity.Region;
+import cn.zhangchuangla.medicine.basic.enums.RegionLevel;
+import cn.zhangchuangla.medicine.basic.mongodb.MongoCache;
+import cn.zhangchuangla.medicine.basic.service.RegionService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.data.mongodb.core.query.Criteria;
