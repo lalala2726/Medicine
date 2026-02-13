@@ -35,7 +35,6 @@ import java.util.List;
 @RestController
 @RequestMapping("/agent/tools")
 @Tag(name = "智能体工具", description = "用于给智能体提供工具接口")
-@Deprecated(forRemoval = true)
 public class AgentToolsController extends BaseController {
 
     private final AgentToolsService agentToolsService;

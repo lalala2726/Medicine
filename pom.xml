@@ -358,6 +358,5 @@
         <module>medicine-common/medicine-common-rabbitmq</module>
         <module>medicine-ai-agent</module>
         <module>medicine-common/medicine-common-http-client</module>
-        <module>medicine-ai-gateway</module>
     </modules>
 </project>
