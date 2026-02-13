@@ -3,6 +3,7 @@ package cn.zhangchuangla.medicine.admin.model.vo;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 
+import java.util.Date;
 import java.util.List;
 
 @Data
@@ -26,6 +27,9 @@ public class PermissionTreeVo {
 
     @Schema(description = "备注", example = "系统用户新增权限")
     private String remark;
+
+    @Schema(description = "创建时间", example = "2023-05-09 10:10:10")
+    private Date createTime;
 
     @Schema(description = "子节点")
     private List<PermissionTreeVo> children;

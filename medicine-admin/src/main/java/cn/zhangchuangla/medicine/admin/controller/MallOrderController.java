@@ -30,7 +30,6 @@ import java.util.List;
 @RestController
 @RequestMapping("/mall/order")
 @Tag(name = "订单管理", description = "订单管理")
-@PreAuthorize("hasRole('admin') or hasRole('super_admin')")
 public class MallOrderController extends BaseController {
 
     private final MallOrderService mallOrderService;
@@ -51,6 +50,7 @@ public class MallOrderController extends BaseController {
      */
     @GetMapping("/list")
     @Operation(summary = "订单列表")
+    @PreAuthorize("hasAuthority('mall:order:list') or hasRole('super_admin')")
     public AjaxResult<TableDataResult> orderList(MallOrderListRequest request) {
         Page<OrderWithProductDto> mallOrderPage = mallOrderService.orderWithProduct(request);
         List<MallOrderListVo> mallOrderListVos = mallOrderPage.getRecords().stream()
@@ -67,7 +67,8 @@ public class MallOrderController extends BaseController {
      */
     @GetMapping("/detail/{orderId}")
     @Operation(summary = "订单详情")
-    public AjaxResult<OrderDetailVo> orderDetail(@PathVariable("orderId") Long orderId) {
+    @PreAuthorize("hasAuthority('mall:order:query') or hasRole('super_admin')")
+    public AjaxResult<OrderDetailVo> orderDetail(@PathVariable Long orderId) {
         OrderDetailVo orderDetailVo = mallOrderService.orderDetail(orderId);
         return success(orderDetailVo);
     }
@@ -80,7 +81,8 @@ public class MallOrderController extends BaseController {
      */
     @GetMapping("/address/{orderId}")
     @Operation(summary = "获取订单地址信息")
-    public AjaxResult<OrderAddressVo> getOrderAddress(@PathVariable("orderId") Long orderId) {
+    @PreAuthorize("hasAuthority('mall:order:query') or hasRole('super_admin')")
+    public AjaxResult<OrderAddressVo> getOrderAddress(@PathVariable Long orderId) {
         OrderAddressVo orderAddressVo = mallOrderService.getOrderAddress(orderId);
         return success(orderAddressVo);
     }
@@ -93,6 +95,7 @@ public class MallOrderController extends BaseController {
      */
     @PutMapping("/address")
     @Operation(summary = "修改订单地址")
+    @PreAuthorize("hasAuthority('mall:order:edit') or hasRole('super_admin')")
     public AjaxResult<Void> updateOrderAddress(@Validated @RequestBody AddressUpdateRequest request) {
         boolean result = mallOrderService.updateOrderAddress(request);
         return toAjax(result);
@@ -106,6 +109,7 @@ public class MallOrderController extends BaseController {
      */
     @GetMapping("/remark/{orderId}")
     @Operation(summary = "获取订单备注信息")
+    @PreAuthorize("hasAuthority('mall:order:query') or hasRole('super_admin')")
     public AjaxResult<OrderRemarkVo> getOrderRemark(@PathVariable("orderId") Long orderId) {
         OrderRemarkVo orderRemarkVo = mallOrderService.getOrderRemark(orderId);
         return success(orderRemarkVo);
@@ -119,6 +123,7 @@ public class MallOrderController extends BaseController {
      */
     @PutMapping("/remark")
     @Operation(summary = "修改订单备注")
+    @PreAuthorize("hasAuthority('mall:order:edit') or hasRole('super_admin')")
     public AjaxResult<Void> updateOrderRemark(@Validated @RequestBody RemarkUpdateRequest request) {
         boolean result = mallOrderService.updateOrderRemark(request);
         return toAjax(result);
@@ -132,7 +137,8 @@ public class MallOrderController extends BaseController {
      */
     @GetMapping("/price/{orderId}")
     @Operation(summary = "获取订单价格信息")
-    public AjaxResult<OrderPriceVo> getOrderPrice(@PathVariable("orderId") Long orderId) {
+    @PreAuthorize("hasAuthority('mall:order:query') or hasRole('super_admin')")
+    public AjaxResult<OrderPriceVo> getOrderPrice(@PathVariable Long orderId) {
         OrderPriceVo orderPriceVo = mallOrderService.getOrderPrice(orderId);
         return success(orderPriceVo);
     }
@@ -145,6 +151,7 @@ public class MallOrderController extends BaseController {
      */
     @PutMapping("/price")
     @Operation(summary = "订单改价")
+    @PreAuthorize("hasAuthority('mall:order:edit') or hasRole('super_admin')")
     public AjaxResult<Void> updateOrderPrice(@Validated @RequestBody OrderUpdatePriceRequest request) {
         boolean result = mallOrderService.updateOrderPrice(request);
         return toAjax(result);
@@ -159,6 +166,7 @@ public class MallOrderController extends BaseController {
      */
     @PostMapping("/refund")
     @Operation(summary = "订单退款")
+    @PreAuthorize("hasAuthority('mall:order:refund') or hasRole('super_admin')")
     public AjaxResult<Void> orderRefund(@RequestBody OrderRefundRequest request) {
         boolean result = mallOrderService.orderRefund(request);
         return toAjax(result);
@@ -175,6 +183,7 @@ public class MallOrderController extends BaseController {
      */
     @PostMapping("/cancel")
     @Operation(summary = "取消订单")
+    @PreAuthorize("hasAuthority('mall:order:cancel') or hasRole('super_admin')")
     public AjaxResult<Void> cancelOrder(@Validated @RequestBody OrderCancelRequest request) {
         boolean result = mallOrderService.cancelOrder(request);
         return toAjax(result);
@@ -188,7 +197,8 @@ public class MallOrderController extends BaseController {
      */
     @GetMapping("/timeline/{orderId}")
     @Operation(summary = "查询订单时间线")
-    public AjaxResult<List<MallOrderTimelineVo>> getOrderTimeline(@PathVariable("orderId") Long orderId) {
+    @PreAuthorize("hasAuthority('mall:order:query') or hasRole('super_admin')")
+    public AjaxResult<List<MallOrderTimelineVo>> getOrderTimeline(@PathVariable Long orderId) {
         List<MallOrderTimeline> timeline = mallOrderTimelineService.getTimelineByOrderId(orderId);
         List<MallOrderTimelineVo> mallOrderTimelineVos = copyListProperties(timeline, MallOrderTimelineVo.class);
         return success(mallOrderTimelineVos);
@@ -202,6 +212,7 @@ public class MallOrderController extends BaseController {
      */
     @PostMapping("/ship")
     @Operation(summary = "订单发货")
+    @PreAuthorize("hasAuthority('mall:order:ship') or hasRole('super_admin')")
     public AjaxResult<Void> shipOrder(@Validated @RequestBody OrderShipRequest request) {
         boolean result = mallOrderService.shipOrder(request);
         return toAjax(result);
@@ -215,7 +226,8 @@ public class MallOrderController extends BaseController {
      */
     @GetMapping("/shipping/{orderId}")
     @Operation(summary = "查询订单物流信息")
-    public AjaxResult<OrderShippingVo> getOrderShipping(@PathVariable("orderId") Long orderId) {
+    @PreAuthorize("hasAuthority('mall:order:query') or hasRole('super_admin')")
+    public AjaxResult<OrderShippingVo> getOrderShipping(@PathVariable Long orderId) {
         OrderShippingVo orderShippingVo = mallOrderService.getOrderShipping(orderId);
         return success(orderShippingVo);
     }
@@ -228,6 +240,7 @@ public class MallOrderController extends BaseController {
      */
     @PostMapping("/confirm-receipt")
     @Operation(summary = "管理员手动确认收货", description = "管理员手动确认订单收货，适用于特殊场景（如客户电话确认等）")
+    @PreAuthorize("hasAuthority('mall:order:edit') or hasRole('super_admin')")
     public AjaxResult<Void> manualConfirmReceipt(@Validated @RequestBody OrderReceiveRequest request) {
         boolean result = mallOrderService.manualConfirmReceipt(request);
         return toAjax(result);
@@ -242,7 +255,8 @@ public class MallOrderController extends BaseController {
      */
     @DeleteMapping("/{ids}")
     @Operation(summary = "删除订单")
-    public AjaxResult<Void> deleteOrders(@PathVariable("ids") List<Long> ids) {
+    @PreAuthorize("hasAuthority('mall:order:delete') or hasRole('super_admin')")
+    public AjaxResult<Void> deleteOrders(@PathVariable List<Long> ids) {
         if (CollectionUtils.isEmpty(ids)) {
             return error("请选择要删除的订单");
         }

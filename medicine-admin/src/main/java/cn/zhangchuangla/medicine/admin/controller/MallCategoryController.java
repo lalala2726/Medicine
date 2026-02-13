@@ -31,7 +31,6 @@ import java.util.List;
 @RequestMapping("/mall/category")
 @RequiredArgsConstructor
 @Tag(name = "商城商品分类接口", description = "提供商城商品分类的增删改查")
-@PreAuthorize("hasRole('admin') or hasRole('super_admin')")
 public class MallCategoryController extends BaseController {
 
     private final MallCategoryService mallCategoryService;
@@ -43,6 +42,7 @@ public class MallCategoryController extends BaseController {
      */
     @GetMapping("/tree")
     @Operation(summary = "获取商品分类树")
+    @PreAuthorize("hasAuthority('mall:category:tree') or hasRole('super_admin')")
     public AjaxResult<List<MallCategoryTree>> categoryTree() {
         List<MallCategoryTree> tree = mallCategoryService.categoryTree();
         return success(tree);
@@ -55,6 +55,7 @@ public class MallCategoryController extends BaseController {
      */
     @GetMapping("/option")
     @Operation(summary = "获取商品下拉选项")
+    @PreAuthorize("hasAuthority('mall:category:option') or hasRole('super_admin')")
     public AjaxResult<List<Option<Long>>> option() {
         List<Option<Long>> options = mallCategoryService.option();
         return success(options);
@@ -68,7 +69,8 @@ public class MallCategoryController extends BaseController {
      */
     @GetMapping("/{id:\\d+}")
     @Operation(summary = "获取商城商品分类详情")
-    public AjaxResult<MallCategoryVo> getCategoryById(@PathVariable("id") Long id) {
+    @PreAuthorize("hasAuthority('mall:category:query') or hasRole('super_admin')")
+    public AjaxResult<MallCategoryVo> getCategoryById(@PathVariable Long id) {
         MallCategory category = mallCategoryService.getCategoryById(id);
         MallCategoryVo categoryVo = copyProperties(category, MallCategoryVo.class);
         return success(categoryVo);
@@ -82,6 +84,7 @@ public class MallCategoryController extends BaseController {
      */
     @PostMapping
     @Operation(summary = "添加商城商品分类")
+    @PreAuthorize("hasAuthority('mall:category:add') or hasRole('super_admin')")
     public AjaxResult<Void> addCategory(@Validated @RequestBody MallCategoryAddRequest request) {
         boolean result = mallCategoryService.addCategory(request);
         return toAjax(result);
@@ -95,6 +98,7 @@ public class MallCategoryController extends BaseController {
      */
     @PutMapping
     @Operation(summary = "修改商城商品分类")
+    @PreAuthorize("hasAuthority('mall:category:edit') or hasRole('super_admin')")
     public AjaxResult<Void> updateCategory(@Validated @RequestBody MallCategoryUpdateRequest request) {
         boolean result = mallCategoryService.updateCategory(request);
         return toAjax(result);
@@ -108,7 +112,8 @@ public class MallCategoryController extends BaseController {
      */
     @DeleteMapping("/{ids}")
     @Operation(summary = "删除商城商品分类")
-    public AjaxResult<Void> deleteCategory(@PathVariable("ids") List<Long> ids) {
+    @PreAuthorize("hasAuthority('mall:category:delete') or hasRole('super_admin')")
+    public AjaxResult<Void> deleteCategory(@PathVariable List<Long> ids) {
         boolean result = mallCategoryService.deleteCategory(ids);
         return toAjax(result);
     }

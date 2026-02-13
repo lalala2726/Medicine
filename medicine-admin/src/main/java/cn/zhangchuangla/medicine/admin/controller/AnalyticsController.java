@@ -23,7 +23,7 @@ import java.util.List;
 @RestController
 @RequestMapping("/analytics")
 @Tag(name = "运营分析")
-@PreAuthorize("hasRole('admin') or hasRole('super_admin')")
+@PreAuthorize("hasRole('super_admin')")
 public class AnalyticsController extends BaseController {
 
     private final AnalyticsService analyticsService;

@@ -37,7 +37,7 @@ public class LoginLogController extends BaseController {
      */
     @GetMapping("/list")
     @Operation(summary = "登录日志列表")
-    @PreAuthorize("hasAuthority('system:login-log:list') or hasRole('super_admin')")
+    @PreAuthorize("hasAuthority('system:login_log:list') or hasRole('super_admin')")
     public AjaxResult<TableDataResult> logList(LoginLogQueryRequest request) {
         var page = loginLogService.logList(request);
         var rows = copyListProperties(page, LoginLogListVo.class);
@@ -52,7 +52,7 @@ public class LoginLogController extends BaseController {
      */
     @GetMapping("/{id:\\d+}")
     @Operation(summary = "登录日志详情")
-    @PreAuthorize("hasAuthority('system:login-log:query') or hasRole('super_admin')")
+    @PreAuthorize("hasAuthority('system:login_log:query') or hasRole('super_admin')")
     public AjaxResult<LoginLogVo> getLogById(@PathVariable Long id) {
         var log = loginLogService.getLogById(id);
         var vo = copyProperties(log, LoginLogVo.class);
@@ -66,7 +66,7 @@ public class LoginLogController extends BaseController {
      */
     @DeleteMapping
     @Operation(summary = "清空登录日志")
-    @PreAuthorize("hasAuthority('system:login-log:delete') or hasRole('super_admin')")
+    @PreAuthorize("hasAuthority('system:login_log:delete') or hasRole('super_admin')")
     @OperationLog(module = "登录日志", action = "清空登录日志", type = OperationType.DELETE)
     public AjaxResult<Void> clearLog() {
         boolean result = loginLogService.clearLogs();

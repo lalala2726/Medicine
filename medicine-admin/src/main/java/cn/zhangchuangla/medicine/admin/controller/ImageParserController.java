@@ -22,6 +22,7 @@ import org.springframework.web.bind.annotation.RestController;
 @RequiredArgsConstructor
 @RequestMapping("/image_parser")
 @Tag(name = "图片解析", description = "将图片信息解析对应的JSON")
+@Deprecated(forRemoval = true)
 public class ImageParserController extends BaseController {
 
     private final ImageParserService imageParserService;
