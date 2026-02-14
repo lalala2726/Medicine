@@ -281,6 +281,9 @@ public class MallOrderController extends BaseController {
         MallOrderListVo.ProductInfo productInfo = MallOrderListVo.ProductInfo.builder()
                 .productName(source.getProductName())
                 .productImage(source.getProductImage())
+                .productPrice(source.getProductPrice())
+                .productCategory(source.getProductCategory())
+                .productId(source.getProductId())
                 .quantity(source.getProductQuantity())
                 .build();
         target.setProductInfo(productInfo);

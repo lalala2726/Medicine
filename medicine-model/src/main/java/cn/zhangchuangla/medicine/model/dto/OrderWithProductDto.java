@@ -4,6 +4,8 @@ import cn.zhangchuangla.medicine.model.entity.MallOrder;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 
+import java.math.BigDecimal;
+
 /**
  * @author Chuang
  * <p>
@@ -32,4 +34,14 @@ public class OrderWithProductDto extends MallOrder {
      * 商品首图
      */
     private String productImage;
+
+    /**
+     * 商品价格
+     */
+    private BigDecimal productPrice;
+
+    /**
+     * 商品分类
+     */
+    private String productCategory;
 }
