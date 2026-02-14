@@ -2,7 +2,6 @@ package cn.zhangchuangla.medicine.admin.service.impl;
 
 import cn.zhangchuangla.medicine.admin.mapper.MallOrderMapper;
 import cn.zhangchuangla.medicine.admin.mapper.UserMapper;
-import cn.zhangchuangla.medicine.admin.model.dto.OrderOverviewStats;
 import cn.zhangchuangla.medicine.admin.model.dto.UserOrderStatistics;
 import cn.zhangchuangla.medicine.admin.model.request.*;
 import cn.zhangchuangla.medicine.admin.model.vo.OrderAddressVo;
@@ -24,6 +23,7 @@ import cn.zhangchuangla.medicine.payment.model.AlipayRefundRequest;
 import cn.zhangchuangla.medicine.payment.service.AlipayPaymentService;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -40,6 +40,7 @@ import java.util.stream.Collectors;
  */
 @Slf4j
 @Service
+@RequiredArgsConstructor
 public class MallOrderServiceImpl extends ServiceImpl<MallOrderMapper, MallOrder>
         implements MallOrderService {
 
@@ -70,25 +71,6 @@ public class MallOrderServiceImpl extends ServiceImpl<MallOrderMapper, MallOrder
     private final MallOrderShippingService mallOrderShippingService;
     private final MallInventoryService mallInventoryService;
 
-
-    public MallOrderServiceImpl(MallOrderMapper mallOrderMapper, UserMapper userMapper, MallOrderItemService mallOrderItemService, MallProductImageService mallProductImageService, AlipayPaymentService alipayPaymentService, MallOrderTimelineService mallOrderTimelineService, UserWalletService userWalletService, MallOrderShippingService mallOrderShippingService, MallInventoryService mallInventoryService) {
-        this.mallOrderMapper = mallOrderMapper;
-        this.userMapper = userMapper;
-        this.mallOrderItemService = mallOrderItemService;
-        this.mallProductImageService = mallProductImageService;
-        this.alipayPaymentService = alipayPaymentService;
-        this.mallOrderTimelineService = mallOrderTimelineService;
-        this.userWalletService = userWalletService;
-        this.mallOrderShippingService = mallOrderShippingService;
-        this.mallInventoryService = mallInventoryService;
-    }
-
-
-    @Override
-    public Page<MallOrder> orderList(MallOrderListRequest request) {
-        Page<MallOrder> mallOrderPage = request.toPage();
-        return mallOrderMapper.orderList(mallOrderPage, request);
-    }
 
     @Override
     public MallOrder getOrderByOrderNo(String orderNo) {
@@ -441,15 +423,13 @@ public class MallOrderServiceImpl extends ServiceImpl<MallOrderMapper, MallOrder
             }
 
             switch (payType) {
-                case ALIPAY -> {
-                    // 支付宝退款
-                    alipayPaymentService.refund(AlipayRefundRequest.builder()
-                            .outTradeNo(mallOrder.getOrderNo())
-                            .refundAmount(formatAmount(refundAmount))
-                            .refundReason("订单取消-" + (request.getCancelReason() != null ? request.getCancelReason() : "用户取消"))
-                            .outRequestNo(buildOutRequestNo(mallOrder))
-                            .build());
-                }
+                case ALIPAY -> // 支付宝退款
+                        alipayPaymentService.refund(AlipayRefundRequest.builder()
+                                .outTradeNo(mallOrder.getOrderNo())
+                                .refundAmount(formatAmount(refundAmount))
+                                .refundReason("订单取消-" + (request.getCancelReason() != null ? request.getCancelReason() : "用户取消"))
+                                .outRequestNo(buildOutRequestNo(mallOrder))
+                                .build());
                 case WALLET -> {
                     // 钱包退款
                     Long userId = mallOrder.getUserId();
@@ -490,23 +470,17 @@ public class MallOrderServiceImpl extends ServiceImpl<MallOrderMapper, MallOrder
         }
 
         // 5. 恢复库存
-        boolean restoreStockAllowed = orderStatusEnum == OrderStatusEnum.PENDING_PAYMENT
-                || orderStatusEnum == OrderStatusEnum.PENDING_SHIPMENT;
-        if (restoreStockAllowed) {
-            List<MallOrderItem> orderItems = mallOrderItemService.lambdaQuery()
-                    .eq(MallOrderItem::getOrderId, mallOrder.getId())
-                    .list();
+        List<MallOrderItem> orderItems = mallOrderItemService.lambdaQuery()
+                .eq(MallOrderItem::getOrderId, mallOrder.getId())
+                .list();
 
-            if (!CollectionUtils.isEmpty(orderItems)) {
-                for (MallOrderItem orderItem : orderItems) {
-                    if (orderItem != null && orderItem.getProductId() != null && orderItem.getQuantity() != null) {
-                        mallInventoryService.restoreStock(orderItem.getProductId(), orderItem.getQuantity());
-                        log.info("恢复商品库存，商品ID：{}，数量：{}", orderItem.getProductId(), orderItem.getQuantity());
-                    }
+        if (!CollectionUtils.isEmpty(orderItems)) {
+            for (MallOrderItem orderItem : orderItems) {
+                if (orderItem != null && orderItem.getProductId() != null && orderItem.getQuantity() != null) {
+                    mallInventoryService.restoreStock(orderItem.getProductId(), orderItem.getQuantity());
+                    log.info("恢复商品库存，商品ID：{}，数量：{}", orderItem.getProductId(), orderItem.getQuantity());
                 }
             }
-        } else {
-            log.info("订单{}已进入发货或售后流程，取消时不恢复库存", mallOrder.getOrderNo());
         }
 
         // 6. 添加订单时间线记录
@@ -990,22 +964,94 @@ public class MallOrderServiceImpl extends ServiceImpl<MallOrderMapper, MallOrder
     }
 
     @Override
-    public OrderOverviewStats getOrderOverviewStats() {
-        OrderOverviewStats stats = mallOrderMapper.getOrderOverviewStats();
-        if (stats == null) {
-            return OrderOverviewStats.builder()
-                    .totalOrders(0L)
-                    .pendingPayment(0L)
-                    .pendingShipment(0L)
-                    .pendingReceipt(0L)
-                    .completed(0L)
-                    .refunded(0L)
-                    .afterSale(0L)
-                    .cancelled(0L)
-                    .totalSales(BigDecimal.ZERO)
-                    .refundedAmount(BigDecimal.ZERO)
-                    .build();
+    public List<OrderDetailVo> getOrderDetailByIds(List<Long> orderIds) {
+        if (CollectionUtils.isEmpty(orderIds)) {
+            return List.of();
         }
-        return stats;
+
+        // 1. 批量查询订单
+        List<MallOrder> orders = listByIds(orderIds);
+        if (orders.isEmpty()) {
+            return List.of();
+        }
+
+        // 2. 批量查询用户信息
+        List<Long> userIds = orders.stream()
+                .map(MallOrder::getUserId)
+                .filter(Objects::nonNull)
+                .distinct()
+                .toList();
+        Map<Long, User> userMap = new HashMap<>();
+        if (!userIds.isEmpty()) {
+            List<User> users = userMapper.selectByIds(userIds);
+            userMap = users.stream()
+                    .collect(Collectors.toMap(User::getId, user -> user, (existing, ignore) -> existing));
+        }
+
+        // 3. 批量查询订单商品
+        List<Long> orderIdsFromOrders = orders.stream().map(MallOrder::getId).toList();
+        List<MallOrderItem> allOrderItems = mallOrderItemService.lambdaQuery()
+                .in(MallOrderItem::getOrderId, orderIdsFromOrders)
+                .list();
+        Map<Long, List<MallOrderItem>> orderItemMap = allOrderItems.stream()
+                .collect(Collectors.groupingBy(MallOrderItem::getOrderId));
+
+        // 4. 构建返回结果
+        List<OrderDetailVo> result = new ArrayList<>();
+        for (MallOrder mallOrder : orders) {
+            // 获取用户信息
+            User userInfo = userMap.get(mallOrder.getUserId());
+            OrderDetailVo.UserInfo userInfoVo = null;
+            if (userInfo != null) {
+                userInfoVo = OrderDetailVo.UserInfo.builder()
+                        .userId(userInfo.getId().toString())
+                        .nickname(userInfo.getNickname())
+                        .phoneNumber(userInfo.getPhoneNumber())
+                        .build();
+            }
+
+            // 构建配送信息
+            OrderDetailVo.DeliveryInfo deliveryInfo = OrderDetailVo.DeliveryInfo.builder()
+                    .receiverName(mallOrder.getReceiverName())
+                    .receiverAddress(mallOrder.getReceiverDetail())
+                    .receiverPhone(mallOrder.getReceiverPhone())
+                    .deliveryMethod(getDeliveryTypeDesc(mallOrder.getDeliveryType()))
+                    .build();
+
+            // 构建订单信息
+            OrderDetailVo.OrderInfo orderInfo = OrderDetailVo.OrderInfo.builder()
+                    .orderNo(mallOrder.getOrderNo())
+                    .orderStatus(mallOrder.getOrderStatus())
+                    .payType(getPayTypeDesc(mallOrder.getPayType()))
+                    .totalAmount(mallOrder.getTotalAmount())
+                    .payAmount(mallOrder.getPayAmount())
+                    .freightAmount(mallOrder.getFreightAmount())
+                    .build();
+
+            // 构建商品信息
+            List<OrderDetailVo.ProductInfo> productInfoList = new ArrayList<>();
+            List<MallOrderItem> orderItems = orderItemMap.getOrDefault(mallOrder.getId(), List.of());
+            for (MallOrderItem item : orderItems) {
+                OrderDetailVo.ProductInfo productInfo = OrderDetailVo.ProductInfo.builder()
+                        .productId(item.getProductId())
+                        .productName(item.getProductName())
+                        .productImage(item.getImageUrl())
+                        .productPrice(item.getPrice())
+                        .productQuantity(item.getQuantity())
+                        .productTotalAmount(item.getTotalPrice())
+                        .build();
+                productInfoList.add(productInfo);
+            }
+
+            result.add(OrderDetailVo.builder()
+                    .userInfo(userInfoVo)
+                    .deliveryInfo(deliveryInfo)
+                    .orderInfo(orderInfo)
+                    .productInfo(productInfoList)
+                    .build());
+        }
+
+        return result;
     }
+
 }

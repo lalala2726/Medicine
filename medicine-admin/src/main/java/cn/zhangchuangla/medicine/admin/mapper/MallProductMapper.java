@@ -46,4 +46,12 @@ public interface MallProductMapper extends BaseMapper<MallProduct> {
      * @return 商品详情列表
      */
     java.util.List<MallProductDetailDto> listOnShelfForIndex(@Param("lastId") Long lastId, @Param("limit") int limit);
+
+    /**
+     * 根据ID列表批量获取商城商品详情
+     *
+     * @param ids 商品ID列表
+     * @return 商城商品详情列表
+     */
+    java.util.List<MallProductDetailDto> getMallProductDetailByIds(@Param("ids") java.util.List<Long> ids);
 }

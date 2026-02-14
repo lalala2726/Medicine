@@ -125,6 +125,38 @@ public class MallProductServiceImpl extends ServiceImpl<MallProductMapper, MallP
     }
 
     @Override
+    public List<MallProductDetailDto> getMallProductByIds(List<Long> ids) {
+        if (ids == null || ids.isEmpty()) {
+            return List.of();
+        }
+        // 批量查询商品基础信息
+        List<MallProductDetailDto> products = mallProductMapper.getMallProductDetailByIds(ids);
+        if (products.isEmpty()) {
+            return List.of();
+        }
+
+        // 批量查询图片并按 productId 分组
+        List<Long> productIds = products.stream().map(MallProduct::getId).toList();
+        Map<Long, List<String>> imageMap = mallProductImageService.lambdaQuery()
+                .in(MallProductImage::getProductId, productIds)
+                .orderByAsc(MallProductImage::getSort)
+                .list()
+                .stream()
+                .collect(Collectors.groupingBy(
+                        MallProductImage::getProductId,
+                        Collectors.mapping(MallProductImage::getImageUrl, Collectors.toList())
+                ));
+
+        // 设置图片到每个商品
+        products.forEach(product -> {
+            List<String> images = imageMap.getOrDefault(product.getId(), List.of());
+            product.setImages(images);
+        });
+
+        return products;
+    }
+
+    @Override
     @Transactional(rollbackFor = Exception.class)
     @CacheEvict(cacheNames = RedisConstants.MallProduct.CACHE_NAME, allEntries = true)
     public boolean addMallProduct(MallProductAddRequest request) {

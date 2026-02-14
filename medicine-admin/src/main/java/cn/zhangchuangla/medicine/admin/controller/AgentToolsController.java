@@ -3,7 +3,10 @@ package cn.zhangchuangla.medicine.admin.controller;
 import cn.zhangchuangla.medicine.admin.model.request.MallOrderListRequest;
 import cn.zhangchuangla.medicine.admin.model.vo.MallOrderListVo;
 import cn.zhangchuangla.medicine.admin.model.vo.MallProductVo;
-import cn.zhangchuangla.medicine.admin.service.AgentToolsService;
+import cn.zhangchuangla.medicine.admin.model.vo.OrderDetailVo;
+import cn.zhangchuangla.medicine.admin.service.MallOrderService;
+import cn.zhangchuangla.medicine.admin.service.MallProductService;
+import cn.zhangchuangla.medicine.admin.service.UserService;
 import cn.zhangchuangla.medicine.common.core.base.AjaxResult;
 import cn.zhangchuangla.medicine.common.core.base.TableDataResult;
 import cn.zhangchuangla.medicine.common.security.base.BaseController;
@@ -17,6 +20,7 @@ import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -34,29 +38,52 @@ import java.util.List;
  */
 @RestController
 @RequestMapping("/agent/tools")
+@RequiredArgsConstructor
 @Tag(name = "智能体工具", description = "用于给智能体提供工具接口")
 public class AgentToolsController extends BaseController {
 
-    private final AgentToolsService agentToolsService;
-
-    public AgentToolsController(AgentToolsService agentToolsService) {
-        this.agentToolsService = agentToolsService;
-    }
+    private final UserService userService;
+    private final MallProductService mallProductService;
+    private final MallOrderService mallOrderService;
 
 
+    /**
+     * 获取当前登录用户的详情
+     *
+     * @return 用户详情
+     */
     @GetMapping("/current_user")
     @Operation(summary = "获取当前用户信息", description = "获取当前登录用户的详细信息")
     public AjaxResult<UserVo> getCurrentUser() {
-        User user = agentToolsService.getCurrentUser();
+        Long userId = getUserId();
+        User user = userService.getUserById(userId);
         UserVo userVo = copyProperties(user, UserVo.class);
         return success(userVo);
     }
 
+    /**
+     * 根据关键字和查询条件查询商品信息，相比商品列表接口，此接口调用ES在搜索的话会更加高效
+     *
+     * @return 商品列表
+     */
+    @GetMapping("/product/search")
+    @Operation(summary = "商品搜索", description = "根据关键词和分类搜索商品")
+    public AjaxResult<Void> searchProduct() {
+        // todo 商品搜索功能待实现
+        return success();
+    }
 
-    @GetMapping("/products/search")
-    @Operation(summary = "搜索商品", description = "根据关键词和分类搜索商品")
+
+    /**
+     * 根据条件查询商品列表
+     *
+     * @param request 请求参数
+     * @return 商品列表
+     */
+    @GetMapping("/products/list")
+    @Operation(summary = "商品列表", description = "根据关键词和分类搜索商品")
     public AjaxResult<TableDataResult> searchProducts(MallProductListQueryRequest request) {
-        Page<MallProductDetailDto> page = agentToolsService.searchProducts(request);
+        Page<MallProductDetailDto> page = mallProductService.listMallProductWithCategory(request);
         List<MallProductListVo> mallProductListVos = page.getRecords().stream()
                 .map(product -> {
                     MallProductListVo productListVo = copyProperties(product, MallProductListVo.class);
@@ -69,14 +96,19 @@ public class AgentToolsController extends BaseController {
         return getTableData(page, mallProductListVos);
     }
 
-    @GetMapping("/products/{productId}")
+    /**
+     * 根据商品ID查询商品详情
+     *
+     * @return 返回商品详情
+     */
+    @GetMapping("/products/{productIds}")
     @Operation(summary = "获取商品详情", description = "根据商品ID获取详细信息")
-    public AjaxResult<MallProductVo> getProductDetail(
+    public AjaxResult<List<MallProductVo>> getProductDetail(
             @Parameter(description = "商品ID")
-            @PathVariable Long productId
+            @PathVariable List<Long> productIds
     ) {
-        MallProductDetailDto product = agentToolsService.getProductDetail(productId);
-        MallProductVo productVo = copyProperties(product, MallProductVo.class);
+        List<MallProductDetailDto> product = mallProductService.getMallProductByIds(productIds);
+        List<MallProductVo> productVo = copyListProperties(product, MallProductVo.class);
         return success(productVo);
     }
 
@@ -86,7 +118,8 @@ public class AgentToolsController extends BaseController {
     @GetMapping("/orders/list")
     @Operation(summary = "获取订单列表", description = "分页获取订单列表，默认按创建时间倒序")
     public AjaxResult<TableDataResult> getOrderList(MallOrderListRequest request) {
-        Page<OrderWithProductDto> orderPage = agentToolsService.getOrderList(request);
+        MallOrderListRequest safeRequest = request == null ? new MallOrderListRequest() : request;
+        Page<OrderWithProductDto> orderPage = mallOrderService.orderWithProduct(safeRequest);
         List<MallOrderListVo> orderListVos = orderPage.getRecords().stream()
                 .map(this::buildOrderListVo)
                 .toList();
@@ -97,14 +130,11 @@ public class AgentToolsController extends BaseController {
     /**
      * 获取订单详情
      */
-    @GetMapping("/orders/{orderId}")
+    @GetMapping("/orders/{orderIds}")
     @Operation(summary = "获取订单详情", description = "根据订单ID获取详细信息")
-    public AjaxResult<MallOrderListVo> getOrderDetail(
-            @Parameter(description = "订单ID")
-            @PathVariable Long orderId
-    ) {
-        MallOrderListVo orderVo = agentToolsService.getOrderDetail(orderId);
-        return success(orderVo);
+    public AjaxResult<List<OrderDetailVo>> getOrderDetail(@Parameter(description = "订单ID") @PathVariable List<Long> orderIds) {
+        List<OrderDetailVo> orderDetails = mallOrderService.getOrderDetailByIds(orderIds);
+        return success(orderDetails);
     }
 
     private MallOrderListVo buildOrderListVo(OrderWithProductDto source) {
@@ -126,5 +156,4 @@ public class AgentToolsController extends BaseController {
         target.setProductInfo(productInfo);
         return target;
     }
-
 }

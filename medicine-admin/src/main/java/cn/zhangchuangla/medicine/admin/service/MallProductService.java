@@ -46,6 +46,14 @@ public interface MallProductService extends IService<MallProduct> {
     MallProductDetailDto getMallProductById(Long id);
 
     /**
+     * 根据ID列表批量获取商城商品
+     *
+     * @param ids 商品ID列表
+     * @return 商城商品列表
+     */
+    List<MallProductDetailDto> getMallProductByIds(List<Long> ids);
+
+    /**
      * 添加商城商品
      *
      * @param request 添加参数
