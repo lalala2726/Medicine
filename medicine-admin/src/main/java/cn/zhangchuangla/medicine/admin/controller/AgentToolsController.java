@@ -1,8 +1,9 @@
 package cn.zhangchuangla.medicine.admin.controller;
 
 import cn.zhangchuangla.medicine.admin.model.request.MallOrderListRequest;
+import cn.zhangchuangla.medicine.admin.model.vo.AgentDrugDetailVo;
+import cn.zhangchuangla.medicine.admin.model.vo.AgentProductDetailVo;
 import cn.zhangchuangla.medicine.admin.model.vo.MallOrderListVo;
-import cn.zhangchuangla.medicine.admin.model.vo.MallProductVo;
 import cn.zhangchuangla.medicine.admin.model.vo.OrderDetailVo;
 import cn.zhangchuangla.medicine.admin.service.MallOrderService;
 import cn.zhangchuangla.medicine.admin.service.MallProductService;
@@ -80,7 +81,7 @@ public class AgentToolsController extends BaseController {
      * @param request 请求参数
      * @return 商品列表
      */
-    @GetMapping("/products/list")
+    @GetMapping("/product/list")
     @Operation(summary = "商品列表", description = "根据关键词和分类搜索商品")
     public AjaxResult<TableDataResult> searchProducts(MallProductListQueryRequest request) {
         Page<MallProductDetailDto> page = mallProductService.listMallProductWithCategory(request);
@@ -101,21 +102,36 @@ public class AgentToolsController extends BaseController {
      *
      * @return 返回商品详情
      */
-    @GetMapping("/products/{productIds}")
-    @Operation(summary = "获取商品详情", description = "根据商品ID获取详细信息")
-    public AjaxResult<List<MallProductVo>> getProductDetail(
+    @GetMapping("/product/{productIds}")
+    @Operation(summary = "获取商品详情", description = "根据商品ID获取详细信息（不含药品详情）")
+    public AjaxResult<List<AgentProductDetailVo>> getProductDetail(
             @Parameter(description = "商品ID")
             @PathVariable List<Long> productIds
     ) {
-        List<MallProductDetailDto> product = mallProductService.getMallProductByIds(productIds);
-        List<MallProductVo> productVo = copyListProperties(product, MallProductVo.class);
-        return success(productVo);
+        List<MallProductDetailDto> products = mallProductService.getMallProductByIds(productIds);
+        List<AgentProductDetailVo> productVos = copyListProperties(products, AgentProductDetailVo.class);
+        return success(productVos);
+    }
+
+    /**
+     * 根据商品ID查询药品详情
+     *
+     * @return 返回药品详情
+     */
+    @GetMapping("/drug/{productIds}")
+    @Operation(summary = "获取药品详情", description = "根据商品ID获取药品详细信息")
+    public AjaxResult<List<AgentDrugDetailVo>> getDrugDetail(
+            @Parameter(description = "商品ID")
+            @PathVariable List<Long> productIds
+    ) {
+        List<AgentDrugDetailVo> drugDetails = mallProductService.getDrugDetailByProductIds(productIds);
+        return success(drugDetails);
     }
 
     /**
      * 获取订单列表
      */
-    @GetMapping("/orders/list")
+    @GetMapping("/order/list")
     @Operation(summary = "获取订单列表", description = "分页获取订单列表，默认按创建时间倒序")
     public AjaxResult<TableDataResult> getOrderList(MallOrderListRequest request) {
         MallOrderListRequest safeRequest = request == null ? new MallOrderListRequest() : request;
@@ -130,7 +146,7 @@ public class AgentToolsController extends BaseController {
     /**
      * 获取订单详情
      */
-    @GetMapping("/orders/{orderIds}")
+    @GetMapping("/order/{orderIds}")
     @Operation(summary = "获取订单详情", description = "根据订单ID获取详细信息")
     public AjaxResult<List<OrderDetailVo>> getOrderDetail(@Parameter(description = "订单ID") @PathVariable List<Long> orderIds) {
         List<OrderDetailVo> orderDetails = mallOrderService.getOrderDetailByIds(orderIds);
