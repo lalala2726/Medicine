@@ -9,7 +9,6 @@ import cn.zhangchuangla.medicine.common.http.model.BaseResponse;
 import cn.zhangchuangla.medicine.common.http.model.ClientRequest;
 import cn.zhangchuangla.medicine.common.http.model.HttpResult;
 import cn.zhangchuangla.medicine.model.dto.MedicineInfoDto;
-import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.util.CollectionUtils;
 
@@ -22,11 +21,14 @@ import java.util.List;
  * created on 2026/2/1
  */
 @Service
-@RequiredArgsConstructor
 public class AgentImageParseServiceImpl implements AgentImageParseService {
 
     public static final String IMAGE_PARSE = "/api/image/parse/drug";
     private final AgentProperties agentProperties;
+
+    public AgentImageParseServiceImpl(AgentProperties agentProperties) {
+        this.agentProperties = agentProperties;
+    }
 
     @Override
     public MedicineInfoDto medicineInfoParse(List<String> imageUrls) {
