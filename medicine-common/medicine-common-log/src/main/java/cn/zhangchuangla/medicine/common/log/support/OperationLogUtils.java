@@ -22,7 +22,11 @@ import java.util.Set;
 public final class OperationLogUtils {
 
     private static final Set<String> SENSITIVE_KEYS = Set.of(
-            "password", "passwd", "pwd", "token", "authorization", "secret", "accessToken", "refreshToken"
+            "password", "passwd", "pwd", "token", "authorization", "secret",
+            "accesstoken", "refreshtoken",
+            "phone", "mobile", "phonenumber", "receiverphone",
+            "email", "mail",
+            "idcard", "id_card", "idno", "identityno"
     );
 
     private OperationLogUtils() {
@@ -40,7 +44,8 @@ public final class OperationLogUtils {
             maskSensitive(element);
             return JSONUtils.toJson(element);
         } catch (Exception ex) {
-            return String.valueOf(value);
+            // 序列化异常时避免回退到对象 toString() 导致明文敏感数据泄露。
+            return "\"[MASKED_SERIALIZATION_ERROR]\"";
         }
     }
 
@@ -99,6 +104,6 @@ public final class OperationLogUtils {
             return false;
         }
         String normalized = key.toLowerCase(Locale.ROOT);
-        return SENSITIVE_KEYS.stream().anyMatch(s -> normalized.contains(s.toLowerCase(Locale.ROOT)));
+        return SENSITIVE_KEYS.stream().anyMatch(normalized::contains);
     }
 }

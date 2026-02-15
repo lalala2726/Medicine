@@ -23,15 +23,33 @@ class OperationLogUtilsTests {
         Map<String, Object> payload = Map.of(
                 "username", "admin",
                 "password", "123456",
-                "nested", Map.of("accessToken", "abc", "normal", "ok")
+                "phoneNumber", "13800000000",
+                "email", "user@example.com",
+                "idCard", "110101199001011234",
+                "nested", Map.of("accessToken", "abc", "receiverPhone", "13900000000", "normal", "ok")
         );
 
         String json = OperationLogUtils.toJson(payload);
 
         assertTrue(json.contains("\"password\":\"***\""));
         assertTrue(json.contains("\"accessToken\":\"***\""));
+        assertTrue(json.contains("\"phoneNumber\":\"***\""));
+        assertTrue(json.contains("\"email\":\"***\""));
+        assertTrue(json.contains("\"idCard\":\"***\""));
+        assertTrue(json.contains("\"receiverPhone\":\"***\""));
         assertFalse(json.contains("123456"));
         assertFalse(json.contains("\"abc\""));
+        assertFalse(json.contains("13800000000"));
+        assertFalse(json.contains("user@example.com"));
+    }
+
+    /**
+     * 验证 JSON 序列化异常时不会回退到对象 toString()，避免敏感明文泄露。
+     */
+    @Test
+    void toJson_WhenSerializationFails_ShouldReturnMaskedPlaceholder() {
+        String json = OperationLogUtils.toJson(new NaNHolder());
+        assertTrue(json.contains("MASKED_SERIALIZATION_ERROR"));
     }
 
     /**
@@ -54,5 +72,9 @@ class OperationLogUtilsTests {
     @Test
     void isFilterObject_ShouldReturnFalseForNormalObject() {
         assertFalse(OperationLogUtils.isFilterObject(Map.of("name", "alice")));
+    }
+
+    private static class NaNHolder {
+        private final Double amount = Double.NaN;
     }
 }
