@@ -1,5 +1,6 @@
 package cn.zhangchuangla.medicine.agent.controller.admin;
 
+import cn.zhangchuangla.medicine.agent.annotation.InternalAgentHeaderTrace;
 import cn.zhangchuangla.medicine.agent.config.condition.ConditionalOnAgentSpi;
 import cn.zhangchuangla.medicine.agent.model.vo.admin.AdminAgentDrugDetailVo;
 import cn.zhangchuangla.medicine.agent.spi.AdminProductDataProvider;
@@ -23,6 +24,7 @@ import java.util.List;
 @RequestMapping("/agent/tools/drug")
 @Tag(name = "Admin智能体药品工具", description = "用于 Admin 侧智能体药品查询接口")
 @ConditionalOnAgentSpi(AdminProductDataProvider.class)
+@InternalAgentHeaderTrace
 public class AdminAgentDrugToolsController extends BaseController {
 
     /**

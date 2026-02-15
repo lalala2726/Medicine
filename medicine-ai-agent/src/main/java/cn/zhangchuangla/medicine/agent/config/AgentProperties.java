@@ -1,5 +1,6 @@
 package cn.zhangchuangla.medicine.agent.config;
 
+import lombok.Data;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.context.annotation.Configuration;
 
@@ -8,6 +9,7 @@ import org.springframework.context.annotation.Configuration;
  * <p>
  * created on 2026/1/26
  */
+@Data
 @Configuration
 @ConfigurationProperties(prefix = "agent")
 public class AgentProperties {
@@ -17,11 +19,4 @@ public class AgentProperties {
      */
     private String url = "http://localhost:8000";
 
-    public String getUrl() {
-        return url;
-    }
-
-    public void setUrl(String url) {
-        this.url = url;
-    }
 }

@@ -1,5 +1,6 @@
 package cn.zhangchuangla.medicine.agent.controller.admin;
 
+import cn.zhangchuangla.medicine.agent.annotation.InternalAgentHeaderTrace;
 import cn.zhangchuangla.medicine.agent.config.condition.ConditionalOnAgentSpi;
 import cn.zhangchuangla.medicine.agent.spi.AdminUserDataProvider;
 import cn.zhangchuangla.medicine.agent.spi.AgentSpiLoader;
@@ -19,6 +20,7 @@ import org.springframework.web.bind.annotation.RestController;
 @RequestMapping("/agent/tools")
 @Tag(name = "Admin智能体用户工具", description = "用于 Admin 侧智能体用户查询接口")
 @ConditionalOnAgentSpi(AdminUserDataProvider.class)
+@InternalAgentHeaderTrace
 public class AdminAgentUserToolsController extends BaseController {
 
     /**

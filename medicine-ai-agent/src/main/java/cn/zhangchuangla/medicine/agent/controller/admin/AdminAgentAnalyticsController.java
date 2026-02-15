@@ -1,5 +1,6 @@
 package cn.zhangchuangla.medicine.agent.controller.admin;
 
+import cn.zhangchuangla.medicine.agent.annotation.InternalAgentHeaderTrace;
 import cn.zhangchuangla.medicine.agent.config.condition.ConditionalOnAgentSpi;
 import cn.zhangchuangla.medicine.agent.model.vo.analytics.*;
 import cn.zhangchuangla.medicine.agent.spi.AdminAnalyticsDataProvider;
@@ -23,6 +24,7 @@ import java.util.List;
 @RequestMapping("/agent/tools/analytics")
 @Tag(name = "Admin智能体运营分析工具", description = "用于 Admin 侧智能体运营分析查询接口")
 @ConditionalOnAgentSpi(AdminAnalyticsDataProvider.class)
+@InternalAgentHeaderTrace
 public class AdminAgentAnalyticsController extends BaseController {
 
     /**

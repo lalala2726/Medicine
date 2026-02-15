@@ -1,5 +1,6 @@
 package cn.zhangchuangla.medicine.agent.controller.admin;
 
+import cn.zhangchuangla.medicine.agent.annotation.InternalAgentHeaderTrace;
 import cn.zhangchuangla.medicine.agent.config.condition.ConditionalOnAgentSpi;
 import cn.zhangchuangla.medicine.agent.model.request.AdminMallOrderListRequest;
 import cn.zhangchuangla.medicine.agent.model.vo.admin.AdminMallOrderListVo;
@@ -28,6 +29,7 @@ import java.util.List;
 @RequestMapping("/agent/tools/order")
 @Tag(name = "Admin智能体订单工具", description = "用于 Admin 侧智能体订单查询接口")
 @ConditionalOnAgentSpi(AdminOrderDataProvider.class)
+@InternalAgentHeaderTrace
 public class AdminAgentOrderToolsController extends BaseController {
 
     /**
