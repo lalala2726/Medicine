@@ -9,6 +9,7 @@ import java.util.List;
  * <p>
  * created on 2026/2/1
  */
+@Deprecated(forRemoval = true)
 public interface AgentImageParseService {
 
 

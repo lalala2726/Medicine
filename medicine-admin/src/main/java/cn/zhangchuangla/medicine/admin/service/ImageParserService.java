@@ -8,6 +8,7 @@ import cn.zhangchuangla.medicine.model.request.ParserMedicineInfoRequest;
  * <p>
  * created on 2026/1/31
  */
+@Deprecated(forRemoval = true)
 public interface ImageParserService {
 
     /**

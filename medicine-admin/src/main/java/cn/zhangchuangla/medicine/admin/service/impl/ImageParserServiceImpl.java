@@ -14,6 +14,7 @@ import org.springframework.stereotype.Service;
  */
 @Service
 @RequiredArgsConstructor
+@Deprecated(forRemoval = true)
 public class ImageParserServiceImpl implements ImageParserService {
 
     private final AgentImageParseService agentImageParseService;

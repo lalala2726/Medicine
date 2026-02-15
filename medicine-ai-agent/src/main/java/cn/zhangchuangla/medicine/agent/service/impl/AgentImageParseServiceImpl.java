@@ -21,6 +21,7 @@ import java.util.List;
  * created on 2026/2/1
  */
 @Service
+@Deprecated(forRemoval = true)
 public class AgentImageParseServiceImpl implements AgentImageParseService {
 
     public static final String IMAGE_PARSE = "/api/image/parse/drug";

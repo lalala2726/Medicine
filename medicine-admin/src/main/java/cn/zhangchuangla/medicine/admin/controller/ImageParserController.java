@@ -25,6 +25,8 @@ import org.springframework.web.bind.annotation.RestController;
 @Deprecated(forRemoval = true)
 public class ImageParserController extends BaseController {
 
+    // todo 解析图片信息转移到Python服务端，这边不处理相关的逻辑
+
     private final ImageParserService imageParserService;
 
     @PostMapping("/medicine_info")
