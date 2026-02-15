@@ -1,11 +1,11 @@
 package cn.zhangchuangla.medicine.admin.controller;
 
+import cn.zhangchuangla.medicine.basic.entity.Region;
+import cn.zhangchuangla.medicine.basic.service.RegionService;
+import cn.zhangchuangla.medicine.basic.vo.RegionVo;
 import cn.zhangchuangla.medicine.common.core.base.AjaxResult;
 import cn.zhangchuangla.medicine.common.core.utils.BeanCotyUtils;
 import cn.zhangchuangla.medicine.common.security.base.BaseController;
-import cn.zhangchuangla.medicine.core.entity.Region;
-import cn.zhangchuangla.medicine.core.service.RegionService;
-import cn.zhangchuangla.medicine.core.vo.RegionVo;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;

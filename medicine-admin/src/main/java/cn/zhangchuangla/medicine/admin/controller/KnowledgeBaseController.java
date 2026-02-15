@@ -1,9 +1,9 @@
 package cn.zhangchuangla.medicine.admin.controller;
 
-import cn.zhangchuangla.medicine.common.security.annotation.IsAdmin;
 import cn.zhangchuangla.medicine.common.security.base.BaseController;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -19,7 +19,7 @@ import org.springframework.web.bind.annotation.RestController;
 @RestController
 @RequestMapping("/knowledge_base")
 @RequiredArgsConstructor
-@IsAdmin
+@PreAuthorize("hasRole('admin') or hasRole('super_admin')")
 @Tag(name = "知识库管理", description = "知识库 CRUD 接口")
 public class KnowledgeBaseController extends BaseController {
 

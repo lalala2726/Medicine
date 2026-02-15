@@ -44,6 +44,9 @@
         <result property="productId" column="product_id"/>
         <result property="productName" column="product_name"/>
         <result property="productQuantity" column="product_quantity"/>
+        <result property="productImage" column="product_image"/>
+        <result property="productPrice" column="product_price"/>
+        <result property="productCategory" column="product_category"/>
     </resultMap>
 
     <sql id="Base_Column_List">
@@ -114,7 +117,10 @@
         o.update_time,
         p.id AS product_id,
         COALESCE(p.name, first_item.product_name) AS product_name,
-        first_item.quantity AS product_quantity
+        first_item.quantity AS product_quantity,
+        p.price AS product_price,
+        c.name AS product_category,
+        (SELECT pi.image_url FROM mall_product_image pi WHERE pi.product_id = p.id AND (pi.is_deleted IS NULL OR pi.is_deleted = 0) ORDER BY pi.sort ASC LIMIT 1) AS product_image
         FROM mall_order o
         LEFT JOIN (
         SELECT oi.order_id, oi.product_id, oi.quantity, oi.product_name
@@ -128,6 +134,7 @@
         )
         ) first_item ON o.id = first_item.order_id
         LEFT JOIN mall_product p ON first_item.product_id = p.id AND (p.is_deleted IS NULL OR p.is_deleted = 0)
+        LEFT JOIN mall_category c ON p.category_id = c.id
         <where>
             (o.is_deleted IS NULL OR o.is_deleted = 0)
             <if test="request.orderNo != null and request.orderNo != ''">

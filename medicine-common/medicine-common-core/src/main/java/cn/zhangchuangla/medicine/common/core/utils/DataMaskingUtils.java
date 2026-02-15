@@ -4,6 +4,7 @@ import cn.zhangchuangla.medicine.common.core.annotation.DataMasking;
 import cn.zhangchuangla.medicine.common.core.enums.MaskingType;
 import org.apache.commons.lang3.StringUtils;
 
+import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 /**
@@ -13,6 +14,8 @@ import java.util.regex.Pattern;
  */
 public class DataMaskingUtils {
 
+    private static final Pattern MASK_SEGMENT_PATTERN = Pattern.compile("\\*+");
+
     /**
      * 执行数据脱敏
      *
@@ -21,7 +24,7 @@ public class DataMaskingUtils {
      * @return 脱敏后的数据
      */
     public static String mask(String data, DataMasking dataMasking) {
-        if (StringUtils.isBlank(data)) {
+        if (StringUtils.isBlank(data) || dataMasking == null) {
             return data;
         }
 
@@ -50,10 +53,16 @@ public class DataMaskingUtils {
         }
 
         try {
-            return data.replaceAll(regex, replacement);
+            String masked = data.replaceAll(regex, replacement);
+            if (StringUtils.equals(masked, data)) {
+                return maskWithKeepChars(data, dataMasking.prefixKeep(), dataMasking.suffixKeep(),
+                        dataMasking.maskChar(), dataMasking.preserveLength(), dataMasking.maskLength());
+            }
+            return masked;
         } catch (Exception e) {
-            // 如果正则表达式有问题，返回原始数据
-            return data;
+            // 正则表达式异常时走安全兜底，避免明文返回。
+            return maskWithKeepChars(data, dataMasking.prefixKeep(), dataMasking.suffixKeep(),
+                    dataMasking.maskChar(), dataMasking.preserveLength(), dataMasking.maskLength());
         }
     }
 
@@ -62,11 +71,12 @@ public class DataMaskingUtils {
      */
     private static String maskWithPredefinedType(String data, MaskingType type, DataMasking dataMasking) {
         String regex = type.getRegex();
-        String replacement = type.getReplacement();
+        String replacement = applyCustomMaskChar(type.getReplacement(), dataMasking.maskChar());
 
-        // 如果指定了自定义脱敏字符，替换默认的*号
-        if (!"*".equals(dataMasking.maskChar())) {
-            replacement = replacement.replaceAll("\\*+", generateMaskChars(4, dataMasking.maskChar()));
+        // 姓名脱敏优先使用通用前后保留策略，保证 preserveLength 语义一致。
+        if (type == MaskingType.NAME) {
+            return maskWithDefaultKeepChars(data, type, dataMasking.maskChar(),
+                    dataMasking.preserveLength(), dataMasking.maskLength());
         }
 
         try {
@@ -79,8 +89,9 @@ public class DataMaskingUtils {
                         dataMasking.preserveLength(), dataMasking.maskLength());
             }
         } catch (Exception e) {
-            // 如果出现异常，返回原始数据
-            return data;
+            // 异常时回退到安全脱敏逻辑，避免明文返回。
+            return maskWithDefaultKeepChars(data, type, dataMasking.maskChar(),
+                    dataMasking.preserveLength(), dataMasking.maskLength());
         }
     }
 
@@ -90,6 +101,12 @@ public class DataMaskingUtils {
     private static String maskWithKeepChars(String data, int prefixKeep, int suffixKeep, String maskChar,
                                             boolean preserveLength, int specifiedMaskLength) {
         int length = data.length();
+        String normalizedMaskChar = normalizeMaskChar(maskChar);
+
+        if (length <= 2) {
+            int fullMaskLength = preserveLength ? length : (specifiedMaskLength > 0 ? specifiedMaskLength : 1);
+            return generateMaskChars(fullMaskLength, normalizedMaskChar);
+        }
 
         // 如果没有指定保留字符数，使用默认规则
         if (prefixKeep == -1 && suffixKeep == -1) {
@@ -104,8 +121,8 @@ public class DataMaskingUtils {
 
         // 确保前后保留的字符数不超过总长度
         if (prefixKeep + suffixKeep >= length) {
-            prefixKeep = Math.max(1, length / 2);
-            suffixKeep = Math.max(1, length - prefixKeep - 1);
+            prefixKeep = Math.max(0, Math.min(prefixKeep, length - 1));
+            suffixKeep = Math.max(0, Math.min(suffixKeep, length - prefixKeep - 1));
         }
 
         String prefix = data.substring(0, Math.min(prefixKeep, length));
@@ -128,7 +145,7 @@ public class DataMaskingUtils {
             }
         }
 
-        String mask = generateMaskChars(maskLength, maskChar);
+        String mask = generateMaskChars(maskLength, normalizedMaskChar);
         return prefix + mask + suffix;
     }
 
@@ -174,5 +191,25 @@ public class DataMaskingUtils {
      */
     private static String generateMaskChars(int count, String maskChar) {
         return String.valueOf(maskChar).repeat(Math.max(0, count));
+    }
+
+    private static String normalizeMaskChar(String maskChar) {
+        return StringUtils.isEmpty(maskChar) ? "*" : maskChar;
+    }
+
+    private static String applyCustomMaskChar(String replacement, String maskChar) {
+        String normalizedMaskChar = normalizeMaskChar(maskChar);
+        if ("*".equals(normalizedMaskChar) || StringUtils.isBlank(replacement)) {
+            return replacement;
+        }
+        Matcher matcher = MASK_SEGMENT_PATTERN.matcher(replacement);
+        StringBuffer sb = new StringBuffer();
+        while (matcher.find()) {
+            String segment = matcher.group();
+            String mask = generateMaskChars(segment.length(), normalizedMaskChar);
+            matcher.appendReplacement(sb, Matcher.quoteReplacement(mask));
+        }
+        matcher.appendTail(sb);
+        return sb.toString();
     }
 }

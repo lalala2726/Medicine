@@ -67,6 +67,8 @@ public @interface DataMasking {
      * 是否保留原始字符串长度，默认为 true
      * 当为 true 时，脱敏后的字符串长度与原始字符串相同
      * 当为 false 时，可能会使用固定长度的脱敏字符
+     * 注意：预定义类型在模板脱敏场景下可能优先使用类型模板；
+     * 如需严格按前后保留字符策略控制长度，请使用 CUSTOM + prefixKeep/suffixKeep。
      */
     boolean preserveLength() default true;
 

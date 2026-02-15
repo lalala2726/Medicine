@@ -6,6 +6,7 @@ target/
 CLAUDE.md
 AGENTS.md
 .java-version
+tmp
 
 ### STS ###
 .apt_generated

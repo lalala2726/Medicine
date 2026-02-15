@@ -30,6 +30,8 @@ import java.util.stream.Collectors;
 @Slf4j
 public class SecurityUtils {
 
+    private static final String ROLE_PREFIX = "ROLE_";
+
     @Value("${security.header}")
     private static final String HEADER = "Authorization";
 
@@ -121,17 +123,7 @@ public class SecurityUtils {
      */
     public static boolean isSuperAdmin() {
         Set<String> roles = getRoles();
-        return roles.contains(RolesConstant.ADMIN);
-    }
-
-    /**
-     * 判断当前用户是否具备管理员或超级管理员权限
-     */
-    public static boolean isAdmin() {
-        // 读取权限集合，兼容 ROLE_ 前缀通过 getRoles 已经去除
-        Set<String> roles = getRoles();
-        return roles.stream()
-                .anyMatch(role -> role.equalsIgnoreCase(RolesConstant.ADMIN));
+        return roles.contains(RolesConstant.SUPER_ADMIN);
     }
 
     /**
@@ -157,7 +149,28 @@ public class SecurityUtils {
                 .stream()
                 .flatMap(Collection::stream)
                 .map(GrantedAuthority::getAuthority)
+                .filter(Objects::nonNull)
+                .map(String::trim)
+                .filter(authority -> !authority.isEmpty())
+                .map(SecurityUtils::normalizeRoleAuthority)
+                .filter(Objects::nonNull)
                 .collect(Collectors.toSet());
+    }
+
+    private static String normalizeRoleAuthority(String authority) {
+        if (authority.startsWith(ROLE_PREFIX)) {
+            String role = authority.substring(ROLE_PREFIX.length());
+            return role.isEmpty() ? null : role;
+        }
+        // 兼容历史数据: 旧 token 中角色可能未带 ROLE_ 前缀
+        if (isLikelyRoleAuthority(authority)) {
+            return authority;
+        }
+        return null;
+    }
+
+    private static boolean isLikelyRoleAuthority(String authority) {
+        return !authority.contains(":") && !authority.contains(".") && !authority.contains("/");
     }
 
     /**

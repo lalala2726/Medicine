@@ -41,6 +41,18 @@ public final class ClientRequest {
         }
 
         /**
+         * 直接传入 HttpUrl 并支持继续追加 query 参数。
+         */
+        public Builder url(HttpUrl url) {
+            if (url == null) {
+                throw new IllegalArgumentException("url must not be null");
+            }
+            this.urlBuilder = url.newBuilder();
+            this.url = null;
+            return this;
+        }
+
+        /**
          * 追加 query 参数（需要先设置 url）。
          */
         public Builder addQueryParameter(String name, String value) {

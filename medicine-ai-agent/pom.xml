@@ -24,11 +24,11 @@
         </dependency>
         <dependency>
             <groupId>cn.zhangchuangla.medicine</groupId>
-            <artifactId>medicine-common-storage</artifactId>
+            <artifactId>medicine-common-security</artifactId>
         </dependency>
         <dependency>
             <groupId>cn.zhangchuangla.medicine</groupId>
-            <artifactId>medicine-common-core</artifactId>
+            <artifactId>medicine-common-storage</artifactId>
         </dependency>
         <dependency>
             <groupId>cn.zhangchuangla.medicine</groupId>
@@ -38,11 +38,15 @@
             <groupId>cn.zhangchuangla.medicine</groupId>
             <artifactId>medicine-model</artifactId>
         </dependency>
-
         <dependency>
             <groupId>org.projectlombok</groupId>
             <artifactId>lombok</artifactId>
-            <optional>true</optional>
+            <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-test</artifactId>
+            <scope>test</scope>
         </dependency>
     </dependencies>
 

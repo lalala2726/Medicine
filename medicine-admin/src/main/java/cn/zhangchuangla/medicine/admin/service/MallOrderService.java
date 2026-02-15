@@ -1,6 +1,5 @@
 package cn.zhangchuangla.medicine.admin.service;
 
-import cn.zhangchuangla.medicine.admin.model.dto.OrderOverviewStats;
 import cn.zhangchuangla.medicine.admin.model.dto.UserOrderStatistics;
 import cn.zhangchuangla.medicine.admin.model.request.*;
 import cn.zhangchuangla.medicine.admin.model.vo.OrderAddressVo;
@@ -21,13 +20,6 @@ import java.util.List;
  */
 public interface MallOrderService extends IService<MallOrder> {
 
-    /**
-     * 订单列表
-     *
-     * @param request 查询参数
-     * @return 订单列分页结果
-     */
-    Page<MallOrder> orderList(MallOrderListRequest request);
 
     /**
      * 根据订单号查询订单
@@ -202,7 +194,10 @@ public interface MallOrderService extends IService<MallOrder> {
     boolean deleteOrders(List<Long> ids);
 
     /**
-     * 查询订单概况统计数据。
+     * 批量获取订单详情
+     *
+     * @param orderIds 订单ID列表
+     * @return 订单详情列表
      */
-    OrderOverviewStats getOrderOverviewStats();
+    List<OrderDetailVo> getOrderDetailByIds(List<Long> orderIds);
 }

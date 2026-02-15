@@ -75,6 +75,11 @@
             </dependency>
             <dependency>
                 <groupId>cn.zhangchuangla.medicine</groupId>
+                <artifactId>medicine-common-log</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>cn.zhangchuangla.medicine</groupId>
                 <artifactId>medicine-common-redis</artifactId>
                 <version>${project.version}</version>
             </dependency>
@@ -105,7 +110,7 @@
             </dependency>
             <dependency>
                 <groupId>cn.zhangchuangla.medicine</groupId>
-                <artifactId>medicine-core</artifactId>
+                <artifactId>medicine-basic</artifactId>
                 <version>${project.version}</version>
             </dependency>
             <dependency>
@@ -344,7 +349,7 @@
 
     <modules>
         <module>medicine-common</module>
-        <module>medicine-core</module>
+        <module>medicine-basic</module>
         <module>medicine-model</module>
         <module>medicine-admin</module>
         <module>medicine-client</module>
@@ -353,6 +358,5 @@
         <module>medicine-common/medicine-common-rabbitmq</module>
         <module>medicine-ai-agent</module>
         <module>medicine-common/medicine-common-http-client</module>
-        <module>medicine-ai-gateway</module>
     </modules>
 </project>

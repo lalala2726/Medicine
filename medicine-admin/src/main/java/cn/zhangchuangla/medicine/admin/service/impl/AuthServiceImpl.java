@@ -1,17 +1,26 @@
 package cn.zhangchuangla.medicine.admin.service.impl;
 
+import cn.zhangchuangla.medicine.admin.publisher.LoginLogPublisher;
 import cn.zhangchuangla.medicine.admin.service.AuthService;
+import cn.zhangchuangla.medicine.admin.service.PermissionService;
+import cn.zhangchuangla.medicine.admin.service.UserService;
 import cn.zhangchuangla.medicine.common.core.constants.RolesConstant;
 import cn.zhangchuangla.medicine.common.core.enums.ResponseCode;
 import cn.zhangchuangla.medicine.common.core.exception.LoginException;
 import cn.zhangchuangla.medicine.common.core.utils.Assert;
+import cn.zhangchuangla.medicine.common.core.utils.IPUtils;
 import cn.zhangchuangla.medicine.common.security.base.BaseService;
 import cn.zhangchuangla.medicine.common.security.entity.AuthTokenVo;
 import cn.zhangchuangla.medicine.common.security.entity.OnlineLoginUser;
+import cn.zhangchuangla.medicine.common.security.entity.SysUserDetails;
 import cn.zhangchuangla.medicine.common.security.token.JwtTokenProvider;
 import cn.zhangchuangla.medicine.common.security.token.RedisTokenStore;
 import cn.zhangchuangla.medicine.common.security.token.TokenService;
+import cn.zhangchuangla.medicine.common.security.utils.SecurityUtils;
+import cn.zhangchuangla.medicine.model.mq.LoginLogMessage;
+import cn.zhangchuangla.medicine.model.vo.CurrentUserInfoVo;
 import io.jsonwebtoken.Claims;
+import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
@@ -23,17 +32,27 @@ import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 
+import java.util.Date;
+import java.util.Locale;
+import java.util.Set;
+
 import static cn.zhangchuangla.medicine.common.core.constants.SecurityConstants.CLAIM_KEY_SESSION_ID;
 
 @Service
 @RequiredArgsConstructor
 @Slf4j
 public class AuthServiceImpl implements AuthService, BaseService {
+    private static final String USER_AGENT_HEADER = "User-Agent";
+    private static final String LOGIN_TYPE_PASSWORD = "password";
+    private static final String LOGIN_SOURCE_ADMIN = "admin";
 
     private final AuthenticationManager authenticationManager;
     private final TokenService tokenService;
     private final RedisTokenStore redisTokenStore;
     private final JwtTokenProvider jwtTokenProvider;
+    private final UserService userService;
+    private final PermissionService permissionService;
+    private final LoginLogPublisher loginLogPublisher;
 
 
     @Override
@@ -42,29 +61,34 @@ public class AuthServiceImpl implements AuthService, BaseService {
         Assert.hasText(password, "密码不能为空");
         UsernamePasswordAuthenticationToken token = new UsernamePasswordAuthenticationToken(username.trim(),
                 password.trim());
-        Authentication authentication;
+        String trimmedUsername = username.trim();
+        Authentication authentication = null;
         try {
             authentication = authenticationManager.authenticate(token);
             boolean hasAdminRole = authentication.getAuthorities().stream()
                     .map(GrantedAuthority::getAuthority)
-                    .anyMatch(RolesConstant.ADMIN::equalsIgnoreCase);
+                    .filter(StringUtils::isNotBlank)
+                    .map(this::normalizeRole)
+                    .anyMatch(role -> RolesConstant.ADMIN.equalsIgnoreCase(role)
+                            || RolesConstant.SUPER_ADMIN.equalsIgnoreCase(role));
             if (!hasAdminRole) {
                 throw new LoginException(ResponseCode.OPERATION_ERROR, "账号不存在!");
             }
+            var session = tokenService.createToken(authentication);
+            recordLoginLog(authentication, trimmedUsername, true, null);
+            return AuthTokenVo.builder()
+                    .accessToken(session.getAccessToken())
+                    .refreshToken(session.getRefreshToken())
+                    .build();
         } catch (BadCredentialsException e) {
+            recordLoginLog(null, trimmedUsername, false, "账号或密码错误");
             throw new LoginException("账号或密码错误");
+        } catch (Exception ex) {
+            recordLoginLog(authentication, trimmedUsername, false, ex.getMessage());
+            throw ex;
         } finally {
             SecurityContextHolder.clearContext();
         }
-
-        // 只有管理员登录成功后才能生成令牌
-
-        // 生成会话令牌
-        var session = tokenService.createToken(authentication);
-        return AuthTokenVo.builder()
-                .accessToken(session.getAccessToken())
-                .refreshToken(session.getRefreshToken())
-                .build();
     }
 
     @Override
@@ -114,6 +138,114 @@ public class AuthServiceImpl implements AuthService, BaseService {
             log.error("退出登录发生异常", e);
             // 即使发生异常，也要确保清空Security上下文
             SecurityContextHolder.clearContext();
+        }
+    }
+
+    @Override
+    public CurrentUserInfoVo currentUserInfo() {
+        var user = userService.getUserById(getUserId());
+        if (user == null) {
+            throw new LoginException(ResponseCode.USER_EXIST);
+        }
+        CurrentUserInfoVo vo = copyProperties(user, CurrentUserInfoVo.class);
+        vo.setRoles(userService.getUserRolesByUserId(getUserId()));
+        return vo;
+    }
+
+    @Override
+    public Set<String> currentUserPermissions() {
+        return permissionService.getPermissionCodesByUserId(getUserId());
+    }
+
+    private String normalizeRole(String authority) {
+        String trimmed = authority.trim();
+        if (trimmed.regionMatches(true, 0, "ROLE_", 0, "ROLE_".length())) {
+            return trimmed.substring("ROLE_".length());
+        }
+        return trimmed.toLowerCase(Locale.ROOT);
+    }
+
+    private void recordLoginLog(Authentication authentication,
+                                String username,
+                                boolean success,
+                                String failReason) {
+        try {
+            LoginLogMessage message = new LoginLogMessage();
+            message.setUsername(username);
+            message.setLoginStatus(success ? 1 : 0);
+            message.setFailReason(success ? null : failReason);
+            message.setLoginSource(LOGIN_SOURCE_ADMIN);
+            message.setLoginType(LOGIN_TYPE_PASSWORD);
+            message.setLoginTime(new Date());
+
+            if (authentication != null && authentication.getPrincipal() instanceof SysUserDetails userDetails) {
+                message.setUserId(userDetails.getUserId());
+                if (StringUtils.isNotBlank(userDetails.getUsername())) {
+                    message.setUsername(userDetails.getUsername());
+                }
+            }
+
+            HttpServletRequest request = resolveRequest();
+            if (request != null) {
+                String ip = IPUtils.getIpAddress(request);
+                message.setIpAddress(ip);
+                if (StringUtils.isNotBlank(ip)) {
+                    message.setIpRegion(IPUtils.getRegion(ip));
+                }
+                String userAgent = request.getHeader(USER_AGENT_HEADER);
+                message.setUserAgent(userAgent);
+                fillUserAgentInfo(message, userAgent);
+            }
+            loginLogPublisher.publish(message);
+        } catch (Exception ex) {
+            log.debug("Failed to record login log", ex);
+        }
+    }
+
+    private HttpServletRequest resolveRequest() {
+        try {
+            return SecurityUtils.getHttpServletRequest();
+        } catch (Exception ex) {
+            log.debug("Failed to resolve request for login log", ex);
+            return null;
+        }
+    }
+
+    private void fillUserAgentInfo(LoginLogMessage message, String userAgent) {
+        if (!org.springframework.util.StringUtils.hasText(userAgent)) {
+            return;
+        }
+        String ua = userAgent.toLowerCase(Locale.ROOT);
+        if (ua.contains("mobile") || ua.contains("android") || ua.contains("iphone")) {
+            message.setDeviceType("mobile");
+        } else {
+            message.setDeviceType("pc");
+        }
+
+        if (ua.contains("windows")) {
+            message.setOs("Windows");
+        } else if (ua.contains("mac os") || ua.contains("macintosh")) {
+            message.setOs("macOS");
+        } else if (ua.contains("android")) {
+            message.setOs("Android");
+        } else if (ua.contains("iphone") || ua.contains("ios")) {
+            message.setOs("iOS");
+        } else if (ua.contains("linux")) {
+            message.setOs("Linux");
+        } else {
+            message.setOs("Unknown");
+        }
+
+        if (ua.contains("edg/")) {
+            message.setBrowser("Edge");
+        } else if (ua.contains("chrome/")) {
+            message.setBrowser("Chrome");
+        } else if (ua.contains("firefox/")) {
+            message.setBrowser("Firefox");
+        } else if (ua.contains("safari/") && !ua.contains("chrome/")) {
+            message.setBrowser("Safari");
+        } else {
+            message.setBrowser("Unknown");
         }
     }
 }

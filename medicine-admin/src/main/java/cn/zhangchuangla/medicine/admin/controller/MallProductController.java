@@ -4,7 +4,6 @@ import cn.zhangchuangla.medicine.admin.model.vo.MallProductVo;
 import cn.zhangchuangla.medicine.admin.service.MallProductService;
 import cn.zhangchuangla.medicine.common.core.base.AjaxResult;
 import cn.zhangchuangla.medicine.common.core.base.TableDataResult;
-import cn.zhangchuangla.medicine.common.security.annotation.IsAdmin;
 import cn.zhangchuangla.medicine.common.security.base.BaseController;
 import cn.zhangchuangla.medicine.model.dto.MallProductDetailDto;
 import cn.zhangchuangla.medicine.model.request.MallProductAddRequest;
@@ -15,6 +14,7 @@ import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
@@ -32,7 +32,6 @@ import java.util.List;
 @RestController
 @RequestMapping("/mall/product")
 @RequiredArgsConstructor
-@IsAdmin
 @Tag(name = "商城商品接口", description = "提供商城商品的增删改查")
 public class MallProductController extends BaseController {
 
@@ -46,6 +45,7 @@ public class MallProductController extends BaseController {
      */
     @GetMapping("/list")
     @Operation(summary = "获取商城商品列表")
+    @PreAuthorize("hasAuthority('mall:product:list') or hasRole('super_admin')")
     public AjaxResult<TableDataResult> listMallProduct(MallProductListQueryRequest request) {
         Page<MallProductDetailDto> page = mallProductService.listMallProductWithCategory(request);
         List<MallProductListVo> mallProductListVos = page.getRecords().stream()
@@ -68,7 +68,8 @@ public class MallProductController extends BaseController {
      */
     @GetMapping("/{id:\\d+}")
     @Operation(summary = "获取商城商品详情")
-    public AjaxResult<MallProductVo> getProductById(@PathVariable("id") Long id) {
+    @PreAuthorize("hasAuthority('mall:product:query') or hasRole('super_admin')")
+    public AjaxResult<MallProductVo> getProductById(@PathVariable Long id) {
         MallProductDetailDto product = mallProductService.getMallProductById(id);
         MallProductVo productVo = copyProperties(product, MallProductVo.class);
         return success(productVo);
@@ -82,6 +83,7 @@ public class MallProductController extends BaseController {
      */
     @PostMapping
     @Operation(summary = "添加商城商品")
+    @PreAuthorize("hasAuthority('mall:product:add') or hasRole('super_admin')")
     public AjaxResult<Void> addProduct(@Validated @RequestBody MallProductAddRequest request) {
         boolean result = mallProductService.addMallProduct(request);
         return toAjax(result);
@@ -95,6 +97,7 @@ public class MallProductController extends BaseController {
      */
     @PutMapping
     @Operation(summary = "修改商城商品")
+    @PreAuthorize("hasAuthority('mall:product:edit') or hasRole('super_admin')")
     public AjaxResult<Void> updateProduct(@Validated @RequestBody MallProductUpdateRequest request) {
         boolean result = mallProductService.updateMallProduct(request);
         return toAjax(result);
@@ -108,7 +111,8 @@ public class MallProductController extends BaseController {
      */
     @DeleteMapping("/{ids}")
     @Operation(summary = "删除商城商品")
-    public AjaxResult<Void> deleteProduct(@PathVariable("ids") List<Long> ids) {
+    @PreAuthorize("hasAuthority('mall:product:delete') or hasRole('super_admin')")
+    public AjaxResult<Void> deleteProduct(@PathVariable List<Long> ids) {
         boolean result = mallProductService.deleteMallProduct(ids);
         return toAjax(result);
     }
@@ -121,6 +125,7 @@ public class MallProductController extends BaseController {
      */
     @PostMapping("/index/batch")
     @Operation(summary = "批量索引上架商品")
+    @PreAuthorize("hasAuthority('mall:product:edit') or hasRole('super_admin')")
     public AjaxResult<Void> indexOnShelfBatch() {
         mallProductService.reindexOnShelfBatch();
         return success();
@@ -131,6 +136,7 @@ public class MallProductController extends BaseController {
      */
     @GetMapping("/after-sale/list")
     @Operation
+    @PreAuthorize("hasAuthority('mall:after_sale:list') or hasRole('super_admin')")
     public AjaxResult<TableDataResult> listAfterSale() {
         return success();
     }
@@ -140,7 +146,9 @@ public class MallProductController extends BaseController {
      */
     @GetMapping("/after-sale/{id:\\d+}")
     @Operation(summary = "获取售后详情")
-    public AjaxResult<Void> getAfterSaleById(@PathVariable("id") Long id) {
+    @PreAuthorize("hasAuthority('mall:after_sale:query') or hasRole('super_admin')")
+    public AjaxResult<Void> getAfterSaleById(@PathVariable Long id) {
+        // TODO 获取售后详情
         return success();
     }
 

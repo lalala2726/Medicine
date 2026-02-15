@@ -3,10 +3,10 @@ package cn.zhangchuangla.medicine.admin.controller;
 import cn.zhangchuangla.medicine.admin.model.vo.analytics.*;
 import cn.zhangchuangla.medicine.admin.service.AnalyticsService;
 import cn.zhangchuangla.medicine.common.core.base.AjaxResult;
-import cn.zhangchuangla.medicine.common.security.annotation.IsAdmin;
 import cn.zhangchuangla.medicine.common.security.base.BaseController;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -23,7 +23,7 @@ import java.util.List;
 @RestController
 @RequestMapping("/analytics")
 @Tag(name = "运营分析")
-@IsAdmin
+@PreAuthorize("hasRole('super_admin')")
 public class AnalyticsController extends BaseController {
 
     private final AnalyticsService analyticsService;

@@ -1,6 +1,9 @@
 package cn.zhangchuangla.medicine.admin.service;
 
 import cn.zhangchuangla.medicine.common.security.entity.AuthTokenVo;
+import cn.zhangchuangla.medicine.model.vo.CurrentUserInfoVo;
+
+import java.util.Set;
 
 /**
  * @author Chuang
@@ -32,4 +35,16 @@ public interface AuthService {
      * @param accessToken 访问令牌
      */
     void logout(String accessToken);
+
+    /**
+     * 获取当前登录用户信息
+     */
+    CurrentUserInfoVo currentUserInfo();
+
+    /**
+     * 获取当前登录用户权限
+     *
+     * @return 权限列表
+     */
+    Set<String> currentUserPermissions();
 }

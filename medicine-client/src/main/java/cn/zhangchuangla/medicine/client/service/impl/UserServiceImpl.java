@@ -16,7 +16,6 @@ import cn.zhangchuangla.medicine.model.entity.User;
 import cn.zhangchuangla.medicine.model.enums.OrderStatusEnum;
 import com.baomidou.mybatisplus.extension.conditions.query.LambdaQueryChainWrapper;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
-import org.apache.commons.lang3.StringUtils;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
@@ -69,9 +68,15 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User>
      */
     @Override
     public Set<String> getUserRolesByUserId(Long userId) {
-        LambdaQueryChainWrapper<User> eq = lambdaQuery().eq(User::getId, userId);
-        User user = eq.one();
-        return extractRoles(user);
+        List<String> roleCodes = baseMapper.listRoleCodesByUserId(userId);
+        if (roleCodes == null || roleCodes.isEmpty()) {
+            return Set.of();
+        }
+        return roleCodes.stream()
+                .filter(Objects::nonNull)
+                .map(String::trim)
+                .filter(code -> !code.isEmpty())
+                .collect(Collectors.toSet());
     }
 
     /**
@@ -82,9 +87,11 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User>
      */
     @Override
     public Set<String> getUserRolesByUserName(String username) {
-        LambdaQueryChainWrapper<User> eq = lambdaQuery().eq(User::getUsername, username);
-        User user = eq.one();
-        return extractRoles(user);
+        User user = getUserByUsername(username);
+        if (user == null) {
+            return Set.of();
+        }
+        return getUserRolesByUserId(user.getId());
     }
 
     @Override
@@ -168,25 +175,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User>
         return updateById(user);
     }
 
-    private Set<String> extractRoles(User user) {
-        if (user == null || StringUtils.isBlank(user.getRoles())) {
-            return Collections.emptySet();
-        }
-        String rawRoles = user.getRoles().trim();
-        if (rawRoles.startsWith("[") && rawRoles.endsWith("]")) {
-            rawRoles = rawRoles.substring(1, rawRoles.length() - 1);
-        }
-        if (StringUtils.isBlank(rawRoles)) {
-            return Collections.emptySet();
-        }
-        return Arrays.stream(rawRoles.split(","))
-                .map(String::trim)
-                .map(role -> StringUtils.remove(role, '"'))
-                .filter(StringUtils::isNotBlank)
-                .collect(Collectors.toSet());
-    }
 }
-
 
 
 

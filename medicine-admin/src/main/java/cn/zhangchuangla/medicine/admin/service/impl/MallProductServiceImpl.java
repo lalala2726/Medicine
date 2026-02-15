@@ -3,6 +3,7 @@ package cn.zhangchuangla.medicine.admin.service.impl;
 import cn.zhangchuangla.medicine.admin.mapper.MallOrderItemMapper;
 import cn.zhangchuangla.medicine.admin.mapper.MallProductMapper;
 import cn.zhangchuangla.medicine.admin.model.dto.ProductSalesDto;
+import cn.zhangchuangla.medicine.admin.model.vo.AgentDrugDetailVo;
 import cn.zhangchuangla.medicine.admin.service.*;
 import cn.zhangchuangla.medicine.admin.task.MallProductSearchIndexer;
 import cn.zhangchuangla.medicine.common.core.constants.RedisConstants;
@@ -11,6 +12,7 @@ import cn.zhangchuangla.medicine.common.core.utils.Assert;
 import cn.zhangchuangla.medicine.common.redis.core.RedisCache;
 import cn.zhangchuangla.medicine.common.security.base.BaseService;
 import cn.zhangchuangla.medicine.common.security.utils.SecurityUtils;
+import cn.zhangchuangla.medicine.model.dto.DrugDetailDto;
 import cn.zhangchuangla.medicine.model.dto.MallProductDetailDto;
 import cn.zhangchuangla.medicine.model.entity.DrugDetail;
 import cn.zhangchuangla.medicine.model.entity.MallProduct;
@@ -122,6 +124,73 @@ public class MallProductServiceImpl extends ServiceImpl<MallProductMapper, MallP
                 .toList();
         product.setImages(images);
         return product;
+    }
+
+    @Override
+    public List<MallProductDetailDto> getMallProductByIds(List<Long> ids) {
+        if (ids == null || ids.isEmpty()) {
+            return List.of();
+        }
+        // 批量查询商品基础信息
+        List<MallProductDetailDto> products = mallProductMapper.getMallProductDetailByIds(ids);
+        if (products.isEmpty()) {
+            return List.of();
+        }
+
+        // 批量查询图片并按 productId 分组
+        List<Long> productIds = products.stream().map(MallProduct::getId).toList();
+        Map<Long, List<String>> imageMap = mallProductImageService.lambdaQuery()
+                .in(MallProductImage::getProductId, productIds)
+                .orderByAsc(MallProductImage::getSort)
+                .list()
+                .stream()
+                .collect(Collectors.groupingBy(
+                        MallProductImage::getProductId,
+                        Collectors.mapping(MallProductImage::getImageUrl, Collectors.toList())
+                ));
+
+        // 设置图片到每个商品
+        products.forEach(product -> {
+            List<String> images = imageMap.getOrDefault(product.getId(), List.of());
+            product.setImages(images);
+        });
+
+        return products;
+    }
+
+    @Override
+    public List<AgentDrugDetailVo> getDrugDetailByProductIds(List<Long> productIds) {
+        if (productIds == null || productIds.isEmpty()) {
+            return List.of();
+        }
+
+        // 批量查询商品信息（获取商品名称）
+        List<MallProduct> products = listByIds(productIds);
+        if (products.isEmpty()) {
+            return List.of();
+        }
+        Map<Long, String> productNameMap = products.stream()
+                .collect(Collectors.toMap(MallProduct::getId, MallProduct::getName, (existing, ignore) -> existing));
+
+        // 批量查询药品详情
+        List<DrugDetail> drugDetails = medicineDetailService.lambdaQuery()
+                .in(DrugDetail::getProductId, productIds)
+                .list();
+        if (drugDetails.isEmpty()) {
+            return List.of();
+        }
+
+        // 组装结果
+        return drugDetails.stream()
+                .map(drug -> {
+                    DrugDetailDto drugDetailDto = copyProperties(drug, DrugDetailDto.class);
+                    return AgentDrugDetailVo.builder()
+                            .productId(drug.getProductId())
+                            .productName(productNameMap.get(drug.getProductId()))
+                            .drugDetail(drugDetailDto)
+                            .build();
+                })
+                .toList();
     }
 
     @Override

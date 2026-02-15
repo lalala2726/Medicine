@@ -15,6 +15,7 @@ import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
@@ -41,6 +42,7 @@ public class MallAfterSaleController extends BaseController {
      */
     @GetMapping("/list")
     @Operation(summary = "查询售后列表", description = "管理员查询所有售后申请列表")
+    @PreAuthorize("hasAuthority('mall:after_sale:list') or hasRole('super_admin')")
     public AjaxResult<TableDataResult> getAfterSaleList(AfterSaleListRequest request) {
         Page<AfterSaleListVo> page = mallAfterSaleService.getAfterSaleList(request);
         return getTableData(page);
@@ -54,6 +56,7 @@ public class MallAfterSaleController extends BaseController {
      */
     @GetMapping("/detail/{afterSaleId}")
     @Operation(summary = "查询售后详情", description = "管理员查询售后申请详情")
+    @PreAuthorize("hasAuthority('mall:after_sale:query') or hasRole('super_admin')")
     public AjaxResult<AfterSaleDetailVo> getAfterSaleDetail(
             @Parameter(description = "售后申请ID", required = true)
             @PathVariable Long afterSaleId) {
@@ -69,6 +72,7 @@ public class MallAfterSaleController extends BaseController {
      */
     @PostMapping("/audit")
     @Operation(summary = "审核售后申请", description = "管理员审核售后申请(通过/拒绝)")
+    @PreAuthorize("hasAuthority('mall:after_sale:audit') or hasRole('super_admin')")
     public AjaxResult<Void> auditAfterSale(@Validated @RequestBody AfterSaleAuditRequest request) {
         boolean result = mallAfterSaleService.auditAfterSale(request);
         return toAjax(result);
@@ -82,6 +86,7 @@ public class MallAfterSaleController extends BaseController {
      */
     @PostMapping("/process-refund")
     @Operation(summary = "处理退款", description = "管理员处理售后退款(原路退回)")
+    @PreAuthorize("hasAuthority('mall:after_sale:refund') or hasRole('super_admin')")
     public AjaxResult<Void> processRefund(@Validated @RequestBody AfterSaleProcessRequest request) {
         boolean result = mallAfterSaleService.processRefund(request);
         return toAjax(result);
@@ -95,6 +100,7 @@ public class MallAfterSaleController extends BaseController {
      */
     @PostMapping("/process-exchange")
     @Operation(summary = "处理换货", description = "管理员处理售后换货")
+    @PreAuthorize("hasAuthority('mall:after_sale:exchange') or hasRole('super_admin')")
     public AjaxResult<Void> processExchange(@Validated @RequestBody AfterSaleProcessRequest request) {
         boolean result = mallAfterSaleService.processExchange(request);
         return toAjax(result);

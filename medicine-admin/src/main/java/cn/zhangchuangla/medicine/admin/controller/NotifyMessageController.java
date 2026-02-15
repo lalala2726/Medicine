@@ -8,13 +8,13 @@ import cn.zhangchuangla.medicine.admin.model.vo.NotifyMessageListVo;
 import cn.zhangchuangla.medicine.admin.service.NotifyMessageService;
 import cn.zhangchuangla.medicine.common.core.base.AjaxResult;
 import cn.zhangchuangla.medicine.common.core.base.TableDataResult;
-import cn.zhangchuangla.medicine.common.security.annotation.IsAdmin;
 import cn.zhangchuangla.medicine.common.security.base.BaseController;
 import cn.zhangchuangla.medicine.model.entity.NotifyMessage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
@@ -26,7 +26,6 @@ import java.util.List;
 @RestController
 @RequestMapping("/notify/message")
 @RequiredArgsConstructor
-@IsAdmin
 @Tag(name = "通知消息管理", description = "管理端通知消息维护接口")
 public class NotifyMessageController extends BaseController {
 
@@ -40,6 +39,7 @@ public class NotifyMessageController extends BaseController {
      */
     @GetMapping("/list")
     @Operation(summary = "通知消息列表")
+    @PreAuthorize("hasAuthority('notify_message:list') or hasRole('super_admin')")
     public AjaxResult<TableDataResult> listNotifyMessages(NotifyMessageListRequest request) {
         Page<NotifyMessage> page = notifyMessageService.listNotifyMessages(request);
         List<NotifyMessageListVo> rows = copyListProperties(page, NotifyMessageListVo.class);
@@ -54,6 +54,7 @@ public class NotifyMessageController extends BaseController {
      */
     @GetMapping("/{id:\\d+}")
     @Operation(summary = "通知消息详情")
+    @PreAuthorize("hasAuthority('notify_message:query') or hasRole('super_admin')")
     public AjaxResult<NotifyMessageDetailVo> getNotifyMessageDetail(@PathVariable Long id) {
         NotifyMessageDetailVo detailVo = notifyMessageService.getNotifyMessageDetail(id);
         return success(detailVo);
@@ -67,6 +68,7 @@ public class NotifyMessageController extends BaseController {
      */
     @PostMapping
     @Operation(summary = "发送通知消息")
+    @PreAuthorize("hasAuthority('notify_message:add') or hasRole('super_admin')")
     public AjaxResult<Void> sendNotifyMessage(@Validated @RequestBody NotifyMessageSendRequest request) {
         boolean result = notifyMessageService.sendAdminMessage(request);
         return toAjax(result);
@@ -80,6 +82,7 @@ public class NotifyMessageController extends BaseController {
      */
     @PutMapping
     @Operation(summary = "编辑通知消息")
+    @PreAuthorize("hasAuthority('notify_message:edit') or hasRole('super_admin')")
     public AjaxResult<Void> updateNotifyMessage(@Validated @RequestBody NotifyMessageUpdateRequest request) {
         boolean result = notifyMessageService.updateAdminMessage(request);
         return toAjax(result);
@@ -93,6 +96,7 @@ public class NotifyMessageController extends BaseController {
      */
     @DeleteMapping("/{ids}")
     @Operation(summary = "删除通知消息(仅管理员发送)")
+    @PreAuthorize("hasAuthority('notify_message:delete') or hasRole('super_admin')")
     public AjaxResult<Void> deleteNotifyMessages(@PathVariable List<Long> ids) {
         boolean result = notifyMessageService.deleteAdminMessages(ids);
         return toAjax(result);

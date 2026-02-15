@@ -62,11 +62,6 @@ public class User {
     private String password;
 
     /**
-     * 角色
-     */
-    private String roles;
-
-    /**
      * 真实姓名
      */
     private String realName;

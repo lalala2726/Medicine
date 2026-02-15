@@ -3,6 +3,8 @@ package cn.zhangchuangla.medicine.model.vo;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 
+import java.util.Set;
+
 /**
  * 用户信息视图对象
  */
@@ -22,6 +24,6 @@ public class CurrentUserInfoVo {
     @Schema(description = "用户名", example = "zhangsan")
     private String username;
 
-    @Schema(description = "角色标识", example = "ROLE_USER")
-    private String roles;
+    @Schema(description = "角色标识集合", example = "[\"admin\",\"super_admin\"]")
+    private Set<String> roles;
 }
