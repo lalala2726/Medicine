@@ -4,6 +4,7 @@ import cn.zhangchuangla.medicine.agent.model.request.AdminMallOrderListRequest;
 import cn.zhangchuangla.medicine.agent.model.vo.admin.AdminAgentDrugDetailVo;
 import cn.zhangchuangla.medicine.agent.model.vo.admin.AdminAgentProductDetailVo;
 import cn.zhangchuangla.medicine.agent.model.vo.admin.AdminOrderDetailVo;
+import cn.zhangchuangla.medicine.agent.model.vo.analytics.*;
 import cn.zhangchuangla.medicine.model.dto.MallProductDetailDto;
 import cn.zhangchuangla.medicine.model.dto.OrderWithProductDto;
 import cn.zhangchuangla.medicine.model.request.MallProductListQueryRequest;
@@ -27,6 +28,13 @@ public final class TestAgentSpiData {
     public static Page<OrderWithProductDto> orderPage;
     public static List<AdminOrderDetailVo> orderDetails;
 
+    // Analytics 相关数据
+    public static List<OrderTrendPoint> orderTrendPoints;
+    public static List<StatusDistribution> statusDistributions;
+    public static List<PaymentDistribution> paymentDistributions;
+    public static List<HotProductRank> hotProductRanks;
+    public static List<ReturnRateStat> returnRateStats;
+
     public static Long capturedAdminUserId;
     public static Long capturedClientUserId;
     public static MallProductListQueryRequest capturedProductListRequest;
@@ -34,6 +42,14 @@ public final class TestAgentSpiData {
     public static List<Long> capturedDrugDetailIds;
     public static AdminMallOrderListRequest capturedOrderListRequest;
     public static List<Long> capturedOrderDetailIds;
+
+    // Analytics 相关捕获变量
+    public static boolean capturedAnalyticsOverview;
+    public static String capturedAnalyticsPeriod;
+    public static boolean capturedAnalyticsStatusDistribution;
+    public static boolean capturedAnalyticsPaymentDistribution;
+    public static int capturedAnalyticsHotProductsLimit;
+    public static int capturedAnalyticsReturnRatesLimit;
 
     private TestAgentSpiData() {
     }
@@ -46,6 +62,11 @@ public final class TestAgentSpiData {
         drugDetails = null;
         orderPage = null;
         orderDetails = null;
+        orderTrendPoints = null;
+        statusDistributions = null;
+        paymentDistributions = null;
+        hotProductRanks = null;
+        returnRateStats = null;
         capturedAdminUserId = null;
         capturedClientUserId = null;
         capturedProductListRequest = null;
@@ -53,5 +74,11 @@ public final class TestAgentSpiData {
         capturedDrugDetailIds = null;
         capturedOrderListRequest = null;
         capturedOrderDetailIds = null;
+        capturedAnalyticsOverview = false;
+        capturedAnalyticsPeriod = null;
+        capturedAnalyticsStatusDistribution = false;
+        capturedAnalyticsPaymentDistribution = false;
+        capturedAnalyticsHotProductsLimit = 0;
+        capturedAnalyticsReturnRatesLimit = 0;
     }
 }
