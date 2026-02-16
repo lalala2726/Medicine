@@ -21,7 +21,7 @@ import java.util.List;
  * Admin 端智能体运营分析工具接口。
  */
 @RestController
-@RequestMapping("/agent/tools/analytics")
+@RequestMapping("/agent/analytics")
 @Tag(name = "Admin智能体运营分析工具", description = "用于 Admin 侧智能体运营分析查询接口")
 @ConditionalOnAgentSpi(AdminAnalyticsDataProvider.class)
 @InternalAgentHeaderTrace

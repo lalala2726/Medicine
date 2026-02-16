@@ -21,7 +21,7 @@ import java.util.List;
  * Admin 端智能体药品工具接口。
  */
 @RestController
-@RequestMapping("/agent/tools/drug")
+@RequestMapping("/agent/drug")
 @Tag(name = "Admin智能体药品工具", description = "用于 Admin 侧智能体药品查询接口")
 @ConditionalOnAgentSpi(AdminProductDataProvider.class)
 @InternalAgentHeaderTrace

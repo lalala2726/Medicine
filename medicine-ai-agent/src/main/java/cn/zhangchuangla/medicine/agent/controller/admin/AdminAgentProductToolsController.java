@@ -26,7 +26,7 @@ import java.util.List;
  * Admin 端智能体商品工具接口。
  */
 @RestController
-@RequestMapping("/agent/tools/product")
+@RequestMapping("/agent/product")
 @Tag(name = "Admin智能体商品工具", description = "用于 Admin 侧智能体商品查询接口")
 @ConditionalOnAgentSpi(AdminProductDataProvider.class)
 @InternalAgentHeaderTrace

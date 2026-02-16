@@ -26,7 +26,7 @@ import java.util.List;
  * Admin 端智能体订单工具接口。
  */
 @RestController
-@RequestMapping("/agent/tools/order")
+@RequestMapping("/agent/order")
 @Tag(name = "Admin智能体订单工具", description = "用于 Admin 侧智能体订单查询接口")
 @ConditionalOnAgentSpi(AdminOrderDataProvider.class)
 @InternalAgentHeaderTrace

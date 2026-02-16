@@ -17,7 +17,7 @@ import org.springframework.web.bind.annotation.RestController;
  * Admin 端智能体用户工具接口。
  */
 @RestController
-@RequestMapping("/agent/tools")
+@RequestMapping("/agent/user")
 @Tag(name = "Admin智能体用户工具", description = "用于 Admin 侧智能体用户查询接口")
 @ConditionalOnAgentSpi(AdminUserDataProvider.class)
 @InternalAgentHeaderTrace
@@ -26,7 +26,7 @@ public class AdminAgentUserToolsController extends BaseController {
     /**
      * 获取当前登录用户信息。
      */
-    @GetMapping("/current_user")
+    @GetMapping("/info")
     @Operation(summary = "获取当前用户信息", description = "获取当前登录用户的详细信息")
     public AjaxResult<UserVo> getCurrentUser() {
         Long userId = getUserId();
