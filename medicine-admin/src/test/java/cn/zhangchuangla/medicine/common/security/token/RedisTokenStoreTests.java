@@ -2,7 +2,7 @@ package cn.zhangchuangla.medicine.common.security.token;
 
 import cn.zhangchuangla.medicine.common.core.constants.RedisConstants;
 import cn.zhangchuangla.medicine.common.redis.core.RedisCache;
-import cn.zhangchuangla.medicine.common.security.SecurityProperties;
+import cn.zhangchuangla.medicine.common.security.config.SecurityProperties;
 import cn.zhangchuangla.medicine.common.security.entity.OnlineLoginUser;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;

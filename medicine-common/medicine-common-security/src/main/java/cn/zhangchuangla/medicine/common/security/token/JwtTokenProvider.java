@@ -2,7 +2,7 @@ package cn.zhangchuangla.medicine.common.security.token;
 
 import cn.zhangchuangla.medicine.common.core.constants.SecurityConstants;
 import cn.zhangchuangla.medicine.common.core.exception.AuthorizationException;
-import cn.zhangchuangla.medicine.common.security.SecurityProperties;
+import cn.zhangchuangla.medicine.common.security.config.SecurityProperties;
 import io.jsonwebtoken.*;
 import io.jsonwebtoken.io.Decoders;
 import io.jsonwebtoken.security.Keys;

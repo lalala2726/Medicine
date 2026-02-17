@@ -6,7 +6,7 @@ import cn.zhangchuangla.medicine.common.core.exception.AuthorizationException;
 import cn.zhangchuangla.medicine.common.core.exception.ServiceException;
 import cn.zhangchuangla.medicine.common.core.utils.Assert;
 import cn.zhangchuangla.medicine.common.redis.core.RedisCache;
-import cn.zhangchuangla.medicine.common.security.SecurityProperties;
+import cn.zhangchuangla.medicine.common.security.config.SecurityProperties;
 import cn.zhangchuangla.medicine.common.security.entity.OnlineLoginUser;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
