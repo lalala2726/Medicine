@@ -1,15 +1,15 @@
 package cn.zhangchuangla.medicine.agent.controller.admin;
 
 import cn.zhangchuangla.medicine.agent.annotation.InternalAgentHeaderTrace;
-import cn.zhangchuangla.medicine.agent.config.condition.ConditionalOnAgentSpi;
-import cn.zhangchuangla.medicine.agent.model.vo.analytics.*;
-import cn.zhangchuangla.medicine.agent.spi.AdminAnalyticsDataProvider;
-import cn.zhangchuangla.medicine.agent.spi.AgentSpiLoader;
+import cn.zhangchuangla.medicine.agent.service.AnalyticsService;
 import cn.zhangchuangla.medicine.common.core.base.AjaxResult;
 import cn.zhangchuangla.medicine.common.security.base.BaseController;
+import cn.zhangchuangla.medicine.model.vo.analytics.*;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import lombok.RequiredArgsConstructor;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -23,9 +23,12 @@ import java.util.List;
 @RestController
 @RequestMapping("/agent/analytics")
 @Tag(name = "Admin智能体运营分析工具", description = "用于 Admin 侧智能体运营分析查询接口")
-@ConditionalOnAgentSpi(AdminAnalyticsDataProvider.class)
 @InternalAgentHeaderTrace
+@RequiredArgsConstructor
+@PreAuthorize("hasRole('super_admin')")
 public class AdminAgentAnalyticsController extends BaseController {
+
+    private final AnalyticsService agentAnalyticsService;
 
     /**
      * 获取运营总览数据。
@@ -33,8 +36,7 @@ public class AdminAgentAnalyticsController extends BaseController {
     @GetMapping("/overview")
     @Operation(summary = "运营总览", description = "包括总订单数、总销售额、总用户数等关键指标")
     public AjaxResult<OverviewVo> overview() {
-        AdminAnalyticsDataProvider provider = AgentSpiLoader.loadSingle(AdminAnalyticsDataProvider.class);
-        return success(provider.overview());
+        return success(agentAnalyticsService.overview());
     }
 
     /**
@@ -46,8 +48,7 @@ public class AdminAgentAnalyticsController extends BaseController {
             @Parameter(description = "时间周期，支持 DAY(日)、WEEK(周)、MONTH(月)")
             @RequestParam(defaultValue = "DAY") String period
     ) {
-        AdminAnalyticsDataProvider provider = AgentSpiLoader.loadSingle(AdminAnalyticsDataProvider.class);
-        return success(provider.orderTrend(period));
+        return success(agentAnalyticsService.orderTrend(period));
     }
 
     /**
@@ -56,8 +57,7 @@ public class AdminAgentAnalyticsController extends BaseController {
     @GetMapping("/order/status-distribution")
     @Operation(summary = "订单状态分布", description = "统计不同状态订单的数量和占比")
     public AjaxResult<List<StatusDistribution>> orderStatusDistribution() {
-        AdminAnalyticsDataProvider provider = AgentSpiLoader.loadSingle(AdminAnalyticsDataProvider.class);
-        return success(provider.orderStatusDistribution());
+        return success(agentAnalyticsService.orderStatusDistribution());
     }
 
     /**
@@ -66,8 +66,7 @@ public class AdminAgentAnalyticsController extends BaseController {
     @GetMapping("/order/payment-distribution")
     @Operation(summary = "支付方式分布", description = "统计不同支付方式的使用情况和占比")
     public AjaxResult<List<PaymentDistribution>> paymentDistribution() {
-        AdminAnalyticsDataProvider provider = AgentSpiLoader.loadSingle(AdminAnalyticsDataProvider.class);
-        return success(provider.paymentDistribution());
+        return success(agentAnalyticsService.paymentDistribution());
     }
 
     /**
@@ -79,8 +78,7 @@ public class AdminAgentAnalyticsController extends BaseController {
             @Parameter(description = "返回数量限制")
             @RequestParam(defaultValue = "10") int limit
     ) {
-        AdminAnalyticsDataProvider provider = AgentSpiLoader.loadSingle(AdminAnalyticsDataProvider.class);
-        return success(provider.hotProducts(limit));
+        return success(agentAnalyticsService.hotProducts(limit));
     }
 
     /**
@@ -92,7 +90,6 @@ public class AdminAgentAnalyticsController extends BaseController {
             @Parameter(description = "返回数量限制")
             @RequestParam(defaultValue = "10") int limit
     ) {
-        AdminAnalyticsDataProvider provider = AgentSpiLoader.loadSingle(AdminAnalyticsDataProvider.class);
-        return success(provider.productReturnRates(limit));
+        return success(agentAnalyticsService.productReturnRates(limit));
     }
 }

@@ -1,10 +1,8 @@
 package cn.zhangchuangla.medicine.agent.controller.admin;
 
 import cn.zhangchuangla.medicine.agent.annotation.InternalAgentHeaderTrace;
-import cn.zhangchuangla.medicine.agent.config.condition.ConditionalOnAgentSpi;
 import cn.zhangchuangla.medicine.agent.model.vo.admin.AdminAgentProductDetailVo;
-import cn.zhangchuangla.medicine.agent.spi.AdminProductDataProvider;
-import cn.zhangchuangla.medicine.agent.spi.AgentSpiLoader;
+import cn.zhangchuangla.medicine.agent.service.MallProductService;
 import cn.zhangchuangla.medicine.common.core.base.AjaxResult;
 import cn.zhangchuangla.medicine.common.core.base.TableDataResult;
 import cn.zhangchuangla.medicine.common.security.base.BaseController;
@@ -15,6 +13,8 @@ import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import lombok.RequiredArgsConstructor;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -28,15 +28,18 @@ import java.util.List;
 @RestController
 @RequestMapping("/agent/product")
 @Tag(name = "Admin智能体商品工具", description = "用于 Admin 侧智能体商品查询接口")
-@ConditionalOnAgentSpi(AdminProductDataProvider.class)
 @InternalAgentHeaderTrace
+@RequiredArgsConstructor
 public class AdminAgentProductToolsController extends BaseController {
+
+    private final MallProductService agentProductService;
 
     /**
      * 商品搜索占位接口。
      */
     @GetMapping("/search")
     @Operation(summary = "商品搜索", description = "根据关键词和分类搜索商品")
+    @PreAuthorize("hasAuthority('mall:product:list') or hasRole('super_admin')")
     public AjaxResult<Void> searchProduct() {
         return success();
     }
@@ -46,10 +49,10 @@ public class AdminAgentProductToolsController extends BaseController {
      */
     @GetMapping("/list")
     @Operation(summary = "商品列表", description = "根据关键词和分类搜索商品")
+    @PreAuthorize("hasAuthority('mall:product:list') or hasRole('super_admin')")
     public AjaxResult<TableDataResult> searchProducts(MallProductListQueryRequest request) {
-        AdminProductDataProvider provider = AgentSpiLoader.loadSingle(AdminProductDataProvider.class);
         MallProductListQueryRequest safeRequest = request == null ? new MallProductListQueryRequest() : request;
-        Page<MallProductDetailDto> page = provider.listProducts(safeRequest);
+        Page<MallProductDetailDto> page = agentProductService.listProducts(safeRequest);
         List<MallProductListVo> mallProductListVos = page.getRecords().stream()
                 .map(product -> {
                     MallProductListVo productListVo = copyProperties(product, MallProductListVo.class);
@@ -67,11 +70,11 @@ public class AdminAgentProductToolsController extends BaseController {
      */
     @GetMapping("/{productIds}")
     @Operation(summary = "获取商品详情", description = "根据商品ID获取详细信息（不含药品详情）")
+    @PreAuthorize("hasAuthority('mall:product:query') or hasRole('super_admin')")
     public AjaxResult<List<AdminAgentProductDetailVo>> getProductDetail(
             @Parameter(description = "商品ID")
             @PathVariable List<Long> productIds
     ) {
-        AdminProductDataProvider provider = AgentSpiLoader.loadSingle(AdminProductDataProvider.class);
-        return success(provider.getProductDetail(productIds));
+        return success(agentProductService.getProductDetail(productIds));
     }
 }

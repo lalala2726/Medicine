@@ -1,6 +1,6 @@
 package cn.zhangchuangla.medicine.admin.service;
 
-import cn.zhangchuangla.medicine.admin.model.vo.analytics.*;
+import cn.zhangchuangla.medicine.model.vo.analytics.*;
 
 import java.util.List;
 

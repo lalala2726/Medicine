@@ -1,0 +1,50 @@
+spring:
+  profiles:
+    active: druid
+  application:
+    name: MedicineAiAgent
+    version: 0.1
+  servlet:
+    multipart:
+      max-file-size: 50MB
+      max-request-size: 50MB
+  data:
+    redis:
+      host: ${MEDICINE_REDIS_HOST:192.168.10.110}
+      port: ${MEDICINE_REDIS_PORT:6379}
+      database: ${MEDICINE_REDIS_DB:0}
+      password: ${MEDICINE_REDIS_PASSWORD:zhangchuang2726}
+server:
+  port: 8083
+mybatis-plus:
+  configuration:
+    log-impl: org.apache.ibatis.logging.stdout.StdOutImpl
+  type-aliases-package: cn.zhangchuangla.medicine.**.entity
+  mapper-locations:
+    - classpath*:mapper/**/**.xml
+  global-config:
+    db-config:
+      logic-delete-field: isDeleted
+      logic-delete-value: 1
+      logic-not-delete-value: 0
+
+security:
+  header: Authorization
+  secret: ${SECURITY_SECRET:zhangchuang2726zhangchuang2726zhangchuang2726}
+  access-token-expire-time: 18000000
+  refresh-token-expire-time: 25920000
+
+minio:
+  endpoint: ${MINIO_ENDPOINT:http://192.168.10.110:9000}
+  access-key: ${MINIO_ACCESS_KEY:L8lIE0S3gkc0L5imKvNd}
+  secret-key: ${MINIO_SECRET_KEY:wERm9ywqhjsflwIsyF98HlnhY8CxXuEJWJjaNVj8}
+  bucket-name: ${MINIO_BUCKET_NAME:medicine}
+
+file:
+  upload:
+    allowed-types: image/jpeg,image/png,image/gif,image/webp,application/pdf
+
+ip2region:
+  enabled: true
+  db-path: classpath:data/ip2region.xdb
+  cache-enabled: true

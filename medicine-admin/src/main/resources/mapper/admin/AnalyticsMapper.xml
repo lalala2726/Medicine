@@ -14,7 +14,7 @@
         WHERE is_deleted = 0
     </select>
 
-    <select id="orderAmountStats" resultType="cn.zhangchuangla.medicine.admin.model.vo.analytics.OrderAmountStats">
+    <select id="orderAmountStats" resultType="cn.zhangchuangla.medicine.model.vo.analytics.OrderAmountStats">
         SELECT COUNT(*)            AS totalOrders,
                SUM(CASE
                        WHEN paid = 1 AND order_status NOT IN ('CANCELLED', 'REFUNDED') THEN 1
@@ -34,7 +34,7 @@
         WHERE is_deleted = 0
     </select>
 
-    <select id="refundStats" resultType="cn.zhangchuangla.medicine.admin.model.vo.analytics.RefundStats">
+    <select id="refundStats" resultType="cn.zhangchuangla.medicine.model.vo.analytics.RefundStats">
         SELECT COUNT(*)                      AS refundCount,
                IFNULL(SUM(refund_amount), 0) AS refundAmount
         FROM mall_after_sale
@@ -42,7 +42,7 @@
           AND after_sale_status IN ('APPROVED', 'PROCESSING', 'COMPLETED')
     </select>
 
-    <select id="orderTrend" resultType="cn.zhangchuangla.medicine.admin.model.vo.analytics.OrderTrendPoint">
+    <select id="orderTrend" resultType="cn.zhangchuangla.medicine.model.vo.analytics.OrderTrendPoint">
         SELECT DATE_FORMAT(create_time, #{groupFormat}) AS label,
                COUNT(*)                                 AS orderCount,
                IFNULL(SUM(pay_amount), 0)               AS orderAmount
@@ -56,7 +56,7 @@
     </select>
 
     <select id="orderStatusDistribution"
-            resultType="cn.zhangchuangla.medicine.admin.model.vo.analytics.StatusDistribution">
+            resultType="cn.zhangchuangla.medicine.model.vo.analytics.StatusDistribution">
         SELECT order_status AS status,
                COUNT(*)     AS count
         FROM mall_order
@@ -65,7 +65,7 @@
     </select>
 
     <select id="paymentDistribution"
-            resultType="cn.zhangchuangla.medicine.admin.model.vo.analytics.PaymentDistribution">
+            resultType="cn.zhangchuangla.medicine.model.vo.analytics.PaymentDistribution">
         SELECT pay_type                   AS payType,
                COUNT(*)                   AS count,
                IFNULL(SUM(pay_amount), 0) AS amount
@@ -76,7 +76,7 @@
         GROUP BY pay_type
     </select>
 
-    <select id="hotProducts" resultType="cn.zhangchuangla.medicine.admin.model.vo.analytics.HotProductRank">
+    <select id="hotProducts" resultType="cn.zhangchuangla.medicine.model.vo.analytics.HotProductRank">
         SELECT moi.product_id                  AS productId,
                mp.name                         AS productName,
                SUM(moi.quantity)               AS quantity,
@@ -93,7 +93,7 @@
         LIMIT #{limit}
     </select>
 
-    <select id="productReturnRates" resultType="cn.zhangchuangla.medicine.admin.model.vo.analytics.ReturnRateStat">
+    <select id="productReturnRates" resultType="cn.zhangchuangla.medicine.model.vo.analytics.ReturnRateStat">
         SELECT sold.product_id           AS productId,
                sold.product_name         AS productName,
                sold.sold_quantity        AS soldQuantity,

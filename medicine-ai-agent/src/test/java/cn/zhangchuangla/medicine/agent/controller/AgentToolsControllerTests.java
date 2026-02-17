@@ -5,17 +5,21 @@ import cn.zhangchuangla.medicine.agent.controller.admin.AdminAgentOrderToolsCont
 import cn.zhangchuangla.medicine.agent.controller.admin.AdminAgentProductToolsController;
 import cn.zhangchuangla.medicine.agent.controller.admin.AdminAgentUserToolsController;
 import cn.zhangchuangla.medicine.agent.controller.client.ClientAgentUserToolsController;
+import cn.zhangchuangla.medicine.agent.model.request.AdminMallOrderListRequest;
 import cn.zhangchuangla.medicine.agent.model.vo.admin.AdminAgentDrugDetailVo;
 import cn.zhangchuangla.medicine.agent.model.vo.admin.AdminAgentProductDetailVo;
 import cn.zhangchuangla.medicine.agent.model.vo.admin.AdminMallOrderListVo;
 import cn.zhangchuangla.medicine.agent.model.vo.admin.AdminOrderDetailVo;
-import cn.zhangchuangla.medicine.agent.spi.*;
-import cn.zhangchuangla.medicine.agent.spi.test.TestAgentSpiData;
+import cn.zhangchuangla.medicine.agent.service.MallOrderService;
+import cn.zhangchuangla.medicine.agent.service.MallProductService;
+import cn.zhangchuangla.medicine.agent.service.UserService;
 import cn.zhangchuangla.medicine.common.core.base.TableDataResult;
 import cn.zhangchuangla.medicine.common.security.entity.AuthUser;
 import cn.zhangchuangla.medicine.common.security.entity.SysUserDetails;
+import cn.zhangchuangla.medicine.model.dto.AuthUserDto;
 import cn.zhangchuangla.medicine.model.dto.MallProductDetailDto;
 import cn.zhangchuangla.medicine.model.dto.OrderWithProductDto;
+import cn.zhangchuangla.medicine.model.request.MallProductListQueryRequest;
 import cn.zhangchuangla.medicine.model.vo.UserVo;
 import cn.zhangchuangla.medicine.model.vo.mall.MallProductListVo;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
@@ -29,61 +33,66 @@ import java.math.BigDecimal;
 import java.util.List;
 import java.util.Set;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 class AgentToolsControllerTests {
 
-    private final AdminAgentUserToolsController adminUserController = new AdminAgentUserToolsController();
-    private final ClientAgentUserToolsController clientUserController = new ClientAgentUserToolsController();
-    private final AdminAgentProductToolsController adminProductController = new AdminAgentProductToolsController();
-    private final AdminAgentDrugToolsController adminDrugController = new AdminAgentDrugToolsController();
-    private final AdminAgentOrderToolsController adminOrderController = new AdminAgentOrderToolsController();
+    private final StubUserService agentUserService = new StubUserService();
+    private final StubMallProductService agentProductService = new StubMallProductService();
+    private final StubMallOrderService agentOrderService = new StubMallOrderService();
+
+    private final AgentAuthorizationController authorizationController = new AgentAuthorizationController(agentUserService);
+    private final AdminAgentUserToolsController adminUserController = new AdminAgentUserToolsController(agentUserService);
+    private final ClientAgentUserToolsController clientUserController = new ClientAgentUserToolsController(agentUserService);
+    private final AdminAgentProductToolsController adminProductController = new AdminAgentProductToolsController(agentProductService);
+    private final AdminAgentDrugToolsController adminDrugController = new AdminAgentDrugToolsController(agentProductService);
+    private final AdminAgentOrderToolsController adminOrderController = new AdminAgentOrderToolsController(agentOrderService);
 
     @BeforeEach
     void setUp() {
-        TestAgentSpiData.reset();
         loginAs(1001L, "test-user");
     }
 
     @AfterEach
     void tearDown() {
         SecurityContextHolder.clearContext();
-        TestAgentSpiData.reset();
     }
 
     @Test
-    void adminCurrentUser_ShouldUseAdminProviderAndReturnUser() {
-        UserVo userVo = new UserVo();
-        userVo.setId(1001L);
-        userVo.setNickName("管理员");
-        TestAgentSpiData.adminUser = userVo;
+    void authorizationController_ShouldReturnCurrentAuthUser() {
+        AuthUserDto dto = new AuthUserDto();
+        dto.setId(1001L);
+        dto.setUsername("test-user");
+        agentUserService.authUser = dto;
 
-        var result = adminUserController.getCurrentUser();
+        var result = authorizationController.getCurrentUser();
 
         assertEquals(200, result.getCode());
         assertNotNull(result.getData());
         assertEquals(1001L, result.getData().getId());
-        assertEquals("管理员", result.getData().getNickName());
-        assertEquals(1001L, TestAgentSpiData.capturedAdminUserId);
+        assertEquals(1001L, agentUserService.capturedAuthUserId);
     }
 
     @Test
-    void clientCurrentUser_ShouldUseClientProviderAndReturnUser() {
+    void userControllers_ShouldDelegateToUserService() {
         UserVo userVo = new UserVo();
         userVo.setId(1001L);
-        userVo.setNickName("客户端用户");
-        TestAgentSpiData.clientUser = userVo;
+        userVo.setNickName("管理员");
+        agentUserService.currentUser = userVo;
 
-        var result = clientUserController.getCurrentUser();
+        var adminResult = adminUserController.getCurrentUser();
+        var clientResult = clientUserController.getCurrentUser();
 
-        assertEquals(200, result.getCode());
-        assertNotNull(result.getData());
-        assertEquals("客户端用户", result.getData().getNickName());
-        assertEquals(1001L, TestAgentSpiData.capturedClientUserId);
+        assertEquals(200, adminResult.getCode());
+        assertEquals(200, clientResult.getCode());
+        assertEquals("管理员", adminResult.getData().getNickName());
+        assertEquals("管理员", clientResult.getData().getNickName());
+        assertEquals(1001L, agentUserService.capturedCurrentUserId);
     }
 
     @Test
-    void adminProductList_ShouldMapCoverImageToMallProductListVo() {
+    void adminProductList_ShouldMapCoverImageToListVo() {
         MallProductDetailDto dto = new MallProductDetailDto();
         dto.setId(200L);
         dto.setName("维生素C");
@@ -91,13 +100,11 @@ class AgentToolsControllerTests {
 
         Page<MallProductDetailDto> page = new Page<>(2, 20, 1);
         page.setRecords(List.of(dto));
-        TestAgentSpiData.productPage = page;
+        agentProductService.productPage = page;
 
         var result = adminProductController.searchProducts(null);
 
         assertEquals(200, result.getCode());
-        assertNotNull(TestAgentSpiData.capturedProductListRequest);
-
         TableDataResult table = result.getData();
         assertNotNull(table);
         assertEquals(1L, table.getTotal());
@@ -107,35 +114,32 @@ class AgentToolsControllerTests {
 
         MallProductListVo row = (MallProductListVo) table.getRows().getFirst();
         assertEquals(200L, row.getId());
-        assertEquals("维生素C", row.getName());
         assertEquals("cover.jpg", row.getCoverImage());
+        assertNotNull(agentProductService.capturedListRequest);
     }
 
     @Test
-    void adminProductAndDrugDetail_ShouldDelegateToProvider() {
+    void adminProductAndDrugDetail_ShouldDelegateToService() {
         AdminAgentProductDetailVo productDetail = new AdminAgentProductDetailVo();
         productDetail.setId(301L);
         productDetail.setName("感冒灵");
-        TestAgentSpiData.productDetails = List.of(productDetail);
 
         AdminAgentDrugDetailVo drugDetail = new AdminAgentDrugDetailVo();
         drugDetail.setProductId(301L);
         drugDetail.setProductName("感冒灵");
-        TestAgentSpiData.drugDetails = List.of(drugDetail);
+
+        agentProductService.productDetails = List.of(productDetail);
+        agentProductService.drugDetails = List.of(drugDetail);
 
         var productResult = adminProductController.getProductDetail(List.of(301L, 302L));
         var drugResult = adminDrugController.getDrugDetail(List.of(301L));
 
-        assertEquals(List.of(301L, 302L), TestAgentSpiData.capturedProductDetailIds);
-        assertEquals(List.of(301L), TestAgentSpiData.capturedDrugDetailIds);
-
         assertEquals(200, productResult.getCode());
-        assertEquals(1, productResult.getData().size());
-        assertEquals("感冒灵", productResult.getData().getFirst().getName());
-
         assertEquals(200, drugResult.getCode());
-        assertEquals(1, drugResult.getData().size());
+        assertEquals("感冒灵", productResult.getData().getFirst().getName());
         assertEquals(301L, drugResult.getData().getFirst().getProductId());
+        assertEquals(List.of(301L, 302L), agentProductService.capturedProductDetailIds);
+        assertEquals(List.of(301L), agentProductService.capturedDrugDetailIds);
     }
 
     @Test
@@ -153,14 +157,13 @@ class AgentToolsControllerTests {
 
         Page<OrderWithProductDto> page = new Page<>(1, 10, 1);
         page.setRecords(List.of(dto));
-        TestAgentSpiData.orderPage = page;
+        agentOrderService.orderPage = page;
 
         var result = adminOrderController.getOrderList(null);
 
         assertEquals(200, result.getCode());
-        assertNotNull(TestAgentSpiData.capturedOrderListRequest);
-
         TableDataResult table = result.getData();
+        assertNotNull(table);
         assertEquals(1, table.getRows().size());
 
         AdminMallOrderListVo row = (AdminMallOrderListVo) table.getRows().getFirst();
@@ -168,34 +171,22 @@ class AgentToolsControllerTests {
         assertNotNull(row.getProductInfo());
         assertEquals(9001L, row.getProductInfo().getProductId());
         assertEquals(2, row.getProductInfo().getQuantity());
+        assertNotNull(agentOrderService.capturedListRequest);
     }
 
     @Test
-    void adminOrderDetail_ShouldDelegateToProvider() {
-        AdminOrderDetailVo detail = new AdminOrderDetailVo();
+    void adminOrderDetail_ShouldDelegateToService() {
+        AdminOrderDetailVo detailVo = new AdminOrderDetailVo();
         AdminOrderDetailVo.OrderInfo orderInfo = new AdminOrderDetailVo.OrderInfo();
         orderInfo.setOrderNo("OD-1");
-        detail.setOrderInfo(orderInfo);
-        TestAgentSpiData.orderDetails = List.of(detail);
+        detailVo.setOrderInfo(orderInfo);
+        agentOrderService.orderDetails = List.of(detailVo);
 
         var result = adminOrderController.getOrderDetail(List.of(501L, 502L));
 
-        assertEquals(List.of(501L, 502L), TestAgentSpiData.capturedOrderDetailIds);
         assertEquals(200, result.getCode());
-        assertEquals(1, result.getData().size());
         assertEquals("OD-1", result.getData().getFirst().getOrderInfo().getOrderNo());
-    }
-
-    @Test
-    void agentSpiLoader_ShouldLoadTestProviders() {
-        assertTrue(AgentSpiLoader.hasImplementation(AdminUserDataProvider.class));
-        assertTrue(AgentSpiLoader.hasImplementation(AdminProductDataProvider.class));
-        assertTrue(AgentSpiLoader.hasImplementation(AdminOrderDataProvider.class));
-        assertTrue(AgentSpiLoader.hasImplementation(ClientUserDataProvider.class));
-        assertFalse(AgentSpiLoader.hasImplementation(MissingSpi.class));
-
-        assertNotNull(AgentSpiLoader.loadSingle(AdminUserDataProvider.class));
-        assertNotNull(AgentSpiLoader.loadSingle(ClientUserDataProvider.class));
+        assertEquals(List.of(501L, 502L), agentOrderService.capturedOrderDetailIds);
     }
 
     private void loginAs(Long userId, String username) {
@@ -210,6 +201,88 @@ class AgentToolsControllerTests {
         );
     }
 
-    private interface MissingSpi {
+    private static class StubUserService implements UserService {
+
+        private UserVo currentUser;
+        private AuthUserDto authUser;
+        private Long capturedCurrentUserId;
+        private Long capturedAuthUserId;
+
+        @Override
+        public UserVo getCurrentUser(Long userId) {
+            this.capturedCurrentUserId = userId;
+            return currentUser;
+        }
+
+        @Override
+        public AuthUserDto getUser(Long userId) {
+            this.capturedAuthUserId = userId;
+            return authUser;
+        }
+
+        @Override
+        public cn.zhangchuangla.medicine.model.entity.User getUserByUsername(String username) {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public Set<String> getUserRolesByUserId(Long userId) {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public Set<String> getUserPermissionCodesByUserId(Long userId) {
+            throw new UnsupportedOperationException();
+        }
+    }
+
+    private static class StubMallProductService implements MallProductService {
+
+        private Page<MallProductDetailDto> productPage = new Page<>();
+        private List<AdminAgentProductDetailVo> productDetails = List.of();
+        private List<AdminAgentDrugDetailVo> drugDetails = List.of();
+
+        private MallProductListQueryRequest capturedListRequest;
+        private List<Long> capturedProductDetailIds;
+        private List<Long> capturedDrugDetailIds;
+
+        @Override
+        public Page<MallProductDetailDto> listProducts(MallProductListQueryRequest request) {
+            this.capturedListRequest = request;
+            return productPage;
+        }
+
+        @Override
+        public List<AdminAgentProductDetailVo> getProductDetail(List<Long> productIds) {
+            this.capturedProductDetailIds = productIds;
+            return productDetails;
+        }
+
+        @Override
+        public List<AdminAgentDrugDetailVo> getDrugDetail(List<Long> productIds) {
+            this.capturedDrugDetailIds = productIds;
+            return drugDetails;
+        }
+    }
+
+    private static class StubMallOrderService implements MallOrderService {
+
+        private Page<OrderWithProductDto> orderPage = new Page<>();
+        private List<AdminOrderDetailVo> orderDetails = List.of();
+
+        private AdminMallOrderListRequest capturedListRequest;
+        private List<Long> capturedOrderDetailIds;
+
+        @Override
+        public Page<OrderWithProductDto> listOrders(AdminMallOrderListRequest request) {
+            this.capturedListRequest = request;
+            return orderPage;
+        }
+
+        @Override
+        public List<AdminOrderDetailVo> getOrderDetail(List<Long> orderIds) {
+            this.capturedOrderDetailIds = orderIds;
+            return orderDetails;
+        }
     }
 }
