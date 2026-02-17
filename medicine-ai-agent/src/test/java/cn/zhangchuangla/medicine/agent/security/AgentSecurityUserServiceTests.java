@@ -10,6 +10,8 @@ import org.junit.jupiter.api.Test;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 
+import java.util.Arrays;
+import java.util.LinkedHashSet;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -33,6 +35,7 @@ class AgentSecurityUserServiceTests {
 
         var details = securityUserService.loadUserByUsername("admin");
         assertInstanceOf(SysUserDetails.class, details);
+        var sysUserDetails = (SysUserDetails) details;
 
         Set<String> authorities = details.getAuthorities().stream()
                 .map(GrantedAuthority::getAuthority)
@@ -41,6 +44,34 @@ class AgentSecurityUserServiceTests {
         assertTrue(authorities.contains("ROLE_super_admin"));
         assertTrue(authorities.contains("mall:product:list"));
         assertTrue(authorities.contains("system:user:query"));
+        assertEquals(Set.of("admin", "super_admin"), sysUserDetails.getUser().getRoles());
+        assertEquals(Set.of("mall:product:list", "system:user:query"), sysUserDetails.getUser().getPermissions());
+    }
+
+    @Test
+    void loadUserByUsername_ShouldNormalizeDirtyRoleAndPermissionCodes() {
+        StubUserService userService = new StubUserService();
+        User user = new User();
+        user.setId(1002L);
+        user.setUsername("cleaner");
+        user.setPassword("pwd");
+        user.setStatus(Constants.ACCOUNT_UNLOCK_KEY);
+        userService.userByUsername = user;
+        userService.roles = new LinkedHashSet<>(Arrays.asList(" ROLE_admin ", "admin", " ", "ROLE_super_admin", null));
+        userService.permissions = new LinkedHashSet<>(Arrays.asList(
+                " mall:product:list ", "mall:product:list", " ", "system:user:query", null));
+
+        AgentSecurityUserService securityUserService = new AgentSecurityUserService(userService);
+
+        var details = (SysUserDetails) securityUserService.loadUserByUsername("cleaner");
+
+        Set<String> authorities = details.getAuthorities().stream()
+                .map(GrantedAuthority::getAuthority)
+                .collect(Collectors.toSet());
+        assertEquals(Set.of("ROLE_admin", "ROLE_super_admin", "mall:product:list", "system:user:query"), authorities);
+        assertFalse(authorities.contains("ROLE_ROLE_admin"));
+        assertEquals(Set.of("admin", "super_admin"), details.getUser().getRoles());
+        assertEquals(Set.of("mall:product:list", "system:user:query"), details.getUser().getPermissions());
     }
 
     @Test
