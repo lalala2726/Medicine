@@ -1,5 +1,6 @@
 package cn.zhangchuangla.medicine.agent.spi;
 
+import cn.zhangchuangla.medicine.model.dto.AuthUserDto;
 import cn.zhangchuangla.medicine.model.vo.UserVo;
 
 /**
@@ -14,4 +15,13 @@ public interface AdminUserDataProvider {
      * @return 用户信息
      */
     UserVo getCurrentUser(Long userId);
+
+
+    /**
+     * 根据用户 ID 获取用户信息。
+     *
+     * @param userId 用户 ID
+     * @return 用户信息
+     */
+    AuthUserDto getUser(Long userId);
 }

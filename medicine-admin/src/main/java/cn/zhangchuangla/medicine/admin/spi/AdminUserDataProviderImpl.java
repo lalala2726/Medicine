@@ -4,6 +4,7 @@ import cn.zhangchuangla.medicine.admin.service.UserService;
 import cn.zhangchuangla.medicine.agent.spi.AdminUserDataProvider;
 import cn.zhangchuangla.medicine.common.core.utils.BeanCotyUtils;
 import cn.zhangchuangla.medicine.common.core.utils.SpringUtils;
+import cn.zhangchuangla.medicine.model.dto.AuthUserDto;
 import cn.zhangchuangla.medicine.model.entity.User;
 import cn.zhangchuangla.medicine.model.vo.UserVo;
 
@@ -20,5 +21,12 @@ public class AdminUserDataProviderImpl implements AdminUserDataProvider {
         UserService userService = SpringUtils.getBean(UserService.class);
         User user = userService.getUserById(userId);
         return BeanCotyUtils.copyProperties(user, UserVo.class);
+    }
+
+    @Override
+    public AuthUserDto getUser(Long userId) {
+        UserService userService = SpringUtils.getBean(UserService.class);
+        User user = userService.getUserById(userId);
+        return BeanCotyUtils.copyProperties(user, AuthUserDto.class);
     }
 }
