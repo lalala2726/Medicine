@@ -115,7 +115,7 @@
             </dependency>
             <dependency>
                 <groupId>cn.zhangchuangla.medicine</groupId>
-                <artifactId>medicine-ai-agent</artifactId>
+                <artifactId>medicine-agent</artifactId>
                 <version>${project.version}</version>
             </dependency>
             <!-- MyBatis-Plus JSqlParser，提供分页插件支持 -->
@@ -356,7 +356,7 @@
         <module>medicine-payment</module>
         <module>medicine-common/medicine-common-elasticsearch</module>
         <module>medicine-common/medicine-common-rabbitmq</module>
-        <module>medicine-ai-agent</module>
+        <module>medicine-agent</module>
         <module>medicine-common/medicine-common-http-client</module>
     </modules>
 </project>

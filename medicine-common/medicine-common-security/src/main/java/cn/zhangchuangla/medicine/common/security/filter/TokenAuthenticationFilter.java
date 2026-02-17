@@ -3,7 +3,7 @@ package cn.zhangchuangla.medicine.common.security.filter;
 import cn.zhangchuangla.medicine.common.core.constants.SecurityConstants;
 import cn.zhangchuangla.medicine.common.core.enums.ResponseCode;
 import cn.zhangchuangla.medicine.common.core.utils.ResponseUtils;
-import cn.zhangchuangla.medicine.common.security.SecurityProperties;
+import cn.zhangchuangla.medicine.common.security.config.SecurityProperties;
 import cn.zhangchuangla.medicine.common.security.token.TokenService;
 import jakarta.annotation.Nonnull;
 import jakarta.servlet.FilterChain;

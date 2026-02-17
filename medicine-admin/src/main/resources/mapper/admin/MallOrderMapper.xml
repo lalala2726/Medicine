@@ -120,7 +120,8 @@
         first_item.quantity AS product_quantity,
         p.price AS product_price,
         c.name AS product_category,
-        (SELECT pi.image_url FROM mall_product_image pi WHERE pi.product_id = p.id AND (pi.is_deleted IS NULL OR pi.is_deleted = 0) ORDER BY pi.sort ASC LIMIT 1) AS product_image
+        (SELECT pi.image_url FROM mall_product_image pi WHERE pi.product_id = p.id AND (pi.is_deleted IS NULL OR
+        pi.is_deleted = 0) ORDER BY pi.sort ASC LIMIT 1) AS product_image
         FROM mall_order o
         LEFT JOIN (
         SELECT oi.order_id, oi.product_id, oi.quantity, oi.product_name

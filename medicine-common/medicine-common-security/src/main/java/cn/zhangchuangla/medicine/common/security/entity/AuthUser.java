@@ -31,9 +31,9 @@ public class AuthUser implements Serializable {
     private String username;
 
     /**
-     * 加密后的密码
+     * 加密后的密码（仅运行期使用，不参与 Redis/Gson 序列化）
      */
-    private String password;
+    private transient String password;
 
     /**
      * 账号状态，0-正常，非0表示不可用
@@ -45,6 +45,12 @@ public class AuthUser implements Serializable {
      */
     @Builder.Default
     private Set<String> roles = Collections.emptySet();
+
+    /**
+     * 权限编码集合
+     */
+    @Builder.Default
+    private Set<String> permissions = Collections.emptySet();
 
     /**
      * 是否启用

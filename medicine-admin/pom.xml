@@ -49,10 +49,6 @@
         </dependency>
         <dependency>
             <groupId>cn.zhangchuangla.medicine</groupId>
-            <artifactId>medicine-ai-agent</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>cn.zhangchuangla.medicine</groupId>
             <artifactId>medicine-common-elasticsearch</artifactId>
         </dependency>
         <dependency>
