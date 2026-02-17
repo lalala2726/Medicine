@@ -7,9 +7,28 @@ import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 
 import java.util.List;
 
+/**
+ * 智能体订单服务接口。
+ * <p>
+ * 提供订单相关的查询服务，包括订单列表查询和订单详情查询。
+ *
+ * @author Chuang
+ */
 public interface MallOrderService {
 
+    /**
+     * 分页查询订单列表。
+     *
+     * @param request 查询请求参数，包含订单状态、时间范围等筛选条件
+     * @return 订单与商品信息分页数据
+     */
     Page<OrderWithProductDto> listOrders(AdminMallOrderListRequest request);
 
+    /**
+     * 批量查询订单详情。
+     *
+     * @param orderIds 订单 ID 列表
+     * @return 订单详情列表
+     */
     List<AdminOrderDetailVo> getOrderDetail(List<Long> orderIds);
 }

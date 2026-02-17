@@ -12,9 +12,12 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 /**
- * @author Chuang
+ * 智能体认证授权控制器。
  * <p>
- * created on 2026/2/17
+ * 提供智能体获取当前登录用户信息的接口，用于智能体调用时确认用户身份。
+ *
+ * @author Chuang
+ * @since 2026/2/17
  */
 @RestController
 @RequestMapping("/agent/authorization")
@@ -25,7 +28,12 @@ public class AgentAuthorizationController extends BaseController {
     private final UserService agentUserService;
 
     /**
-     * 获取当前用户信息。
+     * 获取当前登录用户的认证信息。
+     * <p>
+     * 返回用户的认证相关信息，包括用户ID、用户名、角色、权限等，
+     * 供智能体确认调用者身份使用。
+     *
+     * @return 用户认证信息
      */
     @GetMapping
     @Operation(summary = "获取当前用户信息", description = "获取当前登录用户的详细信息")

@@ -23,7 +23,12 @@ import org.springframework.web.bind.annotation.RestController;
 import java.util.List;
 
 /**
- * Admin 端智能体订单工具接口。
+ * Admin 端智能体订单工具控制器。
+ * <p>
+ * 提供给管理端智能体使用的订单查询工具接口，
+ * 支持订单列表查询和订单详情查询等功能。
+ *
+ * @author Chuang
  */
 @RestController
 @RequestMapping("/agent/order")
@@ -35,7 +40,13 @@ public class AdminAgentOrderToolsController extends BaseController {
     private final MallOrderService agentOrderService;
 
     /**
-     * 获取订单列表。
+     * 根据条件分页查询订单列表。
+     * <p>
+     * 支持按订单状态、时间范围等条件筛选订单，
+     * 返回订单基本信息及首个商品信息，按创建时间倒序排列。
+     *
+     * @param request 查询请求参数
+     * @return 订单列表分页数据
      */
     @GetMapping("/list")
     @Operation(summary = "获取订单列表", description = "分页获取订单列表，默认按创建时间倒序")
@@ -50,7 +61,13 @@ public class AdminAgentOrderToolsController extends BaseController {
     }
 
     /**
-     * 获取订单详情。
+     * 根据订单 ID 批量查询订单详情。
+     * <p>
+     * 返回订单的详细信息，包括订单基本信息、收货地址、
+     * 商品明细、支付信息等完整订单数据。
+     *
+     * @param orderIds 订单 ID 列表，支持批量查询
+     * @return 订单详情列表
      */
     @GetMapping("/{orderIds}")
     @Operation(summary = "获取订单详情", description = "根据订单ID获取详细信息")

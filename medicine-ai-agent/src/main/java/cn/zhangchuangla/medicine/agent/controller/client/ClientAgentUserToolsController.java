@@ -12,7 +12,12 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 /**
- * Client 端智能体用户工具接口。
+ * Client 端智能体用户工具控制器。
+ * <p>
+ * 提供给客户端智能体使用的用户查询工具接口，
+ * 用于智能体在对话过程中查询当前用户信息。
+ *
+ * @author Chuang
  */
 @RestController
 @RequestMapping("/agent/tools/client")
@@ -23,7 +28,12 @@ public class ClientAgentUserToolsController extends BaseController {
     private final UserService agentUserService;
 
     /**
-     * 获取当前登录用户信息。
+     * 获取当前登录用户的详细信息。
+     * <p>
+     * 返回当前登录用户的完整信息，包括基本信息、头像等，
+     * 供客户端智能体在服务用户时获取用户上下文。
+     *
+     * @return 用户详细信息
      */
     @GetMapping("/current_user")
     @Operation(summary = "获取当前用户信息", description = "获取当前登录用户的详细信息")

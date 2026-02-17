@@ -23,7 +23,12 @@ import org.springframework.web.bind.annotation.RestController;
 import java.util.List;
 
 /**
- * Admin 端智能体商品工具接口。
+ * Admin 端智能体商品工具控制器。
+ * <p>
+ * 提供给管理端智能体使用的商品查询工具接口，
+ * 支持商品搜索、列表查询和详情查询等功能。
+ *
+ * @author Chuang
  */
 @RestController
 @RequestMapping("/agent/product")
@@ -36,6 +41,11 @@ public class AdminAgentProductToolsController extends BaseController {
 
     /**
      * 商品搜索占位接口。
+     * <p>
+     * 此接口为智能体工具调用的占位接口，
+     * 实际搜索逻辑由智能体通过 list 接口实现。
+     *
+     * @return 空结果
      */
     @GetMapping("/search")
     @Operation(summary = "商品搜索", description = "根据关键词和分类搜索商品")
@@ -45,7 +55,13 @@ public class AdminAgentProductToolsController extends BaseController {
     }
 
     /**
-     * 根据条件查询商品列表。
+     * 根据条件分页查询商品列表。
+     * <p>
+     * 支持按关键词、分类等条件筛选商品，
+     * 返回商品基本信息及封面图片，按分页形式返回。
+     *
+     * @param request 查询请求参数
+     * @return 商品列表分页数据
      */
     @GetMapping("/list")
     @Operation(summary = "商品列表", description = "根据关键词和分类搜索商品")
@@ -66,7 +82,13 @@ public class AdminAgentProductToolsController extends BaseController {
     }
 
     /**
-     * 根据商品 ID 查询商品详情。
+     * 根据商品 ID 批量查询商品详情。
+     * <p>
+     * 返回商品的详细信息，包括基本信息、分类、图片列表等，
+     * 不包含药品的详细说明书信息。
+     *
+     * @param productIds 商品 ID 列表，支持批量查询
+     * @return 商品详情列表
      */
     @GetMapping("/{productIds}")
     @Operation(summary = "获取商品详情", description = "根据商品ID获取详细信息（不含药品详情）")

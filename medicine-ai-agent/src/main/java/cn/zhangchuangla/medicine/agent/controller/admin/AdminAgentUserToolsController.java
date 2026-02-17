@@ -14,7 +14,12 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 /**
- * Admin 端智能体用户工具接口。
+ * Admin 端智能体用户工具控制器。
+ * <p>
+ * 提供给管理端智能体使用的用户查询工具接口，
+ * 需要具备用户查询权限或超级管理员角色才能访问。
+ *
+ * @author Chuang
  */
 @RestController
 @RequestMapping("/agent/user")
@@ -26,7 +31,12 @@ public class AdminAgentUserToolsController extends BaseController {
     private final UserService agentUserService;
 
     /**
-     * 获取当前登录用户信息。
+     * 获取当前管理员的详细信息。
+     * <p>
+     * 返回当前登录管理员的完整信息，包括基本信息、角色等，
+     * 供管理端智能体在执行管理操作时获取操作者上下文。
+     *
+     * @return 管理员详细信息
      */
     @GetMapping("/info")
     @Operation(summary = "获取当前用户信息", description = "获取当前登录用户的详细信息")
