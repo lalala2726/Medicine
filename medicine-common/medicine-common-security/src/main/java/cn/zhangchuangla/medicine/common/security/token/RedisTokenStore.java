@@ -197,7 +197,12 @@ public class RedisTokenStore {
             return false;
         }
 
-        onlineLoginUser.setAccessTime(System.currentTimeMillis());
+        long now = System.currentTimeMillis();
+        if (onlineLoginUser.getCreateTime() == null) {
+            onlineLoginUser.setCreateTime(now);
+        }
+        onlineLoginUser.setAccessTime(now);
+        onlineLoginUser.setUpdateTime(now);
         redisCache.setCacheObject(accessTokenRedisKey, onlineLoginUser, expire);
         return true;
     }

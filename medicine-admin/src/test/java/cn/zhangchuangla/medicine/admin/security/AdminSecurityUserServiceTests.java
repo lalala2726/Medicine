@@ -4,6 +4,7 @@ import cn.zhangchuangla.medicine.admin.service.PermissionService;
 import cn.zhangchuangla.medicine.admin.service.RoleService;
 import cn.zhangchuangla.medicine.admin.service.UserService;
 import cn.zhangchuangla.medicine.common.core.constants.Constants;
+import cn.zhangchuangla.medicine.common.security.entity.SysUserDetails;
 import cn.zhangchuangla.medicine.model.entity.User;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -55,6 +56,7 @@ class AdminSecurityUserServiceTests {
         when(permissionService.getPermissionCodesByUserId(1L)).thenReturn(Set.of("system:user:list"));
 
         var userDetails = adminSecurityUserService.loadUserByUsername("admin");
+        var sysUserDetails = (SysUserDetails) userDetails;
 
         Set<String> authorities = userDetails.getAuthorities()
                 .stream()
@@ -63,6 +65,34 @@ class AdminSecurityUserServiceTests {
                 .collect(Collectors.toSet());
 
         assertEquals("admin", userDetails.getUsername());
+        assertTrue(authorities.contains("ROLE_admin"));
+        assertTrue(authorities.contains("ROLE_super_admin"));
+        assertTrue(authorities.contains("system:user:list"));
+        assertEquals(Set.of("admin", "super_admin"), sysUserDetails.getUser().getRoles());
+        assertEquals(Set.of("system:user:list"), sysUserDetails.getUser().getPermissions());
+    }
+
+    @Test
+    void loadUserByUsername_ShouldNormalizeDirtyRoleAndPermissionCodes() {
+        User user = new User();
+        user.setId(2L);
+        user.setUsername("cleaner");
+        user.setPassword("pwd");
+        user.setStatus(Constants.ACCOUNT_UNLOCK_KEY);
+
+        when(userService.getUserByUsername("cleaner")).thenReturn(user);
+        when(roleService.getUserRoleByUserId(2L)).thenReturn(Set.of("admin", " ", "ROLE_super_admin"));
+        when(permissionService.getPermissionCodesByUserId(2L)).thenReturn(Set.of("system:user:list", "   "));
+
+        var userDetails = (SysUserDetails) adminSecurityUserService.loadUserByUsername("cleaner");
+        Set<String> authorities = userDetails.getAuthorities()
+                .stream()
+                .map(SimpleGrantedAuthority.class::cast)
+                .map(SimpleGrantedAuthority::getAuthority)
+                .collect(Collectors.toSet());
+
+        assertEquals(Set.of("admin", "super_admin"), userDetails.getUser().getRoles());
+        assertEquals(Set.of("system:user:list"), userDetails.getUser().getPermissions());
         assertTrue(authorities.contains("ROLE_admin"));
         assertTrue(authorities.contains("ROLE_super_admin"));
         assertTrue(authorities.contains("system:user:list"));

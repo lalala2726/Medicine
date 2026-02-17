@@ -51,9 +51,14 @@ public class OnlineLoginUser implements Serializable {
     private AuthUser user;
 
     /**
-     * 角色权限集合
+     * 角色集合
      */
     private Set<String> roles;
+
+    /**
+     * 权限集合
+     */
+    private Set<String> permissions;
 
     /**
      * 登录IP地址
@@ -66,7 +71,17 @@ public class OnlineLoginUser implements Serializable {
     private String location;
 
     /**
-     * 访问时间
+     * 创建时间（登录写入 Redis 时间）
+     */
+    private Long createTime;
+
+    /**
+     * 更新时间（会话对象写回 Redis 时间）
+     */
+    private Long updateTime;
+
+    /**
+     * 访问时间(每次请求系统走)
      */
     private Long accessTime;
 
