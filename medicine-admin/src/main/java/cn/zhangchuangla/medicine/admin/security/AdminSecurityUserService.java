@@ -15,13 +15,10 @@ import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
 
-import java.util.HashSet;
-import java.util.Objects;
-import java.util.Optional;
-import java.util.Set;
+import java.util.*;
 
 /**
- * 管理端的用户查询实现，负责将业务用户转换为通用的安全模型。
+ * 管理端的用户查询实现，负责将业务用户转换为通用˚的安全模型。
  */
 @Service
 @RequiredArgsConstructor
@@ -39,10 +36,10 @@ public class AdminSecurityUserService implements UserDetailsService {
         }
         Set<String> roles = Optional.ofNullable(roleService.getUserRoleByUserId(user.getId()))
                 .filter(set -> !set.isEmpty())
-                .orElseGet(java.util.Collections::emptySet);
+                .orElseGet(Collections::emptySet);
         Set<String> permissions = Optional.ofNullable(permissionService.getPermissionCodesByUserId(user.getId()))
                 .filter(set -> !set.isEmpty())
-                .orElseGet(java.util.Collections::emptySet);
+                .orElseGet(Collections::emptySet);
 
         boolean unlocked = Objects.equals(user.getStatus(), Constants.ACCOUNT_UNLOCK_KEY);
 
