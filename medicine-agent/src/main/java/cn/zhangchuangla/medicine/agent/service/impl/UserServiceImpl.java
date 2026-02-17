@@ -58,6 +58,8 @@ public class UserServiceImpl implements UserService {
         return normalizeCodes(userMapper.listRoleCodesByUserId(userId));
     }
 
+    private static final String ROLE_PREFIX = "ROLE_";
+
     @Override
     public Set<String> getUserPermissionCodesByUserId(Long userId) {
         if (userId == null) {
@@ -69,11 +71,26 @@ public class UserServiceImpl implements UserService {
 
         Set<String> roleCodes = getUserRolesByUserId(userId);
         boolean isSuperAdmin = roleCodes.stream()
+                .map(this::removeRolePrefix)
                 .anyMatch(RolesConstant.SUPER_ADMIN::equalsIgnoreCase);
         if (isSuperAdmin) {
             return normalizeCodes(userMapper.listAllEnabledPermissionCodes());
         }
         return normalizeCodes(userMapper.listPermissionCodesByUserId(userId));
+    }
+
+    /**
+     * 移除角色编码的 ROLE_ 前缀。
+     */
+    private String removeRolePrefix(String roleCode) {
+        if (roleCode == null) {
+            return "";
+        }
+        String trimmed = roleCode.trim();
+        if (trimmed.regionMatches(true, 0, ROLE_PREFIX, 0, ROLE_PREFIX.length())) {
+            return trimmed.substring(ROLE_PREFIX.length());
+        }
+        return trimmed;
     }
 
     private Set<String> normalizeCodes(List<String> codes) {
