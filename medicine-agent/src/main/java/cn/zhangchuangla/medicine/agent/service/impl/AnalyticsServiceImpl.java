@@ -83,7 +83,7 @@ public class AnalyticsServiceImpl implements AnalyticsService {
                 .collect(Collectors.toMap(PayTypeEnum::getType, item -> item));
         list.forEach(item -> {
             PayTypeEnum payTypeEnum = payTypeMap.get(item.getPayType());
-            item.setPayTypeName(payTypeEnum == null ? "未知" : payTypeEnum.getType());
+            item.setPayTypeName(payTypeEnum == null ? "未知" : payTypeEnum.getDescription());
             item.setCount(defaultLong(item.getCount()));
             item.setAmount(defaultBigDecimal(item.getAmount()));
         });
