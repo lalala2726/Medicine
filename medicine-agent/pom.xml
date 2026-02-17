@@ -9,7 +9,7 @@
         <version>0.1</version>
     </parent>
 
-    <artifactId>medicine-ai-agent</artifactId>
+    <artifactId>medicine-agent</artifactId>
 
     <properties>
         <maven.compiler.source>21</maven.compiler.source>

@@ -33,7 +33,7 @@ public interface AnalyticsService {
      *
      * @return 订单状态分布列表
      */
-    List<cn.zhangchuangla.medicine.model.vo.analytics.StatusDistribution> orderStatusDistribution();
+    List<StatusDistribution> orderStatusDistribution();
 
     /**
      * 获取支付方式分布。

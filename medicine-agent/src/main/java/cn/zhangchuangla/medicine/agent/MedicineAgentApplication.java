@@ -10,7 +10,7 @@ import org.springframework.transaction.annotation.EnableTransactionManagement;
 @MapperScan("cn.zhangchuangla.medicine.agent.mapper")
 @EnableTransactionManagement
 @EnableAsync
-public class MedicineAiAgentApplication {
+public class MedicineAgentApplication {
 
     public static void main(String[] args) {
         String hint = """
@@ -21,7 +21,7 @@ public class MedicineAiAgentApplication {
                  /_/   \\_\\__, |\\___|_| |_|\\__| |____/ \\__,_|\\___\\___\\___||___/___/_|  \\__,_|_| |____/ \\__\\__,_|_|   \\__|\\__,_| .__/\s
                          |___/                                                                                               |_|   \s
                 """;
-        SpringApplication.run(MedicineAiAgentApplication.class, args);
+        SpringApplication.run(MedicineAgentApplication.class, args);
         System.out.println(hint);
     }
 }
