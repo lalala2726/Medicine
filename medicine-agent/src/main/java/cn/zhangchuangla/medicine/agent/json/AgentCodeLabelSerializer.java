@@ -19,6 +19,9 @@ public class AgentCodeLabelSerializer extends JsonSerializer<Object> implements 
 
     private final AgentCodeLabel annotation;
 
+    public AgentCodeLabelSerializer() {
+        this.annotation = null;
+    }
 
     public AgentCodeLabelSerializer(AgentCodeLabel annotation) {
         this.annotation = annotation;
@@ -32,30 +35,18 @@ public class AgentCodeLabelSerializer extends JsonSerializer<Object> implements 
             return;
         }
 
-        Object bean = gen.currentValue();
-        if (bean == null) {
+        Object rawValue = resolveRawValue(codeLabel, value, gen.currentValue());
+        if (rawValue == null) {
             gen.writeNull();
             return;
         }
 
-        Object sourceValue = readSourceValue(bean, codeLabel.source());
-        if (sourceValue == null) {
-            gen.writeNull();
-            return;
+        String code = String.valueOf(rawValue);
+        String description = findLabel(code, codeLabel);
+        if (description == null && codeLabel.fallbackToSource()) {
+            description = code;
         }
-
-        String code = String.valueOf(sourceValue);
-        String label = findLabel(code, codeLabel);
-        if (label != null) {
-            gen.writeString(label);
-            return;
-        }
-
-        if (codeLabel.fallbackToSource()) {
-            gen.writeString(code);
-        } else {
-            gen.writeNull();
-        }
+        writeCodeObject(gen, serializers, rawValue, description);
     }
 
     @Override
@@ -74,7 +65,7 @@ public class AgentCodeLabelSerializer extends JsonSerializer<Object> implements 
 
     private String findLabel(String code, AgentCodeLabel codeLabel) {
         AgentCodePair[] pairs = codeLabel.pairs();
-        if (pairs != null) {
+        if (pairs != null && pairs.length > 0) {
             for (AgentCodePair pair : pairs) {
                 if (pair.code().equals(code)) {
                     return pair.label();
@@ -82,6 +73,33 @@ public class AgentCodeLabelSerializer extends JsonSerializer<Object> implements 
             }
         }
         return AgentCodeLabelRegistry.getLabel(codeLabel.dictKey(), code);
+    }
+
+    private Object resolveRawValue(AgentCodeLabel codeLabel, Object currentFieldValue, Object bean) {
+        String sourceField = codeLabel.source();
+        if (sourceField == null || sourceField.isBlank()) {
+            return currentFieldValue;
+        }
+        if (bean == null) {
+            return null;
+        }
+        return readSourceValue(bean, sourceField);
+    }
+
+    private void writeCodeObject(JsonGenerator gen,
+                                 SerializerProvider serializers,
+                                 Object rawValue,
+                                 String description) throws IOException {
+        gen.writeStartObject();
+        gen.writeFieldName("value");
+        serializers.defaultSerializeValue(rawValue, gen);
+        gen.writeFieldName("description");
+        if (description == null) {
+            gen.writeNull();
+        } else {
+            gen.writeString(description);
+        }
+        gen.writeEndObject();
     }
 
     private AgentCodeLabel resolveAnnotation(JsonGenerator gen) {

@@ -43,25 +43,18 @@ public class AdminAgentProductListVo {
     @Schema(description = "排序值，越小越靠前", example = "1")
     private Integer sort;
 
-    @Schema(description = "状态（1-上架，0-下架）", example = "1")
-    private Integer status;
-
-    @Schema(description = "状态名称", example = "上架")
+    @Schema(description = "状态（value-编码，description-描述）", example = "1")
     @AgentCodeLabel(
-            source = "status",
             pairs = {
                     @AgentCodePair(code = "1", label = "上架"),
                     @AgentCodePair(code = "0", label = "下架")
             }
     )
-    private String statusName = "";
+    private Integer status;
 
-    @Schema(description = "配送方式", example = "1")
+    @Schema(description = "配送方式（value-编码，description-描述）", example = "1")
+    @AgentCodeLabel(dictKey = AgentCodeLabelRegistry.AGENT_PRODUCT_DELIVERY_TYPE)
     private Integer deliveryType;
-
-    @Schema(description = "配送方式名称", example = "快递配送")
-    @AgentCodeLabel(source = "deliveryType", dictKey = AgentCodeLabelRegistry.AGENT_PRODUCT_DELIVERY_TYPE)
-    private String deliveryTypeName = "";
 
     @Schema(description = "创建时间", example = "2025-01-01 00:00:00")
     private Date createTime;

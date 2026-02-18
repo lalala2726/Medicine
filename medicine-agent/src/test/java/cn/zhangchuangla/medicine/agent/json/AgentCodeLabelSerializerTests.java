@@ -23,7 +23,8 @@ class AgentCodeLabelSerializerTests {
 
         JsonNode node = serializeToNode(sample);
 
-        assertEquals("上架", node.get("statusName").asText());
+        assertEquals("上架", node.get("status").get("description").asText());
+        assertEquals(1, node.get("status").get("value").asInt());
     }
 
     @Test
@@ -33,7 +34,8 @@ class AgentCodeLabelSerializerTests {
 
         JsonNode node = serializeToNode(sample);
 
-        assertEquals("快递配送", node.get("deliveryTypeName").asText());
+        assertEquals("快递配送", node.get("deliveryType").get("description").asText());
+        assertEquals(2, node.get("deliveryType").get("value").asInt());
     }
 
     @Test
@@ -43,7 +45,8 @@ class AgentCodeLabelSerializerTests {
 
         JsonNode node = serializeToNode(sample);
 
-        assertEquals("MIX_PAY", node.get("payTypeName").asText());
+        assertEquals("MIX_PAY", node.get("payType").get("description").asText());
+        assertEquals("MIX_PAY", node.get("payType").get("value").asText());
     }
 
     @Test
@@ -53,7 +56,7 @@ class AgentCodeLabelSerializerTests {
 
         JsonNode node = serializeToNode(sample);
 
-        assertTrue(node.get("payTypeName").isNull());
+        assertTrue(node.get("payType").isNull());
     }
 
     @Test
@@ -63,7 +66,9 @@ class AgentCodeLabelSerializerTests {
 
         JsonNode node = serializeToNode(sample);
 
-        assertEquals("下架", node.get("statusName").asText());
+        assertEquals("下架", node.get("status").get("description").asText());
+        assertTrue(node.get("status").get("value").isInt());
+        assertEquals(0, node.get("status").get("value").asInt());
     }
 
     private JsonNode serializeToNode(Object value) {
@@ -77,33 +82,26 @@ class AgentCodeLabelSerializerTests {
     @Data
     private static class PairSample {
 
-        private Integer status;
-
         @AgentCodeLabel(
-                source = "status",
                 pairs = {
                         @AgentCodePair(code = "1", label = "上架"),
                         @AgentCodePair(code = "0", label = "下架")
                 }
         )
-        private String statusName = "";
+        private Integer status;
     }
 
     @Data
     private static class DictSample {
 
+        @AgentCodeLabel(dictKey = AgentCodeLabelRegistry.AGENT_PRODUCT_DELIVERY_TYPE)
         private Integer deliveryType;
-
-        @AgentCodeLabel(source = "deliveryType", dictKey = AgentCodeLabelRegistry.AGENT_PRODUCT_DELIVERY_TYPE)
-        private String deliveryTypeName = "";
     }
 
     @Data
     private static class UnknownCodeSample {
 
+        @AgentCodeLabel(dictKey = AgentCodeLabelRegistry.AGENT_ORDER_PAY_TYPE)
         private String payType;
-
-        @AgentCodeLabel(source = "payType", dictKey = AgentCodeLabelRegistry.AGENT_ORDER_PAY_TYPE)
-        private String payTypeName = "";
     }
 }

@@ -24,19 +24,13 @@ public class AdminMallOrderListVo {
     @Schema(description = "订单总金额（含运费）", example = "100.00")
     private BigDecimal totalAmount;
 
-    @Schema(description = "支付方式编码", example = "ALIPAY")
+    @Schema(description = "支付方式（value-编码，description-描述）")
+    @AgentCodeLabel(dictKey = AgentCodeLabelRegistry.AGENT_ORDER_PAY_TYPE)
     private String payType;
 
-    @Schema(description = "支付方式名称", example = "使用支付宝进行支付")
-    @AgentCodeLabel(source = "payType", dictKey = AgentCodeLabelRegistry.AGENT_ORDER_PAY_TYPE)
-    private String payTypeName = "";
-
-    @Schema(description = "订单状态编码", example = "WAIT_PAY")
+    @Schema(description = "订单状态（value-编码，description-描述）")
+    @AgentCodeLabel(dictKey = AgentCodeLabelRegistry.AGENT_ORDER_STATUS)
     private String orderStatus;
-
-    @Schema(description = "订单状态名称", example = "待支付")
-    @AgentCodeLabel(source = "orderStatus", dictKey = AgentCodeLabelRegistry.AGENT_ORDER_STATUS)
-    private String orderStatusName = "";
 
     @Schema(description = "支付时间", example = "2025-10-31 21:22:00")
     private Date payTime;

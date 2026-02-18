@@ -65,19 +65,13 @@ public class AdminOrderDetailVo {
         @Schema(description = "订单编号")
         private String orderNo;
 
-        @Schema(description = "订单状态")
+        @Schema(description = "订单状态（value-编码，description-描述）")
+        @AgentCodeLabel(dictKey = AgentCodeLabelRegistry.AGENT_ORDER_STATUS)
         private String orderStatus;
 
-        @Schema(description = "订单状态名称")
-        @AgentCodeLabel(source = "orderStatus", dictKey = AgentCodeLabelRegistry.AGENT_ORDER_STATUS)
-        private String orderStatusName = "";
-
-        @Schema(description = "支付方式")
+        @Schema(description = "支付方式（value-编码，description-描述）")
+        @AgentCodeLabel(dictKey = AgentCodeLabelRegistry.AGENT_ORDER_PAY_TYPE)
         private String payType;
-
-        @Schema(description = "支付方式名称")
-        @AgentCodeLabel(source = "payType", dictKey = AgentCodeLabelRegistry.AGENT_ORDER_PAY_TYPE)
-        private String payTypeName = "";
 
         @Schema(description = "订单总金额")
         private BigDecimal totalAmount;

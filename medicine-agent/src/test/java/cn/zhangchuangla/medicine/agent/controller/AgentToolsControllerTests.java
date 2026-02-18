@@ -120,8 +120,10 @@ class AgentToolsControllerTests {
         assertEquals("cover.jpg", row.getCoverImage());
 
         JsonNode rowNode = serializeToNode(row);
-        assertEquals("上架", rowNode.get("statusName").asText());
-        assertEquals("快递配送", rowNode.get("deliveryTypeName").asText());
+        assertEquals("上架", rowNode.get("status").get("description").asText());
+        assertEquals(1, rowNode.get("status").get("value").asInt());
+        assertEquals("快递配送", rowNode.get("deliveryType").get("description").asText());
+        assertEquals(2, rowNode.get("deliveryType").get("value").asInt());
         assertNotNull(agentProductService.capturedListRequest);
     }
 
@@ -147,8 +149,10 @@ class AgentToolsControllerTests {
         assertEquals(200, drugResult.getCode());
         assertEquals("感冒灵", productResult.getData().getFirst().getName());
         JsonNode productNode = serializeToNode(productResult.getData().getFirst());
-        assertEquals("上架", productNode.get("statusName").asText());
-        assertEquals("自提", productNode.get("deliveryTypeName").asText());
+        assertEquals("上架", productNode.get("status").get("description").asText());
+        assertEquals(1, productNode.get("status").get("value").asInt());
+        assertEquals("自提", productNode.get("deliveryType").get("description").asText());
+        assertEquals(1, productNode.get("deliveryType").get("value").asInt());
         assertEquals(301L, drugResult.getData().getFirst().getProductId());
         assertEquals(List.of(301L, 302L), agentProductService.capturedProductDetailIds);
         assertEquals(List.of(301L), agentProductService.capturedDrugDetailIds);
@@ -187,8 +191,10 @@ class AgentToolsControllerTests {
         assertEquals(2, row.getProductInfo().getQuantity());
 
         JsonNode rowNode = serializeToNode(row);
-        assertEquals("使用支付宝进行支付", rowNode.get("payTypeName").asText());
-        assertEquals("待支付", rowNode.get("orderStatusName").asText());
+        assertEquals("使用支付宝进行支付", rowNode.get("payType").get("description").asText());
+        assertEquals("ALIPAY", rowNode.get("payType").get("value").asText());
+        assertEquals("待支付", rowNode.get("orderStatus").get("description").asText());
+        assertEquals("PENDING_PAYMENT", rowNode.get("orderStatus").get("value").asText());
         assertNotNull(agentOrderService.capturedListRequest);
     }
 
@@ -207,8 +213,10 @@ class AgentToolsControllerTests {
         assertEquals(200, result.getCode());
         assertEquals("OD-1", result.getData().getFirst().getOrderInfo().getOrderNo());
         JsonNode orderInfoNode = serializeToNode(result.getData().getFirst().getOrderInfo());
-        assertEquals("使用微信支付进行支付", orderInfoNode.get("payTypeName").asText());
-        assertEquals("待发货", orderInfoNode.get("orderStatusName").asText());
+        assertEquals("使用微信支付进行支付", orderInfoNode.get("payType").get("description").asText());
+        assertEquals("WECHAT_PAY", orderInfoNode.get("payType").get("value").asText());
+        assertEquals("待发货", orderInfoNode.get("orderStatus").get("description").asText());
+        assertEquals("PENDING_SHIPMENT", orderInfoNode.get("orderStatus").get("value").asText());
         assertEquals(List.of(501L, 502L), agentOrderService.capturedOrderDetailIds);
     }
 

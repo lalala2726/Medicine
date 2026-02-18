@@ -20,8 +20,9 @@ public @interface AgentCodeLabel {
 
     /**
      * 来源编码字段名，例如 status、payType。
+     * 为空时使用当前字段本身作为编码值。
      */
-    String source();
+    String source() default "";
 
     /**
      * 字典注册表 key，用于大映射配置。
