@@ -11,9 +11,9 @@ import java.util.Date;
 import java.util.List;
 
 /**
- * Admin 端智能体商品详情。
+ * 管理端智能体商品详情。
  */
-@Schema(description = "Admin 端智能体商品详情")
+@Schema(description = "管理端智能体商品详情")
 @Data
 public class AdminAgentProductDetailVo {
 

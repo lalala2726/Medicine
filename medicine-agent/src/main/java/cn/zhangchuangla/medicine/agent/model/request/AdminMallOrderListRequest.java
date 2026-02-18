@@ -6,10 +6,10 @@ import lombok.Data;
 import lombok.EqualsAndHashCode;
 
 /**
- * Admin 端智能体订单列表查询参数。
+ * 管理端智能体订单列表查询参数。
  */
 @EqualsAndHashCode(callSuper = true)
-@Schema(description = "Admin 端智能体订单列表查询参数")
+@Schema(description = "管理端智能体订单列表查询参数")
 @Data
 public class AdminMallOrderListRequest extends PageRequest {
 

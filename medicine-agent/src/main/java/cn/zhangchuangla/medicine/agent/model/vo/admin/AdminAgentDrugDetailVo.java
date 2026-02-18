@@ -5,9 +5,9 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 
 /**
- * Admin 端智能体药品详情。
+ * 管理端智能体药品详情。
  */
-@Schema(description = "Admin 端智能体药品详情")
+@Schema(description = "管理端智能体药品详情")
 @Data
 public class AdminAgentDrugDetailVo {
 

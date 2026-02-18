@@ -9,9 +9,9 @@ import java.math.BigDecimal;
 import java.util.Date;
 
 /**
- * Admin 端智能体订单列表视图。
+ * 管理端智能体订单列表视图。
  */
-@Schema(description = "Admin 端智能体订单列表")
+@Schema(description = "管理端智能体订单列表")
 @Data
 public class AdminMallOrderListVo {
 

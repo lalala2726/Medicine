@@ -18,7 +18,7 @@ import org.springframework.web.bind.annotation.RestController;
 import java.util.List;
 
 /**
- * Admin 端智能体运营分析工具控制器。
+ * 管理端智能体运营分析工具控制器。
  * <p>
  * 提供给管理端智能体使用的运营数据分析工具接口，
  * 包括订单统计、销售趋势、商品排行等数据分析功能。
@@ -28,7 +28,7 @@ import java.util.List;
  */
 @RestController
 @RequestMapping("/agent/analytics")
-@Tag(name = "Admin智能体运营分析工具", description = "用于 Admin 侧智能体运营分析查询接口")
+@Tag(name = "管理端智能体运营分析工具", description = "用于管理端智能体运营分析查询接口")
 @InternalAgentHeaderTrace
 @RequiredArgsConstructor
 @PreAuthorize("hasRole('super_admin')")

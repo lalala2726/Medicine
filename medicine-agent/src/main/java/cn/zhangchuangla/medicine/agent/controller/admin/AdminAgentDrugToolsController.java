@@ -18,7 +18,7 @@ import org.springframework.web.bind.annotation.RestController;
 import java.util.List;
 
 /**
- * Admin 端智能体药品工具控制器。
+ * 管理端智能体药品工具控制器。
  * <p>
  * 提供给管理端智能体使用的药品详情查询工具接口，
  * 用于查询商品的药品说明书等详细信息。
@@ -27,7 +27,7 @@ import java.util.List;
  */
 @RestController
 @RequestMapping("/agent/drug")
-@Tag(name = "Admin智能体药品工具", description = "用于 Admin 侧智能体药品查询接口")
+@Tag(name = "管理端智能体药品工具", description = "用于管理端智能体药品查询接口")
 @InternalAgentHeaderTrace
 @RequiredArgsConstructor
 public class AdminAgentDrugToolsController extends BaseController {

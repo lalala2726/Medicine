@@ -23,7 +23,7 @@ import org.springframework.web.bind.annotation.RestController;
 import java.util.List;
 
 /**
- * Admin 端智能体商品工具控制器。
+ * 管理端智能体商品工具控制器。
  * <p>
  * 提供给管理端智能体使用的商品查询工具接口，
  * 支持商品搜索、列表查询和详情查询等功能。
@@ -32,7 +32,7 @@ import java.util.List;
  */
 @RestController
 @RequestMapping("/agent/product")
-@Tag(name = "Admin智能体商品工具", description = "用于 Admin 侧智能体商品查询接口")
+@Tag(name = "管理端智能体商品工具", description = "用于管理端智能体商品查询接口")
 @InternalAgentHeaderTrace
 @RequiredArgsConstructor
 public class AdminAgentProductToolsController extends BaseController {

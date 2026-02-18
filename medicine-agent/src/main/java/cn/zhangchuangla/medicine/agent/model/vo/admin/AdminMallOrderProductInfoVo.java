@@ -6,9 +6,9 @@ import lombok.Data;
 import java.math.BigDecimal;
 
 /**
- * Admin 端智能体订单商品信息视图。
+ * 管理端智能体订单商品信息视图。
  */
-@Schema(description = "Admin 端智能体订单商品信息")
+@Schema(description = "管理端智能体订单商品信息")
 @Data
 public class AdminMallOrderProductInfoVo {
 

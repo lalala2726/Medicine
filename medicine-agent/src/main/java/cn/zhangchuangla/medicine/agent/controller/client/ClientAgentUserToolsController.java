@@ -12,7 +12,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 /**
- * Client 端智能体用户工具控制器。
+ * 客户端智能体用户工具控制器。
  * <p>
  * 提供给客户端智能体使用的用户查询工具接口，
  * 用于智能体在对话过程中查询当前用户信息。
@@ -21,7 +21,7 @@ import org.springframework.web.bind.annotation.RestController;
  */
 @RestController
 @RequestMapping("/agent/tools/client")
-@Tag(name = "Client智能体用户工具", description = "用于 Client 侧智能体用户查询接口")
+@Tag(name = "客户端智能体用户工具", description = "用于客户端智能体用户查询接口")
 @RequiredArgsConstructor
 public class ClientAgentUserToolsController extends BaseController {
 

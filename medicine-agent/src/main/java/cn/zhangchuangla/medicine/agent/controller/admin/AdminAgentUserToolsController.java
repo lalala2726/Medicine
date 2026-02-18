@@ -14,7 +14,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 /**
- * Admin 端智能体用户工具控制器。
+ * 管理端智能体用户工具控制器。
  * <p>
  * 提供给管理端智能体使用的用户查询工具接口，
  * 需要具备用户查询权限或超级管理员角色才能访问。
@@ -23,7 +23,7 @@ import org.springframework.web.bind.annotation.RestController;
  */
 @RestController
 @RequestMapping("/agent/user")
-@Tag(name = "Admin智能体用户工具", description = "用于 Admin 侧智能体用户查询接口")
+@Tag(name = "管理端智能体用户工具", description = "用于管理端智能体用户查询接口")
 @InternalAgentHeaderTrace
 @RequiredArgsConstructor
 public class AdminAgentUserToolsController extends BaseController {

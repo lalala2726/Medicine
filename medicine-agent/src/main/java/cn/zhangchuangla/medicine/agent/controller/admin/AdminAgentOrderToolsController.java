@@ -24,7 +24,7 @@ import org.springframework.web.bind.annotation.RestController;
 import java.util.List;
 
 /**
- * Admin 端智能体订单工具控制器。
+ * 管理端智能体订单工具控制器。
  * <p>
  * 提供给管理端智能体使用的订单查询工具接口，
  * 支持订单列表查询和订单详情查询等功能。
@@ -33,7 +33,7 @@ import java.util.List;
  */
 @RestController
 @RequestMapping("/agent/order")
-@Tag(name = "Admin智能体订单工具", description = "用于 Admin 侧智能体订单查询接口")
+@Tag(name = "管理端智能体订单工具", description = "用于管理端智能体订单查询接口")
 @InternalAgentHeaderTrace
 @RequiredArgsConstructor
 public class AdminAgentOrderToolsController extends BaseController {
