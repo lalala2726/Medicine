@@ -3,6 +3,7 @@ package cn.zhangchuangla.medicine.agent.controller.admin;
 import cn.zhangchuangla.medicine.agent.annotation.InternalAgentHeaderTrace;
 import cn.zhangchuangla.medicine.agent.model.request.AdminMallOrderListRequest;
 import cn.zhangchuangla.medicine.agent.model.vo.admin.AdminMallOrderListVo;
+import cn.zhangchuangla.medicine.agent.model.vo.admin.AdminMallOrderProductInfoVo;
 import cn.zhangchuangla.medicine.agent.model.vo.admin.AdminOrderDetailVo;
 import cn.zhangchuangla.medicine.agent.service.MallOrderService;
 import cn.zhangchuangla.medicine.common.core.base.AjaxResult;
@@ -80,14 +81,23 @@ public class AdminAgentOrderToolsController extends BaseController {
     }
 
     private AdminMallOrderListVo buildOrderListVo(OrderWithProductDto source) {
-        AdminMallOrderListVo target = copyProperties(source, AdminMallOrderListVo.class);
-        if (target == null) {
+        if (source == null) {
             return null;
         }
+        AdminMallOrderListVo target = new AdminMallOrderListVo();
+        target.setId(source.getId());
+        target.setOrderNo(source.getOrderNo());
+        target.setTotalAmount(source.getTotalAmount());
+        target.setPayType(source.getPayType());
+        target.setOrderStatus(source.getOrderStatus());
+        target.setPayTime(source.getPayTime());
+        target.setCreateTime(source.getCreateTime());
+
         if (source.getProductId() == null) {
             return target;
         }
-        AdminMallOrderListVo.ProductInfo productInfo = new AdminMallOrderListVo.ProductInfo();
+
+        AdminMallOrderProductInfoVo productInfo = new AdminMallOrderProductInfoVo();
         productInfo.setProductName(source.getProductName());
         productInfo.setProductImage(source.getProductImage());
         productInfo.setProductPrice(source.getProductPrice());
