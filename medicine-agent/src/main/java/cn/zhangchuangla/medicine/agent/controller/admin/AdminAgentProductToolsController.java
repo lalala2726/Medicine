@@ -2,13 +2,13 @@ package cn.zhangchuangla.medicine.agent.controller.admin;
 
 import cn.zhangchuangla.medicine.agent.annotation.InternalAgentHeaderTrace;
 import cn.zhangchuangla.medicine.agent.model.vo.admin.AdminAgentProductDetailVo;
+import cn.zhangchuangla.medicine.agent.model.vo.admin.AdminAgentProductListVo;
 import cn.zhangchuangla.medicine.agent.service.MallProductService;
 import cn.zhangchuangla.medicine.common.core.base.AjaxResult;
 import cn.zhangchuangla.medicine.common.core.base.TableDataResult;
 import cn.zhangchuangla.medicine.common.security.base.BaseController;
 import cn.zhangchuangla.medicine.model.dto.MallProductDetailDto;
 import cn.zhangchuangla.medicine.model.request.MallProductListQueryRequest;
-import cn.zhangchuangla.medicine.model.vo.mall.MallProductListVo;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -69,9 +69,9 @@ public class AdminAgentProductToolsController extends BaseController {
     public AjaxResult<TableDataResult> searchProducts(MallProductListQueryRequest request) {
         MallProductListQueryRequest safeRequest = request == null ? new MallProductListQueryRequest() : request;
         Page<MallProductDetailDto> page = agentProductService.listProducts(safeRequest);
-        List<MallProductListVo> mallProductListVos = page.getRecords().stream()
+        List<AdminAgentProductListVo> mallProductListVos = page.getRecords().stream()
                 .map(product -> {
-                    MallProductListVo productListVo = copyProperties(product, MallProductListVo.class);
+                    AdminAgentProductListVo productListVo = copyProperties(product, AdminAgentProductListVo.class);
                     if (product.getImages() != null && !product.getImages().isEmpty()) {
                         productListVo.setCoverImage(product.getImages().getFirst());
                     }

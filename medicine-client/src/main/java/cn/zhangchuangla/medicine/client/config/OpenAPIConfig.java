@@ -13,7 +13,7 @@ import org.springframework.context.annotation.Configuration;
  * @author Chuang
  */
 @Configuration
-public class ClientOpenAPIConfig {
+public class OpenAPIConfig {
 
     /**
      * 所有接口

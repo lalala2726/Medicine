@@ -13,7 +13,6 @@ import cn.zhangchuangla.medicine.model.entity.MallOrderItem;
 import cn.zhangchuangla.medicine.model.entity.MallProductImage;
 import cn.zhangchuangla.medicine.model.entity.User;
 import cn.zhangchuangla.medicine.model.enums.DeliveryTypeEnum;
-import cn.zhangchuangla.medicine.model.enums.PayTypeEnum;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import lombok.RequiredArgsConstructor;
@@ -111,7 +110,7 @@ public class MallOrderServiceImpl implements MallOrderService {
             AdminOrderDetailVo.OrderInfo orderInfo = new AdminOrderDetailVo.OrderInfo();
             orderInfo.setOrderNo(order.getOrderNo());
             orderInfo.setOrderStatus(order.getOrderStatus());
-            orderInfo.setPayType(getPayTypeDesc(order.getPayType()));
+            orderInfo.setPayType(order.getPayType());
             orderInfo.setTotalAmount(order.getTotalAmount());
             orderInfo.setPayAmount(order.getPayAmount());
             orderInfo.setFreightAmount(order.getFreightAmount());
@@ -158,10 +157,5 @@ public class MallOrderServiceImpl implements MallOrderService {
     private String getDeliveryTypeDesc(String deliveryType) {
         DeliveryTypeEnum deliveryTypeEnum = DeliveryTypeEnum.fromCode(deliveryType);
         return deliveryTypeEnum == null ? "未知" : deliveryTypeEnum.getName();
-    }
-
-    private String getPayTypeDesc(String payType) {
-        PayTypeEnum payTypeEnum = PayTypeEnum.fromCode(payType);
-        return payTypeEnum == null ? "未知" : payTypeEnum.getType();
     }
 }

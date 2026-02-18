@@ -1,5 +1,7 @@
 package cn.zhangchuangla.medicine.agent.model.vo.admin;
 
+import cn.zhangchuangla.medicine.agent.annotation.AgentCodeLabel;
+import cn.zhangchuangla.medicine.agent.mapping.AgentCodeLabelRegistry;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 
@@ -25,8 +27,16 @@ public class AdminMallOrderListVo {
     @Schema(description = "支付方式编码", example = "ALIPAY")
     private String payType;
 
+    @Schema(description = "支付方式名称", example = "使用支付宝进行支付")
+    @AgentCodeLabel(source = "payType", dictKey = AgentCodeLabelRegistry.AGENT_ORDER_PAY_TYPE)
+    private String payTypeName = "";
+
     @Schema(description = "订单状态编码", example = "WAIT_PAY")
     private String orderStatus;
+
+    @Schema(description = "订单状态名称", example = "待支付")
+    @AgentCodeLabel(source = "orderStatus", dictKey = AgentCodeLabelRegistry.AGENT_ORDER_STATUS)
+    private String orderStatusName = "";
 
     @Schema(description = "支付时间", example = "2025-10-31 21:22:00")
     private Date payTime;

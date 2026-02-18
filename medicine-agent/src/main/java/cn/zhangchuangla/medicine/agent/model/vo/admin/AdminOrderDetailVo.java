@@ -1,5 +1,7 @@
 package cn.zhangchuangla.medicine.agent.model.vo.admin;
 
+import cn.zhangchuangla.medicine.agent.annotation.AgentCodeLabel;
+import cn.zhangchuangla.medicine.agent.mapping.AgentCodeLabelRegistry;
 import cn.zhangchuangla.medicine.common.core.annotation.DataMasking;
 import cn.zhangchuangla.medicine.common.core.enums.MaskingType;
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -66,8 +68,16 @@ public class AdminOrderDetailVo {
         @Schema(description = "订单状态")
         private String orderStatus;
 
+        @Schema(description = "订单状态名称")
+        @AgentCodeLabel(source = "orderStatus", dictKey = AgentCodeLabelRegistry.AGENT_ORDER_STATUS)
+        private String orderStatusName = "";
+
         @Schema(description = "支付方式")
         private String payType;
+
+        @Schema(description = "支付方式名称")
+        @AgentCodeLabel(source = "payType", dictKey = AgentCodeLabelRegistry.AGENT_ORDER_PAY_TYPE)
+        private String payTypeName = "";
 
         @Schema(description = "订单总金额")
         private BigDecimal totalAmount;

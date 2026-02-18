@@ -8,14 +8,13 @@ import lombok.Data;
 
 import java.math.BigDecimal;
 import java.util.Date;
-import java.util.List;
 
 /**
- * Admin 端智能体商品详情。
+ * Admin 端智能体商品列表视图。
  */
-@Schema(description = "Admin 端智能体商品详情")
+@Schema(description = "Admin 端智能体商品列表视图")
 @Data
-public class AdminAgentProductDetailVo {
+public class AdminAgentProductListVo {
 
     @Schema(description = "商品ID", example = "1")
     private Long id;
@@ -37,6 +36,9 @@ public class AdminAgentProductDetailVo {
 
     @Schema(description = "商品库存数量", example = "50")
     private Integer stock;
+
+    @Schema(description = "商品销量", example = "10")
+    private Integer sales;
 
     @Schema(description = "排序值，越小越靠前", example = "1")
     private Integer sort;
@@ -73,6 +75,6 @@ public class AdminAgentProductDetailVo {
     @Schema(description = "更新者", example = "admin")
     private String updateBy;
 
-    @Schema(description = "商品图片列表")
-    private List<String> images;
+    @Schema(description = "商品展示图", example = "https://example.com/image1.jpg")
+    private String coverImage;
 }

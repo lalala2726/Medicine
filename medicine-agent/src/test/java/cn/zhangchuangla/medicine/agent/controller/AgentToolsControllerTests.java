@@ -6,10 +6,7 @@ import cn.zhangchuangla.medicine.agent.controller.admin.AdminAgentProductToolsCo
 import cn.zhangchuangla.medicine.agent.controller.admin.AdminAgentUserToolsController;
 import cn.zhangchuangla.medicine.agent.controller.client.ClientAgentUserToolsController;
 import cn.zhangchuangla.medicine.agent.model.request.AdminMallOrderListRequest;
-import cn.zhangchuangla.medicine.agent.model.vo.admin.AdminAgentDrugDetailVo;
-import cn.zhangchuangla.medicine.agent.model.vo.admin.AdminAgentProductDetailVo;
-import cn.zhangchuangla.medicine.agent.model.vo.admin.AdminMallOrderListVo;
-import cn.zhangchuangla.medicine.agent.model.vo.admin.AdminOrderDetailVo;
+import cn.zhangchuangla.medicine.agent.model.vo.admin.*;
 import cn.zhangchuangla.medicine.agent.service.MallOrderService;
 import cn.zhangchuangla.medicine.agent.service.MallProductService;
 import cn.zhangchuangla.medicine.agent.service.UserService;
@@ -21,8 +18,10 @@ import cn.zhangchuangla.medicine.model.dto.MallProductDetailDto;
 import cn.zhangchuangla.medicine.model.dto.OrderWithProductDto;
 import cn.zhangchuangla.medicine.model.request.MallProductListQueryRequest;
 import cn.zhangchuangla.medicine.model.vo.UserVo;
-import cn.zhangchuangla.medicine.model.vo.mall.MallProductListVo;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.json.JsonMapper;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -37,6 +36,8 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 class AgentToolsControllerTests {
+
+    private final ObjectMapper objectMapper = JsonMapper.builder().findAndAddModules().build();
 
     private final StubUserService agentUserService = new StubUserService();
     private final StubMallProductService agentProductService = new StubMallProductService();
@@ -97,6 +98,8 @@ class AgentToolsControllerTests {
         dto.setId(200L);
         dto.setName("维生素C");
         dto.setImages(List.of("cover.jpg", "detail.jpg"));
+        dto.setStatus(1);
+        dto.setDeliveryType(2);
 
         Page<MallProductDetailDto> page = new Page<>(2, 20, 1);
         page.setRecords(List.of(dto));
@@ -112,9 +115,13 @@ class AgentToolsControllerTests {
         assertEquals(20L, table.getPageSize());
         assertEquals(1, table.getRows().size());
 
-        MallProductListVo row = (MallProductListVo) table.getRows().getFirst();
+        AdminAgentProductListVo row = (AdminAgentProductListVo) table.getRows().getFirst();
         assertEquals(200L, row.getId());
         assertEquals("cover.jpg", row.getCoverImage());
+
+        JsonNode rowNode = serializeToNode(row);
+        assertEquals("上架", rowNode.get("statusName").asText());
+        assertEquals("快递配送", rowNode.get("deliveryTypeName").asText());
         assertNotNull(agentProductService.capturedListRequest);
     }
 
@@ -123,6 +130,8 @@ class AgentToolsControllerTests {
         AdminAgentProductDetailVo productDetail = new AdminAgentProductDetailVo();
         productDetail.setId(301L);
         productDetail.setName("感冒灵");
+        productDetail.setStatus(1);
+        productDetail.setDeliveryType(1);
 
         AdminAgentDrugDetailVo drugDetail = new AdminAgentDrugDetailVo();
         drugDetail.setProductId(301L);
@@ -137,6 +146,9 @@ class AgentToolsControllerTests {
         assertEquals(200, productResult.getCode());
         assertEquals(200, drugResult.getCode());
         assertEquals("感冒灵", productResult.getData().getFirst().getName());
+        JsonNode productNode = serializeToNode(productResult.getData().getFirst());
+        assertEquals("上架", productNode.get("statusName").asText());
+        assertEquals("自提", productNode.get("deliveryTypeName").asText());
         assertEquals(301L, drugResult.getData().getFirst().getProductId());
         assertEquals(List.of(301L, 302L), agentProductService.capturedProductDetailIds);
         assertEquals(List.of(301L), agentProductService.capturedDrugDetailIds);
@@ -148,6 +160,8 @@ class AgentToolsControllerTests {
         dto.setId(401L);
         dto.setOrderNo("O401");
         dto.setTotalAmount(new BigDecimal("88.00"));
+        dto.setPayType("ALIPAY");
+        dto.setOrderStatus("PENDING_PAYMENT");
         dto.setProductId(9001L);
         dto.setProductName("阿莫西林");
         dto.setProductImage("p.jpg");
@@ -171,6 +185,10 @@ class AgentToolsControllerTests {
         assertNotNull(row.getProductInfo());
         assertEquals(9001L, row.getProductInfo().getProductId());
         assertEquals(2, row.getProductInfo().getQuantity());
+
+        JsonNode rowNode = serializeToNode(row);
+        assertEquals("使用支付宝进行支付", rowNode.get("payTypeName").asText());
+        assertEquals("待支付", rowNode.get("orderStatusName").asText());
         assertNotNull(agentOrderService.capturedListRequest);
     }
 
@@ -179,6 +197,8 @@ class AgentToolsControllerTests {
         AdminOrderDetailVo detailVo = new AdminOrderDetailVo();
         AdminOrderDetailVo.OrderInfo orderInfo = new AdminOrderDetailVo.OrderInfo();
         orderInfo.setOrderNo("OD-1");
+        orderInfo.setPayType("WECHAT_PAY");
+        orderInfo.setOrderStatus("PENDING_SHIPMENT");
         detailVo.setOrderInfo(orderInfo);
         agentOrderService.orderDetails = List.of(detailVo);
 
@@ -186,7 +206,18 @@ class AgentToolsControllerTests {
 
         assertEquals(200, result.getCode());
         assertEquals("OD-1", result.getData().getFirst().getOrderInfo().getOrderNo());
+        JsonNode orderInfoNode = serializeToNode(result.getData().getFirst().getOrderInfo());
+        assertEquals("使用微信支付进行支付", orderInfoNode.get("payTypeName").asText());
+        assertEquals("待发货", orderInfoNode.get("orderStatusName").asText());
         assertEquals(List.of(501L, 502L), agentOrderService.capturedOrderDetailIds);
+    }
+
+    private JsonNode serializeToNode(Object value) {
+        try {
+            return objectMapper.readTree(objectMapper.writeValueAsBytes(value));
+        } catch (Exception ex) {
+            throw new IllegalStateException("serialize value failed", ex);
+        }
     }
 
     private void loginAs(Long userId, String username) {
