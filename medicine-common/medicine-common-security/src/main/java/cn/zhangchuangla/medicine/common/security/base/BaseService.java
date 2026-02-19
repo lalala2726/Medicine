@@ -5,6 +5,7 @@ import cn.zhangchuangla.medicine.common.security.entity.SysUserDetails;
 import cn.zhangchuangla.medicine.common.security.utils.SecurityUtils;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 
+import java.util.Collection;
 import java.util.List;
 import java.util.Set;
 
@@ -39,6 +40,50 @@ public interface BaseService {
      */
     default Set<String> getRoles() {
         return SecurityUtils.getRoles();
+    }
+
+    /**
+     * 统一归一化编码集合。
+     * <p>
+     * 该方法委托 {@link SecurityUtils#normalizeCodes(Collection)}，
+     * 用于在服务层以一致规则处理角色码、权限码等字符串集合。
+     * </p>
+     *
+     * @param values 待归一化编码集合
+     * @return 去空、去空白、去重后的不可变集合
+     */
+    default Set<String> normalizeCodes(Collection<String> values) {
+        return SecurityUtils.normalizeCodes(values);
+    }
+
+    /**
+     * 统一归一化角色编码集合（输出纯角色码）。
+     *
+     * @param roleCodes 待处理角色集合，可包含 {@code ROLE_} 前缀
+     * @return 纯角色编码集合
+     */
+    default Set<String> normalizeRoleCodes(Collection<String> roleCodes) {
+        return SecurityUtils.normalizeRoleCodes(roleCodes);
+    }
+
+    /**
+     * 将角色编码集合转换为标准角色权限集合（带 {@code ROLE_} 前缀）。
+     *
+     * @param roleCodes 角色集合
+     * @return 标准角色权限集合
+     */
+    default Set<String> toRoleAuthorities(Collection<String> roleCodes) {
+        return SecurityUtils.toRoleAuthorities(roleCodes);
+    }
+
+    /**
+     * 统一归一化业务权限集合（自动过滤角色权限项）。
+     *
+     * @param permissionCodes 待处理权限集合
+     * @return 业务权限集合
+     */
+    default Set<String> toPermissionAuthorities(Collection<String> permissionCodes) {
+        return SecurityUtils.toPermissionAuthorities(permissionCodes);
     }
 
     /**

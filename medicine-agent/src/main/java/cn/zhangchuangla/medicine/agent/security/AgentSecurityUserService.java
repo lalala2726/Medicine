@@ -4,6 +4,7 @@ import cn.zhangchuangla.medicine.agent.service.UserService;
 import cn.zhangchuangla.medicine.common.core.constants.Constants;
 import cn.zhangchuangla.medicine.common.security.entity.AuthUser;
 import cn.zhangchuangla.medicine.common.security.entity.SysUserDetails;
+import cn.zhangchuangla.medicine.common.security.utils.SecurityUtils;
 import cn.zhangchuangla.medicine.model.entity.User;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
@@ -21,8 +22,6 @@ import java.util.*;
 @RequiredArgsConstructor
 public class AgentSecurityUserService implements UserDetailsService {
 
-    private static final String ROLE_PREFIX = "ROLE_";
-
     private final UserService userService;
 
     /**
@@ -35,10 +34,10 @@ public class AgentSecurityUserService implements UserDetailsService {
             throw new UsernameNotFoundException("用户不存在");
         }
 
-        Set<String> roles = normalizeRoleCodes(Optional.ofNullable(userService.getUserRolesByUserId(user.getId()))
+        Set<String> roles = SecurityUtils.normalizeRoleCodes(Optional.ofNullable(userService.getUserRolesByUserId(user.getId()))
                 .filter(set -> !set.isEmpty())
                 .orElseGet(Collections::emptySet));
-        Set<String> permissions = normalizePermissionCodes(
+        Set<String> permissions = SecurityUtils.toPermissionAuthorities(
                 Optional.ofNullable(userService.getUserPermissionCodesByUserId(user.getId()))
                         .filter(set -> !set.isEmpty())
                         .orElseGet(Collections::emptySet));
@@ -58,52 +57,12 @@ public class AgentSecurityUserService implements UserDetailsService {
                 .build();
 
         Set<SimpleGrantedAuthority> authorities = new HashSet<>();
-        roles.forEach(role -> authorities.add(new SimpleGrantedAuthority(ROLE_PREFIX + role)));
+        SecurityUtils.toRoleAuthorities(roles)
+                .forEach(roleAuthority -> authorities.add(new SimpleGrantedAuthority(roleAuthority)));
         permissions.forEach(permission -> authorities.add(new SimpleGrantedAuthority(permission)));
 
         SysUserDetails userDetails = new SysUserDetails(authUser);
         userDetails.setAuthorities(authorities);
         return userDetails;
-    }
-
-    private Set<String> normalizeRoleCodes(Set<String> roleCodes) {
-        LinkedHashSet<String> normalized = new LinkedHashSet<>();
-        for (String roleCode : roleCodes) {
-            if (roleCode == null) {
-                continue;
-            }
-            String trimmed = roleCode.trim();
-            if (trimmed.isEmpty()) {
-                continue;
-            }
-            if (trimmed.regionMatches(true, 0, ROLE_PREFIX, 0, ROLE_PREFIX.length())) {
-                trimmed = trimmed.substring(ROLE_PREFIX.length()).trim();
-                if (trimmed.isEmpty()) {
-                    continue;
-                }
-            }
-            normalized.add(trimmed);
-        }
-        if (normalized.isEmpty()) {
-            return Set.of();
-        }
-        return Set.copyOf(normalized);
-    }
-
-    private Set<String> normalizePermissionCodes(Set<String> permissionCodes) {
-        LinkedHashSet<String> normalized = new LinkedHashSet<>();
-        for (String permissionCode : permissionCodes) {
-            if (permissionCode == null) {
-                continue;
-            }
-            String trimmed = permissionCode.trim();
-            if (!trimmed.isEmpty()) {
-                normalized.add(trimmed);
-            }
-        }
-        if (normalized.isEmpty()) {
-            return Set.of();
-        }
-        return Set.copyOf(normalized);
     }
 }

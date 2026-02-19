@@ -11,6 +11,8 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.util.HashMap;
+
 /**
  * 智能体认证授权控制器。
  * <p>
@@ -37,8 +39,13 @@ public class AgentAuthorizationController extends BaseController {
      */
     @GetMapping
     @Operation(summary = "获取当前用户信息", description = "获取当前登录用户的详细信息")
-    public AjaxResult<AuthUserDto> getCurrentUser() {
+    public AjaxResult<HashMap<String, Object>> getCurrentUser() {
         Long userId = getUserId();
-        return success(agentUserService.getUser(userId));
+        AuthUserDto user = agentUserService.getUser(userId);
+        HashMap<String, Object> userInfo = new HashMap<>();
+        userInfo.put("user", user);
+        userInfo.put("roles", agentUserService.getUserRolesByUserId(userId));
+        userInfo.put("permissions", agentUserService.getUserPermissionCodesByUserId(userId));
+        return success(userInfo);
     }
 }
