@@ -25,10 +25,10 @@ public interface MallOrderService {
     Page<OrderWithProductDto> listOrders(AdminMallOrderListRequest request);
 
     /**
-     * 批量查询订单详情。
+     * 根据订单编号批量查询订单详细信息。
      *
-     * @param orderIds 订单 ID 列表
+     * @param orderNos 订单编号列表
      * @return 订单详情列表
      */
-    List<AdminOrderDetailVo> getOrderDetail(List<Long> orderIds);
+    List<AdminOrderDetailVo> getOrderDetail(List<String> orderNos);
 }

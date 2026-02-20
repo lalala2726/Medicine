@@ -60,17 +60,40 @@ public class MallOrderServiceImpl implements MallOrderService {
     }
 
     @Override
-    public List<AdminOrderDetailVo> getOrderDetail(List<Long> orderIds) {
-        if (orderIds == null || orderIds.isEmpty()) {
+    public List<AdminOrderDetailVo> getOrderDetail(List<String> orderNos) {
+        if (orderNos == null || orderNos.isEmpty()) {
             return List.of();
         }
 
-        List<MallOrder> orders = mallOrderMapper.selectByIds(orderIds);
+        List<String> normalizedOrderNos = orderNos.stream()
+                .map(StringUtils::trimToNull)
+                .filter(Objects::nonNull)
+                .distinct()
+                .toList();
+        if (normalizedOrderNos.isEmpty()) {
+            return List.of();
+        }
+
+        List<MallOrder> orders = mallOrderMapper.selectList(new LambdaQueryWrapper<MallOrder>()
+                .in(MallOrder::getOrderNo, normalizedOrderNos));
         if (orders.isEmpty()) {
             return List.of();
         }
 
-        List<Long> userIds = orders.stream()
+        Map<String, MallOrder> orderMap = orders.stream().collect(Collectors.toMap(
+                MallOrder::getOrderNo,
+                order -> order,
+                (left, right) -> left
+        ));
+        List<MallOrder> sortedOrders = normalizedOrderNos.stream()
+                .map(orderMap::get)
+                .filter(Objects::nonNull)
+                .toList();
+        if (sortedOrders.isEmpty()) {
+            return List.of();
+        }
+
+        List<Long> userIds = sortedOrders.stream()
                 .map(MallOrder::getUserId)
                 .filter(Objects::nonNull)
                 .distinct()
@@ -81,14 +104,14 @@ public class MallOrderServiceImpl implements MallOrderService {
             userMap = users.stream().collect(Collectors.toMap(User::getId, user -> user, (left, right) -> left));
         }
 
-        List<Long> normalizedOrderIds = orders.stream().map(MallOrder::getId).toList();
+        List<Long> normalizedOrderIds = sortedOrders.stream().map(MallOrder::getId).toList();
         List<MallOrderItem> orderItems = mallOrderItemMapper.selectList(new LambdaQueryWrapper<MallOrderItem>()
                 .in(MallOrderItem::getOrderId, normalizedOrderIds));
         Map<Long, List<MallOrderItem>> orderItemMap = orderItems.stream()
                 .collect(Collectors.groupingBy(MallOrderItem::getOrderId));
 
         List<AdminOrderDetailVo> result = new ArrayList<>();
-        for (MallOrder order : orders) {
+        for (MallOrder order : sortedOrders) {
             AdminOrderDetailVo detailVo = new AdminOrderDetailVo();
 
             User user = userMap.get(order.getUserId());

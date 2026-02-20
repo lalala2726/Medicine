@@ -62,22 +62,22 @@ public class AdminAgentOrderToolsController extends BaseController {
     }
 
     /**
-     * 根据订单 ID 批量查询订单详情。
+     * 根据订单编号查询订单详情
      * <p>
      * 返回订单的详细信息，包括订单基本信息、收货地址、
      * 商品明细、支付信息等完整订单数据。
      *
-     * @param orderIds 订单 ID 列表，支持批量查询
+     * @param orderNos 订单编号列表
      * @return 订单详情列表
      */
-    @GetMapping("/{orderIds}")
-    @Operation(summary = "获取订单详情", description = "根据订单ID获取详细信息")
+    @GetMapping("/{orderNos}")
+    @Operation(summary = "获取订单详情", description = "根据订单编号获取详细信息")
     @PreAuthorize("hasAuthority('mall:order:query') or hasRole('super_admin')")
     public AjaxResult<List<AdminOrderDetailVo>> getOrderDetail(
-            @Parameter(description = "订单ID")
-            @PathVariable List<Long> orderIds
+            @Parameter(description = "订单编号，多个可用逗号分隔")
+            @PathVariable List<String> orderNos
     ) {
-        return success(agentOrderService.getOrderDetail(orderIds));
+        return success(agentOrderService.getOrderDetail(orderNos));
     }
 
     private AdminMallOrderListVo buildOrderListVo(OrderWithProductDto source) {
