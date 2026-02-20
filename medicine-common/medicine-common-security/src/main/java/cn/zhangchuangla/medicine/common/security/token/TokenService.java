@@ -244,9 +244,9 @@ public class TokenService {
     /**
      * 基于 Redis 在线会话构造 {@link SysUserDetails}。
      *
-     * @param onlineUser Redis 中的在线用户
-     * @param authorities 已计算的权限集合
-     * @param roleAuthorities 角色权限（ROLE_ 前缀）
+     * @param onlineUser            Redis 中的在线用户
+     * @param authorities           已计算的权限集合
+     * @param roleAuthorities       角色权限（ROLE_ 前缀）
      * @param permissionAuthorities 业务权限码
      * @return 统一用户详情
      */
@@ -307,7 +307,7 @@ public class TokenService {
      * 优先使用 {@link AuthUser} 中的角色/权限；若缺失则从 authorities 回退拆分。
      * </p>
      *
-     * @param authUser 统一用户对象
+     * @param authUser       统一用户对象
      * @param authorityCodes 认证对象中的权限编码
      * @return 角色与权限快照
      */
