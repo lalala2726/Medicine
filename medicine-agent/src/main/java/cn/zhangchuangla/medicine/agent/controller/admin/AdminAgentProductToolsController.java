@@ -1,6 +1,7 @@
 package cn.zhangchuangla.medicine.agent.controller.admin;
 
 import cn.zhangchuangla.medicine.agent.annotation.InternalAgentHeaderTrace;
+import cn.zhangchuangla.medicine.agent.model.vo.admin.AdminAgentDrugDetailVo;
 import cn.zhangchuangla.medicine.agent.model.vo.admin.AdminAgentProductDetailVo;
 import cn.zhangchuangla.medicine.agent.model.vo.admin.AdminAgentProductListVo;
 import cn.zhangchuangla.medicine.agent.service.MallProductService;
@@ -98,5 +99,24 @@ public class AdminAgentProductToolsController extends BaseController {
             @PathVariable List<Long> productIds
     ) {
         return success(agentProductService.getProductDetail(productIds));
+    }
+
+    /**
+     * 根据商品 ID 批量查询药品详情。
+     * <p>
+     * 返回商品的药品详细信息，包括适应症、用法用量、
+     * 不良反应、注意事项、禁忌等药品说明书内容。
+     *
+     * @param productIds 商品 ID 列表，支持批量查询
+     * @return 药品详情列表
+     */
+    @GetMapping("/drug/{productIds}")
+    @Operation(summary = "获取药品详情", description = "根据商品ID获取药品详细信息")
+    @PreAuthorize("hasAuthority('mall:product:query') or hasRole('super_admin')")
+    public AjaxResult<List<AdminAgentDrugDetailVo>> getDrugDetail(
+            @Parameter(description = "商品ID")
+            @PathVariable List<Long> productIds
+    ) {
+        return success(agentProductService.getDrugDetail(productIds));
     }
 }
