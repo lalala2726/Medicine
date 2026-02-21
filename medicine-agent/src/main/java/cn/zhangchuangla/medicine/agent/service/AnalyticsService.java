@@ -1,6 +1,11 @@
 package cn.zhangchuangla.medicine.agent.service;
 
-import cn.zhangchuangla.medicine.model.vo.analytics.*;
+import cn.zhangchuangla.medicine.agent.model.vo.analytics.PaymentDistribution;
+import cn.zhangchuangla.medicine.agent.model.vo.analytics.StatusDistribution;
+import cn.zhangchuangla.medicine.model.vo.analytics.HotProductRank;
+import cn.zhangchuangla.medicine.model.vo.analytics.OrderTrendPoint;
+import cn.zhangchuangla.medicine.model.vo.analytics.OverviewVo;
+import cn.zhangchuangla.medicine.model.vo.analytics.ReturnRateStat;
 
 import java.util.List;
 

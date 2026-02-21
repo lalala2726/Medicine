@@ -1,10 +1,15 @@
 package cn.zhangchuangla.medicine.agent.controller.admin;
 
 import cn.zhangchuangla.medicine.agent.annotation.InternalAgentHeaderTrace;
+import cn.zhangchuangla.medicine.agent.model.vo.analytics.PaymentDistribution;
+import cn.zhangchuangla.medicine.agent.model.vo.analytics.StatusDistribution;
 import cn.zhangchuangla.medicine.agent.service.AnalyticsService;
 import cn.zhangchuangla.medicine.common.core.base.AjaxResult;
 import cn.zhangchuangla.medicine.common.security.base.BaseController;
-import cn.zhangchuangla.medicine.model.vo.analytics.*;
+import cn.zhangchuangla.medicine.model.vo.analytics.HotProductRank;
+import cn.zhangchuangla.medicine.model.vo.analytics.OrderTrendPoint;
+import cn.zhangchuangla.medicine.model.vo.analytics.OverviewVo;
+import cn.zhangchuangla.medicine.model.vo.analytics.ReturnRateStat;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;

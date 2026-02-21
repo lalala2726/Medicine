@@ -1,6 +1,8 @@
 package cn.zhangchuangla.medicine.agent.service.impl;
 
 import cn.zhangchuangla.medicine.agent.mapper.AnalyticsMapper;
+import cn.zhangchuangla.medicine.agent.model.vo.analytics.PaymentDistribution;
+import cn.zhangchuangla.medicine.agent.model.vo.analytics.StatusDistribution;
 import cn.zhangchuangla.medicine.agent.service.AnalyticsService;
 import cn.zhangchuangla.medicine.model.enums.OrderStatusEnum;
 import cn.zhangchuangla.medicine.model.enums.PayTypeEnum;
@@ -58,7 +60,7 @@ public class AnalyticsServiceImpl implements AnalyticsService {
     }
 
     @Override
-    public List<cn.zhangchuangla.medicine.model.vo.analytics.StatusDistribution> orderStatusDistribution() {
+    public List<StatusDistribution> orderStatusDistribution() {
         List<StatusDistribution> list = analyticsMapper.orderStatusDistribution();
         if (CollectionUtils.isEmpty(list)) {
             return List.of();

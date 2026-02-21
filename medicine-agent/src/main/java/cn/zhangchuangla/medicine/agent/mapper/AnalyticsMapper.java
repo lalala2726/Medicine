@@ -1,5 +1,7 @@
 package cn.zhangchuangla.medicine.agent.mapper;
 
+import cn.zhangchuangla.medicine.agent.model.vo.analytics.PaymentDistribution;
+import cn.zhangchuangla.medicine.agent.model.vo.analytics.StatusDistribution;
 import cn.zhangchuangla.medicine.model.vo.analytics.*;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;

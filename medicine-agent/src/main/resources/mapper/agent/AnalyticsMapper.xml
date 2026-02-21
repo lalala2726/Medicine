@@ -56,7 +56,7 @@
     </select>
 
     <select id="orderStatusDistribution"
-            resultType="cn.zhangchuangla.medicine.model.vo.analytics.StatusDistribution">
+            resultType="cn.zhangchuangla.medicine.agent.model.vo.analytics.StatusDistribution">
         SELECT order_status AS status,
                COUNT(*)     AS count
         FROM mall_order
@@ -65,7 +65,7 @@
     </select>
 
     <select id="paymentDistribution"
-            resultType="cn.zhangchuangla.medicine.model.vo.analytics.PaymentDistribution">
+            resultType="cn.zhangchuangla.medicine.agent.model.vo.analytics.PaymentDistribution">
         SELECT pay_type                   AS payType,
                COUNT(*)                   AS count,
                IFNULL(SUM(pay_amount), 0) AS amount

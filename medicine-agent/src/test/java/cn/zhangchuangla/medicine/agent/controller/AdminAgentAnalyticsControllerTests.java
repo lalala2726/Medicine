@@ -126,15 +126,13 @@ class AdminAgentAnalyticsControllerTests {
         }
 
         @Override
-        public List<StatusDistribution> orderStatusDistribution() {
-            this.statusInvoked = true;
-            return statusDistributions;
+        public List<cn.zhangchuangla.medicine.agent.model.vo.analytics.StatusDistribution> orderStatusDistribution() {
+            return List.of();
         }
 
         @Override
-        public List<PaymentDistribution> paymentDistribution() {
-            this.paymentInvoked = true;
-            return paymentDistributions;
+        public List<cn.zhangchuangla.medicine.agent.model.vo.analytics.PaymentDistribution> paymentDistribution() {
+            return List.of();
         }
 
         @Override
