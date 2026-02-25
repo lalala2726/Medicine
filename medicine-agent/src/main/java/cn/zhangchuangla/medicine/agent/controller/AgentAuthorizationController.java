@@ -44,6 +44,8 @@ public class AgentAuthorizationController extends BaseController {
     @GetMapping
     @Operation(summary = "获取当前用户信息", description = "获取当前登录用户的详细信息")
     public AjaxResult<HashMap<String, Object>> getCurrentUser() {
+
+        // todo 重新设计这边的代码逻辑，确保在获取用户信息不依赖 Admin 或者 Client 模块
         Long userId = getUserId();
         AuthContextDto context = adminAgentAuthRpcService.getByUserId(userId);
         HashMap<String, Object> userInfo = new HashMap<>();
