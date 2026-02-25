@@ -39,6 +39,8 @@ public enum ResponseCode {
     NOT_FOUND(404, "未找到该资源"),
     // 请求方法不被允许
     NOT_SUPPORT(405, "不支持该请求"),
+    // 下游业务模块尚未就绪
+    SERVICE_UNAVAILABLE(503, "业务模块未就绪，请稍后再试"),
     // endregion
 
     // region 认证与授权错误状态
