@@ -21,7 +21,7 @@ import java.util.List;
 @Service
 public class MallOrderServiceImpl implements MallOrderService {
 
-    @DubboReference(group = "medicine-admin", version = "1.0.0", check = false, timeout = 30000, retries = 0,
+    @DubboReference(group = "medicine-admin", version = "1.0.0", check = false, timeout = 10000, retries = 0,
             url = "${dubbo.references.medicine-admin.url:}")
     private AdminAgentOrderRpcService adminAgentOrderRpcService;
 

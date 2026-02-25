@@ -36,7 +36,7 @@ dubbo:
     check: false
     # Consumer 调用超时（毫秒）。
     # 示例: 30000
-    timeout: 30000
+    timeout: 10000
     # Consumer 重试次数。
     # 示例: 0
     retries: 0

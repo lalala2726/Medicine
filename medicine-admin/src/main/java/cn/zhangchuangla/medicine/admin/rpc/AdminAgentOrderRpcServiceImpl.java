@@ -15,7 +15,7 @@ import java.util.List;
 /**
  * 管理端 Agent 订单 RPC Provider。
  */
-@DubboService(interfaceClass = AdminAgentOrderRpcService.class, group = "medicine-admin", version = "1.0.0", timeout = 30000)
+@DubboService(interfaceClass = AdminAgentOrderRpcService.class, group = "medicine-admin", version = "1.0.0", timeout = 10000)
 @RequiredArgsConstructor
 public class AdminAgentOrderRpcServiceImpl implements AdminAgentOrderRpcService {
 

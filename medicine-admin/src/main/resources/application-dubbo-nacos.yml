@@ -40,7 +40,7 @@ dubbo:
   provider:
     # Provider 超时（毫秒）。
     # 示例: 30000
-    timeout: 30000
+    timeout: 10000
     # Provider 重试次数。
     # 示例: 0
     retries: 0
