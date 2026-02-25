@@ -2,8 +2,8 @@ package cn.zhangchuangla.medicine.admin.service.impl;
 
 import cn.zhangchuangla.medicine.admin.mapper.MallOrderMapper;
 import cn.zhangchuangla.medicine.admin.mapper.UserMapper;
-import cn.zhangchuangla.medicine.admin.model.vo.OrderDetailVo;
 import cn.zhangchuangla.medicine.admin.service.*;
+import cn.zhangchuangla.medicine.model.dto.OrderDetailDto;
 import cn.zhangchuangla.medicine.model.entity.MallOrder;
 import cn.zhangchuangla.medicine.model.entity.MallOrderItem;
 import cn.zhangchuangla.medicine.model.entity.User;
@@ -63,14 +63,14 @@ class MallOrderServiceImplGetOrderDetailByIdsTests {
 
     @Test
     void getOrderDetailByIds_WhenInputIsNull_ShouldReturnEmptyList() {
-        List<OrderDetailVo> result = mallOrderService.getOrderDetailByIds(null);
+        List<OrderDetailDto> result = mallOrderService.getOrderDetailByIds(null);
 
         assertTrue(result.isEmpty());
     }
 
     @Test
     void getOrderDetailByIds_WhenInputIsEmpty_ShouldReturnEmptyList() {
-        List<OrderDetailVo> result = mallOrderService.getOrderDetailByIds(Collections.emptyList());
+        List<OrderDetailDto> result = mallOrderService.getOrderDetailByIds(Collections.emptyList());
 
         assertTrue(result.isEmpty());
     }
@@ -79,7 +79,7 @@ class MallOrderServiceImplGetOrderDetailByIdsTests {
     void getOrderDetailByIds_WhenOrdersNotFound_ShouldReturnEmptyList() {
         doReturn(Collections.emptyList()).when(mallOrderService).listByIds(any());
 
-        List<OrderDetailVo> result = mallOrderService.getOrderDetailByIds(List.of(1L, 2L));
+        List<OrderDetailDto> result = mallOrderService.getOrderDetailByIds(List.of(1L, 2L));
 
         assertTrue(result.isEmpty());
     }
@@ -98,10 +98,10 @@ class MallOrderServiceImplGetOrderDetailByIdsTests {
         MallOrderItem orderItem = createMockOrderItem(1L, 1L, "商品1");
         mockOrderItemService(List.of(orderItem));
 
-        List<OrderDetailVo> result = mallOrderService.getOrderDetailByIds(List.of(1L));
+        List<OrderDetailDto> result = mallOrderService.getOrderDetailByIds(List.of(1L));
 
         assertEquals(1, result.size());
-        OrderDetailVo detail = result.getFirst();
+        OrderDetailDto detail = result.getFirst();
 
         // 验证订单信息
         assertNotNull(detail.getOrderInfo());
@@ -140,7 +140,7 @@ class MallOrderServiceImplGetOrderDetailByIdsTests {
         MallOrderItem item2 = createMockOrderItem(2L, 2L, "商品2");
         mockOrderItemService(List.of(item1, item2));
 
-        List<OrderDetailVo> result = mallOrderService.getOrderDetailByIds(List.of(1L, 2L));
+        List<OrderDetailDto> result = mallOrderService.getOrderDetailByIds(List.of(1L, 2L));
 
         assertEquals(2, result.size());
     }
@@ -156,7 +156,7 @@ class MallOrderServiceImplGetOrderDetailByIdsTests {
         MallOrderItem orderItem = createMockOrderItem(1L, 1L, "商品1");
         mockOrderItemService(List.of(orderItem));
 
-        List<OrderDetailVo> result = mallOrderService.getOrderDetailByIds(List.of(1L));
+        List<OrderDetailDto> result = mallOrderService.getOrderDetailByIds(List.of(1L));
 
         assertEquals(1, result.size());
         assertNull(result.getFirst().getUserInfo());
@@ -176,7 +176,7 @@ class MallOrderServiceImplGetOrderDetailByIdsTests {
         // 没有订单商品
         mockOrderItemService(Collections.emptyList());
 
-        List<OrderDetailVo> result = mallOrderService.getOrderDetailByIds(List.of(1L));
+        List<OrderDetailDto> result = mallOrderService.getOrderDetailByIds(List.of(1L));
 
         assertEquals(1, result.size());
         assertNotNull(result.getFirst().getProductInfo());

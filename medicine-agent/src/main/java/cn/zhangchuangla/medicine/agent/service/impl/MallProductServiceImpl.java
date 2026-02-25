@@ -6,7 +6,7 @@ import cn.zhangchuangla.medicine.agent.service.MallProductService;
 import cn.zhangchuangla.medicine.common.core.base.PageResult;
 import cn.zhangchuangla.medicine.common.core.utils.BeanCotyUtils;
 import cn.zhangchuangla.medicine.dubbo.api.admin.AdminAgentProductRpcService;
-import cn.zhangchuangla.medicine.dubbo.api.model.AgentDrugDetailDto;
+import cn.zhangchuangla.medicine.model.dto.AgentDrugDetailDto;
 import cn.zhangchuangla.medicine.model.dto.MallProductDetailDto;
 import cn.zhangchuangla.medicine.model.request.MallProductListQueryRequest;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;

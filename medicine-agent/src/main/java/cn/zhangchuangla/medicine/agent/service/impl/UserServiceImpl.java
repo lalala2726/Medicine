@@ -5,7 +5,7 @@ import cn.zhangchuangla.medicine.common.core.utils.BeanCotyUtils;
 import cn.zhangchuangla.medicine.common.security.utils.SecurityUtils;
 import cn.zhangchuangla.medicine.dubbo.api.admin.AdminAgentAuthRpcService;
 import cn.zhangchuangla.medicine.dubbo.api.client.ClientAgentUserRpcService;
-import cn.zhangchuangla.medicine.dubbo.api.model.AdminAuthContextDto;
+import cn.zhangchuangla.medicine.model.dto.AuthContextDto;
 import cn.zhangchuangla.medicine.model.dto.AuthUserDto;
 import cn.zhangchuangla.medicine.model.entity.User;
 import cn.zhangchuangla.medicine.model.vo.UserVo;
@@ -38,7 +38,7 @@ public class UserServiceImpl implements UserService {
 
     @Override
     public AuthUserDto getUser(Long userId) {
-        AdminAuthContextDto context = getAuthContextByUserId(userId);
+        AuthContextDto context = getAuthContextByUserId(userId);
         if (context == null || context.getUser() == null) {
             return null;
         }
@@ -50,13 +50,13 @@ public class UserServiceImpl implements UserService {
         if (username == null || username.isBlank()) {
             return null;
         }
-        AdminAuthContextDto context = adminAgentAuthRpcService.getByUsername(username.trim());
+        AuthContextDto context = adminAgentAuthRpcService.getByUsername(username.trim());
         return context == null ? null : context.getUser();
     }
 
     @Override
     public Set<String> getUserRolesByUserId(Long userId) {
-        AdminAuthContextDto context = getAuthContextByUserId(userId);
+        AuthContextDto context = getAuthContextByUserId(userId);
         if (context == null) {
             return Set.of();
         }
@@ -65,14 +65,14 @@ public class UserServiceImpl implements UserService {
 
     @Override
     public Set<String> getUserPermissionCodesByUserId(Long userId) {
-        AdminAuthContextDto context = getAuthContextByUserId(userId);
+        AuthContextDto context = getAuthContextByUserId(userId);
         if (context == null) {
             return Set.of();
         }
         return SecurityUtils.normalizeCodes(context.getPermissions());
     }
 
-    private AdminAuthContextDto getAuthContextByUserId(Long userId) {
+    private AuthContextDto getAuthContextByUserId(Long userId) {
         if (userId == null) {
             return null;
         }

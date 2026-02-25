@@ -3,12 +3,13 @@ package cn.zhangchuangla.medicine.admin.service;
 import cn.zhangchuangla.medicine.admin.model.dto.UserOrderStatistics;
 import cn.zhangchuangla.medicine.admin.model.request.*;
 import cn.zhangchuangla.medicine.admin.model.vo.OrderAddressVo;
-import cn.zhangchuangla.medicine.admin.model.vo.OrderDetailVo;
 import cn.zhangchuangla.medicine.admin.model.vo.OrderPriceVo;
 import cn.zhangchuangla.medicine.admin.model.vo.OrderRemarkVo;
 import cn.zhangchuangla.medicine.common.core.base.PageRequest;
+import cn.zhangchuangla.medicine.model.dto.OrderDetailDto;
 import cn.zhangchuangla.medicine.model.dto.OrderWithProductDto;
 import cn.zhangchuangla.medicine.model.entity.MallOrder;
+import cn.zhangchuangla.medicine.model.request.MallOrderListRequest;
 import cn.zhangchuangla.medicine.model.vo.mall.OrderShippingVo;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.IService;
@@ -35,7 +36,7 @@ public interface MallOrderService extends IService<MallOrder> {
      * @param orderNos 订单号列表
      * @return 订单详情列表
      */
-    List<OrderDetailVo> getOrderByOrderNo(List<String> orderNos);
+    List<OrderDetailDto> getOrderByOrderNo(List<String> orderNos);
 
     /**
      * 根据ID查询订单
@@ -51,7 +52,7 @@ public interface MallOrderService extends IService<MallOrder> {
      * @param orderId 订单ID
      * @return 订单详情
      */
-    OrderDetailVo orderDetail(Long orderId);
+    OrderDetailDto orderDetail(Long orderId);
 
     /**
      * 获取订单地址信息
@@ -207,5 +208,5 @@ public interface MallOrderService extends IService<MallOrder> {
      * @param orderIds 订单ID列表
      * @return 订单详情列表
      */
-    List<OrderDetailVo> getOrderDetailByIds(List<Long> orderIds);
+    List<OrderDetailDto> getOrderDetailByIds(List<Long> orderIds);
 }

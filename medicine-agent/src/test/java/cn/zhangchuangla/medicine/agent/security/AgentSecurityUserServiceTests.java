@@ -3,7 +3,7 @@ package cn.zhangchuangla.medicine.agent.security;
 import cn.zhangchuangla.medicine.common.core.constants.Constants;
 import cn.zhangchuangla.medicine.common.security.entity.SysUserDetails;
 import cn.zhangchuangla.medicine.dubbo.api.admin.AdminAgentAuthRpcService;
-import cn.zhangchuangla.medicine.dubbo.api.model.AdminAuthContextDto;
+import cn.zhangchuangla.medicine.model.dto.AuthContextDto;
 import cn.zhangchuangla.medicine.model.entity.User;
 import org.junit.jupiter.api.Test;
 import org.springframework.security.core.GrantedAuthority;
@@ -90,18 +90,18 @@ class AgentSecurityUserServiceTests {
         assertThrows(UsernameNotFoundException.class, () -> securityUserService.loadUserByUsername("missing"));
     }
 
-    private AdminAuthContextDto buildContext(Long userId,
-                                             String username,
-                                             String password,
-                                             Set<String> roles,
-                                             Set<String> permissions) {
+    private AuthContextDto buildContext(Long userId,
+                                        String username,
+                                        String password,
+                                        Set<String> roles,
+                                        Set<String> permissions) {
         User user = new User();
         user.setId(userId);
         user.setUsername(username);
         user.setPassword(password);
         user.setStatus(Constants.ACCOUNT_UNLOCK_KEY);
 
-        AdminAuthContextDto context = new AdminAuthContextDto();
+        AuthContextDto context = new AuthContextDto();
         context.setUser(user);
         context.setRoles(roles);
         context.setPermissions(permissions);
@@ -110,15 +110,15 @@ class AgentSecurityUserServiceTests {
 
     private static class StubAuthRpcService implements AdminAgentAuthRpcService {
 
-        private AdminAuthContextDto context;
+        private AuthContextDto context;
 
         @Override
-        public AdminAuthContextDto getByUserId(Long userId) {
+        public AuthContextDto getByUserId(Long userId) {
             return context;
         }
 
         @Override
-        public AdminAuthContextDto getByUsername(String username) {
+        public AuthContextDto getByUsername(String username) {
             return context;
         }
     }

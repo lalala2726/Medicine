@@ -3,7 +3,6 @@ package cn.zhangchuangla.medicine.admin.service.impl;
 import cn.zhangchuangla.medicine.admin.mapper.MallOrderItemMapper;
 import cn.zhangchuangla.medicine.admin.mapper.MallProductMapper;
 import cn.zhangchuangla.medicine.admin.model.dto.ProductSalesDto;
-import cn.zhangchuangla.medicine.admin.model.vo.AgentDrugDetailVo;
 import cn.zhangchuangla.medicine.admin.service.*;
 import cn.zhangchuangla.medicine.admin.task.MallProductSearchIndexer;
 import cn.zhangchuangla.medicine.common.core.constants.RedisConstants;
@@ -12,6 +11,7 @@ import cn.zhangchuangla.medicine.common.core.utils.Assert;
 import cn.zhangchuangla.medicine.common.redis.core.RedisCache;
 import cn.zhangchuangla.medicine.common.security.base.BaseService;
 import cn.zhangchuangla.medicine.common.security.utils.SecurityUtils;
+import cn.zhangchuangla.medicine.model.dto.AgentDrugDetailDto;
 import cn.zhangchuangla.medicine.model.dto.DrugDetailDto;
 import cn.zhangchuangla.medicine.model.dto.MallProductDetailDto;
 import cn.zhangchuangla.medicine.model.entity.DrugDetail;
@@ -159,7 +159,7 @@ public class MallProductServiceImpl extends ServiceImpl<MallProductMapper, MallP
     }
 
     @Override
-    public List<AgentDrugDetailVo> getDrugDetailByProductIds(List<Long> productIds) {
+    public List<AgentDrugDetailDto> getDrugDetailByProductIds(List<Long> productIds) {
         if (productIds == null || productIds.isEmpty()) {
             return List.of();
         }
@@ -184,11 +184,11 @@ public class MallProductServiceImpl extends ServiceImpl<MallProductMapper, MallP
         return drugDetails.stream()
                 .map(drug -> {
                     DrugDetailDto drugDetailDto = copyProperties(drug, DrugDetailDto.class);
-                    return AgentDrugDetailVo.builder()
-                            .productId(drug.getProductId())
-                            .productName(productNameMap.get(drug.getProductId()))
-                            .drugDetail(drugDetailDto)
-                            .build();
+                    AgentDrugDetailDto dto = new AgentDrugDetailDto();
+                    dto.setProductId(drug.getProductId());
+                    dto.setProductName(productNameMap.get(drug.getProductId()));
+                    dto.setDrugDetail(drugDetailDto);
+                    return dto;
                 })
                 .toList();
     }

@@ -5,7 +5,7 @@ import cn.zhangchuangla.medicine.admin.service.RoleService;
 import cn.zhangchuangla.medicine.admin.service.UserService;
 import cn.zhangchuangla.medicine.common.security.utils.SecurityUtils;
 import cn.zhangchuangla.medicine.dubbo.api.admin.AdminAgentAuthRpcService;
-import cn.zhangchuangla.medicine.dubbo.api.model.AdminAuthContextDto;
+import cn.zhangchuangla.medicine.model.dto.AuthContextDto;
 import cn.zhangchuangla.medicine.model.entity.User;
 import lombok.RequiredArgsConstructor;
 import org.apache.dubbo.config.annotation.DubboService;
@@ -25,7 +25,7 @@ public class AdminAgentAuthRpcServiceImpl implements AdminAgentAuthRpcService {
     private final PermissionService permissionService;
 
     @Override
-    public AdminAuthContextDto getByUserId(Long userId) {
+    public AuthContextDto getByUserId(Long userId) {
         if (userId == null) {
             return null;
         }
@@ -37,7 +37,7 @@ public class AdminAgentAuthRpcServiceImpl implements AdminAgentAuthRpcService {
     }
 
     @Override
-    public AdminAuthContextDto getByUsername(String username) {
+    public AuthContextDto getByUsername(String username) {
         if (!StringUtils.hasText(username)) {
             return null;
         }
@@ -48,11 +48,11 @@ public class AdminAgentAuthRpcServiceImpl implements AdminAgentAuthRpcService {
         return buildContext(user);
     }
 
-    private AdminAuthContextDto buildContext(User user) {
+    private AuthContextDto buildContext(User user) {
         Set<String> roleCodes = SecurityUtils.normalizeRoleCodes(roleService.getUserRoleByUserId(user.getId()));
         Set<String> permissionCodes = SecurityUtils.toPermissionAuthorities(permissionService.getPermissionCodesByUserId(user.getId()));
 
-        AdminAuthContextDto dto = new AdminAuthContextDto();
+        AuthContextDto dto = new AuthContextDto();
         dto.setUser(user);
         dto.setRoles(roleCodes);
         dto.setPermissions(permissionCodes);

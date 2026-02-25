@@ -6,9 +6,9 @@ import cn.zhangchuangla.medicine.agent.service.MallOrderService;
 import cn.zhangchuangla.medicine.common.core.base.PageResult;
 import cn.zhangchuangla.medicine.common.core.utils.BeanCotyUtils;
 import cn.zhangchuangla.medicine.dubbo.api.admin.AdminAgentOrderRpcService;
-import cn.zhangchuangla.medicine.dubbo.api.model.AdminOrderListQuery;
-import cn.zhangchuangla.medicine.dubbo.api.model.AgentOrderDetailDto;
+import cn.zhangchuangla.medicine.model.dto.OrderDetailDto;
 import cn.zhangchuangla.medicine.model.dto.OrderWithProductDto;
+import cn.zhangchuangla.medicine.model.request.MallOrderListRequest;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import org.apache.dubbo.config.annotation.DubboReference;
 import org.springframework.stereotype.Service;
@@ -28,14 +28,14 @@ public class MallOrderServiceImpl implements MallOrderService {
     @Override
     public Page<OrderWithProductDto> listOrders(AdminMallOrderListRequest request) {
         AdminMallOrderListRequest safeRequest = request == null ? new AdminMallOrderListRequest() : request;
-        AdminOrderListQuery query = BeanCotyUtils.copyProperties(safeRequest, AdminOrderListQuery.class);
+        MallOrderListRequest query = BeanCotyUtils.copyProperties(safeRequest, MallOrderListRequest.class);
         PageResult<OrderWithProductDto> result = adminAgentOrderRpcService.listOrders(query);
         return toPage(result);
     }
 
     @Override
     public List<AdminOrderDetailVo> getOrderDetail(List<String> orderNos) {
-        List<AgentOrderDetailDto> details = adminAgentOrderRpcService.getOrderDetailsByOrderNos(orderNos);
+        List<OrderDetailDto> details = adminAgentOrderRpcService.getOrderDetailsByOrderNos(orderNos);
         return details.stream().map(this::toAdminOrderDetail).toList();
     }
 
@@ -51,7 +51,7 @@ public class MallOrderServiceImpl implements MallOrderService {
         return page;
     }
 
-    private AdminOrderDetailVo toAdminOrderDetail(AgentOrderDetailDto source) {
+    private AdminOrderDetailVo toAdminOrderDetail(OrderDetailDto source) {
         if (source == null) {
             return null;
         }

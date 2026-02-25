@@ -2,7 +2,7 @@ package cn.zhangchuangla.medicine.agent.service.impl;
 
 import cn.zhangchuangla.medicine.dubbo.api.admin.AdminAgentAuthRpcService;
 import cn.zhangchuangla.medicine.dubbo.api.client.ClientAgentUserRpcService;
-import cn.zhangchuangla.medicine.dubbo.api.model.AdminAuthContextDto;
+import cn.zhangchuangla.medicine.model.dto.AuthContextDto;
 import cn.zhangchuangla.medicine.model.entity.User;
 import cn.zhangchuangla.medicine.model.vo.UserVo;
 import org.junit.jupiter.api.Test;
@@ -35,7 +35,7 @@ class UserServiceImplTests {
     @Test
     void getUserPermissionCodesByUserId_ShouldNormalizeCodes() throws Exception {
         StubAdminAuthRpcService adminAuthRpcService = new StubAdminAuthRpcService();
-        AdminAuthContextDto context = new AdminAuthContextDto();
+        AuthContextDto context = new AuthContextDto();
         context.setPermissions(new LinkedHashSet<>(Arrays.asList(" mall:product:list ", null, "", "mall:product:list", "mall:order:query")));
         adminAuthRpcService.byUserId = context;
 
@@ -69,7 +69,7 @@ class UserServiceImplTests {
         user.setId(1L);
         user.setUsername("admin");
 
-        AdminAuthContextDto context = new AdminAuthContextDto();
+        AuthContextDto context = new AuthContextDto();
         context.setUser(user);
         adminAuthRpcService.byUsername = context;
 
@@ -91,16 +91,16 @@ class UserServiceImplTests {
 
     private static class StubAdminAuthRpcService implements AdminAgentAuthRpcService {
 
-        private AdminAuthContextDto byUserId;
-        private AdminAuthContextDto byUsername;
+        private AuthContextDto byUserId;
+        private AuthContextDto byUsername;
 
         @Override
-        public AdminAuthContextDto getByUserId(Long userId) {
+        public AuthContextDto getByUserId(Long userId) {
             return byUserId;
         }
 
         @Override
-        public AdminAuthContextDto getByUsername(String username) {
+        public AuthContextDto getByUsername(String username) {
             return byUsername;
         }
     }

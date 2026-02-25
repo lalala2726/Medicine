@@ -1,4 +1,4 @@
-package cn.zhangchuangla.medicine.dubbo.api.model;
+package cn.zhangchuangla.medicine.model.dto;
 
 import cn.zhangchuangla.medicine.model.entity.User;
 import lombok.Data;
@@ -11,7 +11,7 @@ import java.util.Set;
  * 管理端智能体认证上下文。
  */
 @Data
-public class AdminAuthContextDto implements Serializable {
+public class AuthContextDto implements Serializable {
 
     @Serial
     private static final long serialVersionUID = 1L;

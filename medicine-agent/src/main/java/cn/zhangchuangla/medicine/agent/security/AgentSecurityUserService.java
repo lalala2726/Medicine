@@ -5,7 +5,7 @@ import cn.zhangchuangla.medicine.common.security.entity.AuthUser;
 import cn.zhangchuangla.medicine.common.security.entity.SysUserDetails;
 import cn.zhangchuangla.medicine.common.security.utils.SecurityUtils;
 import cn.zhangchuangla.medicine.dubbo.api.admin.AdminAgentAuthRpcService;
-import cn.zhangchuangla.medicine.dubbo.api.model.AdminAuthContextDto;
+import cn.zhangchuangla.medicine.model.dto.AuthContextDto;
 import cn.zhangchuangla.medicine.model.entity.User;
 import org.apache.dubbo.config.annotation.DubboReference;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
@@ -33,7 +33,7 @@ public class AgentSecurityUserService implements UserDetailsService {
      */
     @Override
     public UserDetails loadUserByUsername(String username) {
-        AdminAuthContextDto authContext = adminAgentAuthRpcService.getByUsername(username);
+        AuthContextDto authContext = adminAgentAuthRpcService.getByUsername(username);
         User user = authContext == null ? null : authContext.getUser();
         if (user == null) {
             throw new UsernameNotFoundException("用户不存在");

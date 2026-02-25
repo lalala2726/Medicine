@@ -1,4 +1,4 @@
-package cn.zhangchuangla.medicine.admin.model.vo;
+package cn.zhangchuangla.medicine.model.dto;
 
 import cn.zhangchuangla.medicine.common.core.annotation.DataMasking;
 import cn.zhangchuangla.medicine.common.core.enums.MaskingType;
@@ -8,19 +8,23 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.io.Serial;
+import java.io.Serializable;
 import java.math.BigDecimal;
 import java.util.List;
 
 /**
- * @author Chuang
- * <p>
- * created on 2025/10/31
+ * 管理端智能体订单详情。
  */
 @Data
-@AllArgsConstructor
-@NoArgsConstructor
 @Builder
-public class OrderDetailVo {
+@NoArgsConstructor
+@AllArgsConstructor
+@Schema(description = "订单详情")
+public class OrderDetailDto implements Serializable {
+
+    @Serial
+    private static final long serialVersionUID = 1L;
 
     @Schema(description = "用户信息")
     private UserInfo userInfo;
@@ -34,12 +38,15 @@ public class OrderDetailVo {
     @Schema(description = "商品信息")
     private List<ProductInfo> productInfo;
 
-
     @Data
-    @AllArgsConstructor
-    @NoArgsConstructor
     @Builder
-    public static class UserInfo {
+    @NoArgsConstructor
+    @AllArgsConstructor
+    @Schema(description = "用户信息")
+    public static class UserInfo implements Serializable {
+
+        @Serial
+        private static final long serialVersionUID = 1L;
 
         @Schema(description = "用户ID")
         private String userId;
@@ -52,12 +59,15 @@ public class OrderDetailVo {
         private String phoneNumber;
     }
 
-
     @Data
-    @AllArgsConstructor
-    @NoArgsConstructor
     @Builder
-    public static class DeliveryInfo {
+    @NoArgsConstructor
+    @AllArgsConstructor
+    @Schema(description = "配送信息")
+    public static class DeliveryInfo implements Serializable {
+
+        @Serial
+        private static final long serialVersionUID = 1L;
 
         @Schema(description = "收货人")
         private String receiverName;
@@ -73,10 +83,14 @@ public class OrderDetailVo {
     }
 
     @Data
-    @AllArgsConstructor
-    @NoArgsConstructor
     @Builder
-    public static class OrderInfo {
+    @NoArgsConstructor
+    @AllArgsConstructor
+    @Schema(description = "订单信息")
+    public static class OrderInfo implements Serializable {
+
+        @Serial
+        private static final long serialVersionUID = 1L;
 
         @Schema(description = "订单编号")
         private String orderNo;
@@ -98,10 +112,14 @@ public class OrderDetailVo {
     }
 
     @Data
-    @AllArgsConstructor
-    @NoArgsConstructor
     @Builder
-    public static class ProductInfo {
+    @NoArgsConstructor
+    @AllArgsConstructor
+    @Schema(description = "商品信息")
+    public static class ProductInfo implements Serializable {
+
+        @Serial
+        private static final long serialVersionUID = 1L;
 
         @Schema(description = "商品ID")
         private Long productId;
@@ -121,6 +139,4 @@ public class OrderDetailVo {
         @Schema(description = "商品总价")
         private BigDecimal productTotalAmount;
     }
-
-
 }

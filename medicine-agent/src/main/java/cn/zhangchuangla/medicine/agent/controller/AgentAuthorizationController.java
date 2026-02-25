@@ -5,7 +5,7 @@ import cn.zhangchuangla.medicine.common.core.utils.BeanCotyUtils;
 import cn.zhangchuangla.medicine.common.security.base.BaseController;
 import cn.zhangchuangla.medicine.common.security.utils.SecurityUtils;
 import cn.zhangchuangla.medicine.dubbo.api.admin.AdminAgentAuthRpcService;
-import cn.zhangchuangla.medicine.dubbo.api.model.AdminAuthContextDto;
+import cn.zhangchuangla.medicine.model.dto.AuthContextDto;
 import cn.zhangchuangla.medicine.model.dto.AuthUserDto;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -45,7 +45,7 @@ public class AgentAuthorizationController extends BaseController {
     @Operation(summary = "获取当前用户信息", description = "获取当前登录用户的详细信息")
     public AjaxResult<HashMap<String, Object>> getCurrentUser() {
         Long userId = getUserId();
-        AdminAuthContextDto context = adminAgentAuthRpcService.getByUserId(userId);
+        AuthContextDto context = adminAgentAuthRpcService.getByUserId(userId);
         HashMap<String, Object> userInfo = new HashMap<>();
 
         AuthUserDto user = context == null || context.getUser() == null
