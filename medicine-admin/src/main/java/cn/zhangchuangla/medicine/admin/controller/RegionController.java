@@ -9,6 +9,7 @@ import cn.zhangchuangla.medicine.common.security.base.BaseController;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import lombok.RequiredArgsConstructor;
 import org.springframework.util.StringUtils;
 import org.springframework.web.bind.annotation.*;
 
@@ -26,13 +27,10 @@ import java.util.Set;
 @Tag(name = "地址管理", description = "省市区街道地址查询接口")
 @RestController
 @RequestMapping("/common/regions")
+@RequiredArgsConstructor
 public class RegionController extends BaseController {
 
     private final RegionService regionService;
-
-    public RegionController(RegionService regionService) {
-        this.regionService = regionService;
-    }
 
     /**
      * 获取所有省份
@@ -227,3 +225,4 @@ public class RegionController extends BaseController {
         return success(regionVos);
     }
 }
+

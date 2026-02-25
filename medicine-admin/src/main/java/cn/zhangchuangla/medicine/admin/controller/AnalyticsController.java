@@ -6,6 +6,7 @@ import cn.zhangchuangla.medicine.common.security.base.BaseController;
 import cn.zhangchuangla.medicine.model.vo.analytics.*;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import lombok.RequiredArgsConstructor;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -24,13 +25,11 @@ import java.util.List;
 @RequestMapping("/analytics")
 @Tag(name = "运营分析")
 @PreAuthorize("hasRole('super_admin')")
+@RequiredArgsConstructor
 public class AnalyticsController extends BaseController {
 
     private final AnalyticsService analyticsService;
 
-    public AnalyticsController(AnalyticsService analyticsService) {
-        this.analyticsService = analyticsService;
-    }
 
     /**
      * 获取运营总览数据

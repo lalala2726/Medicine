@@ -271,18 +271,28 @@ public class SecurityUtils {
         if (normalizedPermissions.isEmpty()) {
             return false;
         }
+        Set<String> currentPermissions = getPermissions();
+        if (currentPermissions.isEmpty()) {
+            return false;
+        }
+        return normalizedPermissions.stream().anyMatch(currentPermissions::contains);
+    }
 
-        return Optional.ofNullable(SecurityContextHolder.getContext().getAuthentication())
-                .map(Authentication::getAuthorities)
-                .filter(CollectionUtils::isNotEmpty)
-                .stream()
-                .flatMap(Collection::stream)
-                .map(GrantedAuthority::getAuthority)
-                .filter(Objects::nonNull)
-                .map(String::trim)
-                .filter(authority -> !authority.isEmpty())
-                .filter(authority -> normalizeRoleAuthority(authority) == null)
-                .anyMatch(normalizedPermissions::contains);
+    /**
+     * 是否拥有指定权限编码（精确匹配）。
+     *
+     * @param permissionCode 权限编码
+     * @return true: 命中权限，false: 未命中
+     */
+    public static boolean hasPermission(String permissionCode) {
+        if (permissionCode == null) {
+            return false;
+        }
+        String trimmed = permissionCode.trim();
+        if (trimmed.isEmpty()) {
+            return false;
+        }
+        return getPermissions().contains(trimmed);
     }
 
     /**
@@ -370,6 +380,25 @@ public class SecurityUtils {
                 .filter(authority -> !authority.isEmpty())
                 .map(SecurityUtils::normalizeRoleAuthority)
                 .filter(Objects::nonNull)
+                .collect(Collectors.toSet());
+    }
+
+    /**
+     * 获取当前用户权限集合（不包含角色权限）。
+     *
+     * @return 权限集合
+     */
+    public static Set<String> getPermissions() {
+        return Optional.ofNullable(SecurityContextHolder.getContext().getAuthentication())
+                .map(Authentication::getAuthorities)
+                .filter(CollectionUtils::isNotEmpty)
+                .stream()
+                .flatMap(Collection::stream)
+                .map(GrantedAuthority::getAuthority)
+                .filter(Objects::nonNull)
+                .map(String::trim)
+                .filter(authority -> !authority.isEmpty())
+                .filter(authority -> normalizeRoleAuthority(authority) == null)
                 .collect(Collectors.toSet());
     }
 

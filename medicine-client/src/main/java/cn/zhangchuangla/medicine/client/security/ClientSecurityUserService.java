@@ -1,7 +1,7 @@
 package cn.zhangchuangla.medicine.client.security;
 
 import cn.zhangchuangla.medicine.client.service.UserService;
-import cn.zhangchuangla.medicine.common.core.constants.Constants;
+import cn.zhangchuangla.medicine.common.core.utils.BeanCotyUtils;
 import cn.zhangchuangla.medicine.common.security.entity.AuthUser;
 import cn.zhangchuangla.medicine.common.security.entity.SysUserDetails;
 import cn.zhangchuangla.medicine.model.entity.User;
@@ -12,7 +12,7 @@ import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
 
-import java.util.Objects;
+import java.util.Collections;
 import java.util.Optional;
 import java.util.Set;
 
@@ -33,21 +33,11 @@ public class ClientSecurityUserService implements UserDetailsService {
         }
         Set<String> roles = Optional.ofNullable(userService.getUserRolesByUserId(user.getId()))
                 .filter(set -> !set.isEmpty())
-                .orElseGet(java.util.Collections::emptySet);
+                .orElseGet(Collections::emptySet);
 
-        boolean unlocked = Objects.equals(user.getStatus(), Constants.ACCOUNT_UNLOCK_KEY);
-
-        AuthUser authUser = AuthUser.builder()
-                .id(user.getId())
-                .username(user.getUsername())
-                .password(user.getPassword())
-                .status(user.getStatus())
-                .roles(roles)
-                .enabled(unlocked)
-                .accountNonLocked(unlocked)
-                .accountNonExpired(true)
-                .credentialsNonExpired(true)
-                .build();
+        AuthUser authUser = BeanCotyUtils.copyProperties(user, AuthUser.class);
+        authUser.setPassword(user.getPassword());
+        authUser.setRoles(roles);
         return new SysUserDetails(authUser);
     }
 }

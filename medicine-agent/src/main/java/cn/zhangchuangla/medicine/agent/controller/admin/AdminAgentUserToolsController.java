@@ -1,9 +1,9 @@
 package cn.zhangchuangla.medicine.agent.controller.admin;
 
 import cn.zhangchuangla.medicine.agent.annotation.InternalAgentHeaderTrace;
-import cn.zhangchuangla.medicine.agent.service.UserService;
 import cn.zhangchuangla.medicine.common.core.base.AjaxResult;
 import cn.zhangchuangla.medicine.common.security.base.BaseController;
+import cn.zhangchuangla.medicine.common.security.entity.AuthUser;
 import cn.zhangchuangla.medicine.model.vo.UserVo;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -28,8 +28,6 @@ import org.springframework.web.bind.annotation.RestController;
 @RequiredArgsConstructor
 public class AdminAgentUserToolsController extends BaseController {
 
-    private final UserService agentUserService;
-
     /**
      * 获取当前管理员的详细信息。
      * <p>
@@ -42,7 +40,8 @@ public class AdminAgentUserToolsController extends BaseController {
     @Operation(summary = "获取当前用户信息", description = "获取当前登录用户的详细信息")
     @PreAuthorize("hasAuthority('system:user:query') or hasRole('super_admin')")
     public AjaxResult<UserVo> getCurrentUser() {
-        Long userId = getUserId();
-        return success(agentUserService.getCurrentUser(userId));
+        AuthUser user = getLoginUser().getUser();
+        UserVo userVo = copyProperties(user, UserVo.class);
+        return success(userVo);
     }
 }

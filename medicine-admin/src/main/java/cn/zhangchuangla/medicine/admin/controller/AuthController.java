@@ -11,6 +11,7 @@ import cn.zhangchuangla.medicine.model.request.RefreshRequest;
 import cn.zhangchuangla.medicine.model.vo.CurrentUserInfoVo;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.web.bind.annotation.*;
 
@@ -26,13 +27,11 @@ import java.util.Set;
 @RestController
 @Tag(name = "认证接口", description = "注册、登录、刷新、当前用户")
 @RequestMapping("/auth")
+@RequiredArgsConstructor
 public class AuthController extends BaseController {
 
     private final AuthService authService;
 
-    public AuthController(AuthService authService) {
-        this.authService = authService;
-    }
 
     /**
      * 登录

@@ -1,15 +1,11 @@
 package cn.zhangchuangla.medicine.agent.controller;
 
 import cn.zhangchuangla.medicine.common.core.base.AjaxResult;
-import cn.zhangchuangla.medicine.common.core.utils.BeanCotyUtils;
 import cn.zhangchuangla.medicine.common.security.base.BaseController;
+import cn.zhangchuangla.medicine.common.security.entity.AuthUser;
 import cn.zhangchuangla.medicine.common.security.utils.SecurityUtils;
-import cn.zhangchuangla.medicine.model.dto.AuthContextDto;
-import cn.zhangchuangla.medicine.model.dto.AuthUserDto;
-import cn.zhangchuangla.medicine.rpc.admin.AdminAgentAuthRpcService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
-import org.apache.dubbo.config.annotation.DubboReference;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
@@ -29,10 +25,6 @@ import java.util.HashMap;
 @Tag(name = "认证授权接口", description = "认证授权接口")
 public class AgentAuthorizationController extends BaseController {
 
-    @DubboReference(group = "medicine-admin", version = "1.0.0", check = false, timeout = 3000, retries = 0,
-            url = "${dubbo.references.medicine-admin.url:}")
-    private AdminAgentAuthRpcService adminAgentAuthRpcService;
-
     /**
      * 获取当前登录用户的认证信息。
      * <p>
@@ -44,15 +36,12 @@ public class AgentAuthorizationController extends BaseController {
     @GetMapping
     @Operation(summary = "获取当前用户信息", description = "获取当前登录用户的详细信息")
     public AjaxResult<HashMap<String, Object>> getCurrentUser() {
-        Long userId = getUserId();
-        AuthContextDto context = adminAgentAuthRpcService.getByUserId(userId);
+        AuthUser user = getLoginUser().getUser();
         HashMap<String, Object> userInfo = new HashMap<>();
 
-        AuthUserDto user = context == null || context.getUser() == null
-                ? null : BeanCotyUtils.copyProperties(context.getUser(), AuthUserDto.class);
         userInfo.put("user", user);
-        userInfo.put("roles", context == null ? SecurityUtils.normalizeCodes(null) : SecurityUtils.normalizeCodes(context.getRoles()));
-        userInfo.put("permissions", context == null ? SecurityUtils.normalizeCodes(null) : SecurityUtils.normalizeCodes(context.getPermissions()));
+        userInfo.put("roles", SecurityUtils.getRoles());
+        userInfo.put("permissions", SecurityUtils.getPermissions());
         return success(userInfo);
     }
 }

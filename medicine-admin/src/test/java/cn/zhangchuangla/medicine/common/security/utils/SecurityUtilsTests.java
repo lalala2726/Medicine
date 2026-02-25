@@ -86,6 +86,42 @@ class SecurityUtilsTests {
     }
 
     /**
+     * 验证 getPermissions 仅返回业务权限，不包含角色项。
+     */
+    @Test
+    void getPermissions_ShouldExcludeRoleAuthorities() {
+        var authentication = new UsernamePasswordAuthenticationToken(
+                "tester",
+                null,
+                createAuthorityList("ROLE_admin", "super_admin", "system:user:list")
+        );
+        SecurityContextHolder.getContext().setAuthentication(authentication);
+
+        Set<String> permissions = SecurityUtils.getPermissions();
+        assertTrue(permissions.contains("system:user:list"));
+        assertFalse(permissions.contains("ROLE_admin"));
+        assertFalse(permissions.contains("super_admin"));
+    }
+
+    /**
+     * 验证 hasPermission 支持单权限精确匹配。
+     */
+    @Test
+    void hasPermission_ShouldMatchSinglePermission() {
+        var authentication = new UsernamePasswordAuthenticationToken(
+                "tester",
+                null,
+                createAuthorityList("ROLE_admin", "system:user:list")
+        );
+        SecurityContextHolder.getContext().setAuthentication(authentication);
+
+        assertTrue(SecurityUtils.hasPermission("system:user:list"));
+        assertTrue(SecurityUtils.hasPermission(" system:user:list "));
+        assertFalse(SecurityUtils.hasPermission("system:user:query"));
+        assertFalse(SecurityUtils.hasPermission("ROLE_admin"));
+    }
+
+    /**
      * 验证 hasAnyRole 支持 ROLE_ 前缀与纯角色码输入。
      */
     @Test
@@ -110,6 +146,7 @@ class SecurityUtilsTests {
         SecurityContextHolder.clearContext();
 
         assertFalse(SecurityUtils.hasAnyPermission(Set.of("system:user:list")));
+        assertFalse(SecurityUtils.hasPermission("system:user:list"));
         assertFalse(SecurityUtils.hasAnyRole(Set.of("admin")));
     }
 

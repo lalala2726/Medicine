@@ -3,6 +3,7 @@ package cn.zhangchuangla.medicine.common.security.token;
 import cn.zhangchuangla.medicine.common.core.constants.SecurityConstants;
 import cn.zhangchuangla.medicine.common.core.enums.ResponseCode;
 import cn.zhangchuangla.medicine.common.core.exception.AuthorizationException;
+import cn.zhangchuangla.medicine.common.core.utils.BeanCotyUtils;
 import cn.zhangchuangla.medicine.common.core.utils.IPUtils;
 import cn.zhangchuangla.medicine.common.core.utils.UUIDUtils;
 import cn.zhangchuangla.medicine.common.security.entity.AuthTokenVo;
@@ -257,12 +258,11 @@ public class TokenService {
         AuthUser authUser = onlineUser.getUser();
         Set<String> roleCodes = SecurityUtils.toRoleCodes(roleAuthorities);
         if (authUser == null) {
-            authUser = AuthUser.builder()
-                    .id(onlineUser.getUserId())
-                    .username(onlineUser.getUsername())
-                    .roles(roleCodes)
-                    .permissions(permissionAuthorities)
-                    .build();
+            authUser = new AuthUser();
+            authUser.setId(onlineUser.getUserId());
+            authUser.setUsername(onlineUser.getUsername());
+            authUser.setRoles(roleCodes);
+            authUser.setPermissions(permissionAuthorities);
         } else {
             authUser.setRoles(roleCodes);
             authUser.setPermissions(permissionAuthorities);
@@ -284,21 +284,11 @@ public class TokenService {
      * @return 适用于会话持久化的裁剪用户对象
      */
     private AuthUser buildSessionUser(AuthUser authUser) {
-        return AuthUser.builder()
-                .id(authUser.getId())
-                .username(authUser.getUsername())
-                .password(null)
-                .status(authUser.getStatus())
-                .roles(Set.of())
-                .permissions(Set.of())
-                .enabled(authUser.isEnabled())
-                .accountNonLocked(authUser.isAccountNonLocked())
-                .accountNonExpired(authUser.isAccountNonExpired())
-                .credentialsNonExpired(authUser.isCredentialsNonExpired())
-                .attributes(authUser.getAttributes())
-                .createdAt(authUser.getCreatedAt())
-                .updatedAt(authUser.getUpdatedAt())
-                .build();
+        AuthUser sessionUser = BeanCotyUtils.copyProperties(authUser, AuthUser.class);
+        sessionUser.setPassword(null);
+        sessionUser.setRoles(Set.of());
+        sessionUser.setPermissions(Set.of());
+        return sessionUser;
     }
 
     /**

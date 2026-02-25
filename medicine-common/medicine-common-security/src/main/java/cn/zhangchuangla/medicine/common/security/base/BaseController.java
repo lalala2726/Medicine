@@ -134,6 +134,25 @@ public class BaseController {
     }
 
     /**
+     * 获取当前用户权限
+     *
+     * @return 权限集合
+     */
+    protected Set<String> getPermissions() {
+        return SecurityUtils.getPermissions();
+    }
+
+    /**
+     * 检查当前用户是否拥有指定权限
+     *
+     * @param permission 权限编码
+     * @return 是否拥有权限
+     */
+    protected boolean hasPermission(String permission) {
+        return SecurityUtils.hasPermission(permission);
+    }
+
+    /**
      * 统一归一化编码集合。
      * <p>
      * 该方法委托 {@link SecurityUtils#normalizeCodes(Collection)}，

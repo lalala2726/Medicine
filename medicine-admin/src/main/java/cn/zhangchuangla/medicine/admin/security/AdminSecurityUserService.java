@@ -3,7 +3,7 @@ package cn.zhangchuangla.medicine.admin.security;
 import cn.zhangchuangla.medicine.admin.service.PermissionService;
 import cn.zhangchuangla.medicine.admin.service.RoleService;
 import cn.zhangchuangla.medicine.admin.service.UserService;
-import cn.zhangchuangla.medicine.common.core.constants.Constants;
+import cn.zhangchuangla.medicine.common.core.utils.BeanCotyUtils;
 import cn.zhangchuangla.medicine.common.security.entity.AuthUser;
 import cn.zhangchuangla.medicine.common.security.entity.SysUserDetails;
 import cn.zhangchuangla.medicine.common.security.utils.SecurityUtils;
@@ -16,7 +16,10 @@ import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
 
-import java.util.*;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.Optional;
+import java.util.Set;
 
 /**
  * 管理端的用户查询实现，负责将业务用户转换为通用˚的安全模型。
@@ -43,20 +46,11 @@ public class AdminSecurityUserService implements UserDetailsService {
                         .filter(set -> !set.isEmpty())
                         .orElseGet(Collections::emptySet));
 
-        boolean unlocked = Objects.equals(user.getStatus(), Constants.ACCOUNT_UNLOCK_KEY);
+        AuthUser authUser = BeanCotyUtils.copyProperties(user, AuthUser.class);
+        authUser.setPassword(user.getPassword());
+        authUser.setRoles(roles);
+        authUser.setPermissions(permissions);
 
-        AuthUser authUser = AuthUser.builder()
-                .id(user.getId())
-                .username(user.getUsername())
-                .password(user.getPassword())
-                .status(user.getStatus())
-                .roles(roles)
-                .permissions(permissions)
-                .enabled(unlocked)
-                .accountNonLocked(unlocked)
-                .accountNonExpired(true)
-                .credentialsNonExpired(true)
-                .build();
         Set<SimpleGrantedAuthority> authorities = new HashSet<>();
         SecurityUtils.toRoleAuthorities(roles)
                 .forEach(roleAuthority -> authorities.add(new SimpleGrantedAuthority(roleAuthority)));

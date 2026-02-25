@@ -43,6 +43,20 @@ public interface BaseService {
     }
 
     /**
+     * 获取当前用户权限
+     */
+    default Set<String> getPermissions() {
+        return SecurityUtils.getPermissions();
+    }
+
+    /**
+     * 检查当前用户是否拥有指定权限
+     */
+    default boolean hasPermission(String permission) {
+        return SecurityUtils.hasPermission(permission);
+    }
+
+    /**
      * 统一归一化编码集合。
      * <p>
      * 该方法委托 {@link SecurityUtils#normalizeCodes(Collection)}，
