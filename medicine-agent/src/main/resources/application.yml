@@ -9,7 +9,7 @@ spring:
   application:
     # 应用名称（用于日志和注册识别）。
     # 示例: MedicineAiAgent
-    name: MedicineAiAgent
+    name: Medicine-Agent
     # 应用版本号。
     # 示例: 0.1
     version: 0.1

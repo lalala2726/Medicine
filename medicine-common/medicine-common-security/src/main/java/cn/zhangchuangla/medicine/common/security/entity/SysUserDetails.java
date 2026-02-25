@@ -1,6 +1,7 @@
 package cn.zhangchuangla.medicine.common.security.entity;
 
 import cn.zhangchuangla.medicine.common.core.constants.Constants;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import org.springframework.lang.NonNull;
@@ -21,6 +22,7 @@ import java.util.stream.Collectors;
  */
 @Data
 @NoArgsConstructor
+@JsonIgnoreProperties(ignoreUnknown = true)
 public class SysUserDetails implements UserDetails, Serializable {
 
     @Serial

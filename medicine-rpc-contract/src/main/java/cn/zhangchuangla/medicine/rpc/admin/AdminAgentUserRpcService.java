@@ -1,9 +1,9 @@
 package cn.zhangchuangla.medicine.rpc.admin;
 
 import cn.zhangchuangla.medicine.common.core.base.PageRequest;
-import cn.zhangchuangla.medicine.common.core.base.PageResult;
 import cn.zhangchuangla.medicine.model.dto.*;
 import cn.zhangchuangla.medicine.model.request.UserListQueryRequest;
+import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 
 /**
  * 管理端 Agent 用户只读 RPC。
@@ -16,7 +16,7 @@ public interface AdminAgentUserRpcService {
      * @param query 用户查询参数
      * @return 用户分页结果
      */
-    PageResult<UserListDto> listUsers(UserListQueryRequest query);
+    Page<UserListDto> listUsers(UserListQueryRequest query);
 
     /**
      * 根据用户 ID 查询用户详情。
@@ -41,7 +41,7 @@ public interface AdminAgentUserRpcService {
      * @param request 分页参数
      * @return 钱包流水分页结果
      */
-    PageResult<UserWalletFlowDto> getUserWalletFlow(Long userId, PageRequest request);
+    Page<UserWalletFlowDto> getUserWalletFlow(Long userId, PageRequest request);
 
     /**
      * 分页查询用户消费信息。
@@ -50,5 +50,5 @@ public interface AdminAgentUserRpcService {
      * @param request 分页参数
      * @return 用户消费分页结果
      */
-    PageResult<UserConsumeInfoDto> getConsumeInfo(Long userId, PageRequest request);
+    Page<UserConsumeInfoDto> getConsumeInfo(Long userId, PageRequest request);
 }

@@ -5,14 +5,15 @@ import cn.zhangchuangla.medicine.agent.model.vo.admin.*;
 import cn.zhangchuangla.medicine.agent.service.UserService;
 import cn.zhangchuangla.medicine.common.core.base.AjaxResult;
 import cn.zhangchuangla.medicine.common.core.base.PageRequest;
-import cn.zhangchuangla.medicine.common.core.base.PageResult;
 import cn.zhangchuangla.medicine.common.core.base.TableDataResult;
 import cn.zhangchuangla.medicine.common.security.base.BaseController;
 import cn.zhangchuangla.medicine.common.security.entity.AuthUser;
 import cn.zhangchuangla.medicine.model.dto.*;
 import cn.zhangchuangla.medicine.model.request.UserListQueryRequest;
+import cn.zhangchuangla.medicine.model.vo.UserListVo;
 import cn.zhangchuangla.medicine.model.vo.UserVo;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
@@ -39,6 +40,8 @@ import java.util.List;
 @RequiredArgsConstructor
 public class AgentUserController extends BaseController {
 
+    private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
+
     private final UserService userService;
 
     /**
@@ -52,9 +55,14 @@ public class AgentUserController extends BaseController {
     @GetMapping("/info")
     @Operation(summary = "获取当前用户信息", description = "获取当前登录用户的详细信息")
     @PreAuthorize("hasAuthority('system:user:query') or hasRole('super_admin')")
+    @Deprecated(forRemoval = true)
     public AjaxResult<UserVo> getCurrentUser() {
         AuthUser user = getLoginUser().getUser();
         UserVo userVo = copyProperties(user, UserVo.class);
+        // 手动映射字段名不一致的属性
+        userVo.setNickName(user.getNickname());
+        userVo.setGender(user.getGender() == null ? null : (user.getGender() == 1 ? "男" : (user.getGender() == 2 ? "女" : "未知")));
+        userVo.setStatus(user.getStatus() == null ? null : (user.getStatus() == 0 ? "正常" : "异常"));
         return success(userVo);
     }
 
@@ -69,7 +77,7 @@ public class AgentUserController extends BaseController {
     @PreAuthorize("hasAuthority('system:user:list') or hasRole('super_admin')")
     public AjaxResult<TableDataResult> listUsers(UserListQueryRequest request) {
         Page<UserListDto> userPage = userService.listUsers(request);
-        List<AgentUserListVo> rows = copyListProperties(userPage.getRecords(), AgentUserListVo.class);
+        List<AgentUserListVo> rows = copyListProperties(userPage, AgentUserListVo.class);
         return getTableData(userPage, rows);
     }
 
@@ -112,8 +120,9 @@ public class AgentUserController extends BaseController {
     @Operation(summary = "用户钱包流水", description = "分页查询用户钱包流水")
     @PreAuthorize("hasAuthority('system:user:query') or hasRole('super_admin')")
     public AjaxResult<TableDataResult> getUserWalletFlow(@PathVariable Long userId, PageRequest request) {
-        PageResult<UserWalletFlowDto> walletFlowDtoPage = userService.getUserWalletFlow(userId, request);
-        return getTableData(toWalletFlowVoPage(walletFlowDtoPage));
+        Page<UserWalletFlowDto> walletFlowDtoPage = userService.getUserWalletFlow(userId, request);
+        List<UserWalletFlowVo> rows = copyListProperties(walletFlowDtoPage, UserWalletFlowVo.class);
+        return getTableData(walletFlowDtoPage, rows);
     }
 
     /**
@@ -127,8 +136,9 @@ public class AgentUserController extends BaseController {
     @Operation(summary = "用户消费信息", description = "分页查询用户消费信息")
     @PreAuthorize("hasAuthority('system:user:query') or hasRole('super_admin')")
     public AjaxResult<TableDataResult> getConsumeInfo(@PathVariable Long userId, PageRequest request) {
-        PageResult<UserConsumeInfoDto> consumeInfoDtoPage = userService.getConsumeInfo(userId, request);
-        return getTableData(toConsumeInfoVoPage(consumeInfoDtoPage));
+        Page<UserConsumeInfoDto> consumeInfoDtoPage = userService.getConsumeInfo(userId, request);
+        List<UserConsumeInfoVo> rows = copyListProperties(consumeInfoDtoPage.getRecords(), UserConsumeInfoVo.class);
+        return getTableData(consumeInfoDtoPage, rows);
     }
 
     private UserDetailVo toUserDetailVo(UserDetailDto source) {
@@ -145,19 +155,20 @@ public class AgentUserController extends BaseController {
         return copyProperties(source, UserWalletVo.class);
     }
 
-    private PageResult<UserWalletFlowVo> toWalletFlowVoPage(PageResult<UserWalletFlowDto> source) {
-        if (source == null) {
-            return new PageResult<>(1L, 10L, 0L, List.of());
+    @SuppressWarnings({"rawtypes", "unchecked"})
+    private List<?> toUserListRows(List<UserListDto> sourceRows) {
+        if (sourceRows == null || sourceRows.isEmpty()) {
+            return List.of();
         }
-        List<UserWalletFlowVo> rows = copyListProperties(source.getRows(), UserWalletFlowVo.class);
-        return new PageResult<>(source.getPageNum(), source.getPageSize(), source.getTotal(), rows);
+        Class<?> targetClass = resolveUserListVoClass();
+        return copyListProperties(sourceRows, (Class) targetClass);
     }
 
-    private PageResult<UserConsumeInfoVo> toConsumeInfoVoPage(PageResult<UserConsumeInfoDto> source) {
-        if (source == null) {
-            return new PageResult<>(1L, 10L, 0L, List.of());
+    private Class<?> resolveUserListVoClass() {
+        try {
+            return Class.forName("cn.zhangchuangla.medicine.agent.model.vo.admin.AgentUserListVo");
+        } catch (ClassNotFoundException | LinkageError ex) {
+            return UserListVo.class;
         }
-        List<UserConsumeInfoVo> rows = copyListProperties(source.getRows(), UserConsumeInfoVo.class);
-        return new PageResult<>(source.getPageNum(), source.getPageSize(), source.getTotal(), rows);
     }
 }

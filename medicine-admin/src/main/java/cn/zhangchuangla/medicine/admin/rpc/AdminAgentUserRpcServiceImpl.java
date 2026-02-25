@@ -2,7 +2,6 @@ package cn.zhangchuangla.medicine.admin.rpc;
 
 import cn.zhangchuangla.medicine.admin.service.UserService;
 import cn.zhangchuangla.medicine.common.core.base.PageRequest;
-import cn.zhangchuangla.medicine.common.core.base.PageResult;
 import cn.zhangchuangla.medicine.model.dto.*;
 import cn.zhangchuangla.medicine.model.request.UserListQueryRequest;
 import cn.zhangchuangla.medicine.rpc.admin.AdminAgentUserRpcService;
@@ -20,10 +19,8 @@ public class AdminAgentUserRpcServiceImpl implements AdminAgentUserRpcService {
     private final UserService userService;
 
     @Override
-    public PageResult<UserListDto> listUsers(UserListQueryRequest query) {
-        UserListQueryRequest request = query == null ? new UserListQueryRequest() : query;
-        Page<UserListDto> userPage = userService.listUser(request);
-        return new PageResult<>(userPage.getCurrent(), userPage.getSize(), userPage.getTotal(), userPage.getRecords());
+    public Page<UserListDto> listUsers(UserListQueryRequest query) {
+        return userService.listUser(query);
     }
 
     @Override
@@ -37,16 +34,14 @@ public class AdminAgentUserRpcServiceImpl implements AdminAgentUserRpcService {
     }
 
     @Override
-    public PageResult<UserWalletFlowDto> getUserWalletFlow(Long userId, PageRequest request) {
+    public Page<UserWalletFlowDto> getUserWalletFlow(Long userId, PageRequest request) {
         PageRequest safeRequest = request == null ? new PageRequest() : request;
-        Page<UserWalletFlowDto> page = userService.getUserWalletFlow(userId, safeRequest);
-        return new PageResult<>(page.getCurrent(), page.getSize(), page.getTotal(), page.getRecords());
+        return userService.getUserWalletFlow(userId, safeRequest);
     }
 
     @Override
-    public PageResult<UserConsumeInfoDto> getConsumeInfo(Long userId, PageRequest request) {
+    public Page<UserConsumeInfoDto> getConsumeInfo(Long userId, PageRequest request) {
         PageRequest safeRequest = request == null ? new PageRequest() : request;
-        Page<UserConsumeInfoDto> page = userService.getConsumeInfo(userId, safeRequest);
-        return new PageResult<>(page.getCurrent(), page.getSize(), page.getTotal(), page.getRecords());
+        return userService.getConsumeInfo(userId, safeRequest);
     }
 }

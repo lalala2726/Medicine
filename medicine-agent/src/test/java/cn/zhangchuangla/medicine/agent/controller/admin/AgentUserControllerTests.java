@@ -2,7 +2,6 @@ package cn.zhangchuangla.medicine.agent.controller.admin;
 
 import cn.zhangchuangla.medicine.agent.service.UserService;
 import cn.zhangchuangla.medicine.common.core.base.PageRequest;
-import cn.zhangchuangla.medicine.common.core.base.PageResult;
 import cn.zhangchuangla.medicine.common.security.entity.AuthUser;
 import cn.zhangchuangla.medicine.common.security.entity.SysUserDetails;
 import cn.zhangchuangla.medicine.model.dto.*;
@@ -15,9 +14,7 @@ import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
 
 import java.math.BigDecimal;
-import java.util.Date;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -89,6 +86,34 @@ class AgentUserControllerTests {
         assertEquals(200, result.getCode());
         assertTrue(userService.listUsersInvoked);
         assertEquals(request, userService.capturedListRequest);
+    }
+
+    @Test
+    @SuppressWarnings({"rawtypes", "unchecked"})
+    void listUsers_ShouldSupportMapRecordsFromRpc() {
+        UserListQueryRequest request = new UserListQueryRequest();
+        request.setPageNum(1);
+        request.setPageSize(10);
+
+        Page<UserListDto> page = new Page<>(1, 10);
+        page.setTotal(1);
+        Map<String, Object> rawRow = new LinkedHashMap<>();
+        rawRow.put("id", 11L);
+        rawRow.put("username", "rpc_user");
+        rawRow.put("nickname", "RPC用户");
+        rawRow.put("roles", "user");
+        rawRow.put("status", 1);
+        rawRow.put("createTime", new Date());
+        ((Page) page).setRecords(List.of(rawRow));
+        userService.userPage = page;
+
+        var result = controller.listUsers(request);
+
+        assertEquals(200, result.getCode());
+        assertNotNull(result.getData());
+        assertNotNull(result.getData().getRows());
+        assertEquals(1, result.getData().getRows().size());
+        assertNotNull(result.getData().getRows().get(0));
     }
 
     /**
@@ -276,7 +301,7 @@ class AgentUserControllerTests {
         return wallet;
     }
 
-    private PageResult<UserWalletFlowDto> createSampleWalletFlowResult() {
+    private Page<UserWalletFlowDto> createSampleWalletFlowResult() {
         UserWalletFlowDto flow = new UserWalletFlowDto();
         flow.setIndex(1L);
         flow.setChangeType("订单支付");
@@ -287,10 +312,13 @@ class AgentUserControllerTests {
         flow.setAfterBalance(new BigDecimal("1000.00"));
         flow.setChangeTime(new Date());
 
-        return new PageResult<>(1L, 10L, 1L, List.of(flow));
+        Page<UserWalletFlowDto> page = new Page<>(1, 10);
+        page.setTotal(1);
+        page.setRecords(List.of(flow));
+        return page;
     }
 
-    private PageResult<UserConsumeInfoDto> createSampleConsumeInfoResult() {
+    private Page<UserConsumeInfoDto> createSampleConsumeInfoResult() {
         UserConsumeInfoDto consume = new UserConsumeInfoDto();
         consume.setIndex(1L);
         consume.setUserId(1L);
@@ -299,7 +327,10 @@ class AgentUserControllerTests {
         consume.setPayPrice(new BigDecimal("95.00"));
         consume.setFinishTime(new Date());
 
-        return new PageResult<>(1L, 10L, 1L, List.of(consume));
+        Page<UserConsumeInfoDto> page = new Page<>(1, 10);
+        page.setTotal(1);
+        page.setRecords(List.of(consume));
+        return page;
     }
 
     // ==================== Stub Service ====================
@@ -309,8 +340,8 @@ class AgentUserControllerTests {
         private Page<UserListDto> userPage = new Page<>();
         private UserDetailDto userDetail;
         private UserWalletDto userWallet;
-        private PageResult<UserWalletFlowDto> walletFlowResult;
-        private PageResult<UserConsumeInfoDto> consumeInfoResult;
+        private Page<UserWalletFlowDto> walletFlowResult = new Page<>();
+        private Page<UserConsumeInfoDto> consumeInfoResult = new Page<>();
 
         private boolean listUsersInvoked;
         private boolean getUserDetailInvoked;
@@ -348,7 +379,7 @@ class AgentUserControllerTests {
         }
 
         @Override
-        public PageResult<UserWalletFlowDto> getUserWalletFlow(Long userId, PageRequest request) {
+        public Page<UserWalletFlowDto> getUserWalletFlow(Long userId, PageRequest request) {
             this.getUserWalletFlowInvoked = true;
             this.capturedFlowUserId = userId;
             this.capturedFlowPageRequest = request;
@@ -356,7 +387,7 @@ class AgentUserControllerTests {
         }
 
         @Override
-        public PageResult<UserConsumeInfoDto> getConsumeInfo(Long userId, PageRequest request) {
+        public Page<UserConsumeInfoDto> getConsumeInfo(Long userId, PageRequest request) {
             this.getConsumeInfoInvoked = true;
             this.capturedConsumeUserId = userId;
             this.capturedConsumePageRequest = request;

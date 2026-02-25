@@ -214,8 +214,6 @@ class AgentProductControllerTests {
         detail.setProductName("维生素C片");
 
         DrugDetailDto drugDetail = new DrugDetailDto();
-        drugDetail.setIndications("用于补充维生素C");
-        drugDetail.setDosage("口服，一次1片，一日3次");
         detail.setDrugDetail(drugDetail);
 
         return List.of(detail);
