@@ -3,7 +3,7 @@ package cn.zhangchuangla.medicine.client.service.impl;
 import cn.zhangchuangla.medicine.client.mapper.MallCategoryMapper;
 import cn.zhangchuangla.medicine.client.service.MallCategoryService;
 import cn.zhangchuangla.medicine.model.entity.MallCategory;
-import cn.zhangchuangla.medicine.model.vo.mall.MallCategoryTree;
+import cn.zhangchuangla.medicine.model.vo.MallCategoryTree;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import org.springframework.stereotype.Service;

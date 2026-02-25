@@ -3,8 +3,8 @@ package cn.zhangchuangla.medicine.agent.controller.admin;
 import cn.zhangchuangla.medicine.agent.annotation.InternalAgentHeaderTrace;
 import cn.zhangchuangla.medicine.agent.model.request.AdminMallOrderListRequest;
 import cn.zhangchuangla.medicine.agent.model.vo.admin.AdminMallOrderListVo;
-import cn.zhangchuangla.medicine.agent.model.vo.admin.AdminMallOrderProductInfoVo;
-import cn.zhangchuangla.medicine.agent.model.vo.admin.AdminOrderDetailVo;
+import cn.zhangchuangla.medicine.agent.model.vo.admin.MallOrderProductInfoVo;
+import cn.zhangchuangla.medicine.agent.model.vo.admin.OrderDetailVo;
 import cn.zhangchuangla.medicine.agent.service.MallOrderService;
 import cn.zhangchuangla.medicine.common.core.base.AjaxResult;
 import cn.zhangchuangla.medicine.common.core.base.TableDataResult;
@@ -32,11 +32,11 @@ import java.util.List;
  * @author Chuang
  */
 @RestController
-@RequestMapping("/agent/order")
+@RequestMapping("/agent/admin/order")
 @Tag(name = "管理端智能体订单工具", description = "用于管理端智能体订单查询接口")
 @InternalAgentHeaderTrace
 @RequiredArgsConstructor
-public class AdminAgentOrderToolsController extends BaseController {
+public class AgentOrderController extends BaseController {
 
     private final MallOrderService agentOrderService;
 
@@ -73,7 +73,7 @@ public class AdminAgentOrderToolsController extends BaseController {
     @GetMapping("/{orderNos}")
     @Operation(summary = "获取订单详情", description = "根据订单编号获取详细信息")
     @PreAuthorize("hasAuthority('mall:order:query') or hasRole('super_admin')")
-    public AjaxResult<List<AdminOrderDetailVo>> getOrderDetail(
+    public AjaxResult<List<OrderDetailVo>> getOrderDetail(
             @Parameter(description = "订单编号，多个可用逗号分隔")
             @PathVariable List<String> orderNos
     ) {
@@ -97,7 +97,7 @@ public class AdminAgentOrderToolsController extends BaseController {
             return target;
         }
 
-        AdminMallOrderProductInfoVo productInfo = new AdminMallOrderProductInfoVo();
+        MallOrderProductInfoVo productInfo = new MallOrderProductInfoVo();
         productInfo.setProductName(source.getProductName());
         productInfo.setProductImage(source.getProductImage());
         productInfo.setProductPrice(source.getProductPrice());

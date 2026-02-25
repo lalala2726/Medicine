@@ -2,7 +2,7 @@ package cn.zhangchuangla.medicine.client.mapper;
 
 import cn.zhangchuangla.medicine.client.model.request.AfterSaleListRequest;
 import cn.zhangchuangla.medicine.model.entity.MallAfterSale;
-import cn.zhangchuangla.medicine.model.vo.mall.AfterSaleListVo;
+import cn.zhangchuangla.medicine.model.vo.AfterSaleListVo;
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import org.apache.ibatis.annotations.Mapper;

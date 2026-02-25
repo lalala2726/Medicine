@@ -1,7 +1,7 @@
 package cn.zhangchuangla.medicine.agent.service;
 
-import cn.zhangchuangla.medicine.agent.model.vo.admin.AdminAgentDrugDetailVo;
-import cn.zhangchuangla.medicine.agent.model.vo.admin.AdminAgentProductDetailVo;
+import cn.zhangchuangla.medicine.agent.model.vo.admin.AgentDrugDetailVo;
+import cn.zhangchuangla.medicine.agent.model.vo.admin.AgentProductDetailVo;
 import cn.zhangchuangla.medicine.model.dto.MallProductDetailDto;
 import cn.zhangchuangla.medicine.model.request.MallProductListQueryRequest;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
@@ -31,7 +31,7 @@ public interface MallProductService {
      * @param productIds 商品 ID 列表
      * @return 商品详情列表
      */
-    List<AdminAgentProductDetailVo> getProductDetail(List<Long> productIds);
+    List<AgentProductDetailVo> getProductDetail(List<Long> productIds);
 
     /**
      * 批量查询药品详情。
@@ -39,5 +39,5 @@ public interface MallProductService {
      * @param productIds 商品 ID 列表
      * @return 药品详情列表
      */
-    List<AdminAgentDrugDetailVo> getDrugDetail(List<Long> productIds);
+    List<AgentDrugDetailVo> getDrugDetail(List<Long> productIds);
 }

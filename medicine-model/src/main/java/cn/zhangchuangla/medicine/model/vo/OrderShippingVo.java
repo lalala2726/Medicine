@@ -1,4 +1,4 @@
-package cn.zhangchuangla.medicine.model.vo.mall;
+package cn.zhangchuangla.medicine.model.vo;
 
 import cn.zhangchuangla.medicine.common.core.annotation.DataMasking;
 import cn.zhangchuangla.medicine.common.core.enums.MaskingType;

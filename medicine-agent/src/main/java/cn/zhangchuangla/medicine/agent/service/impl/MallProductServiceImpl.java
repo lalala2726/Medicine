@@ -1,7 +1,7 @@
 package cn.zhangchuangla.medicine.agent.service.impl;
 
-import cn.zhangchuangla.medicine.agent.model.vo.admin.AdminAgentDrugDetailVo;
-import cn.zhangchuangla.medicine.agent.model.vo.admin.AdminAgentProductDetailVo;
+import cn.zhangchuangla.medicine.agent.model.vo.admin.AgentDrugDetailVo;
+import cn.zhangchuangla.medicine.agent.model.vo.admin.AgentProductDetailVo;
 import cn.zhangchuangla.medicine.agent.service.MallProductService;
 import cn.zhangchuangla.medicine.common.core.base.PageResult;
 import cn.zhangchuangla.medicine.common.core.utils.BeanCotyUtils;
@@ -33,15 +33,15 @@ public class MallProductServiceImpl implements MallProductService {
     }
 
     @Override
-    public List<AdminAgentProductDetailVo> getProductDetail(List<Long> productIds) {
+    public List<AgentProductDetailVo> getProductDetail(List<Long> productIds) {
         List<MallProductDetailDto> products = adminAgentProductRpcService.getProductDetailsByIds(productIds);
-        return BeanCotyUtils.copyListProperties(products, AdminAgentProductDetailVo.class);
+        return BeanCotyUtils.copyListProperties(products, AgentProductDetailVo.class);
     }
 
     @Override
-    public List<AdminAgentDrugDetailVo> getDrugDetail(List<Long> productIds) {
+    public List<AgentDrugDetailVo> getDrugDetail(List<Long> productIds) {
         List<AgentDrugDetailDto> drugDetails = adminAgentProductRpcService.getDrugDetailsByProductIds(productIds);
-        return BeanCotyUtils.copyListProperties(drugDetails, AdminAgentDrugDetailVo.class);
+        return BeanCotyUtils.copyListProperties(drugDetails, AgentDrugDetailVo.class);
     }
 
     private Page<MallProductDetailDto> toPage(PageResult<MallProductDetailDto> result) {

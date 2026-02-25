@@ -3,6 +3,7 @@ package cn.zhangchuangla.medicine.agent.mapping;
 import cn.zhangchuangla.medicine.model.enums.DeliveryTypeEnum;
 import cn.zhangchuangla.medicine.model.enums.OrderStatusEnum;
 import cn.zhangchuangla.medicine.model.enums.PayTypeEnum;
+import cn.zhangchuangla.medicine.model.enums.WalletChangeTypeEnum;
 
 import java.util.LinkedHashMap;
 import java.util.Map;
@@ -26,6 +27,31 @@ public final class AgentCodeLabelRegistry {
      * 商品配送方式编码映射（兼容 legacy 整型编码）。
      */
     public static final String AGENT_PRODUCT_DELIVERY_TYPE = "agent.product.deliveryType";
+
+    /**
+     * 商品状态映射。
+     */
+    public static final String AGENT_PRODUCT_STATUS = "agent.product.status";
+
+    /**
+     * 用户性别映射。
+     */
+    public static final String AGENT_USER_GENDER = "agent.user.gender";
+
+    /**
+     * 用户状态映射。
+     */
+    public static final String AGENT_USER_STATUS = "agent.user.status";
+
+    /**
+     * 用户钱包状态映射。
+     */
+    public static final String AGENT_USER_WALLET_STATUS = "agent.user.wallet.status";
+
+    /**
+     * 钱包流水变动类型映射。
+     */
+    public static final String AGENT_USER_WALLET_CHANGE_TYPE = "agent.user.wallet.changeType";
 
     private static final Map<String, Map<String, String>> DICT = buildDict();
 
@@ -55,6 +81,11 @@ public final class AgentCodeLabelRegistry {
         dict.put(AGENT_ORDER_STATUS, buildOrderStatusDict());
         dict.put(AGENT_ORDER_PAY_TYPE, buildPayTypeDict());
         dict.put(AGENT_PRODUCT_DELIVERY_TYPE, buildLegacyDeliveryTypeDict());
+        dict.put(AGENT_PRODUCT_STATUS, buildProductStatusDict());
+        dict.put(AGENT_USER_GENDER, buildUserGenderDict());
+        dict.put(AGENT_USER_STATUS, buildUserStatusDict());
+        dict.put(AGENT_USER_WALLET_STATUS, buildWalletStatusDict());
+        dict.put(AGENT_USER_WALLET_CHANGE_TYPE, buildWalletChangeTypeDict());
         return Map.copyOf(dict);
     }
 
@@ -78,6 +109,43 @@ public final class AgentCodeLabelRegistry {
         Map<String, String> mapping = new LinkedHashMap<>();
         for (DeliveryTypeEnum deliveryTypeEnum : DeliveryTypeEnum.values()) {
             mapping.put(String.valueOf(deliveryTypeEnum.ordinal()), deliveryTypeEnum.getName());
+        }
+        return Map.copyOf(mapping);
+    }
+
+    private static Map<String, String> buildProductStatusDict() {
+        Map<String, String> mapping = new LinkedHashMap<>();
+        mapping.put("1", "上架");
+        mapping.put("0", "下架");
+        return Map.copyOf(mapping);
+    }
+
+    private static Map<String, String> buildUserGenderDict() {
+        Map<String, String> mapping = new LinkedHashMap<>();
+        mapping.put("0", "未知");
+        mapping.put("1", "男");
+        mapping.put("2", "女");
+        return Map.copyOf(mapping);
+    }
+
+    private static Map<String, String> buildUserStatusDict() {
+        Map<String, String> mapping = new LinkedHashMap<>();
+        mapping.put("0", "正常");
+        mapping.put("1", "禁用");
+        return Map.copyOf(mapping);
+    }
+
+    private static Map<String, String> buildWalletStatusDict() {
+        Map<String, String> mapping = new LinkedHashMap<>();
+        mapping.put("0", "正常");
+        mapping.put("1", "冻结");
+        return Map.copyOf(mapping);
+    }
+
+    private static Map<String, String> buildWalletChangeTypeDict() {
+        Map<String, String> mapping = new LinkedHashMap<>();
+        for (WalletChangeTypeEnum changeTypeEnum : WalletChangeTypeEnum.values()) {
+            mapping.put(String.valueOf(changeTypeEnum.getCode()), changeTypeEnum.getName());
         }
         return Map.copyOf(mapping);
     }

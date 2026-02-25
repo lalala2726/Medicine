@@ -71,6 +71,20 @@ class AgentCodeLabelSerializerTests {
         assertEquals(0, node.get("status").get("value").asInt());
     }
 
+    @Test
+    void shouldResolveSourceFieldWhenConfigured() {
+        SourceFieldSample sample = new SourceFieldSample();
+        sample.setChangeType("订单支付");
+        sample.setAmountDirection(2);
+
+        JsonNode node = serializeToNode(sample);
+
+        assertEquals(2, node.get("changeType").get("value").asInt());
+        assertEquals("支出", node.get("changeType").get("description").asText());
+        assertEquals(2, node.get("amountDirection").get("value").asInt());
+        assertEquals("支出", node.get("amountDirection").get("description").asText());
+    }
+
     private JsonNode serializeToNode(Object value) {
         try {
             return objectMapper.readTree(objectMapper.writeValueAsBytes(value));
@@ -103,5 +117,15 @@ class AgentCodeLabelSerializerTests {
 
         @AgentCodeLabel(dictKey = AgentCodeLabelRegistry.AGENT_ORDER_PAY_TYPE)
         private String payType;
+    }
+
+    @Data
+    private static class SourceFieldSample {
+
+        @AgentCodeLabel(source = "amountDirection", dictKey = AgentCodeLabelRegistry.AGENT_USER_WALLET_CHANGE_TYPE)
+        private String changeType;
+
+        @AgentCodeLabel(dictKey = AgentCodeLabelRegistry.AGENT_USER_WALLET_CHANGE_TYPE)
+        private Integer amountDirection;
     }
 }

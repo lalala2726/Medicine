@@ -9,7 +9,7 @@ import cn.zhangchuangla.medicine.model.dto.MallProductDetailDto;
 import cn.zhangchuangla.medicine.model.request.MallProductAddRequest;
 import cn.zhangchuangla.medicine.model.request.MallProductListQueryRequest;
 import cn.zhangchuangla.medicine.model.request.MallProductUpdateRequest;
-import cn.zhangchuangla.medicine.model.vo.mall.MallProductListVo;
+import cn.zhangchuangla.medicine.model.vo.MallProductListVo;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;

@@ -10,7 +10,7 @@ import java.math.BigDecimal;
  */
 @Schema(description = "管理端智能体订单商品信息")
 @Data
-public class AdminMallOrderProductInfoVo {
+public class MallOrderProductInfoVo {
 
     @Schema(description = "商品名称", example = "商品名称")
     private String productName;

@@ -15,11 +15,12 @@ import cn.zhangchuangla.medicine.model.dto.OrderDetailDto;
 import cn.zhangchuangla.medicine.model.dto.OrderWithProductDto;
 import cn.zhangchuangla.medicine.model.entity.MallOrderTimeline;
 import cn.zhangchuangla.medicine.model.request.MallOrderListRequest;
-import cn.zhangchuangla.medicine.model.vo.mall.MallOrderTimelineVo;
-import cn.zhangchuangla.medicine.model.vo.mall.OrderShippingVo;
+import cn.zhangchuangla.medicine.model.vo.MallOrderTimelineVo;
+import cn.zhangchuangla.medicine.model.vo.OrderShippingVo;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import lombok.RequiredArgsConstructor;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.util.CollectionUtils;
 import org.springframework.validation.annotation.Validated;
@@ -35,16 +36,12 @@ import java.util.List;
 @RestController
 @RequestMapping("/mall/order")
 @Tag(name = "订单管理", description = "订单管理")
+@RequiredArgsConstructor
 public class MallOrderController extends BaseController {
 
     private final MallOrderService mallOrderService;
     private final MallOrderTimelineService mallOrderTimelineService;
 
-
-    public MallOrderController(MallOrderService mallOrderService, MallOrderTimelineService mallOrderTimelineService) {
-        this.mallOrderService = mallOrderService;
-        this.mallOrderTimelineService = mallOrderTimelineService;
-    }
 
 
     /**

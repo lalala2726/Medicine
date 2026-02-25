@@ -7,11 +7,14 @@ import cn.zhangchuangla.medicine.admin.model.vo.UserDetailVo;
 import cn.zhangchuangla.medicine.admin.model.vo.UserWalletFlowInfoVo;
 import cn.zhangchuangla.medicine.admin.model.vo.UserWalletVo;
 import cn.zhangchuangla.medicine.admin.service.UserService;
-import cn.zhangchuangla.medicine.common.core.base.*;
+import cn.zhangchuangla.medicine.common.core.base.AjaxResult;
+import cn.zhangchuangla.medicine.common.core.base.Option;
+import cn.zhangchuangla.medicine.common.core.base.PageRequest;
+import cn.zhangchuangla.medicine.common.core.base.TableDataResult;
 import cn.zhangchuangla.medicine.common.log.annotation.OperationLog;
 import cn.zhangchuangla.medicine.common.log.enums.OperationType;
 import cn.zhangchuangla.medicine.common.security.base.BaseController;
-import cn.zhangchuangla.medicine.model.entity.User;
+import cn.zhangchuangla.medicine.model.dto.*;
 import cn.zhangchuangla.medicine.model.request.UserAddRequest;
 import cn.zhangchuangla.medicine.model.request.UserListQueryRequest;
 import cn.zhangchuangla.medicine.model.request.UserUpdateRequest;
@@ -25,7 +28,6 @@ import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
-import java.util.stream.Collectors;
 
 /**
  * 管理端用户控制器。
@@ -51,18 +53,9 @@ public class UserController extends BaseController {
     @Operation(summary = "用户列表")
     @PreAuthorize("hasAuthority('system:user:list') or hasRole('super_admin')")
     public AjaxResult<TableDataResult> listUser(UserListQueryRequest request) {
-        Page<User> userPage = userService.listUser(request);
-        List<UserListVo> userListVos = userPage.getRecords().stream()
-                .map(user -> {
-                    UserListVo vo = copyProperties(user, UserListVo.class);
-                    String roles = userService.getUserRolesByUserId(user.getId()).stream()
-                            .sorted()
-                            .collect(Collectors.joining(","));
-                    vo.setRoles(roles);
-                    return vo;
-                })
-                .toList();
-        return getTableData(userPage, userListVos);
+        Page<UserListDto> userPage = userService.listUser(request);
+        List<UserListVo> rows = copyListProperties(userPage.getRecords(), UserListVo.class);
+        return getTableData(userPage, rows);
     }
 
 
@@ -76,8 +69,8 @@ public class UserController extends BaseController {
     @Operation(summary = "用户详情")
     @PreAuthorize("hasAuthority('system:user:query') or hasRole('super_admin')")
     public AjaxResult<UserDetailVo> getUserById(@PathVariable Long id) {
-        UserDetailVo userDetailVo = userService.getUserDetailById(id);
-        return success(userDetailVo);
+        UserDetailDto userDetailDto = userService.getUserDetailById(id);
+        return success(toUserDetailVo(userDetailDto));
     }
 
     /**
@@ -87,8 +80,9 @@ public class UserController extends BaseController {
     @Operation(summary = "获取用户钱包流水")
     @PreAuthorize("hasAuthority('system:user:query') or hasRole('super_admin')")
     public AjaxResult<TableDataResult> getUserWalletFlow(@PathVariable Long userId, PageRequest request) {
-        PageResult<UserWalletFlowInfoVo> userWalletLogPage = userService.getUserWalletFlow(userId, request);
-        return getTableData(userWalletLogPage);
+        Page<UserWalletFlowDto> walletFlowDtoPage = userService.getUserWalletFlow(userId, request);
+        List<UserWalletFlowInfoVo> rows = copyListProperties(walletFlowDtoPage.getRecords(), UserWalletFlowInfoVo.class);
+        return getTableData(walletFlowDtoPage, rows);
     }
 
     /**
@@ -98,8 +92,9 @@ public class UserController extends BaseController {
     @Operation(summary = "获取消费信息")
     @PreAuthorize("hasAuthority('system:user:query') or hasRole('super_admin')")
     public AjaxResult<TableDataResult> getConsumeInfo(@PathVariable Long userId, PageRequest request) {
-        PageResult<UserConsumeInfo> consumeInfo = userService.getConsumeInfo(userId, request);
-        return getTableData(consumeInfo);
+        Page<UserConsumeInfoDto> consumeInfoDtoPage = userService.getConsumeInfo(userId, request);
+        List<UserConsumeInfo> rows = copyListProperties(consumeInfoDtoPage.getRecords(), UserConsumeInfo.class);
+        return getTableData(consumeInfoDtoPage, rows);
     }
 
     /**
@@ -157,8 +152,8 @@ public class UserController extends BaseController {
     @Operation(summary = "获取用户钱包金额")
     @PreAuthorize("hasAuthority('system:user:query') or hasRole('super_admin')")
     public AjaxResult<UserWalletVo> getUserWalletBalance(@PathVariable Long userId) {
-        UserWalletVo userWalletVo = userService.getUserWallet(userId);
-        return success(userWalletVo);
+        UserWalletDto userWalletDto = userService.getUserWallet(userId);
+        return success(toUserWalletVo(userWalletDto));
     }
 
 
@@ -235,6 +230,20 @@ public class UserController extends BaseController {
     public AjaxResult<List<Option<Long>>> listUserOptions(@RequestBody List<Long> userIds) {
         List<Option<Long>> options = userService.listUserOptionsByIds(userIds);
         return success(options);
+    }
+
+    private UserDetailVo toUserDetailVo(UserDetailDto source) {
+        if (source == null) {
+            return null;
+        }
+        UserDetailVo target = copyProperties(source, UserDetailVo.class);
+        target.setBasicInfo(copyProperties(source.getBasicInfo(), UserDetailVo.BasicInfo.class));
+        target.setSecurityInfo(copyProperties(source.getSecurityInfo(), UserDetailVo.SecurityInfo.class));
+        return target;
+    }
+
+    private UserWalletVo toUserWalletVo(UserWalletDto source) {
+        return copyProperties(source, UserWalletVo.class);
     }
 
 }

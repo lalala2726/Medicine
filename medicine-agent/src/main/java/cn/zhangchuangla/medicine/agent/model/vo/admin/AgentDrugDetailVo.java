@@ -9,7 +9,7 @@ import lombok.Data;
  */
 @Schema(description = "管理端智能体药品详情")
 @Data
-public class AdminAgentDrugDetailVo {
+public class AgentDrugDetailVo {
 
     @Schema(description = "商品ID", example = "1")
     private Long productId;

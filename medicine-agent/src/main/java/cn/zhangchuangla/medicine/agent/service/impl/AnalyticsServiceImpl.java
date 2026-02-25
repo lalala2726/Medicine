@@ -1,7 +1,7 @@
 package cn.zhangchuangla.medicine.agent.service.impl;
 
-import cn.zhangchuangla.medicine.agent.model.vo.analytics.PaymentDistribution;
-import cn.zhangchuangla.medicine.agent.model.vo.analytics.StatusDistribution;
+import cn.zhangchuangla.medicine.agent.model.vo.admin.PaymentDistribution;
+import cn.zhangchuangla.medicine.agent.model.vo.admin.StatusDistribution;
 import cn.zhangchuangla.medicine.agent.service.AnalyticsService;
 import cn.zhangchuangla.medicine.common.core.utils.BeanCotyUtils;
 import cn.zhangchuangla.medicine.model.vo.analytics.HotProductRank;

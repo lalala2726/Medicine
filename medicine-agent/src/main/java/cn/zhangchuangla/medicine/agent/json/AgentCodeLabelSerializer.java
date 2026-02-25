@@ -65,7 +65,7 @@ public class AgentCodeLabelSerializer extends JsonSerializer<Object> implements 
 
     private String findLabel(String code, AgentCodeLabel codeLabel) {
         AgentCodePair[] pairs = codeLabel.pairs();
-        if (pairs != null && pairs.length > 0) {
+        if (pairs != null) {
             for (AgentCodePair pair : pairs) {
                 if (pair.code().equals(code)) {
                     return pair.label();

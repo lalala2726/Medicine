@@ -4,20 +4,16 @@ import cn.zhangchuangla.medicine.admin.mapper.UserMapper;
 import cn.zhangchuangla.medicine.admin.model.dto.UserOrderStatistics;
 import cn.zhangchuangla.medicine.admin.model.request.FreezeOrUnUserWalletRequest;
 import cn.zhangchuangla.medicine.admin.model.request.WalletChangeRequest;
-import cn.zhangchuangla.medicine.admin.model.vo.UserConsumeInfo;
-import cn.zhangchuangla.medicine.admin.model.vo.UserDetailVo;
-import cn.zhangchuangla.medicine.admin.model.vo.UserWalletFlowInfoVo;
-import cn.zhangchuangla.medicine.admin.model.vo.UserWalletVo;
 import cn.zhangchuangla.medicine.admin.service.*;
 import cn.zhangchuangla.medicine.common.core.base.Option;
 import cn.zhangchuangla.medicine.common.core.base.PageRequest;
-import cn.zhangchuangla.medicine.common.core.base.PageResult;
 import cn.zhangchuangla.medicine.common.core.constants.RolesConstant;
 import cn.zhangchuangla.medicine.common.core.enums.ResponseCode;
 import cn.zhangchuangla.medicine.common.core.exception.ServiceException;
 import cn.zhangchuangla.medicine.common.core.utils.Assert;
 import cn.zhangchuangla.medicine.common.core.utils.BeanCotyUtils;
 import cn.zhangchuangla.medicine.common.security.base.BaseService;
+import cn.zhangchuangla.medicine.model.dto.*;
 import cn.zhangchuangla.medicine.model.entity.*;
 import cn.zhangchuangla.medicine.model.enums.WalletChangeTypeEnum;
 import cn.zhangchuangla.medicine.model.request.UserAddRequest;
@@ -58,7 +54,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User>
      * @return 用户信息
      */
     @Override
-    public UserDetailVo getUserDetailById(Long userId) {
+    public UserDetailDto getUserDetailById(Long userId) {
         Assert.notNull(userId, "用户ID不能为空");
         User user = getById(userId);
         Assert.notNull(user, "用户不存在");
@@ -73,32 +69,30 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User>
         BigDecimal totalConsumption = userOrderStatistics == null ? BigDecimal.ZERO
                 : defaultBigDecimal(userOrderStatistics.getTotalConsumption());
 
-        UserDetailVo.BasicInfo basicInfo = UserDetailVo.BasicInfo.builder()
-                .userId(user.getId())
-                .realName(user.getRealName())
-                .phoneNumber(user.getPhoneNumber())
-                .email(user.getEmail())
-                .gender(user.getGender())
-                .idCard(user.getIdCard())
-                .build();
+        UserDetailDto.BasicInfo basicInfo = new UserDetailDto.BasicInfo();
+        basicInfo.setUserId(user.getId());
+        basicInfo.setRealName(user.getRealName());
+        basicInfo.setPhoneNumber(user.getPhoneNumber());
+        basicInfo.setEmail(user.getEmail());
+        basicInfo.setGender(user.getGender());
+        basicInfo.setIdCard(user.getIdCard());
 
-        UserDetailVo.SecurityInfo securityInfo = UserDetailVo.SecurityInfo.builder()
-                .registerTime(user.getCreateTime())
-                .lastLoginTime(user.getLastLoginTime())
-                .lastLoginIp(user.getLastLoginIp())
-                .lastLoginLocation(user.getLastLoginLocation())
-                .status(user.getStatus())
-                .build();
+        UserDetailDto.SecurityInfo securityInfo = new UserDetailDto.SecurityInfo();
+        securityInfo.setRegisterTime(user.getCreateTime());
+        securityInfo.setLastLoginTime(user.getLastLoginTime());
+        securityInfo.setLastLoginIp(user.getLastLoginIp());
+        securityInfo.setLastLoginLocation(user.getLastLoginLocation());
+        securityInfo.setStatus(user.getStatus());
 
-        return UserDetailVo.builder()
-                .avatar(user.getAvatar())
-                .nickName(user.getNickname())
-                .walletBalance(walletBalance)
-                .totalOrders(safeOrderCount(totalOrderCount))
-                .totalConsume(totalConsumption)
-                .basicInfo(basicInfo)
-                .securityInfo(securityInfo)
-                .build();
+        UserDetailDto detail = new UserDetailDto();
+        detail.setAvatar(user.getAvatar());
+        detail.setNickName(user.getNickname());
+        detail.setWalletBalance(walletBalance);
+        detail.setTotalOrders(safeOrderCount(totalOrderCount));
+        detail.setTotalConsume(totalConsumption);
+        detail.setBasicInfo(basicInfo);
+        detail.setSecurityInfo(securityInfo);
+        return detail;
     }
 
     /**
@@ -146,9 +140,22 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User>
      * @return 返回用户分页
      */
     @Override
-    public Page<User> listUser(UserListQueryRequest request) {
+    public Page<UserListDto> listUser(UserListQueryRequest request) {
         Page<User> userPage = request.toPage();
-        return baseMapper.listUser(userPage, request);
+        Page<User> result = baseMapper.listUser(userPage, request);
+        List<UserListDto> rows = result.getRecords().stream()
+                .map(user -> {
+                    UserListDto userListDto = BeanCotyUtils.copyProperties(user, UserListDto.class);
+                    String roles = getUserRolesByUserId(user.getId()).stream()
+                            .sorted()
+                            .collect(Collectors.joining(","));
+                    userListDto.setRoles(roles);
+                    return userListDto;
+                })
+                .toList();
+        Page<UserListDto> dtoPage = new Page<>(result.getCurrent(), result.getSize(), result.getTotal());
+        dtoPage.setRecords(rows);
+        return dtoPage;
     }
 
     /**
@@ -234,9 +241,9 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User>
      * @return 用户钱包流水
      */
     @Override
-    public PageResult<UserWalletFlowInfoVo> getUserWalletFlow(Long userId, PageRequest request) {
+    public Page<UserWalletFlowDto> getUserWalletFlow(Long userId, PageRequest request) {
         Page<UserWalletLog> userWalletFlow = userWalletLogService.getUserWalletFlow(userId, request);
-        List<UserWalletFlowInfoVo> userWalletFlowInfoVos = new ArrayList<>();
+        List<UserWalletFlowDto> walletFlowDtos = new ArrayList<>();
 
         AtomicLong atomicLong = new AtomicLong(1);
         userWalletFlow.getRecords().forEach(userWalletLog -> {
@@ -245,19 +252,20 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User>
             // 判断是否为收入（使用枚举类的工具方法）
             Boolean isIncome = WalletChangeTypeEnum.isIncome(changeType);
 
-            UserWalletFlowInfoVo walletFlowInfoVo = UserWalletFlowInfoVo.builder()
-                    .index(atomicLong.getAndIncrement())
-                    .afterBalance(userWalletLog.getAfterBalance())
-                    .amount(userWalletLog.getAmount())
-                    .beforeBalance(userWalletLog.getBeforeBalance())
-                    .changeTime(userWalletLog.getCreatedAt())
-                    .changeType(userWalletLog.getReason())
-                    .amountDirection(changeType)
-                    .isIncome(isIncome)
-                    .build();
-            userWalletFlowInfoVos.add(walletFlowInfoVo);
+            UserWalletFlowDto walletFlowDto = new UserWalletFlowDto();
+            walletFlowDto.setIndex(atomicLong.getAndIncrement());
+            walletFlowDto.setAfterBalance(userWalletLog.getAfterBalance());
+            walletFlowDto.setAmount(userWalletLog.getAmount());
+            walletFlowDto.setBeforeBalance(userWalletLog.getBeforeBalance());
+            walletFlowDto.setChangeTime(userWalletLog.getCreatedAt());
+            walletFlowDto.setChangeType(userWalletLog.getReason());
+            walletFlowDto.setAmountDirection(changeType);
+            walletFlowDto.setIsIncome(isIncome);
+            walletFlowDtos.add(walletFlowDto);
         });
-        return new PageResult<>(userWalletFlow.getCurrent(), userWalletFlow.getSize(), userWalletFlow.getTotal(), userWalletFlowInfoVos);
+        Page<UserWalletFlowDto> page = new Page<>(userWalletFlow.getCurrent(), userWalletFlow.getSize(), userWalletFlow.getTotal());
+        page.setRecords(walletFlowDtos);
+        return page;
 
     }
 
@@ -269,20 +277,24 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User>
      * @return 用户消费信息
      */
     @Override
-    public PageResult<UserConsumeInfo> getConsumeInfo(Long userId, PageRequest request) {
+    public Page<UserConsumeInfoDto> getConsumeInfo(Long userId, PageRequest request) {
         Page<MallOrder> mallOrderPage = mallOrderService.getPaidOrderPage(userId, request);
         AtomicLong atomicLong = new AtomicLong(1);
-        List<UserConsumeInfo> userConsumeInfos = mallOrderPage.getRecords().stream()
-                .map(order -> UserConsumeInfo.builder()
-                        .index(atomicLong.getAndIncrement())
-                        .orderNo(order.getOrderNo())
-                        .payPrice(order.getPayAmount())
-                        .finishTime(order.getFinishTime())
-                        .totalPrice(order.getTotalAmount())
-                        .userId(order.getUserId())
-                        .build())
+        List<UserConsumeInfoDto> consumeInfoDtos = mallOrderPage.getRecords().stream()
+                .map(order -> {
+                    UserConsumeInfoDto consumeInfoDto = new UserConsumeInfoDto();
+                    consumeInfoDto.setIndex(atomicLong.getAndIncrement());
+                    consumeInfoDto.setOrderNo(order.getOrderNo());
+                    consumeInfoDto.setPayPrice(order.getPayAmount());
+                    consumeInfoDto.setFinishTime(order.getFinishTime());
+                    consumeInfoDto.setTotalPrice(order.getTotalAmount());
+                    consumeInfoDto.setUserId(order.getUserId());
+                    return consumeInfoDto;
+                })
                 .toList();
-        return new PageResult<>(mallOrderPage.getCurrent(), mallOrderPage.getSize(), mallOrderPage.getTotal(), userConsumeInfos);
+        Page<UserConsumeInfoDto> page = new Page<>(mallOrderPage.getCurrent(), mallOrderPage.getSize(), mallOrderPage.getTotal());
+        page.setRecords(consumeInfoDtos);
+        return page;
     }
 
     @Override
@@ -332,9 +344,9 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User>
     }
 
     @Override
-    public UserWalletVo getUserWallet(Long userId) {
+    public UserWalletDto getUserWallet(Long userId) {
         UserWallet wallet = userWalletService.getUserWalletByUserId(userId);
-        return BeanCotyUtils.copyProperties(wallet, UserWalletVo.class);
+        return BeanCotyUtils.copyProperties(wallet, UserWalletDto.class);
     }
 
     @Override

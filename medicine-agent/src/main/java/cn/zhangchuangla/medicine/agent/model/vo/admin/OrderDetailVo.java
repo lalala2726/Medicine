@@ -15,7 +15,7 @@ import java.util.List;
  */
 @Schema(description = "管理端智能体订单详情")
 @Data
-public class AdminOrderDetailVo {
+public class OrderDetailVo {
 
     @Schema(description = "用户信息")
     private UserInfo userInfo;

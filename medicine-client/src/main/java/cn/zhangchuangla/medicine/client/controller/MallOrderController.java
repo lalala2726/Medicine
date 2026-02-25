@@ -6,7 +6,7 @@ import cn.zhangchuangla.medicine.client.service.MallOrderService;
 import cn.zhangchuangla.medicine.common.core.base.AjaxResult;
 import cn.zhangchuangla.medicine.common.core.base.TableDataResult;
 import cn.zhangchuangla.medicine.common.security.base.BaseController;
-import cn.zhangchuangla.medicine.model.vo.mall.OrderShippingVo;
+import cn.zhangchuangla.medicine.model.vo.OrderShippingVo;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;

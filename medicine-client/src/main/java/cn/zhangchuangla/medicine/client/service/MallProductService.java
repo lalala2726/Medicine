@@ -8,7 +8,7 @@ import cn.zhangchuangla.medicine.common.core.base.PageResult;
 import cn.zhangchuangla.medicine.model.dto.MallProductDetailDto;
 import cn.zhangchuangla.medicine.model.dto.MallProductWithImageDto;
 import cn.zhangchuangla.medicine.model.entity.MallProduct;
-import cn.zhangchuangla.medicine.model.vo.mall.RecommendListVo;
+import cn.zhangchuangla.medicine.model.vo.RecommendListVo;
 import com.baomidou.mybatisplus.extension.service.IService;
 
 import java.util.List;

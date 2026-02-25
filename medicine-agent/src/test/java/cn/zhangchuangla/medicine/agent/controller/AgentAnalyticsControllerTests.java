@@ -1,8 +1,8 @@
 package cn.zhangchuangla.medicine.agent.controller;
 
-import cn.zhangchuangla.medicine.agent.controller.admin.AdminAgentAnalyticsController;
-import cn.zhangchuangla.medicine.agent.model.vo.analytics.PaymentDistribution;
-import cn.zhangchuangla.medicine.agent.model.vo.analytics.StatusDistribution;
+import cn.zhangchuangla.medicine.agent.controller.admin.AgentAnalyticsController;
+import cn.zhangchuangla.medicine.agent.model.vo.admin.PaymentDistribution;
+import cn.zhangchuangla.medicine.agent.model.vo.admin.StatusDistribution;
 import cn.zhangchuangla.medicine.agent.service.AnalyticsService;
 import cn.zhangchuangla.medicine.model.vo.analytics.HotProductRank;
 import cn.zhangchuangla.medicine.model.vo.analytics.OrderTrendPoint;
@@ -16,10 +16,10 @@ import java.util.List;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-class AdminAgentAnalyticsControllerTests {
+class AgentAnalyticsControllerTests {
 
     private final StubAnalyticsService analyticsService = new StubAnalyticsService();
-    private final AdminAgentAnalyticsController controller = new AdminAgentAnalyticsController(analyticsService);
+    private final AgentAnalyticsController controller = new AgentAnalyticsController(analyticsService);
 
     @Test
     void overview_ShouldDelegateToService() {

@@ -1,9 +1,9 @@
 package cn.zhangchuangla.medicine.agent.controller.admin;
 
 import cn.zhangchuangla.medicine.agent.annotation.InternalAgentHeaderTrace;
-import cn.zhangchuangla.medicine.agent.model.vo.admin.AdminAgentDrugDetailVo;
-import cn.zhangchuangla.medicine.agent.model.vo.admin.AdminAgentProductDetailVo;
-import cn.zhangchuangla.medicine.agent.model.vo.admin.AdminAgentProductListVo;
+import cn.zhangchuangla.medicine.agent.model.vo.admin.AgentDrugDetailVo;
+import cn.zhangchuangla.medicine.agent.model.vo.admin.AgentProductDetailVo;
+import cn.zhangchuangla.medicine.agent.model.vo.admin.AgentProductListVo;
 import cn.zhangchuangla.medicine.agent.service.MallProductService;
 import cn.zhangchuangla.medicine.common.core.base.AjaxResult;
 import cn.zhangchuangla.medicine.common.core.base.TableDataResult;
@@ -32,11 +32,11 @@ import java.util.List;
  * @author Chuang
  */
 @RestController
-@RequestMapping("/agent/product")
+@RequestMapping("/agent/admin/product")
 @Tag(name = "管理端智能体商品工具", description = "用于管理端智能体商品查询接口")
 @InternalAgentHeaderTrace
 @RequiredArgsConstructor
-public class AdminAgentProductToolsController extends BaseController {
+public class AgentProductController extends BaseController {
 
     private final MallProductService agentProductService;
 
@@ -70,9 +70,9 @@ public class AdminAgentProductToolsController extends BaseController {
     public AjaxResult<TableDataResult> searchProducts(MallProductListQueryRequest request) {
         MallProductListQueryRequest safeRequest = request == null ? new MallProductListQueryRequest() : request;
         Page<MallProductDetailDto> page = agentProductService.listProducts(safeRequest);
-        List<AdminAgentProductListVo> mallProductListVos = page.getRecords().stream()
+        List<AgentProductListVo> mallProductListVos = page.getRecords().stream()
                 .map(product -> {
-                    AdminAgentProductListVo productListVo = copyProperties(product, AdminAgentProductListVo.class);
+                    AgentProductListVo productListVo = copyProperties(product, AgentProductListVo.class);
                     if (product.getImages() != null && !product.getImages().isEmpty()) {
                         productListVo.setCoverImage(product.getImages().getFirst());
                     }
@@ -94,7 +94,7 @@ public class AdminAgentProductToolsController extends BaseController {
     @GetMapping("/{productIds}")
     @Operation(summary = "获取商品详情", description = "根据商品ID获取详细信息（不含药品详情）")
     @PreAuthorize("hasAuthority('mall:product:query') or hasRole('super_admin')")
-    public AjaxResult<List<AdminAgentProductDetailVo>> getProductDetail(
+    public AjaxResult<List<AgentProductDetailVo>> getProductDetail(
             @Parameter(description = "商品ID")
             @PathVariable List<Long> productIds
     ) {
@@ -113,7 +113,7 @@ public class AdminAgentProductToolsController extends BaseController {
     @GetMapping("/drug/{productIds}")
     @Operation(summary = "获取药品详情", description = "根据商品ID获取药品详细信息")
     @PreAuthorize("hasAuthority('mall:product:query') or hasRole('super_admin')")
-    public AjaxResult<List<AdminAgentDrugDetailVo>> getDrugDetail(
+    public AjaxResult<List<AgentDrugDetailVo>> getDrugDetail(
             @Parameter(description = "商品ID")
             @PathVariable List<Long> productIds
     ) {

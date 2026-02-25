@@ -10,7 +10,7 @@ import cn.zhangchuangla.medicine.model.dto.OrderDetailDto;
 import cn.zhangchuangla.medicine.model.dto.OrderWithProductDto;
 import cn.zhangchuangla.medicine.model.entity.MallOrder;
 import cn.zhangchuangla.medicine.model.request.MallOrderListRequest;
-import cn.zhangchuangla.medicine.model.vo.mall.OrderShippingVo;
+import cn.zhangchuangla.medicine.model.vo.OrderShippingVo;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.IService;
 

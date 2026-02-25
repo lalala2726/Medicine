@@ -2,8 +2,8 @@ package cn.zhangchuangla.medicine.client.service;
 
 import cn.zhangchuangla.medicine.client.model.request.*;
 import cn.zhangchuangla.medicine.model.entity.MallAfterSale;
-import cn.zhangchuangla.medicine.model.vo.mall.AfterSaleDetailVo;
-import cn.zhangchuangla.medicine.model.vo.mall.AfterSaleListVo;
+import cn.zhangchuangla.medicine.model.vo.AfterSaleDetailVo;
+import cn.zhangchuangla.medicine.model.vo.AfterSaleListVo;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.IService;
 

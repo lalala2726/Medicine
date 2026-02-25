@@ -1,7 +1,7 @@
 package cn.zhangchuangla.medicine.agent.service.impl;
 
 import cn.zhangchuangla.medicine.agent.model.request.AdminMallOrderListRequest;
-import cn.zhangchuangla.medicine.agent.model.vo.admin.AdminOrderDetailVo;
+import cn.zhangchuangla.medicine.agent.model.vo.admin.OrderDetailVo;
 import cn.zhangchuangla.medicine.agent.service.MallOrderService;
 import cn.zhangchuangla.medicine.common.core.base.PageResult;
 import cn.zhangchuangla.medicine.common.core.utils.BeanCotyUtils;
@@ -34,7 +34,7 @@ public class MallOrderServiceImpl implements MallOrderService {
     }
 
     @Override
-    public List<AdminOrderDetailVo> getOrderDetail(List<String> orderNos) {
+    public List<OrderDetailVo> getOrderDetail(List<String> orderNos) {
         List<OrderDetailDto> details = adminAgentOrderRpcService.getOrderDetailsByOrderNos(orderNos);
         return details.stream().map(this::toAdminOrderDetail).toList();
     }
@@ -51,15 +51,15 @@ public class MallOrderServiceImpl implements MallOrderService {
         return page;
     }
 
-    private AdminOrderDetailVo toAdminOrderDetail(OrderDetailDto source) {
+    private OrderDetailVo toAdminOrderDetail(OrderDetailDto source) {
         if (source == null) {
             return null;
         }
-        AdminOrderDetailVo target = new AdminOrderDetailVo();
-        target.setUserInfo(BeanCotyUtils.copyProperties(source.getUserInfo(), AdminOrderDetailVo.UserInfo.class));
-        target.setDeliveryInfo(BeanCotyUtils.copyProperties(source.getDeliveryInfo(), AdminOrderDetailVo.DeliveryInfo.class));
-        target.setOrderInfo(BeanCotyUtils.copyProperties(source.getOrderInfo(), AdminOrderDetailVo.OrderInfo.class));
-        target.setProductInfo(BeanCotyUtils.copyListProperties(source.getProductInfo(), AdminOrderDetailVo.ProductInfo.class));
+        OrderDetailVo target = new OrderDetailVo();
+        target.setUserInfo(BeanCotyUtils.copyProperties(source.getUserInfo(), OrderDetailVo.UserInfo.class));
+        target.setDeliveryInfo(BeanCotyUtils.copyProperties(source.getDeliveryInfo(), OrderDetailVo.DeliveryInfo.class));
+        target.setOrderInfo(BeanCotyUtils.copyProperties(source.getOrderInfo(), OrderDetailVo.OrderInfo.class));
+        target.setProductInfo(BeanCotyUtils.copyListProperties(source.getProductInfo(), OrderDetailVo.ProductInfo.class));
         return target;
     }
 }

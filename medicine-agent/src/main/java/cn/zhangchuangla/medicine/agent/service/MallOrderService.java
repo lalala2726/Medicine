@@ -1,7 +1,7 @@
 package cn.zhangchuangla.medicine.agent.service;
 
 import cn.zhangchuangla.medicine.agent.model.request.AdminMallOrderListRequest;
-import cn.zhangchuangla.medicine.agent.model.vo.admin.AdminOrderDetailVo;
+import cn.zhangchuangla.medicine.agent.model.vo.admin.OrderDetailVo;
 import cn.zhangchuangla.medicine.model.dto.OrderWithProductDto;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 
@@ -30,5 +30,5 @@ public interface MallOrderService {
      * @param orderNos 订单编号列表
      * @return 订单详情列表
      */
-    List<AdminOrderDetailVo> getOrderDetail(List<String> orderNos);
+    List<OrderDetailVo> getOrderDetail(List<String> orderNos);
 }

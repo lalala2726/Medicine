@@ -39,5 +39,5 @@ public class AdminMallOrderListVo {
     private Date createTime;
 
     @Schema(description = "商品信息")
-    private AdminMallOrderProductInfoVo productInfo;
+    private MallOrderProductInfoVo productInfo;
 }
