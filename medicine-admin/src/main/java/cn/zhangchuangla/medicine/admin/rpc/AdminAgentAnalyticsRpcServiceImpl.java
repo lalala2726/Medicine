@@ -1,8 +1,8 @@
 package cn.zhangchuangla.medicine.admin.rpc;
 
 import cn.zhangchuangla.medicine.admin.service.AnalyticsService;
-import cn.zhangchuangla.medicine.dubbo.api.admin.AdminAgentAnalyticsRpcService;
 import cn.zhangchuangla.medicine.model.vo.analytics.*;
+import cn.zhangchuangla.medicine.rpc.admin.AdminAgentAnalyticsRpcService;
 import lombok.RequiredArgsConstructor;
 import org.apache.dubbo.config.annotation.DubboService;
 

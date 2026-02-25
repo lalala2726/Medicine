@@ -1,4 +1,4 @@
-package cn.zhangchuangla.medicine.dubbo.api.client;
+package cn.zhangchuangla.medicine.rpc.client;
 
 import cn.zhangchuangla.medicine.model.vo.UserVo;
 

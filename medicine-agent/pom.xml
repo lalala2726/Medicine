@@ -40,7 +40,7 @@
         </dependency>
         <dependency>
             <groupId>cn.zhangchuangla.medicine</groupId>
-            <artifactId>medicine-dubbo-api</artifactId>
+            <artifactId>medicine-rpc-contract</artifactId>
         </dependency>
         <dependency>
             <groupId>org.apache.dubbo</groupId>

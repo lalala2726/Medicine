@@ -3,12 +3,12 @@ package cn.zhangchuangla.medicine.agent.service.impl;
 import cn.zhangchuangla.medicine.agent.service.UserService;
 import cn.zhangchuangla.medicine.common.core.utils.BeanCotyUtils;
 import cn.zhangchuangla.medicine.common.security.utils.SecurityUtils;
-import cn.zhangchuangla.medicine.dubbo.api.admin.AdminAgentAuthRpcService;
-import cn.zhangchuangla.medicine.dubbo.api.client.ClientAgentUserRpcService;
 import cn.zhangchuangla.medicine.model.dto.AuthContextDto;
 import cn.zhangchuangla.medicine.model.dto.AuthUserDto;
 import cn.zhangchuangla.medicine.model.entity.User;
 import cn.zhangchuangla.medicine.model.vo.UserVo;
+import cn.zhangchuangla.medicine.rpc.admin.AdminAgentAuthRpcService;
+import cn.zhangchuangla.medicine.rpc.client.ClientAgentUserRpcService;
 import org.apache.dubbo.config.annotation.DubboReference;
 import org.springframework.stereotype.Service;
 

@@ -61,7 +61,7 @@
         <dependencies>
             <dependency>
                 <groupId>cn.zhangchuangla.medicine</groupId>
-                <artifactId>medicine-dubbo-api</artifactId>
+                <artifactId>medicine-rpc-contract</artifactId>
                 <version>${project.version}</version>
             </dependency>
             <dependency>
@@ -372,7 +372,7 @@
         <module>medicine-common</module>
         <module>medicine-basic</module>
         <module>medicine-model</module>
-        <module>medicine-dubbo-api</module>
+        <module>medicine-rpc-contract</module>
         <module>medicine-admin</module>
         <module>medicine-client</module>
         <module>medicine-payment</module>

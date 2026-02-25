@@ -2,9 +2,9 @@ package cn.zhangchuangla.medicine.client.rpc;
 
 import cn.zhangchuangla.medicine.client.service.UserService;
 import cn.zhangchuangla.medicine.common.core.utils.BeanCotyUtils;
-import cn.zhangchuangla.medicine.dubbo.api.client.ClientAgentUserRpcService;
 import cn.zhangchuangla.medicine.model.entity.User;
 import cn.zhangchuangla.medicine.model.vo.UserVo;
+import cn.zhangchuangla.medicine.rpc.client.ClientAgentUserRpcService;
 import lombok.RequiredArgsConstructor;
 import org.apache.dubbo.config.annotation.DubboService;
 

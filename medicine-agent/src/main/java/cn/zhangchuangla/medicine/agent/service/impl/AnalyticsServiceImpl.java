@@ -4,11 +4,11 @@ import cn.zhangchuangla.medicine.agent.model.vo.analytics.PaymentDistribution;
 import cn.zhangchuangla.medicine.agent.model.vo.analytics.StatusDistribution;
 import cn.zhangchuangla.medicine.agent.service.AnalyticsService;
 import cn.zhangchuangla.medicine.common.core.utils.BeanCotyUtils;
-import cn.zhangchuangla.medicine.dubbo.api.admin.AdminAgentAnalyticsRpcService;
 import cn.zhangchuangla.medicine.model.vo.analytics.HotProductRank;
 import cn.zhangchuangla.medicine.model.vo.analytics.OrderTrendPoint;
 import cn.zhangchuangla.medicine.model.vo.analytics.OverviewVo;
 import cn.zhangchuangla.medicine.model.vo.analytics.ReturnRateStat;
+import cn.zhangchuangla.medicine.rpc.admin.AdminAgentAnalyticsRpcService;
 import org.apache.dubbo.config.annotation.DubboReference;
 import org.springframework.stereotype.Service;
 

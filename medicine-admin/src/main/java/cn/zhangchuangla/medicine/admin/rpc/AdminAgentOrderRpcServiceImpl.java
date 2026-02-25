@@ -2,10 +2,10 @@ package cn.zhangchuangla.medicine.admin.rpc;
 
 import cn.zhangchuangla.medicine.admin.service.MallOrderService;
 import cn.zhangchuangla.medicine.common.core.base.PageResult;
-import cn.zhangchuangla.medicine.dubbo.api.admin.AdminAgentOrderRpcService;
 import cn.zhangchuangla.medicine.model.dto.OrderDetailDto;
 import cn.zhangchuangla.medicine.model.dto.OrderWithProductDto;
 import cn.zhangchuangla.medicine.model.request.MallOrderListRequest;
+import cn.zhangchuangla.medicine.rpc.admin.AdminAgentOrderRpcService;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import lombok.RequiredArgsConstructor;
 import org.apache.dubbo.config.annotation.DubboService;

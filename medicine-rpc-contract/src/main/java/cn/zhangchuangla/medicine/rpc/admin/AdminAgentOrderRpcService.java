@@ -1,4 +1,4 @@
-package cn.zhangchuangla.medicine.dubbo.api.admin;
+package cn.zhangchuangla.medicine.rpc.admin;
 
 import cn.zhangchuangla.medicine.common.core.base.PageResult;
 import cn.zhangchuangla.medicine.model.dto.OrderDetailDto;

@@ -2,9 +2,9 @@ package cn.zhangchuangla.medicine.agent.security;
 
 import cn.zhangchuangla.medicine.common.core.constants.Constants;
 import cn.zhangchuangla.medicine.common.security.entity.SysUserDetails;
-import cn.zhangchuangla.medicine.dubbo.api.admin.AdminAgentAuthRpcService;
 import cn.zhangchuangla.medicine.model.dto.AuthContextDto;
 import cn.zhangchuangla.medicine.model.entity.User;
+import cn.zhangchuangla.medicine.rpc.admin.AdminAgentAuthRpcService;
 import org.junit.jupiter.api.Test;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;

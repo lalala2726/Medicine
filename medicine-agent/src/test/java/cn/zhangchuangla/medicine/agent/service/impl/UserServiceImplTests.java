@@ -1,10 +1,10 @@
 package cn.zhangchuangla.medicine.agent.service.impl;
 
-import cn.zhangchuangla.medicine.dubbo.api.admin.AdminAgentAuthRpcService;
-import cn.zhangchuangla.medicine.dubbo.api.client.ClientAgentUserRpcService;
 import cn.zhangchuangla.medicine.model.dto.AuthContextDto;
 import cn.zhangchuangla.medicine.model.entity.User;
 import cn.zhangchuangla.medicine.model.vo.UserVo;
+import cn.zhangchuangla.medicine.rpc.admin.AdminAgentAuthRpcService;
+import cn.zhangchuangla.medicine.rpc.client.ClientAgentUserRpcService;
 import org.junit.jupiter.api.Test;
 
 import java.lang.reflect.Field;

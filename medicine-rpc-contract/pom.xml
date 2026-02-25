@@ -8,8 +8,8 @@
         <version>0.1</version>
     </parent>
 
-    <artifactId>medicine-dubbo-api</artifactId>
-    <name>medicine-dubbo-api</name>
+    <artifactId>medicine-rpc-contract</artifactId>
+    <name>medicine-rpc-contract</name>
 
     <dependencies>
         <dependency>
