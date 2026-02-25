@@ -1,0 +1,30 @@
+dubbo:
+  application:
+    # Dubbo 应用名。
+    # 示例: medicine-client-dubbo
+    name: medicine-client-dubbo
+    # 序列化安全检查级别（STRICT/WARN/DISABLE）。
+    # 示例: WARN
+    serialize-check-status: WARN
+  scan:
+    # Dubbo 服务扫描包。
+    # 示例: cn.zhangchuangla.medicine
+    base-packages: cn.zhangchuangla.medicine
+  protocol:
+    # Dubbo 协议。
+    # 示例: tri
+    name: tri
+    # Client Dubbo 暴露端口。
+    # 示例: 20881
+    port: ${MEDICINE_CLIENT_DUBBO_PORT:20881}
+  registry:
+    # 本地直连模式关闭注册中心。
+    # 示例: N/A
+    address: N/A
+  provider:
+    # Provider 超时（毫秒）。
+    # 示例: 3000
+    timeout: 3000
+    # Provider 重试次数。
+    # 示例: 0
+    retries: 0

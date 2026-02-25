@@ -5,12 +5,18 @@ import cn.zhangchuangla.medicine.common.core.enums.MaskingType;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 
+import java.io.Serial;
+import java.io.Serializable;
+
 /**
  * 用户
  */
 @Schema(description = "用户信息视图对象")
 @Data
-public class UserVo {
+public class UserVo implements Serializable {
+
+    @Serial
+    private static final long serialVersionUID = 1L;
 
     @Schema(description = "用户ID", example = "1")
     private Long id;

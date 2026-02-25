@@ -1,5 +1,6 @@
 package cn.zhangchuangla.medicine.client;
 
+import org.apache.dubbo.config.spring.context.annotation.EnableDubbo;
 import org.mybatis.spring.annotation.MapperScan;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
@@ -8,6 +9,7 @@ import org.springframework.scheduling.annotation.EnableAsync;
 @SpringBootApplication(scanBasePackages = "cn.zhangchuangla.medicine")
 @MapperScan("cn.zhangchuangla.medicine.client.mapper")
 @EnableAsync
+@EnableDubbo
 public class MedicineClientApplication {
 
     public static void main(String[] args) {

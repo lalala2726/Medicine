@@ -1,5 +1,6 @@
 package cn.zhangchuangla.medicine.admin.mapper;
 
+import cn.zhangchuangla.medicine.admin.model.dto.OrderDetailRow;
 import cn.zhangchuangla.medicine.admin.model.dto.OrderOverviewStats;
 import cn.zhangchuangla.medicine.admin.model.request.MallOrderListRequest;
 import cn.zhangchuangla.medicine.model.dto.OrderWithProductDto;
@@ -52,7 +53,11 @@ public interface MallOrderMapper extends BaseMapper<MallOrder> {
      * 聚合订单概况统计数据。
      */
     OrderOverviewStats getOrderOverviewStats();
-}
 
+    /**
+     * 根据订单号列表批量查询订单详情行数据。
+     */
+    List<OrderDetailRow> selectOrderDetailRowsByOrderNos(@Param("orderNos") List<String> orderNos);
+}
 
 

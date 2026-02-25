@@ -55,9 +55,15 @@
         <spring.framework.version>6.2.11</spring.framework.version>
         <tomcat.version>10.1.47</tomcat.version>
         <thumbnailator.version>0.4.20</thumbnailator.version>
+        <dubbo.version>3.3.2</dubbo.version>
     </properties>
     <dependencyManagement>
         <dependencies>
+            <dependency>
+                <groupId>cn.zhangchuangla.medicine</groupId>
+                <artifactId>medicine-dubbo-api</artifactId>
+                <version>${project.version}</version>
+            </dependency>
             <dependency>
                 <groupId>cn.zhangchuangla.medicine</groupId>
                 <artifactId>medicine-common-elasticsearch</artifactId>
@@ -71,6 +77,11 @@
             <dependency>
                 <groupId>cn.zhangchuangla.medicine</groupId>
                 <artifactId>medicine-common-core</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>cn.zhangchuangla.medicine</groupId>
+                <artifactId>medicine-common-mybatis-plus</artifactId>
                 <version>${project.version}</version>
             </dependency>
             <dependency>
@@ -337,6 +348,16 @@
                 <artifactId>redisson</artifactId>
                 <version>${redisson.version}</version>
             </dependency>
+            <dependency>
+                <groupId>org.apache.dubbo</groupId>
+                <artifactId>dubbo-spring-boot-starter</artifactId>
+                <version>${dubbo.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.dubbo</groupId>
+                <artifactId>dubbo-registry-nacos</artifactId>
+                <version>${dubbo.version}</version>
+            </dependency>
             <!-- Test Dependencies -->
             <dependency>
                 <groupId>com.h2database</groupId>
@@ -351,6 +372,7 @@
         <module>medicine-common</module>
         <module>medicine-basic</module>
         <module>medicine-model</module>
+        <module>medicine-dubbo-api</module>
         <module>medicine-admin</module>
         <module>medicine-client</module>
         <module>medicine-payment</module>

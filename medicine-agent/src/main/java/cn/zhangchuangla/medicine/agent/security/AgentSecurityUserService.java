@@ -1,46 +1,46 @@
 package cn.zhangchuangla.medicine.agent.security;
 
-import cn.zhangchuangla.medicine.agent.service.UserService;
 import cn.zhangchuangla.medicine.common.core.constants.Constants;
 import cn.zhangchuangla.medicine.common.security.entity.AuthUser;
 import cn.zhangchuangla.medicine.common.security.entity.SysUserDetails;
 import cn.zhangchuangla.medicine.common.security.utils.SecurityUtils;
+import cn.zhangchuangla.medicine.dubbo.api.admin.AdminAgentAuthRpcService;
+import cn.zhangchuangla.medicine.dubbo.api.model.AdminAuthContextDto;
 import cn.zhangchuangla.medicine.model.entity.User;
-import lombok.RequiredArgsConstructor;
+import org.apache.dubbo.config.annotation.DubboReference;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
 
-import java.util.*;
+import java.util.HashSet;
+import java.util.Objects;
+import java.util.Set;
 
 /**
  * AI Agent 侧用户查询实现，负责将业务用户转换为通用安全模型。
  */
 @Service
-@RequiredArgsConstructor
 public class AgentSecurityUserService implements UserDetailsService {
 
-    private final UserService userService;
+    @DubboReference(group = "medicine-admin", version = "1.0.0", check = false, timeout = 3000, retries = 0,
+            url = "${dubbo.references.medicine-admin.url:}")
+    private AdminAgentAuthRpcService adminAgentAuthRpcService;
 
     /**
      * 按用户名加载用户并标准化角色/权限集合。
      */
     @Override
     public UserDetails loadUserByUsername(String username) {
-        User user = userService.getUserByUsername(username);
+        AdminAuthContextDto authContext = adminAgentAuthRpcService.getByUsername(username);
+        User user = authContext == null ? null : authContext.getUser();
         if (user == null) {
             throw new UsernameNotFoundException("用户不存在");
         }
 
-        Set<String> roles = SecurityUtils.normalizeRoleCodes(Optional.ofNullable(userService.getUserRolesByUserId(user.getId()))
-                .filter(set -> !set.isEmpty())
-                .orElseGet(Collections::emptySet));
-        Set<String> permissions = SecurityUtils.toPermissionAuthorities(
-                Optional.ofNullable(userService.getUserPermissionCodesByUserId(user.getId()))
-                        .filter(set -> !set.isEmpty())
-                        .orElseGet(Collections::emptySet));
+        Set<String> roles = SecurityUtils.normalizeRoleCodes(authContext.getRoles());
+        Set<String> permissions = SecurityUtils.toPermissionAuthorities(authContext.getPermissions());
         boolean unlocked = Objects.equals(user.getStatus(), Constants.ACCOUNT_UNLOCK_KEY);
 
         AuthUser authUser = AuthUser.builder()

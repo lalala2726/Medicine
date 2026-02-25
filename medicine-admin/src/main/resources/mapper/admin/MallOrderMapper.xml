@@ -49,6 +49,31 @@
         <result property="productCategory" column="product_category"/>
     </resultMap>
 
+    <resultMap id="OrderDetailRowResultMap" type="cn.zhangchuangla.medicine.admin.model.dto.OrderDetailRow">
+        <result property="orderId" column="order_id"/>
+        <result property="orderNo" column="order_no"/>
+        <result property="userId" column="user_id"/>
+        <result property="userNickname" column="user_nickname"/>
+        <result property="userPhoneNumber" column="user_phone_number"/>
+        <result property="receiverName" column="receiver_name"/>
+        <result property="receiverPhone" column="receiver_phone"/>
+        <result property="receiverDetail" column="receiver_detail"/>
+        <result property="deliveryType" column="delivery_type"/>
+        <result property="orderStatus" column="order_status"/>
+        <result property="payType" column="pay_type"/>
+        <result property="totalAmount" column="total_amount"/>
+        <result property="payAmount" column="pay_amount"/>
+        <result property="freightAmount" column="freight_amount"/>
+        <result property="orderItemId" column="order_item_id"/>
+        <result property="productId" column="product_id"/>
+        <result property="productName" column="product_name"/>
+        <result property="productImage" column="product_image"/>
+        <result property="productPrice" column="product_price"/>
+        <result property="productQuantity" column="product_quantity"/>
+        <result property="productTotalAmount" column="product_total_amount"/>
+        <result property="orderCreateTime" column="order_create_time"/>
+    </resultMap>
+
     <sql id="Base_Column_List">
         id,order_no,user_id,total_amount,pay_amount,freight_amount,
         pay_type,order_status,delivery_type,address_id,receiver_name,
@@ -195,6 +220,44 @@
                COALESCE(SUM(refund_price), 0)                                     AS refundedAmount
         FROM mall_order
         WHERE (is_deleted IS NULL OR is_deleted = 0)
+    </select>
+
+    <select id="selectOrderDetailRowsByOrderNos" resultMap="OrderDetailRowResultMap">
+        SELECT o.id         AS order_id,
+               o.order_no,
+               o.user_id,
+               u.nickname   AS user_nickname,
+               u.phone_number AS user_phone_number,
+               o.receiver_name,
+               o.receiver_phone,
+               o.receiver_detail,
+               o.delivery_type,
+               o.order_status,
+               o.pay_type,
+               o.total_amount,
+               o.pay_amount,
+               o.freight_amount,
+               oi.id        AS order_item_id,
+               oi.product_id,
+               oi.product_name,
+               oi.image_url AS product_image,
+               oi.price     AS product_price,
+               oi.quantity  AS product_quantity,
+               oi.total_price AS product_total_amount,
+               o.create_time AS order_create_time
+        FROM mall_order o
+                 LEFT JOIN `user` u
+                           ON u.id = o.user_id
+                               AND (u.is_delete IS NULL OR u.is_delete = 0)
+                 LEFT JOIN mall_order_item oi
+                           ON oi.order_id = o.id
+                               AND (oi.is_deleted IS NULL OR oi.is_deleted = 0)
+        WHERE (o.is_deleted IS NULL OR o.is_deleted = 0)
+          AND o.order_no IN
+        <foreach collection="orderNos" item="orderNo" open="(" separator="," close=")">
+            #{orderNo}
+        </foreach>
+        ORDER BY o.create_time DESC, oi.id
     </select>
 
 </mapper>

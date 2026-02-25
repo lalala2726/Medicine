@@ -2,6 +2,7 @@ package cn.zhangchuangla.medicine.admin.service.impl;
 
 import cn.zhangchuangla.medicine.admin.mapper.MallOrderMapper;
 import cn.zhangchuangla.medicine.admin.mapper.UserMapper;
+import cn.zhangchuangla.medicine.admin.model.dto.OrderDetailRow;
 import cn.zhangchuangla.medicine.admin.model.dto.UserOrderStatistics;
 import cn.zhangchuangla.medicine.admin.model.request.*;
 import cn.zhangchuangla.medicine.admin.model.vo.OrderAddressVo;
@@ -80,6 +81,54 @@ public class MallOrderServiceImpl extends ServiceImpl<MallOrderMapper, MallOrder
             throw new ServiceException(ResponseCode.RESULT_IS_NULL, "订单不存在");
         }
         return mallOrder;
+    }
+
+    @Override
+    public List<OrderDetailVo> getOrderByOrderNo(List<String> orderNos) {
+        if (CollectionUtils.isEmpty(orderNos)) {
+            return List.of();
+        }
+        List<String> normalizedOrderNos = orderNos.stream()
+                .filter(StringUtils::hasText)
+                .map(String::trim)
+                .distinct()
+                .toList();
+        if (normalizedOrderNos.isEmpty()) {
+            return List.of();
+        }
+
+        List<OrderDetailRow> rows = mallOrderMapper.selectOrderDetailRowsByOrderNos(normalizedOrderNos);
+        if (CollectionUtils.isEmpty(rows)) {
+            return List.of();
+        }
+
+        Map<String, OrderDetailVo> detailMap = new LinkedHashMap<>();
+        for (OrderDetailRow row : rows) {
+            if (row == null || !StringUtils.hasText(row.getOrderNo())) {
+                continue;
+            }
+            OrderDetailVo detail = detailMap.computeIfAbsent(row.getOrderNo(), orderNo -> buildOrderDetailVo(row));
+            if (row.getOrderItemId() == null) {
+                continue;
+            }
+            detail.getProductInfo().add(OrderDetailVo.ProductInfo.builder()
+                    .productId(row.getProductId())
+                    .productName(row.getProductName())
+                    .productImage(row.getProductImage())
+                    .productPrice(row.getProductPrice())
+                    .productQuantity(row.getProductQuantity())
+                    .productTotalAmount(row.getProductTotalAmount())
+                    .build());
+        }
+
+        List<OrderDetailVo> result = new ArrayList<>();
+        for (String orderNo : normalizedOrderNos) {
+            OrderDetailVo detail = detailMap.get(orderNo);
+            if (detail != null) {
+                result.add(detail);
+            }
+        }
+        return result;
     }
 
     @Override
@@ -698,6 +747,40 @@ public class MallOrderServiceImpl extends ServiceImpl<MallOrderMapper, MallOrder
     private String getPayTypeDesc(String payType) {
         PayTypeEnum payTypeEnum = PayTypeEnum.fromCode(payType);
         return payTypeEnum != null ? payTypeEnum.getType() : "未知";
+    }
+
+    private OrderDetailVo buildOrderDetailVo(OrderDetailRow row) {
+        OrderDetailVo.UserInfo userInfo = null;
+        if (row.getUserId() != null) {
+            userInfo = OrderDetailVo.UserInfo.builder()
+                    .userId(String.valueOf(row.getUserId()))
+                    .nickname(row.getUserNickname())
+                    .phoneNumber(row.getUserPhoneNumber())
+                    .build();
+        }
+
+        OrderDetailVo.DeliveryInfo deliveryInfo = OrderDetailVo.DeliveryInfo.builder()
+                .receiverName(row.getReceiverName())
+                .receiverAddress(row.getReceiverDetail())
+                .receiverPhone(row.getReceiverPhone())
+                .deliveryMethod(getDeliveryTypeDesc(row.getDeliveryType()))
+                .build();
+
+        OrderDetailVo.OrderInfo orderInfo = OrderDetailVo.OrderInfo.builder()
+                .orderNo(row.getOrderNo())
+                .orderStatus(row.getOrderStatus())
+                .payType(getPayTypeDesc(row.getPayType()))
+                .totalAmount(row.getTotalAmount())
+                .payAmount(row.getPayAmount())
+                .freightAmount(row.getFreightAmount())
+                .build();
+
+        return OrderDetailVo.builder()
+                .userInfo(userInfo)
+                .deliveryInfo(deliveryInfo)
+                .orderInfo(orderInfo)
+                .productInfo(new ArrayList<>())
+                .build();
     }
 
     @Override

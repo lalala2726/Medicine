@@ -1,15 +1,15 @@
 package cn.zhangchuangla.medicine.agent.security;
 
-import cn.zhangchuangla.medicine.agent.service.UserService;
 import cn.zhangchuangla.medicine.common.core.constants.Constants;
 import cn.zhangchuangla.medicine.common.security.entity.SysUserDetails;
-import cn.zhangchuangla.medicine.model.dto.AuthUserDto;
+import cn.zhangchuangla.medicine.dubbo.api.admin.AdminAgentAuthRpcService;
+import cn.zhangchuangla.medicine.dubbo.api.model.AdminAuthContextDto;
 import cn.zhangchuangla.medicine.model.entity.User;
-import cn.zhangchuangla.medicine.model.vo.UserVo;
 import org.junit.jupiter.api.Test;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 
+import java.lang.reflect.Field;
 import java.util.Arrays;
 import java.util.LinkedHashSet;
 import java.util.Set;
@@ -19,19 +19,25 @@ import static org.junit.jupiter.api.Assertions.*;
 
 class AgentSecurityUserServiceTests {
 
-    @Test
-    void loadUserByUsername_ShouldCombineRolesAndPermissionsAuthorities() {
-        StubUserService userService = new StubUserService();
-        User user = new User();
-        user.setId(1001L);
-        user.setUsername("admin");
-        user.setPassword("pwd");
-        user.setStatus(Constants.ACCOUNT_UNLOCK_KEY);
-        userService.userByUsername = user;
-        userService.roles = Set.of("admin", "super_admin");
-        userService.permissions = Set.of("mall:product:list", "system:user:query");
+    private static void setField(Object target, String fieldName, Object value) throws Exception {
+        Field field = target.getClass().getDeclaredField(fieldName);
+        field.setAccessible(true);
+        field.set(target, value);
+    }
 
-        AgentSecurityUserService securityUserService = new AgentSecurityUserService(userService);
+    @Test
+    void loadUserByUsername_ShouldCombineRolesAndPermissionsAuthorities() throws Exception {
+        StubAuthRpcService authRpcService = new StubAuthRpcService();
+        authRpcService.context = buildContext(
+                1001L,
+                "admin",
+                "pwd",
+                Set.of("admin", "super_admin"),
+                Set.of("mall:product:list", "system:user:query")
+        );
+
+        AgentSecurityUserService securityUserService = new AgentSecurityUserService();
+        setField(securityUserService, "adminAgentAuthRpcService", authRpcService);
 
         var details = securityUserService.loadUserByUsername("admin");
         assertInstanceOf(SysUserDetails.class, details);
@@ -49,19 +55,18 @@ class AgentSecurityUserServiceTests {
     }
 
     @Test
-    void loadUserByUsername_ShouldNormalizeDirtyRoleAndPermissionCodes() {
-        StubUserService userService = new StubUserService();
-        User user = new User();
-        user.setId(1002L);
-        user.setUsername("cleaner");
-        user.setPassword("pwd");
-        user.setStatus(Constants.ACCOUNT_UNLOCK_KEY);
-        userService.userByUsername = user;
-        userService.roles = new LinkedHashSet<>(Arrays.asList(" ROLE_admin ", "admin", " ", "ROLE_super_admin", null));
-        userService.permissions = new LinkedHashSet<>(Arrays.asList(
-                " mall:product:list ", "mall:product:list", " ", "system:user:query", null));
+    void loadUserByUsername_ShouldNormalizeDirtyRoleAndPermissionCodes() throws Exception {
+        StubAuthRpcService authRpcService = new StubAuthRpcService();
+        authRpcService.context = buildContext(
+                1002L,
+                "cleaner",
+                "pwd",
+                new LinkedHashSet<>(Arrays.asList(" ROLE_admin ", "admin", " ", "ROLE_super_admin", null)),
+                new LinkedHashSet<>(Arrays.asList(" mall:product:list ", "mall:product:list", " ", "system:user:query", null))
+        );
 
-        AgentSecurityUserService securityUserService = new AgentSecurityUserService(userService);
+        AgentSecurityUserService securityUserService = new AgentSecurityUserService();
+        setField(securityUserService, "adminAgentAuthRpcService", authRpcService);
 
         var details = (SysUserDetails) securityUserService.loadUserByUsername("cleaner");
 
@@ -75,42 +80,46 @@ class AgentSecurityUserServiceTests {
     }
 
     @Test
-    void loadUserByUsername_ShouldThrow_WhenUserNotExists() {
-        StubUserService userService = new StubUserService();
-        AgentSecurityUserService securityUserService = new AgentSecurityUserService(userService);
+    void loadUserByUsername_ShouldThrow_WhenUserNotExists() throws Exception {
+        StubAuthRpcService authRpcService = new StubAuthRpcService();
+        authRpcService.context = null;
+
+        AgentSecurityUserService securityUserService = new AgentSecurityUserService();
+        setField(securityUserService, "adminAgentAuthRpcService", authRpcService);
 
         assertThrows(UsernameNotFoundException.class, () -> securityUserService.loadUserByUsername("missing"));
     }
 
-    private static class StubUserService implements UserService {
+    private AdminAuthContextDto buildContext(Long userId,
+                                             String username,
+                                             String password,
+                                             Set<String> roles,
+                                             Set<String> permissions) {
+        User user = new User();
+        user.setId(userId);
+        user.setUsername(username);
+        user.setPassword(password);
+        user.setStatus(Constants.ACCOUNT_UNLOCK_KEY);
 
-        private User userByUsername;
-        private Set<String> roles = Set.of();
-        private Set<String> permissions = Set.of();
+        AdminAuthContextDto context = new AdminAuthContextDto();
+        context.setUser(user);
+        context.setRoles(roles);
+        context.setPermissions(permissions);
+        return context;
+    }
+
+    private static class StubAuthRpcService implements AdminAgentAuthRpcService {
+
+        private AdminAuthContextDto context;
 
         @Override
-        public UserVo getCurrentUser(Long userId) {
-            return null;
+        public AdminAuthContextDto getByUserId(Long userId) {
+            return context;
         }
 
         @Override
-        public AuthUserDto getUser(Long userId) {
-            return null;
-        }
-
-        @Override
-        public User getUserByUsername(String username) {
-            return userByUsername;
-        }
-
-        @Override
-        public Set<String> getUserRolesByUserId(Long userId) {
-            return roles;
-        }
-
-        @Override
-        public Set<String> getUserPermissionCodesByUserId(Long userId) {
-            return permissions;
+        public AdminAuthContextDto getByUsername(String username) {
+            return context;
         }
     }
 }

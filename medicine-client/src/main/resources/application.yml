@@ -1,87 +1,169 @@
 spring:
+  config:
+    # 导入根目录 .env，统一管理敏感配置和环境差异。
+    # 示例: optional:file:.env[.properties],optional:file:../.env[.properties]
+    import: optional:file:.env[.properties],optional:file:../.env[.properties]
   profiles:
-    active: druid,payment
+    # 启用的 Spring Profile（数据源、支付、Dubbo 模式由 .env 统一控制）。
+    # 示例: druid,payment,${MEDICINE_DUBBO_PROFILE:dubbo-local}
+    active: druid,payment,${MEDICINE_DUBBO_PROFILE:dubbo-local}
   application:
+    # 应用名称（用于日志和注册识别）。
+    # 示例: MedicineClient
     name: MedicineClient
   servlet:
     multipart:
+      # 单个上传文件最大大小。
+      # 示例: 50MB
       max-file-size: 50MB
+      # 单次请求上传总大小上限。
+      # 示例: 50MB
       max-request-size: 50MB
   data:
     mongodb:
-      host: 192.168.10.110
-      database: medicine
-      username: zhangchuang
-      password: zhangchuang27726
-      authentication-database: admin
-      port: 27017
-      # 自动创建索引
+      # MongoDB 连接串。
+      # 示例: mongodb://user:pass@127.0.0.1:27017/medicine?authSource=admin
+      uri: ${MEDICINE_MONGODB_URI:mongodb://127.0.0.1:27017/medicine}
+      # 是否自动创建 MongoDB 索引。
+      # 示例: true
       auto-index-creation: true
-      # UUID表示方式
+      # UUID 表示方式。
+      # 示例: standard
       uuid-representation: standard
     redis:
-      host: 192.168.10.110
-      port: 6379
-      database: 0
-      password: zhangchuang2726
-  #elasticsearch 配置
+      # Redis 主机地址。
+      # 示例: 127.0.0.1
+      host: ${MEDICINE_REDIS_HOST:127.0.0.1}
+      # Redis 端口。
+      # 示例: 6379
+      port: ${MEDICINE_REDIS_PORT:6379}
+      # Redis DB 索引。
+      # 示例: 0
+      database: ${MEDICINE_REDIS_DB:0}
+      # Redis 密码。
+      # 示例: your_redis_password
+      password: ${MEDICINE_REDIS_PASSWORD:}
   elasticsearch:
-    username: elastic
-    password: zhangchuang2726
-    uris: http://192.168.10.110:9200
+    # Elasticsearch 用户名。
+    # 示例: elastic
+    username: ${MEDICINE_ES_USERNAME:elastic}
+    # Elasticsearch 密码。
+    # 示例: your_es_password
+    password: ${MEDICINE_ES_PASSWORD:}
+    # Elasticsearch 节点地址列表。
+    # 示例: http://127.0.0.1:9200
+    uris: ${MEDICINE_ES_URIS:http://127.0.0.1:9200}
   rabbitmq:
-    host: 192.168.10.110
-    port: 5672
-    username: zhangchuang
-    password: zhangchuang2726
-    virtual-host: /
+    # RabbitMQ 主机地址。
+    # 示例: 127.0.0.1
+    host: ${MEDICINE_RABBIT_HOST:127.0.0.1}
+    # RabbitMQ 端口。
+    # 示例: 5672
+    port: ${MEDICINE_RABBIT_PORT:5672}
+    # RabbitMQ 用户名。
+    # 示例: guest
+    username: ${MEDICINE_RABBIT_USERNAME:guest}
+    # RabbitMQ 密码。
+    # 示例: guest
+    password: ${MEDICINE_RABBIT_PASSWORD:guest}
+    # RabbitMQ 虚拟主机。
+    # 示例: /
+    virtual-host: ${MEDICINE_RABBIT_VHOST:/}
     listener:
       simple:
-        # 自动确认；如需手动确认可改为 manual
+        # 消息确认模式。
+        # 示例: auto
         acknowledge-mode: auto
+        # 每次拉取消息数量。
+        # 示例: 10
         prefetch: 10
+        # 最小并发消费者数量。
+        # 示例: 2
         concurrency: 2
+        # 最大并发消费者数量。
+        # 示例: 10
         max-concurrency: 10
+    # 生产者确认类型。
+    # 示例: correlated
     publisher-confirm-type: correlated
+    # 开启消息回退。
+    # 示例: true
     publisher-returns: true
     template:
+      # 无法路由时强制回退。
+      # 示例: true
       mandatory: true
+
 server:
+  # Client HTTP 服务端口。
+  # 示例: 8081
   port: 8081
+
 mybatis-plus:
   configuration:
+    # SQL 日志实现类。
+    # 示例: org.apache.ibatis.logging.stdout.StdOutImpl
     log-impl: org.apache.ibatis.logging.stdout.StdOutImpl
+  # 实体别名包路径。
+  # 示例: cn.zhangchuangla.medicine.**.entity
   type-aliases-package: cn.zhangchuangla.medicine.**.entity
   mapper-locations:
+    # Mapper XML 扫描路径。
+    # 示例: classpath*:mapper/**/**.xml
     - classpath*:mapper/**/**.xml
   global-config:
     db-config:
-      logic-delete-field: isDeleted  # 全局逻辑删除字段名
-      logic-delete-value: 1         # 逻辑已删除值
-      logic-not-delete-value: 0     # 逻辑未删除值
+      # 逻辑删除字段。
+      # 示例: isDeleted
+      logic-delete-field: isDeleted
+      # 逻辑删除值。
+      # 示例: 1
+      logic-delete-value: 1
+      # 逻辑未删除值。
+      # 示例: 0
+      logic-not-delete-value: 0
 
-# 安全配置
 security:
+  # 鉴权请求头名称。
+  # 示例: Authorization
   header: Authorization
-  # 默认密钥（Base64编码的32字节）。生产环境请通过环境变量 SECURITY_SECRET 覆盖。
-  secret: zhangchuang2726zhangchuang2726zhangchuang2726
+  # JWT 签名密钥。
+  # 示例: local-dev-secret-local-dev-secret-1234
+  secret: ${SECURITY_SECRET:local-dev-secret-local-dev-secret-1234}
+  # Access Token 过期时间（毫秒）。
+  # 示例: 18000000
   access-token-expire-time: 18000000
+  # Refresh Token 过期时间（毫秒）。
+  # 示例: 25920000
   refresh-token-expire-time: 25920000
 
-# MinIO文件存储配置
 minio:
-  endpoint: http://192.168.10.110:9000
-  access-key: L8lIE0S3gkc0L5imKvNd
-  secret-key: wERm9ywqhjsflwIsyF98HlnhY8CxXuEJWJjaNVj8
-  bucket-name: medicine
+  # MinIO 服务地址。
+  # 示例: http://127.0.0.1:9000
+  endpoint: ${MINIO_ENDPOINT:http://127.0.0.1:9000}
+  # MinIO Access Key。
+  # 示例: minioadmin
+  access-key: ${MINIO_ACCESS_KEY:minioadmin}
+  # MinIO Secret Key。
+  # 示例: minioadmin
+  secret-key: ${MINIO_SECRET_KEY:minioadmin}
+  # 默认文件桶。
+  # 示例: medicine
+  bucket-name: ${MINIO_BUCKET_NAME:medicine}
 
-# 文件上传配置
 file:
   upload:
+    # 允许上传的 MIME 类型。
+    # 示例: image/jpeg,image/png,application/pdf
     allowed-types: image/jpeg,image/png,image/gif,image/webp,application/pdf
 
-# IP地理位置配置
 ip2region:
+  # 是否启用 IP 地理位置解析。
+  # 示例: true
   enabled: true
+  # IP 库文件路径。
+  # 示例: classpath:data/ip2region.xdb
   db-path: classpath:data/ip2region.xdb
+  # 是否启用本地缓存。
+  # 示例: true
   cache-enabled: true

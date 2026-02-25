@@ -1,8 +1,13 @@
 package cn.zhangchuangla.medicine.agent.controller;
 
 import cn.zhangchuangla.medicine.agent.controller.admin.AdminAgentAnalyticsController;
+import cn.zhangchuangla.medicine.agent.model.vo.analytics.PaymentDistribution;
+import cn.zhangchuangla.medicine.agent.model.vo.analytics.StatusDistribution;
 import cn.zhangchuangla.medicine.agent.service.AnalyticsService;
-import cn.zhangchuangla.medicine.model.vo.analytics.*;
+import cn.zhangchuangla.medicine.model.vo.analytics.HotProductRank;
+import cn.zhangchuangla.medicine.model.vo.analytics.OrderTrendPoint;
+import cn.zhangchuangla.medicine.model.vo.analytics.OverviewVo;
+import cn.zhangchuangla.medicine.model.vo.analytics.ReturnRateStat;
 import org.junit.jupiter.api.Test;
 
 import java.math.BigDecimal;
@@ -126,13 +131,15 @@ class AdminAgentAnalyticsControllerTests {
         }
 
         @Override
-        public List<cn.zhangchuangla.medicine.agent.model.vo.analytics.StatusDistribution> orderStatusDistribution() {
-            return List.of();
+        public List<StatusDistribution> orderStatusDistribution() {
+            this.statusInvoked = true;
+            return statusDistributions;
         }
 
         @Override
-        public List<cn.zhangchuangla.medicine.agent.model.vo.analytics.PaymentDistribution> paymentDistribution() {
-            return List.of();
+        public List<PaymentDistribution> paymentDistribution() {
+            this.paymentInvoked = true;
+            return paymentDistributions;
         }
 
         @Override

@@ -1,77 +1,81 @@
 package cn.zhangchuangla.medicine.agent.service.impl;
 
-import cn.zhangchuangla.medicine.agent.mapper.UserMapper;
 import cn.zhangchuangla.medicine.agent.service.UserService;
-import cn.zhangchuangla.medicine.common.core.constants.RolesConstant;
 import cn.zhangchuangla.medicine.common.core.utils.BeanCotyUtils;
 import cn.zhangchuangla.medicine.common.security.utils.SecurityUtils;
+import cn.zhangchuangla.medicine.dubbo.api.admin.AdminAgentAuthRpcService;
+import cn.zhangchuangla.medicine.dubbo.api.client.ClientAgentUserRpcService;
+import cn.zhangchuangla.medicine.dubbo.api.model.AdminAuthContextDto;
 import cn.zhangchuangla.medicine.model.dto.AuthUserDto;
 import cn.zhangchuangla.medicine.model.entity.User;
 import cn.zhangchuangla.medicine.model.vo.UserVo;
-import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
-import lombok.RequiredArgsConstructor;
-import org.apache.commons.lang3.StringUtils;
+import org.apache.dubbo.config.annotation.DubboReference;
 import org.springframework.stereotype.Service;
 
 import java.util.Set;
 
+/**
+ * Agent 用户服务 Dubbo Consumer 实现。
+ */
 @Service
-@RequiredArgsConstructor
 public class UserServiceImpl implements UserService {
 
-    private final UserMapper userMapper;
+    @DubboReference(group = "medicine-admin", version = "1.0.0", check = false, timeout = 3000, retries = 0,
+            url = "${dubbo.references.medicine-admin.url:}")
+    private AdminAgentAuthRpcService adminAgentAuthRpcService;
+
+    @DubboReference(group = "medicine-client", version = "1.0.0", check = false, timeout = 3000, retries = 0,
+            url = "${dubbo.references.medicine-client.url:}")
+    private ClientAgentUserRpcService clientAgentUserRpcService;
 
     @Override
     public UserVo getCurrentUser(Long userId) {
         if (userId == null) {
             return null;
         }
-        User user = userMapper.selectById(userId);
-        return BeanCotyUtils.copyProperties(user, UserVo.class);
+        return clientAgentUserRpcService.getCurrentUser(userId);
     }
 
     @Override
     public AuthUserDto getUser(Long userId) {
-        if (userId == null) {
+        AdminAuthContextDto context = getAuthContextByUserId(userId);
+        if (context == null || context.getUser() == null) {
             return null;
         }
-        User user = userMapper.selectById(userId);
-        return BeanCotyUtils.copyProperties(user, AuthUserDto.class);
+        return BeanCotyUtils.copyProperties(context.getUser(), AuthUserDto.class);
     }
 
     @Override
     public User getUserByUsername(String username) {
-        if (StringUtils.isBlank(username)) {
+        if (username == null || username.isBlank()) {
             return null;
         }
-        return userMapper.selectOne(new LambdaQueryWrapper<User>()
-                .eq(User::getUsername, username));
+        AdminAuthContextDto context = adminAgentAuthRpcService.getByUsername(username.trim());
+        return context == null ? null : context.getUser();
     }
 
     @Override
     public Set<String> getUserRolesByUserId(Long userId) {
-        if (userId == null) {
+        AdminAuthContextDto context = getAuthContextByUserId(userId);
+        if (context == null) {
             return Set.of();
         }
-        return SecurityUtils.normalizeCodes(userMapper.listRoleCodesByUserId(userId));
+        return SecurityUtils.normalizeCodes(context.getRoles());
     }
 
     @Override
     public Set<String> getUserPermissionCodesByUserId(Long userId) {
-        if (userId == null) {
+        AdminAuthContextDto context = getAuthContextByUserId(userId);
+        if (context == null) {
             return Set.of();
         }
-        if (RolesConstant.SUPER_ADMIN_USER_ID.equals(userId)) {
-            return SecurityUtils.normalizeCodes(userMapper.listAllEnabledPermissionCodes());
-        }
+        return SecurityUtils.normalizeCodes(context.getPermissions());
+    }
 
-        Set<String> roleCodes = getUserRolesByUserId(userId);
-        boolean isSuperAdmin = roleCodes.stream()
-                .map(SecurityUtils::removeRolePrefix)
-                .anyMatch(RolesConstant.SUPER_ADMIN::equalsIgnoreCase);
-        if (isSuperAdmin) {
-            return SecurityUtils.normalizeCodes(userMapper.listAllEnabledPermissionCodes());
+    private AdminAuthContextDto getAuthContextByUserId(Long userId) {
+        if (userId == null) {
+            return null;
         }
-        return SecurityUtils.normalizeCodes(userMapper.listPermissionCodesByUserId(userId));
+        return adminAgentAuthRpcService.getByUserId(userId);
     }
 }

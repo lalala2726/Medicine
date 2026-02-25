@@ -1,5 +1,6 @@
 package cn.zhangchuangla.medicine.admin;
 
+import org.apache.dubbo.config.spring.context.annotation.EnableDubbo;
 import org.mybatis.spring.annotation.MapperScan;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
@@ -10,6 +11,7 @@ import org.springframework.transaction.annotation.EnableTransactionManagement;
 @MapperScan("cn.zhangchuangla.medicine.admin.mapper")
 @EnableTransactionManagement
 @EnableAsync
+@EnableDubbo
 public class MedicineAdminApplication {
 
 

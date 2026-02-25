@@ -3,11 +3,16 @@ package cn.zhangchuangla.medicine.model.vo.analytics;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 
+import java.io.Serial;
+import java.io.Serializable;
 import java.math.BigDecimal;
 
 @Data
 @Schema(description = "商品退货率")
-public class ReturnRateStat {
+public class ReturnRateStat implements Serializable {
+
+    @Serial
+    private static final long serialVersionUID = 1L;
 
     @Schema(description = "商品ID")
     private Long productId;

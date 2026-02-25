@@ -13,6 +13,7 @@
 
     <modules>
         <module>medicine-common-core</module>
+        <module>medicine-common-mybatis-plus</module>
         <module>medicine-common-log</module>
         <module>medicine-common-redis</module>
         <module>medicine-common-mongodb</module>

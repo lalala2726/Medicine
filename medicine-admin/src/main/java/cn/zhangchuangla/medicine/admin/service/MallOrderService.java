@@ -30,6 +30,14 @@ public interface MallOrderService extends IService<MallOrder> {
     MallOrder getOrderByOrderNo(String orderNo);
 
     /**
+     * 根据订单号列表查询订单详情。
+     *
+     * @param orderNos 订单号列表
+     * @return 订单详情列表
+     */
+    List<OrderDetailVo> getOrderByOrderNo(List<String> orderNos);
+
+    /**
      * 根据ID查询订单
      *
      * @param id 订单ID
