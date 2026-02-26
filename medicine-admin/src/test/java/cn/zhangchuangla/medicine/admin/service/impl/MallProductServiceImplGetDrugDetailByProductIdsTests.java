@@ -1,12 +1,12 @@
 package cn.zhangchuangla.medicine.admin.service.impl;
 
 import cn.zhangchuangla.medicine.admin.mapper.MallProductMapper;
-import cn.zhangchuangla.medicine.admin.model.vo.AgentDrugDetailVo;
 import cn.zhangchuangla.medicine.admin.service.MallCategoryService;
 import cn.zhangchuangla.medicine.admin.service.MallMedicineDetailService;
 import cn.zhangchuangla.medicine.admin.service.MallProductImageService;
 import cn.zhangchuangla.medicine.admin.service.MallProductStatsService;
 import cn.zhangchuangla.medicine.admin.task.MallProductSearchIndexer;
+import cn.zhangchuangla.medicine.model.dto.AgentDrugDetailDto;
 import cn.zhangchuangla.medicine.model.dto.DrugDetailDto;
 import cn.zhangchuangla.medicine.model.entity.DrugDetail;
 import cn.zhangchuangla.medicine.model.entity.MallProduct;
@@ -53,14 +53,14 @@ class MallProductServiceImplGetDrugDetailByProductIdsTests {
 
     @Test
     void getDrugDetailByProductIds_WhenInputIsNull_ShouldReturnEmptyList() {
-        List<AgentDrugDetailVo> result = mallProductService.getDrugDetailByProductIds(null);
+        List<AgentDrugDetailDto> result = mallProductService.getDrugDetailByProductIds(null);
 
         assertTrue(result.isEmpty());
     }
 
     @Test
     void getDrugDetailByProductIds_WhenInputIsEmpty_ShouldReturnEmptyList() {
-        List<AgentDrugDetailVo> result = mallProductService.getDrugDetailByProductIds(Collections.emptyList());
+        List<AgentDrugDetailDto> result = mallProductService.getDrugDetailByProductIds(Collections.emptyList());
 
         assertTrue(result.isEmpty());
     }
@@ -69,7 +69,7 @@ class MallProductServiceImplGetDrugDetailByProductIdsTests {
     void getDrugDetailByProductIds_WhenProductsNotFound_ShouldReturnEmptyList() {
         doReturn(Collections.emptyList()).when(mallProductService).listByIds(anyList());
 
-        List<AgentDrugDetailVo> result = mallProductService.getDrugDetailByProductIds(List.of(1L, 2L));
+        List<AgentDrugDetailDto> result = mallProductService.getDrugDetailByProductIds(List.of(1L, 2L));
 
         assertTrue(result.isEmpty());
     }
@@ -83,7 +83,7 @@ class MallProductServiceImplGetDrugDetailByProductIdsTests {
         // 没有药品详情
         mockMedicineDetailService(Collections.emptyList());
 
-        List<AgentDrugDetailVo> result = mallProductService.getDrugDetailByProductIds(List.of(1L));
+        List<AgentDrugDetailDto> result = mallProductService.getDrugDetailByProductIds(List.of(1L));
 
         assertTrue(result.isEmpty());
     }
@@ -98,10 +98,10 @@ class MallProductServiceImplGetDrugDetailByProductIdsTests {
         DrugDetail drugDetail = createMockDrugDetail(1L, "维生素C片", "国药准字H12345678");
         mockMedicineDetailService(List.of(drugDetail));
 
-        List<AgentDrugDetailVo> result = mallProductService.getDrugDetailByProductIds(List.of(1L));
+        List<AgentDrugDetailDto> result = mallProductService.getDrugDetailByProductIds(List.of(1L));
 
         assertEquals(1, result.size());
-        AgentDrugDetailVo vo = result.getFirst();
+        AgentDrugDetailDto vo = result.getFirst();
 
         assertEquals(1L, vo.getProductId());
         assertEquals("维生素C片", vo.getProductName());
@@ -122,18 +122,18 @@ class MallProductServiceImplGetDrugDetailByProductIdsTests {
         DrugDetail drug2 = createMockDrugDetail(2L, "感冒灵颗粒", "国药准字Z87654321");
         mockMedicineDetailService(List.of(drug1, drug2));
 
-        List<AgentDrugDetailVo> result = mallProductService.getDrugDetailByProductIds(List.of(1L, 2L));
+        List<AgentDrugDetailDto> result = mallProductService.getDrugDetailByProductIds(List.of(1L, 2L));
 
         assertEquals(2, result.size());
 
         // 验证第一个药品
-        AgentDrugDetailVo vo1 = result.get(0);
+        AgentDrugDetailDto vo1 = result.get(0);
         assertEquals(1L, vo1.getProductId());
         assertEquals("维生素C片", vo1.getProductName());
         assertNotNull(vo1.getDrugDetail());
 
         // 验证第二个药品
-        AgentDrugDetailVo vo2 = result.get(1);
+        AgentDrugDetailDto vo2 = result.get(1);
         assertEquals(2L, vo2.getProductId());
         assertEquals("感冒灵颗粒", vo2.getProductName());
         assertNotNull(vo2.getDrugDetail());
@@ -149,10 +149,10 @@ class MallProductServiceImplGetDrugDetailByProductIdsTests {
         DrugDetail drugDetail = createFullMockDrugDetail(1L);
         mockMedicineDetailService(List.of(drugDetail));
 
-        List<AgentDrugDetailVo> result = mallProductService.getDrugDetailByProductIds(List.of(1L));
+        List<AgentDrugDetailDto> result = mallProductService.getDrugDetailByProductIds(List.of(1L));
 
         assertEquals(1, result.size());
-        AgentDrugDetailVo vo = result.getFirst();
+        AgentDrugDetailDto vo = result.getFirst();
         DrugDetailDto dto = vo.getDrugDetail();
 
         assertNotNull(dto);
@@ -181,7 +181,7 @@ class MallProductServiceImplGetDrugDetailByProductIdsTests {
         // 准备商品数据（商品不存在）
         doReturn(Collections.emptyList()).when(mallProductService).listByIds(anyList());
 
-        List<AgentDrugDetailVo> result = mallProductService.getDrugDetailByProductIds(List.of(999L));
+        List<AgentDrugDetailDto> result = mallProductService.getDrugDetailByProductIds(List.of(999L));
 
         assertTrue(result.isEmpty());
     }

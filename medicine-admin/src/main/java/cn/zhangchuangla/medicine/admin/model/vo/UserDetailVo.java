@@ -18,6 +18,7 @@ import java.util.Date;
 @NoArgsConstructor
 @Builder
 public class UserDetailVo {
+
     @Schema(description = "头像", example = "https://example.com/avatar.jpg")
     private String avatar;
 

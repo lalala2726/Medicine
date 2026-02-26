@@ -3,11 +3,16 @@ package cn.zhangchuangla.medicine.model.vo.analytics;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 
+import java.io.Serial;
+import java.io.Serializable;
 import java.math.BigDecimal;
 
 @Data
 @Schema(description = "运营总览")
-public class OverviewVo {
+public class OverviewVo implements Serializable {
+
+    @Serial
+    private static final long serialVersionUID = 1L;
 
     @Schema(description = "用户总数")
     private Long totalUsers;

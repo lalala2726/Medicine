@@ -1,5 +1,7 @@
 package cn.zhangchuangla.medicine.common.security.entity;
 
+import cn.zhangchuangla.medicine.common.core.constants.Constants;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import org.springframework.lang.NonNull;
@@ -20,6 +22,7 @@ import java.util.stream.Collectors;
  */
 @Data
 @NoArgsConstructor
+@JsonIgnoreProperties(ignoreUnknown = true)
 public class SysUserDetails implements UserDetails, Serializable {
 
     @Serial
@@ -71,23 +74,27 @@ public class SysUserDetails implements UserDetails, Serializable {
         return username;
     }
 
+    private boolean isAccountAvailable() {
+        return user == null || Objects.equals(user.getStatus(), Constants.ACCOUNT_UNLOCK_KEY);
+    }
+
     @Override
     public boolean isAccountNonExpired() {
-        return user == null || user.isAccountNonExpired();
+        return isAccountAvailable();
     }
 
     @Override
     public boolean isAccountNonLocked() {
-        return user == null || (user.isAccountNonLocked() && !Objects.equals(user.getStatus(), 1));
+        return isAccountAvailable();
     }
 
     @Override
     public boolean isCredentialsNonExpired() {
-        return user == null || user.isCredentialsNonExpired();
+        return isAccountAvailable();
     }
 
     @Override
     public boolean isEnabled() {
-        return user == null || user.isEnabled();
+        return isAccountAvailable();
     }
 }

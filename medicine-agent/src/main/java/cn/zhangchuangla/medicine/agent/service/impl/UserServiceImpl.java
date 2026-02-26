@@ -1,89 +1,48 @@
 package cn.zhangchuangla.medicine.agent.service.impl;
 
-import cn.zhangchuangla.medicine.agent.mapper.UserMapper;
 import cn.zhangchuangla.medicine.agent.service.UserService;
-import cn.zhangchuangla.medicine.common.core.constants.RolesConstant;
-import cn.zhangchuangla.medicine.common.core.utils.BeanCotyUtils;
-import cn.zhangchuangla.medicine.model.dto.AuthUserDto;
-import cn.zhangchuangla.medicine.model.entity.User;
-import cn.zhangchuangla.medicine.model.vo.UserVo;
-import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
-import lombok.RequiredArgsConstructor;
-import org.apache.commons.lang3.StringUtils;
+import cn.zhangchuangla.medicine.common.core.base.PageRequest;
+import cn.zhangchuangla.medicine.model.dto.*;
+import cn.zhangchuangla.medicine.model.request.UserListQueryRequest;
+import cn.zhangchuangla.medicine.rpc.admin.AdminAgentUserRpcService;
+import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
+import org.apache.dubbo.config.annotation.DubboReference;
 import org.springframework.stereotype.Service;
 
-import java.util.List;
-import java.util.Objects;
-import java.util.Set;
-import java.util.stream.Collectors;
-
+/**
+ * Agent 用户服务 Dubbo Consumer 实现。
+ */
 @Service
-@RequiredArgsConstructor
 public class UserServiceImpl implements UserService {
 
-    private final UserMapper userMapper;
+    @DubboReference(group = "medicine-admin", version = "1.0.0", check = false, timeout = 10000, retries = 0,
+            url = "${dubbo.references.medicine-admin.url:}")
+    private AdminAgentUserRpcService adminAgentUserRpcService;
 
     @Override
-    public UserVo getCurrentUser(Long userId) {
-        if (userId == null) {
-            return null;
-        }
-        User user = userMapper.selectById(userId);
-        return BeanCotyUtils.copyProperties(user, UserVo.class);
+    public Page<UserListDto> listUsers(UserListQueryRequest request) {
+        return adminAgentUserRpcService.listUsers(request);
     }
 
     @Override
-    public AuthUserDto getUser(Long userId) {
-        if (userId == null) {
-            return null;
-        }
-        User user = userMapper.selectById(userId);
-        return BeanCotyUtils.copyProperties(user, AuthUserDto.class);
+    public UserDetailDto getUserDetailById(Long userId) {
+        return adminAgentUserRpcService.getUserDetailById(userId);
     }
 
     @Override
-    public User getUserByUsername(String username) {
-        if (StringUtils.isBlank(username)) {
-            return null;
-        }
-        return userMapper.selectOne(new LambdaQueryWrapper<User>()
-                .eq(User::getUsername, username));
+    public UserWalletDto getUserWalletByUserId(Long userId) {
+        return adminAgentUserRpcService.getUserWalletByUserId(userId);
     }
 
     @Override
-    public Set<String> getUserRolesByUserId(Long userId) {
-        if (userId == null) {
-            return Set.of();
-        }
-        return normalizeCodes(userMapper.listRoleCodesByUserId(userId));
+    public Page<UserWalletFlowDto> getUserWalletFlow(Long userId, PageRequest request) {
+        PageRequest safeRequest = request == null ? new PageRequest() : request;
+        return adminAgentUserRpcService.getUserWalletFlow(userId, safeRequest);
     }
 
     @Override
-    public Set<String> getUserPermissionCodesByUserId(Long userId) {
-        if (userId == null) {
-            return Set.of();
-        }
-        if (RolesConstant.SUPER_ADMIN_USER_ID.equals(userId)) {
-            return normalizeCodes(userMapper.listAllEnabledPermissionCodes());
-        }
-
-        Set<String> roleCodes = getUserRolesByUserId(userId);
-        boolean isSuperAdmin = roleCodes.stream()
-                .anyMatch(RolesConstant.SUPER_ADMIN::equalsIgnoreCase);
-        if (isSuperAdmin) {
-            return normalizeCodes(userMapper.listAllEnabledPermissionCodes());
-        }
-        return normalizeCodes(userMapper.listPermissionCodesByUserId(userId));
-    }
-
-    private Set<String> normalizeCodes(List<String> codes) {
-        if (codes == null || codes.isEmpty()) {
-            return Set.of();
-        }
-        return codes.stream()
-                .filter(Objects::nonNull)
-                .map(String::trim)
-                .filter(code -> !code.isEmpty())
-                .collect(Collectors.toSet());
+    public Page<UserConsumeInfoDto> getConsumeInfo(Long userId, PageRequest request) {
+        PageRequest safeRequest = request == null ? new PageRequest() : request;
+        return adminAgentUserRpcService.getConsumeInfo(userId, safeRequest);
     }
 }

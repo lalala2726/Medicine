@@ -1,0 +1,33 @@
+dubbo:
+  application:
+    # Dubbo 应用名。
+    # 示例: medicine-admin-dubbo
+    name: medicine-admin-dubbo
+    # 序列化安全检查级别（STRICT/WARN/DISABLE）。
+    # 示例: WARN
+    serialize-check-status: WARN
+    # QoS 管理端口（避免多服务本地启动端口冲突）。
+    # 示例: 22222
+    qos-port: ${MEDICINE_ADMIN_DUBBO_QOS_PORT:22222}
+  scan:
+    # Dubbo 服务扫描包。
+    # 示例: cn.zhangchuangla.medicine
+    base-packages: cn.zhangchuangla.medicine
+  protocol:
+    # Dubbo 协议。
+    # 示例: tri
+    name: tri
+    # Admin Dubbo 暴露端口。
+    # 示例: 20880
+    port: ${MEDICINE_ADMIN_DUBBO_PORT:20880}
+  registry:
+    # 本地直连模式关闭注册中心。
+    # 示例: N/A
+    address: N/A
+  provider:
+    # Provider 超时（毫秒）。
+    # 示例: 30000
+    timeout: 10000
+    # Provider 重试次数。
+    # 示例: 0
+    retries: 0

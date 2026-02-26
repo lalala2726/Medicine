@@ -1,7 +1,7 @@
 package cn.zhangchuangla.medicine.client.service;
 
 import cn.zhangchuangla.medicine.model.entity.MallCategory;
-import cn.zhangchuangla.medicine.model.vo.mall.MallCategoryTree;
+import cn.zhangchuangla.medicine.model.vo.MallCategoryTree;
 import com.baomidou.mybatisplus.extension.service.IService;
 
 import java.util.List;

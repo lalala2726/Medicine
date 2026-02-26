@@ -1,9 +1,10 @@
 package cn.zhangchuangla.medicine.admin.mapper;
 
+import cn.zhangchuangla.medicine.admin.model.dto.OrderDetailRow;
 import cn.zhangchuangla.medicine.admin.model.dto.OrderOverviewStats;
-import cn.zhangchuangla.medicine.admin.model.request.MallOrderListRequest;
 import cn.zhangchuangla.medicine.model.dto.OrderWithProductDto;
 import cn.zhangchuangla.medicine.model.entity.MallOrder;
+import cn.zhangchuangla.medicine.model.request.MallOrderListRequest;
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import org.apache.ibatis.annotations.Param;
@@ -52,7 +53,10 @@ public interface MallOrderMapper extends BaseMapper<MallOrder> {
      * 聚合订单概况统计数据。
      */
     OrderOverviewStats getOrderOverviewStats();
+
+    /**
+     * 根据订单号列表批量查询订单详情行数据。
+     */
+    List<OrderDetailRow> selectOrderDetailRowsByOrderNos(@Param("orderNos") List<String> orderNos);
 }
-
-
 

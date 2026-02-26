@@ -1,13 +1,15 @@
 package cn.zhangchuangla.medicine.common.security.entity;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
+import lombok.NoArgsConstructor;
 
 import java.io.Serial;
 import java.io.Serializable;
-import java.time.LocalDateTime;
 import java.util.Collections;
-import java.util.Map;
+import java.util.Date;
 import java.util.Set;
 
 /**
@@ -15,30 +17,14 @@ import java.util.Set;
  */
 @Data
 @Builder
+@AllArgsConstructor
+@NoArgsConstructor
+@JsonIgnoreProperties(ignoreUnknown = true)
 public class AuthUser implements Serializable {
 
     @Serial
     private static final long serialVersionUID = -904867432593234359L;
 
-    /**
-     * 用户ID
-     */
-    private Long id;
-
-    /**
-     * 登录名
-     */
-    private String username;
-
-    /**
-     * 加密后的密码（仅运行期使用，不参与 Redis/Gson 序列化）
-     */
-    private transient String password;
-
-    /**
-     * 账号状态，0-正常，非0表示不可用
-     */
-    private Integer status;
 
     /**
      * 角色编码集合
@@ -53,42 +39,107 @@ public class AuthUser implements Serializable {
     private Set<String> permissions = Collections.emptySet();
 
     /**
-     * 是否启用
+     * 用户ID
      */
-    @Builder.Default
-    private boolean enabled = true;
+    private Long id;
 
     /**
-     * 账号是否未过期
+     * 登录名
      */
-    @Builder.Default
-    private boolean accountNonExpired = true;
+    private String username;
 
     /**
-     * 账号是否未锁定
+     * 昵称
      */
-    @Builder.Default
-    private boolean accountNonLocked = true;
+    private String nickname;
 
     /**
-     * 凭证是否未过期
+     * 头像
      */
-    @Builder.Default
-    private boolean credentialsNonExpired = true;
+    private String avatar;
 
     /**
-     * 最近登录时间等自定义属性
+     * 邮箱
      */
-    @Builder.Default
-    private Map<String, Object> attributes = Collections.emptyMap();
+    private String email;
 
     /**
-     * 创建时间（可选）
+     * 手机号
      */
-    private LocalDateTime createdAt;
+    private String phoneNumber;
 
     /**
-     * 更新时间（可选）
+     * 性别
      */
-    private LocalDateTime updatedAt;
+    private Integer gender;
+
+    /**
+     * 生日
+     */
+    private Date birthday;
+
+    /**
+     * 加密后的密码（仅运行期使用，不参与 Redis/Gson 序列化）
+     */
+    private transient String password;
+
+    /**
+     * 真实姓名
+     */
+    private String realName;
+
+    /**
+     * 身份证号
+     */
+    private String idCard;
+
+    /**
+     * 上次登陆时间
+     */
+    private Date lastLoginTime;
+
+    /**
+     * 上次登陆IP
+     */
+    private String lastLoginIp;
+
+    /**
+     * 上次登陆地点
+     */
+    private String lastLoginLocation;
+
+    /**
+     * 账号状态，0-正常，非0表示不可用
+     */
+    private Integer status;
+
+    /**
+     * 创建时间
+     */
+    private Date createTime;
+
+    /**
+     * 更新时间
+     */
+    private Date updateTime;
+
+    /**
+     * 创建人
+     */
+    private String createBy;
+
+    /**
+     * 更新人
+     */
+    private String updateBy;
+
+    /**
+     * 删除时间
+     */
+    private Date deleteTime;
+
+    /**
+     * 是否删除
+     */
+    private Integer isDelete;
 }

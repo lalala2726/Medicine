@@ -22,6 +22,6 @@ public class WelcomeController extends BaseController {
     @GetMapping
     @Anonymous
     public AjaxResult<Void> index() {
-        return success("欢迎访问医药商城系统！");
+        return success();
     }
 }

@@ -19,7 +19,7 @@ import cn.zhangchuangla.medicine.common.security.utils.SecurityUtils;
 import cn.zhangchuangla.medicine.model.dto.*;
 import cn.zhangchuangla.medicine.model.entity.*;
 import cn.zhangchuangla.medicine.model.enums.*;
-import cn.zhangchuangla.medicine.model.vo.mall.OrderShippingVo;
+import cn.zhangchuangla.medicine.model.vo.OrderShippingVo;
 import cn.zhangchuangla.medicine.payment.config.AlipayProperties;
 import cn.zhangchuangla.medicine.payment.model.AlipayPagePayRequest;
 import cn.zhangchuangla.medicine.payment.service.AlipayPaymentService;

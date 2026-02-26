@@ -2,13 +2,9 @@ package cn.zhangchuangla.medicine.admin.service;
 
 import cn.zhangchuangla.medicine.admin.model.request.FreezeOrUnUserWalletRequest;
 import cn.zhangchuangla.medicine.admin.model.request.WalletChangeRequest;
-import cn.zhangchuangla.medicine.admin.model.vo.UserConsumeInfo;
-import cn.zhangchuangla.medicine.admin.model.vo.UserDetailVo;
-import cn.zhangchuangla.medicine.admin.model.vo.UserWalletFlowInfoVo;
-import cn.zhangchuangla.medicine.admin.model.vo.UserWalletVo;
 import cn.zhangchuangla.medicine.common.core.base.Option;
 import cn.zhangchuangla.medicine.common.core.base.PageRequest;
-import cn.zhangchuangla.medicine.common.core.base.PageResult;
+import cn.zhangchuangla.medicine.model.dto.*;
 import cn.zhangchuangla.medicine.model.entity.User;
 import cn.zhangchuangla.medicine.model.request.UserAddRequest;
 import cn.zhangchuangla.medicine.model.request.UserListQueryRequest;
@@ -30,7 +26,7 @@ public interface UserService extends IService<User> {
      * @param userId 用户ID
      * @return 用户
      */
-    UserDetailVo getUserDetailById(Long userId);
+    UserDetailDto getUserDetailById(Long userId);
 
     /**
      * 根据用户名获取用户
@@ -61,7 +57,7 @@ public interface UserService extends IService<User> {
      *
      * @return 用户列表
      */
-    Page<User> listUser(UserListQueryRequest request);
+    Page<UserListDto> listUser(UserListQueryRequest request);
 
     /**
      * 添加用户
@@ -92,7 +88,7 @@ public interface UserService extends IService<User> {
      *
      * @return 用户钱包流水
      */
-    PageResult<UserWalletFlowInfoVo> getUserWalletFlow(Long userId, PageRequest request);
+    Page<UserWalletFlowDto> getUserWalletFlow(Long userId, PageRequest request);
 
 
     /**
@@ -100,7 +96,7 @@ public interface UserService extends IService<User> {
      *
      * @return 用户消费信息
      */
-    PageResult<UserConsumeInfo> getConsumeInfo(Long userId, PageRequest request);
+    Page<UserConsumeInfoDto> getConsumeInfo(Long userId, PageRequest request);
 
     /**
      * 开通用户钱包
@@ -149,7 +145,7 @@ public interface UserService extends IService<User> {
      * @param userId 用户ID
      * @return 用户钱包
      */
-    UserWalletVo getUserWallet(Long userId);
+    UserWalletDto getUserWallet(Long userId);
 
     /**
      * 根据用户ID列表获取用户名映射

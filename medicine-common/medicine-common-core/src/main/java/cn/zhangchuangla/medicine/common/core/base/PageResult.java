@@ -2,13 +2,18 @@ package cn.zhangchuangla.medicine.common.core.base;
 
 import lombok.Data;
 
+import java.io.Serial;
+import java.io.Serializable;
 import java.util.List;
 
 /**
  * @author Chuang
  */
 @Data
-public class PageResult<T> {
+public class PageResult<T> implements Serializable {
+
+    @Serial
+    private static final long serialVersionUID = 1L;
 
     /**
      * 当前页码

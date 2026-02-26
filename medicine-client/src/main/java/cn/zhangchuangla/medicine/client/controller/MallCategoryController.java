@@ -3,7 +3,7 @@ package cn.zhangchuangla.medicine.client.controller;
 import cn.zhangchuangla.medicine.client.service.MallCategoryService;
 import cn.zhangchuangla.medicine.common.core.base.AjaxResult;
 import cn.zhangchuangla.medicine.common.security.base.BaseController;
-import cn.zhangchuangla.medicine.model.vo.mall.MallCategoryTree;
+import cn.zhangchuangla.medicine.model.vo.MallCategoryTree;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;

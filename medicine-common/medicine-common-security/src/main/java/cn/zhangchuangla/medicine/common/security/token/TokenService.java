@@ -3,6 +3,7 @@ package cn.zhangchuangla.medicine.common.security.token;
 import cn.zhangchuangla.medicine.common.core.constants.SecurityConstants;
 import cn.zhangchuangla.medicine.common.core.enums.ResponseCode;
 import cn.zhangchuangla.medicine.common.core.exception.AuthorizationException;
+import cn.zhangchuangla.medicine.common.core.utils.BeanCotyUtils;
 import cn.zhangchuangla.medicine.common.core.utils.IPUtils;
 import cn.zhangchuangla.medicine.common.core.utils.UUIDUtils;
 import cn.zhangchuangla.medicine.common.security.entity.AuthTokenVo;
@@ -40,8 +41,6 @@ import static cn.zhangchuangla.medicine.common.core.constants.SecurityConstants.
 @RequiredArgsConstructor
 @Slf4j
 public class TokenService {
-
-    private static final String ROLE_PREFIX = "ROLE_";
 
     private final JwtTokenProvider jwtTokenProvider;
     private final RedisTokenStore redisTokenStore;
@@ -246,9 +245,9 @@ public class TokenService {
     /**
      * 基于 Redis 在线会话构造 {@link SysUserDetails}。
      *
-     * @param onlineUser Redis 中的在线用户
-     * @param authorities 已计算的权限集合
-     * @param roleAuthorities 角色权限（ROLE_ 前缀）
+     * @param onlineUser            Redis 中的在线用户
+     * @param authorities           已计算的权限集合
+     * @param roleAuthorities       角色权限（ROLE_ 前缀）
      * @param permissionAuthorities 业务权限码
      * @return 统一用户详情
      */
@@ -257,14 +256,13 @@ public class TokenService {
                                             Set<String> roleAuthorities,
                                             Set<String> permissionAuthorities) {
         AuthUser authUser = onlineUser.getUser();
-        Set<String> roleCodes = toRoleCodes(roleAuthorities);
+        Set<String> roleCodes = SecurityUtils.toRoleCodes(roleAuthorities);
         if (authUser == null) {
-            authUser = AuthUser.builder()
-                    .id(onlineUser.getUserId())
-                    .username(onlineUser.getUsername())
-                    .roles(roleCodes)
-                    .permissions(permissionAuthorities)
-                    .build();
+            authUser = new AuthUser();
+            authUser.setId(onlineUser.getUserId());
+            authUser.setUsername(onlineUser.getUsername());
+            authUser.setRoles(roleCodes);
+            authUser.setPermissions(permissionAuthorities);
         } else {
             authUser.setRoles(roleCodes);
             authUser.setPermissions(permissionAuthorities);
@@ -286,21 +284,11 @@ public class TokenService {
      * @return 适用于会话持久化的裁剪用户对象
      */
     private AuthUser buildSessionUser(AuthUser authUser) {
-        return AuthUser.builder()
-                .id(authUser.getId())
-                .username(authUser.getUsername())
-                .password(null)
-                .status(authUser.getStatus())
-                .roles(Set.of())
-                .permissions(Set.of())
-                .enabled(authUser.isEnabled())
-                .accountNonLocked(authUser.isAccountNonLocked())
-                .accountNonExpired(authUser.isAccountNonExpired())
-                .credentialsNonExpired(authUser.isCredentialsNonExpired())
-                .attributes(authUser.getAttributes())
-                .createdAt(authUser.getCreatedAt())
-                .updatedAt(authUser.getUpdatedAt())
-                .build();
+        AuthUser sessionUser = BeanCotyUtils.copyProperties(authUser, AuthUser.class);
+        sessionUser.setPassword(null);
+        sessionUser.setRoles(Set.of());
+        sessionUser.setPermissions(Set.of());
+        return sessionUser;
     }
 
     /**
@@ -309,13 +297,14 @@ public class TokenService {
      * 优先使用 {@link AuthUser} 中的角色/权限；若缺失则从 authorities 回退拆分。
      * </p>
      *
-     * @param authUser 统一用户对象
+     * @param authUser       统一用户对象
      * @param authorityCodes 认证对象中的权限编码
      * @return 角色与权限快照
      */
     private RolePermissionSnapshot resolveRolePermissionForSession(AuthUser authUser, Set<String> authorityCodes) {
-        Set<String> roleAuthorities = toRoleAuthorities(authUser == null ? Collections.emptySet() : authUser.getRoles());
-        Set<String> permissionAuthorities = toPermissionAuthorities(
+        Set<String> roleAuthorities = SecurityUtils.toRoleAuthorities(
+                authUser == null ? Collections.emptySet() : authUser.getRoles());
+        Set<String> permissionAuthorities = SecurityUtils.toPermissionAuthorities(
                 authUser == null ? Collections.emptySet() : authUser.getPermissions());
         if (!authorityCodes.isEmpty()) {
             RolePermissionSnapshot authoritySnapshot = splitAuthorities(authorityCodes);
@@ -340,7 +329,7 @@ public class TokenService {
      */
     private RolePermissionSnapshot resolveRolePermissionFromSession(OnlineLoginUser onlineUser) {
         RolePermissionSnapshot roleSnapshot = splitAuthorities(onlineUser.getRoles());
-        Set<String> permissions = toPermissionAuthorities(onlineUser.getPermissions());
+        Set<String> permissions = SecurityUtils.toPermissionAuthorities(onlineUser.getPermissions());
         if (permissions.isEmpty()) {
             permissions = roleSnapshot.permissionAuthorities();
         } else if (!roleSnapshot.permissionAuthorities().isEmpty()) {
@@ -360,9 +349,9 @@ public class TokenService {
     private RolePermissionSnapshot splitAuthorities(Set<String> authorityCodes) {
         LinkedHashSet<String> roleAuthorities = new LinkedHashSet<>();
         LinkedHashSet<String> permissionAuthorities = new LinkedHashSet<>();
-        for (String authority : normalizeCodes(authorityCodes)) {
+        for (String authority : SecurityUtils.normalizeCodes(authorityCodes)) {
             if (isRoleAuthority(authority)) {
-                String roleAuthority = toRoleAuthority(authority);
+                String roleAuthority = SecurityUtils.toRoleAuthority(authority);
                 if (roleAuthority != null) {
                     roleAuthorities.add(roleAuthority);
                 }
@@ -374,142 +363,16 @@ public class TokenService {
     }
 
     /**
-     * 将角色编码集合标准化为 ROLE_ 前缀权限集合。
-     *
-     * @param roleCodes 角色编码集合
-     * @return 角色权限集合
-     */
-    private Set<String> toRoleAuthorities(Set<String> roleCodes) {
-        LinkedHashSet<String> roleAuthorities = new LinkedHashSet<>();
-        for (String roleCode : normalizeCodes(roleCodes)) {
-            String roleAuthority = toRoleAuthority(roleCode);
-            if (roleAuthority != null) {
-                roleAuthorities.add(roleAuthority);
-            }
-        }
-        if (roleAuthorities.isEmpty()) {
-            return Set.of();
-        }
-        return Set.copyOf(roleAuthorities);
-    }
-
-    /**
-     * 将权限编码集合标准化为业务权限集合（排除 ROLE_ 项）。
-     *
-     * @param permissions 权限编码集合
-     * @return 业务权限集合
-     */
-    private Set<String> toPermissionAuthorities(Set<String> permissions) {
-        LinkedHashSet<String> permissionAuthorities = new LinkedHashSet<>();
-        for (String permission : normalizeCodes(permissions)) {
-            if (!isPrefixedRoleAuthority(permission)) {
-                permissionAuthorities.add(permission);
-            }
-        }
-        if (permissionAuthorities.isEmpty()) {
-            return Set.of();
-        }
-        return Set.copyOf(permissionAuthorities);
-    }
-
-    /**
-     * 将 ROLE_ 前缀角色权限转换为纯角色编码。
-     *
-     * @param roleAuthorities 角色权限集合
-     * @return 角色编码集合
-     */
-    private Set<String> toRoleCodes(Set<String> roleAuthorities) {
-        LinkedHashSet<String> roleCodes = new LinkedHashSet<>();
-        for (String roleAuthority : normalizeCodes(roleAuthorities)) {
-            String roleCode = removeRolePrefix(roleAuthority);
-            if (!roleCode.isEmpty()) {
-                roleCodes.add(roleCode);
-            }
-        }
-        if (roleCodes.isEmpty()) {
-            return Set.of();
-        }
-        return Set.copyOf(roleCodes);
-    }
-
-    /**
-     * 归一化编码集合：去空、去空白、去重。
-     *
-     * @param values 待归一化集合
-     * @return 归一化后的不可变集合
-     */
-    private Set<String> normalizeCodes(Set<String> values) {
-        if (values == null || values.isEmpty()) {
-            return Set.of();
-        }
-        LinkedHashSet<String> normalized = new LinkedHashSet<>();
-        for (String value : values) {
-            if (value == null) {
-                continue;
-            }
-            String trimmed = value.trim();
-            if (!trimmed.isEmpty()) {
-                normalized.add(trimmed);
-            }
-        }
-        if (normalized.isEmpty()) {
-            return Set.of();
-        }
-        return Set.copyOf(normalized);
-    }
-
-    /**
-     * 将角色编码转换为 ROLE_ 前缀权限。
-     *
-     * @param roleCode 角色编码或角色权限
-     * @return ROLE_ 前缀权限；为空时返回 {@code null}
-     */
-    private String toRoleAuthority(String roleCode) {
-        String normalizedRoleCode = removeRolePrefix(roleCode);
-        if (normalizedRoleCode.isEmpty()) {
-            return null;
-        }
-        return ROLE_PREFIX + normalizedRoleCode;
-    }
-
-    /**
-     * 去除角色权限前缀 {@code ROLE_}。
-     *
-     * @param roleOrAuthority 角色编码或角色权限
-     * @return 去前缀后的角色编码
-     */
-    private String removeRolePrefix(String roleOrAuthority) {
-        if (roleOrAuthority == null) {
-            return "";
-        }
-        String trimmed = roleOrAuthority.trim();
-        if (trimmed.regionMatches(true, 0, ROLE_PREFIX, 0, ROLE_PREFIX.length())) {
-            return trimmed.substring(ROLE_PREFIX.length()).trim();
-        }
-        return trimmed;
-    }
-
-    /**
      * 判断编码是否应视为角色项。
      *
      * @param authority 待判断编码
      * @return true 表示角色项
      */
     private boolean isRoleAuthority(String authority) {
-        if (isPrefixedRoleAuthority(authority)) {
+        if (SecurityUtils.isPrefixedRoleAuthority(authority)) {
             return true;
         }
         return !looksLikePermissionAuthority(authority);
-    }
-
-    /**
-     * 判断编码是否带有角色前缀。
-     *
-     * @param authority 编码
-     * @return true 表示带有 ROLE_ 前缀
-     */
-    private boolean isPrefixedRoleAuthority(String authority) {
-        return authority.regionMatches(true, 0, ROLE_PREFIX, 0, ROLE_PREFIX.length());
     }
 
     /**

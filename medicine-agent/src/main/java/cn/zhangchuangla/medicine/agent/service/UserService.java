@@ -1,57 +1,54 @@
 package cn.zhangchuangla.medicine.agent.service;
 
-import cn.zhangchuangla.medicine.model.dto.AuthUserDto;
-import cn.zhangchuangla.medicine.model.entity.User;
-import cn.zhangchuangla.medicine.model.vo.UserVo;
-
-import java.util.Set;
+import cn.zhangchuangla.medicine.common.core.base.PageRequest;
+import cn.zhangchuangla.medicine.model.dto.*;
+import cn.zhangchuangla.medicine.model.request.UserListQueryRequest;
+import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 
 /**
  * 智能体用户服务接口。
- * <p>
- * 提供用户相关的查询服务，包括用户信息、角色和权限的查询。
- *
- * @author Chuang
  */
 public interface UserService {
 
     /**
-     * 获取当前用户的详细信息。
+     * 分页查询用户列表。
      *
-     * @param userId 用户 ID
-     * @return 用户详细信息
+     * @param request 用户查询参数
+     * @return 用户分页列表
      */
-    UserVo getCurrentUser(Long userId);
+    Page<UserListDto> listUsers(UserListQueryRequest request);
 
     /**
-     * 获取用户的认证信息。
+     * 根据用户 ID 查询用户详情。
      *
      * @param userId 用户 ID
-     * @return 用户认证信息
+     * @return 用户详情
      */
-    AuthUserDto getUser(Long userId);
+    UserDetailDto getUserDetailById(Long userId);
 
     /**
-     * 根据用户名查询用户。
-     *
-     * @param username 用户名
-     * @return 用户实体
-     */
-    User getUserByUsername(String username);
-
-    /**
-     * 获取用户的角色编码集合。
+     * 根据用户 ID 查询钱包信息。
      *
      * @param userId 用户 ID
-     * @return 角色编码集合
+     * @return 钱包信息
      */
-    Set<String> getUserRolesByUserId(Long userId);
+    UserWalletDto getUserWalletByUserId(Long userId);
 
     /**
-     * 获取用户的权限编码集合。
+     * 分页查询用户钱包流水。
      *
-     * @param userId 用户 ID
-     * @return 权限编码集合
+     * @param userId  用户 ID
+     * @param request 分页参数
+     * @return 钱包流水分页结果
      */
-    Set<String> getUserPermissionCodesByUserId(Long userId);
+    Page<UserWalletFlowDto> getUserWalletFlow(Long userId, PageRequest request);
+
+    /**
+     * 分页查询用户消费信息。
+     *
+     * @param userId  用户 ID
+     * @param request 分页参数
+     * @return 用户消费分页结果
+     */
+    Page<UserConsumeInfoDto> getConsumeInfo(Long userId, PageRequest request);
 }

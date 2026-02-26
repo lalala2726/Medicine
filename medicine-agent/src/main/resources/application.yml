@@ -1,50 +1,87 @@
 spring:
+  config:
+    # 导入根目录 .env，统一管理敏感配置和环境差异。
+    import: optional:file:.env[.properties],optional:file:../.env[.properties]
   profiles:
-    active: druid
+    # 启用的 Spring Profile（Dubbo 模式由 .env 统一控制，默认本地直连）。
+    # 示例: ${MEDICINE_DUBBO_PROFILE:dubbo-local}
+    active: ${MEDICINE_DUBBO_PROFILE:dubbo-local}
   application:
-    name: MedicineAiAgent
+    # 应用名称（用于日志和注册识别）。
+    # 示例: MedicineAiAgent
+    name: Medicine-Agent
+    # 应用版本号。
+    # 示例: 0.1
     version: 0.1
   servlet:
     multipart:
+      # 单个上传文件最大大小。
+      # 示例: 50MB
       max-file-size: 50MB
+      # 单次请求上传总大小上限。
+      # 示例: 50MB
       max-request-size: 50MB
   data:
     redis:
-      host: ${MEDICINE_REDIS_HOST:192.168.10.110}
+      # Redis 主机地址。
+      # 示例: 127.0.0.1
+      host: ${MEDICINE_REDIS_HOST:127.0.0.1}
+      # Redis 端口。
+      # 示例: 6379
       port: ${MEDICINE_REDIS_PORT:6379}
+      # Redis DB 索引。
+      # 示例: 0
       database: ${MEDICINE_REDIS_DB:0}
-      password: ${MEDICINE_REDIS_PASSWORD:zhangchuang2726}
+      # Redis 密码。
+      # 示例: your_redis_password
+      password: ${MEDICINE_REDIS_PASSWORD:}
+
 server:
+  # Agent HTTP 服务端口。
+  # 示例: 8083
   port: 8083
-mybatis-plus:
-  configuration:
-    log-impl: org.apache.ibatis.logging.stdout.StdOutImpl
-  type-aliases-package: cn.zhangchuangla.medicine.**.entity
-  mapper-locations:
-    - classpath*:mapper/**/**.xml
-  global-config:
-    db-config:
-      logic-delete-field: isDeleted
-      logic-delete-value: 1
-      logic-not-delete-value: 0
 
 security:
+  # 鉴权请求头名称。
+  # 示例: Authorization
   header: Authorization
-  secret: ${SECURITY_SECRET:zhangchuang2726zhangchuang2726zhangchuang2726}
+  # JWT 签名密钥。
+  # 示例: local-dev-secret-local-dev-secret-1234
+  secret: ${SECURITY_SECRET:local-dev-secret-local-dev-secret-1234}
+  # Access Token 过期时间（毫秒）。
+  # 示例: 18000000
   access-token-expire-time: 18000000
+  # Refresh Token 过期时间（毫秒）。
+  # 示例: 25920000
   refresh-token-expire-time: 25920000
 
 minio:
-  endpoint: ${MINIO_ENDPOINT:http://192.168.10.110:9000}
-  access-key: ${MINIO_ACCESS_KEY:L8lIE0S3gkc0L5imKvNd}
-  secret-key: ${MINIO_SECRET_KEY:wERm9ywqhjsflwIsyF98HlnhY8CxXuEJWJjaNVj8}
+  # MinIO 服务地址。
+  # 示例: http://127.0.0.1:9000
+  endpoint: ${MINIO_ENDPOINT:http://127.0.0.1:9000}
+  # MinIO Access Key。
+  # 示例: minioadmin
+  access-key: ${MINIO_ACCESS_KEY:minioadmin}
+  # MinIO Secret Key。
+  # 示例: minioadmin
+  secret-key: ${MINIO_SECRET_KEY:minioadmin}
+  # 默认文件桶。
+  # 示例: medicine
   bucket-name: ${MINIO_BUCKET_NAME:medicine}
 
 file:
   upload:
+    # 允许上传的 MIME 类型。
+    # 示例: image/jpeg,image/png,application/pdf
     allowed-types: image/jpeg,image/png,image/gif,image/webp,application/pdf
 
 ip2region:
+  # 是否启用 IP 地理位置解析。
+  # 示例: true
   enabled: true
+  # IP 库文件路径。
+  # 示例: classpath:data/ip2region.xdb
   db-path: classpath:data/ip2region.xdb
+  # 是否启用本地缓存。
+  # 示例: true
   cache-enabled: true

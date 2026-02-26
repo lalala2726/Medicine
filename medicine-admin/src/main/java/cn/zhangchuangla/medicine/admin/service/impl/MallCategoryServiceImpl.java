@@ -8,7 +8,7 @@ import cn.zhangchuangla.medicine.common.security.utils.SecurityUtils;
 import cn.zhangchuangla.medicine.model.entity.MallCategory;
 import cn.zhangchuangla.medicine.model.request.MallCategoryAddRequest;
 import cn.zhangchuangla.medicine.model.request.MallCategoryUpdateRequest;
-import cn.zhangchuangla.medicine.model.vo.mall.MallCategoryTree;
+import cn.zhangchuangla.medicine.model.vo.MallCategoryTree;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import org.springframework.beans.BeanUtils;

@@ -1,15 +1,16 @@
 package cn.zhangchuangla.medicine.agent.controller;
 
-import cn.zhangchuangla.medicine.agent.service.UserService;
 import cn.zhangchuangla.medicine.common.core.base.AjaxResult;
 import cn.zhangchuangla.medicine.common.security.base.BaseController;
-import cn.zhangchuangla.medicine.model.dto.AuthUserDto;
+import cn.zhangchuangla.medicine.common.security.entity.AuthUser;
+import cn.zhangchuangla.medicine.common.security.utils.SecurityUtils;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
-import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+
+import java.util.HashMap;
 
 /**
  * 智能体认证授权控制器。
@@ -22,10 +23,7 @@ import org.springframework.web.bind.annotation.RestController;
 @RestController
 @RequestMapping("/agent/authorization")
 @Tag(name = "认证授权接口", description = "认证授权接口")
-@RequiredArgsConstructor
 public class AgentAuthorizationController extends BaseController {
-
-    private final UserService agentUserService;
 
     /**
      * 获取当前登录用户的认证信息。
@@ -37,8 +35,13 @@ public class AgentAuthorizationController extends BaseController {
      */
     @GetMapping
     @Operation(summary = "获取当前用户信息", description = "获取当前登录用户的详细信息")
-    public AjaxResult<AuthUserDto> getCurrentUser() {
-        Long userId = getUserId();
-        return success(agentUserService.getUser(userId));
+    public AjaxResult<HashMap<String, Object>> getCurrentUser() {
+        AuthUser user = getLoginUser().getUser();
+        HashMap<String, Object> userInfo = new HashMap<>();
+
+        userInfo.put("user", user);
+        userInfo.put("roles", SecurityUtils.getRoles());
+        userInfo.put("permissions", SecurityUtils.getPermissions());
+        return success(userInfo);
     }
 }

@@ -1,11 +1,25 @@
 alipay:
-  # 以下四项建议通过环境变量注入，保证密钥不会写死在代码仓库中
-  appId: ${ALIPAY_APPID}
-  private-key: ${ALIPAY_PRIVATE_KEY}
-  alipay-public-key: ${ALIPAY_ALIPAY_PUBLIC_KEY}
-  gatewayUrl: ${ALIPAY_GATEWAY_URL}
-  # notifyUrl 和 returnUrl 在业务代码中也可以覆盖，方便不同系统使用独立的回调地址
-  notifyUrl: http://medicine.zhangchuangla.cn/order/alipay/notify
-  returnUrl: http://localhost:8081/success.html
+  # 支付宝应用 APPID。
+  # 示例: 2021000118630011
+  appId: ${ALIPAY_APPID:}
+  # 商户私钥（PKCS8）。
+  # 示例: MIIEvQIBADANBgkqhkiG9w0BAQEFAASCBK...
+  private-key: ${ALIPAY_PRIVATE_KEY:}
+  # 支付宝公钥。
+  # 示例: MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMI...
+  alipay-public-key: ${ALIPAY_ALIPAY_PUBLIC_KEY:}
+  # 支付网关地址。
+  # 示例: https://openapi.alipay.com/gateway.do
+  gatewayUrl: ${ALIPAY_GATEWAY_URL:https://openapi-sandbox.dl.alipaydev.com/gateway.do}
+  # Client 异步通知回调地址。
+  # 示例: http://127.0.0.1:8081/order/alipay/notify
+  notifyUrl: ${ALIPAY_CLIENT_NOTIFY_URL:http://127.0.0.1:8081/order/alipay/notify}
+  # Client 支付成功页面跳转地址。
+  # 示例: http://127.0.0.1:8081/success.html
+  returnUrl: ${ALIPAY_CLIENT_RETURN_URL:http://127.0.0.1:8081/success.html}
+  # 签名算法。
+  # 示例: RSA2
   signType: RSA2
+  # 请求字符集。
+  # 示例: utf-8
   charset: utf-8

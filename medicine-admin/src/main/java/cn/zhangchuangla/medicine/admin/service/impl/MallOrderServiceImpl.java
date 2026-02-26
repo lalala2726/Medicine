@@ -2,10 +2,10 @@ package cn.zhangchuangla.medicine.admin.service.impl;
 
 import cn.zhangchuangla.medicine.admin.mapper.MallOrderMapper;
 import cn.zhangchuangla.medicine.admin.mapper.UserMapper;
+import cn.zhangchuangla.medicine.admin.model.dto.OrderDetailRow;
 import cn.zhangchuangla.medicine.admin.model.dto.UserOrderStatistics;
 import cn.zhangchuangla.medicine.admin.model.request.*;
 import cn.zhangchuangla.medicine.admin.model.vo.OrderAddressVo;
-import cn.zhangchuangla.medicine.admin.model.vo.OrderDetailVo;
 import cn.zhangchuangla.medicine.admin.model.vo.OrderPriceVo;
 import cn.zhangchuangla.medicine.admin.model.vo.OrderRemarkVo;
 import cn.zhangchuangla.medicine.admin.service.*;
@@ -14,11 +14,13 @@ import cn.zhangchuangla.medicine.common.core.enums.ResponseCode;
 import cn.zhangchuangla.medicine.common.core.exception.ServiceException;
 import cn.zhangchuangla.medicine.common.core.utils.Assert;
 import cn.zhangchuangla.medicine.common.security.utils.SecurityUtils;
+import cn.zhangchuangla.medicine.model.dto.OrderDetailDto;
 import cn.zhangchuangla.medicine.model.dto.OrderTimelineDto;
 import cn.zhangchuangla.medicine.model.dto.OrderWithProductDto;
 import cn.zhangchuangla.medicine.model.entity.*;
 import cn.zhangchuangla.medicine.model.enums.*;
-import cn.zhangchuangla.medicine.model.vo.mall.OrderShippingVo;
+import cn.zhangchuangla.medicine.model.request.MallOrderListRequest;
+import cn.zhangchuangla.medicine.model.vo.OrderShippingVo;
 import cn.zhangchuangla.medicine.payment.model.AlipayRefundRequest;
 import cn.zhangchuangla.medicine.payment.service.AlipayPaymentService;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
@@ -83,6 +85,54 @@ public class MallOrderServiceImpl extends ServiceImpl<MallOrderMapper, MallOrder
     }
 
     @Override
+    public List<OrderDetailDto> getOrderByOrderNo(List<String> orderNos) {
+        if (CollectionUtils.isEmpty(orderNos)) {
+            return List.of();
+        }
+        List<String> normalizedOrderNos = orderNos.stream()
+                .filter(StringUtils::hasText)
+                .map(String::trim)
+                .distinct()
+                .toList();
+        if (normalizedOrderNos.isEmpty()) {
+            return List.of();
+        }
+
+        List<OrderDetailRow> rows = mallOrderMapper.selectOrderDetailRowsByOrderNos(normalizedOrderNos);
+        if (CollectionUtils.isEmpty(rows)) {
+            return List.of();
+        }
+
+        Map<String, OrderDetailDto> detailMap = new LinkedHashMap<>();
+        for (OrderDetailRow row : rows) {
+            if (row == null || !StringUtils.hasText(row.getOrderNo())) {
+                continue;
+            }
+            OrderDetailDto detail = detailMap.computeIfAbsent(row.getOrderNo(), orderNo -> buildOrderDetailDto(row));
+            if (row.getOrderItemId() == null) {
+                continue;
+            }
+            detail.getProductInfo().add(OrderDetailDto.ProductInfo.builder()
+                    .productId(row.getProductId())
+                    .productName(row.getProductName())
+                    .productImage(row.getProductImage())
+                    .productPrice(row.getProductPrice())
+                    .productQuantity(row.getProductQuantity())
+                    .productTotalAmount(row.getProductTotalAmount())
+                    .build());
+        }
+
+        List<OrderDetailDto> result = new ArrayList<>();
+        for (String orderNo : normalizedOrderNos) {
+            OrderDetailDto detail = detailMap.get(orderNo);
+            if (detail != null) {
+                result.add(detail);
+            }
+        }
+        return result;
+    }
+
+    @Override
     public MallOrder getOrderById(Long id) {
         Assert.isPositive(id, "订单ID不能小于0");
         MallOrder mallOrder = getById(id);
@@ -93,7 +143,7 @@ public class MallOrderServiceImpl extends ServiceImpl<MallOrderMapper, MallOrder
     }
 
     @Override
-    public OrderDetailVo orderDetail(Long orderId) {
+    public OrderDetailDto orderDetail(Long orderId) {
 
         // 获取订单信息
         MallOrder mallOrder = getOrderById(orderId);
@@ -103,14 +153,14 @@ public class MallOrderServiceImpl extends ServiceImpl<MallOrderMapper, MallOrder
         List<MallOrderItem> mallOrderItems = mallOrderItemService.getOrderItemByOrderId(mallOrder.getId());
 
         // 构建用户信息
-        OrderDetailVo.UserInfo userInfoVo = OrderDetailVo.UserInfo.builder()
+        OrderDetailDto.UserInfo userInfoVo = OrderDetailDto.UserInfo.builder()
                 .userId(userInfo.getId().toString())
                 .nickname(userInfo.getNickname())
                 .phoneNumber(userInfo.getPhoneNumber())
                 .build();
 
         // 构建配送信息
-        OrderDetailVo.DeliveryInfo deliveryInfo = OrderDetailVo.DeliveryInfo.builder()
+        OrderDetailDto.DeliveryInfo deliveryInfo = OrderDetailDto.DeliveryInfo.builder()
                 .receiverName(mallOrder.getReceiverName())
                 .receiverAddress(mallOrder.getReceiverDetail())
                 .receiverPhone(mallOrder.getReceiverPhone())
@@ -118,19 +168,19 @@ public class MallOrderServiceImpl extends ServiceImpl<MallOrderMapper, MallOrder
                 .build();
 
         // 构建订单信息
-        OrderDetailVo.OrderInfo orderInfo = OrderDetailVo.OrderInfo.builder()
+        OrderDetailDto.OrderInfo orderInfo = OrderDetailDto.OrderInfo.builder()
                 .orderNo(mallOrder.getOrderNo())
                 .orderStatus(mallOrder.getOrderStatus())
-                .payType(getPayTypeDesc(mallOrder.getPayType()))
+                .payType(mallOrder.getPayType())
                 .totalAmount(mallOrder.getTotalAmount())
                 .payAmount(mallOrder.getPayAmount())
                 .freightAmount(mallOrder.getFreightAmount())
                 .build();
 
         // 构建商品信息
-        List<OrderDetailVo.ProductInfo> productInfoLists = new ArrayList<>();
+        List<OrderDetailDto.ProductInfo> productInfoLists = new ArrayList<>();
         mallOrderItems.forEach(mallOrderItem -> {
-            OrderDetailVo.ProductInfo productInfo = OrderDetailVo.ProductInfo.builder()
+            OrderDetailDto.ProductInfo productInfo = OrderDetailDto.ProductInfo.builder()
                     .productId(mallOrderItem.getProductId())
                     .productName(mallOrderItem.getProductName())
                     .productImage(mallOrderItem.getImageUrl())
@@ -142,7 +192,7 @@ public class MallOrderServiceImpl extends ServiceImpl<MallOrderMapper, MallOrder
         });
 
         // 构建完整的订单详情
-        return OrderDetailVo.builder()
+        return OrderDetailDto.builder()
                 .userInfo(userInfoVo)
                 .deliveryInfo(deliveryInfo)
                 .orderInfo(orderInfo)
@@ -700,6 +750,40 @@ public class MallOrderServiceImpl extends ServiceImpl<MallOrderMapper, MallOrder
         return payTypeEnum != null ? payTypeEnum.getType() : "未知";
     }
 
+    private OrderDetailDto buildOrderDetailDto(OrderDetailRow row) {
+        OrderDetailDto.UserInfo userInfo = null;
+        if (row.getUserId() != null) {
+            userInfo = OrderDetailDto.UserInfo.builder()
+                    .userId(String.valueOf(row.getUserId()))
+                    .nickname(row.getUserNickname())
+                    .phoneNumber(row.getUserPhoneNumber())
+                    .build();
+        }
+
+        OrderDetailDto.DeliveryInfo deliveryInfo = OrderDetailDto.DeliveryInfo.builder()
+                .receiverName(row.getReceiverName())
+                .receiverAddress(row.getReceiverDetail())
+                .receiverPhone(row.getReceiverPhone())
+                .deliveryMethod(getDeliveryTypeDesc(row.getDeliveryType()))
+                .build();
+
+        OrderDetailDto.OrderInfo orderInfo = OrderDetailDto.OrderInfo.builder()
+                .orderNo(row.getOrderNo())
+                .orderStatus(row.getOrderStatus())
+                .payType(row.getPayType())
+                .totalAmount(row.getTotalAmount())
+                .payAmount(row.getPayAmount())
+                .freightAmount(row.getFreightAmount())
+                .build();
+
+        return OrderDetailDto.builder()
+                .userInfo(userInfo)
+                .deliveryInfo(deliveryInfo)
+                .orderInfo(orderInfo)
+                .productInfo(new ArrayList<>())
+                .build();
+    }
+
     @Override
     @Transactional(rollbackFor = Exception.class)
     public boolean shipOrder(OrderShipRequest request) {
@@ -964,7 +1048,7 @@ public class MallOrderServiceImpl extends ServiceImpl<MallOrderMapper, MallOrder
     }
 
     @Override
-    public List<OrderDetailVo> getOrderDetailByIds(List<Long> orderIds) {
+    public List<OrderDetailDto> getOrderDetailByIds(List<Long> orderIds) {
         if (CollectionUtils.isEmpty(orderIds)) {
             return List.of();
         }
@@ -997,13 +1081,13 @@ public class MallOrderServiceImpl extends ServiceImpl<MallOrderMapper, MallOrder
                 .collect(Collectors.groupingBy(MallOrderItem::getOrderId));
 
         // 4. 构建返回结果
-        List<OrderDetailVo> result = new ArrayList<>();
+        List<OrderDetailDto> result = new ArrayList<>();
         for (MallOrder mallOrder : orders) {
             // 获取用户信息
             User userInfo = userMap.get(mallOrder.getUserId());
-            OrderDetailVo.UserInfo userInfoVo = null;
+            OrderDetailDto.UserInfo userInfoVo = null;
             if (userInfo != null) {
-                userInfoVo = OrderDetailVo.UserInfo.builder()
+                userInfoVo = OrderDetailDto.UserInfo.builder()
                         .userId(userInfo.getId().toString())
                         .nickname(userInfo.getNickname())
                         .phoneNumber(userInfo.getPhoneNumber())
@@ -1011,7 +1095,7 @@ public class MallOrderServiceImpl extends ServiceImpl<MallOrderMapper, MallOrder
             }
 
             // 构建配送信息
-            OrderDetailVo.DeliveryInfo deliveryInfo = OrderDetailVo.DeliveryInfo.builder()
+            OrderDetailDto.DeliveryInfo deliveryInfo = OrderDetailDto.DeliveryInfo.builder()
                     .receiverName(mallOrder.getReceiverName())
                     .receiverAddress(mallOrder.getReceiverDetail())
                     .receiverPhone(mallOrder.getReceiverPhone())
@@ -1019,20 +1103,20 @@ public class MallOrderServiceImpl extends ServiceImpl<MallOrderMapper, MallOrder
                     .build();
 
             // 构建订单信息
-            OrderDetailVo.OrderInfo orderInfo = OrderDetailVo.OrderInfo.builder()
+            OrderDetailDto.OrderInfo orderInfo = OrderDetailDto.OrderInfo.builder()
                     .orderNo(mallOrder.getOrderNo())
                     .orderStatus(mallOrder.getOrderStatus())
-                    .payType(getPayTypeDesc(mallOrder.getPayType()))
+                    .payType(mallOrder.getPayType())
                     .totalAmount(mallOrder.getTotalAmount())
                     .payAmount(mallOrder.getPayAmount())
                     .freightAmount(mallOrder.getFreightAmount())
                     .build();
 
             // 构建商品信息
-            List<OrderDetailVo.ProductInfo> productInfoList = new ArrayList<>();
+            List<OrderDetailDto.ProductInfo> productInfoList = new ArrayList<>();
             List<MallOrderItem> orderItems = orderItemMap.getOrDefault(mallOrder.getId(), List.of());
             for (MallOrderItem item : orderItems) {
-                OrderDetailVo.ProductInfo productInfo = OrderDetailVo.ProductInfo.builder()
+                OrderDetailDto.ProductInfo productInfo = OrderDetailDto.ProductInfo.builder()
                         .productId(item.getProductId())
                         .productName(item.getProductName())
                         .productImage(item.getImageUrl())
@@ -1043,7 +1127,7 @@ public class MallOrderServiceImpl extends ServiceImpl<MallOrderMapper, MallOrder
                 productInfoList.add(productInfo);
             }
 
-            result.add(OrderDetailVo.builder()
+            result.add(OrderDetailDto.builder()
                     .userInfo(userInfoVo)
                     .deliveryInfo(deliveryInfo)
                     .orderInfo(orderInfo)
