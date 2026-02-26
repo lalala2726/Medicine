@@ -1,5 +1,7 @@
 package cn.zhangchuangla.medicine.agent.model.vo.admin;
 
+import cn.zhangchuangla.medicine.agent.annotation.AgentFieldDesc;
+import cn.zhangchuangla.medicine.agent.annotation.AgentVoDesc;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 
@@ -11,23 +13,30 @@ import java.util.Date;
  */
 @Data
 @Schema(description = "管理端用户消费信息")
+@AgentVoDesc("管理端用户消费信息")
 public class UserConsumeInfoVo {
 
     @Schema(description = "索引")
+    @AgentFieldDesc("索引")
     private Long index;
 
     @Schema(description = "用户ID")
+    @AgentFieldDesc("用户ID")
     private Long userId;
 
     @Schema(description = "订单编号")
+    @AgentFieldDesc("订单编号")
     private String orderNo;
 
     @Schema(description = "商品总价")
+    @AgentFieldDesc("商品总价")
     private BigDecimal totalPrice;
 
     @Schema(description = "实付金额")
+    @AgentFieldDesc("实付金额")
     private BigDecimal payPrice;
 
     @Schema(description = "完成时间")
+    @AgentFieldDesc("完成时间，订单从创建到完成的时间，这边的完成是用户确定收货的时间")
     private Date finishTime;
 }
