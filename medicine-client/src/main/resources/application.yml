@@ -10,7 +10,7 @@ spring:
   application:
     # 应用名称（用于日志和注册识别）。
     # 示例: MedicineClient
-    name: MedicineClient
+    name: Medicine-Client
   servlet:
     multipart:
       # 单个上传文件最大大小。

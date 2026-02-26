@@ -10,7 +10,7 @@ spring:
   application:
     # 应用名称（用于日志和注册识别）。
     # 示例: Medical
-    name: Medical
+    name: Medicine-Admin
     # 应用版本号。
     # 示例: 0.1
     version: 0.1
