@@ -10,6 +10,8 @@ import cn.zhangchuangla.medicine.common.core.base.AjaxResult;
 import cn.zhangchuangla.medicine.common.core.base.TableDataResult;
 import cn.zhangchuangla.medicine.common.security.base.BaseController;
 import cn.zhangchuangla.medicine.model.dto.OrderWithProductDto;
+import cn.zhangchuangla.medicine.model.vo.MallOrderTimelineVo;
+import cn.zhangchuangla.medicine.model.vo.OrderShippingVo;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -78,6 +80,32 @@ public class AgentOrderController extends BaseController {
             @PathVariable List<String> orderNos
     ) {
         return success(agentOrderService.getOrderDetail(orderNos));
+    }
+
+    /**
+     * 根据订单ID查询订单流程（时间线）。
+     *
+     * @param orderId 订单ID
+     * @return 订单流程列表
+     */
+    @GetMapping("/timeline/{orderId}")
+    @Operation(summary = "获取订单流程", description = "根据订单ID获取订单流程信息")
+    @PreAuthorize("hasAuthority('mall:order:query') or hasRole('super_admin')")
+    public AjaxResult<List<MallOrderTimelineVo>> getOrderTimeline(@PathVariable Long orderId) {
+        return success(agentOrderService.getOrderTimeline(orderId));
+    }
+
+    /**
+     * 根据订单ID查询发货记录。
+     *
+     * @param orderId 订单ID
+     * @return 发货记录
+     */
+    @GetMapping("/shipping/{orderId}")
+    @Operation(summary = "获取发货记录", description = "根据订单ID获取发货记录")
+    @PreAuthorize("hasAuthority('mall:order:query') or hasRole('super_admin')")
+    public AjaxResult<OrderShippingVo> getOrderShipping(@PathVariable Long orderId) {
+        return success(agentOrderService.getOrderShipping(orderId));
     }
 
     private AdminMallOrderListVo buildOrderListVo(OrderWithProductDto source) {

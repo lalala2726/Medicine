@@ -4,6 +4,8 @@ import cn.zhangchuangla.medicine.common.core.base.PageResult;
 import cn.zhangchuangla.medicine.model.dto.OrderDetailDto;
 import cn.zhangchuangla.medicine.model.dto.OrderWithProductDto;
 import cn.zhangchuangla.medicine.model.request.MallOrderListRequest;
+import cn.zhangchuangla.medicine.model.vo.MallOrderTimelineVo;
+import cn.zhangchuangla.medicine.model.vo.OrderShippingVo;
 
 import java.util.List;
 
@@ -27,4 +29,20 @@ public interface AdminAgentOrderRpcService {
      * @return 订单详情列表
      */
     List<OrderDetailDto> getOrderDetailsByOrderNos(List<String> orderNos);
+
+    /**
+     * 根据订单ID查询订单流程（时间线）。
+     *
+     * @param orderId 订单ID
+     * @return 订单流程列表
+     */
+    List<MallOrderTimelineVo> getOrderTimeline(Long orderId);
+
+    /**
+     * 根据订单ID查询发货记录。
+     *
+     * @param orderId 订单ID
+     * @return 发货记录
+     */
+    OrderShippingVo getOrderShipping(Long orderId);
 }

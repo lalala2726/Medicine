@@ -1,10 +1,15 @@
 package cn.zhangchuangla.medicine.admin.rpc;
 
 import cn.zhangchuangla.medicine.admin.service.MallOrderService;
+import cn.zhangchuangla.medicine.admin.service.MallOrderTimelineService;
 import cn.zhangchuangla.medicine.common.core.base.PageResult;
+import cn.zhangchuangla.medicine.common.core.utils.BeanCotyUtils;
 import cn.zhangchuangla.medicine.model.dto.OrderDetailDto;
 import cn.zhangchuangla.medicine.model.dto.OrderWithProductDto;
+import cn.zhangchuangla.medicine.model.entity.MallOrderTimeline;
 import cn.zhangchuangla.medicine.model.request.MallOrderListRequest;
+import cn.zhangchuangla.medicine.model.vo.MallOrderTimelineVo;
+import cn.zhangchuangla.medicine.model.vo.OrderShippingVo;
 import cn.zhangchuangla.medicine.rpc.admin.AdminAgentOrderRpcService;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import lombok.RequiredArgsConstructor;
@@ -20,6 +25,7 @@ import java.util.List;
 public class AdminAgentOrderRpcServiceImpl implements AdminAgentOrderRpcService {
 
     private final MallOrderService mallOrderService;
+    private final MallOrderTimelineService mallOrderTimelineService;
 
     @Override
     public PageResult<OrderWithProductDto> listOrders(MallOrderListRequest query) {
@@ -31,5 +37,16 @@ public class AdminAgentOrderRpcServiceImpl implements AdminAgentOrderRpcService 
     @Override
     public List<OrderDetailDto> getOrderDetailsByOrderNos(List<String> orderNos) {
         return mallOrderService.getOrderByOrderNo(orderNos);
+    }
+
+    @Override
+    public List<MallOrderTimelineVo> getOrderTimeline(Long orderId) {
+        List<MallOrderTimeline> timeline = mallOrderTimelineService.getTimelineByOrderId(orderId);
+        return BeanCotyUtils.copyListProperties(timeline, MallOrderTimelineVo.class);
+    }
+
+    @Override
+    public OrderShippingVo getOrderShipping(Long orderId) {
+        return mallOrderService.getOrderShipping(orderId);
     }
 }

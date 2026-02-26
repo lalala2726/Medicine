@@ -3,6 +3,8 @@ package cn.zhangchuangla.medicine.agent.service;
 import cn.zhangchuangla.medicine.agent.model.request.AdminMallOrderListRequest;
 import cn.zhangchuangla.medicine.agent.model.vo.admin.OrderDetailVo;
 import cn.zhangchuangla.medicine.model.dto.OrderWithProductDto;
+import cn.zhangchuangla.medicine.model.vo.MallOrderTimelineVo;
+import cn.zhangchuangla.medicine.model.vo.OrderShippingVo;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 
 import java.util.List;
@@ -31,4 +33,20 @@ public interface MallOrderService {
      * @return 订单详情列表
      */
     List<OrderDetailVo> getOrderDetail(List<String> orderNos);
+
+    /**
+     * 根据订单ID查询订单流程（时间线）。
+     *
+     * @param orderId 订单ID
+     * @return 订单流程列表
+     */
+    List<MallOrderTimelineVo> getOrderTimeline(Long orderId);
+
+    /**
+     * 根据订单ID查询发货记录。
+     *
+     * @param orderId 订单ID
+     * @return 发货记录
+     */
+    OrderShippingVo getOrderShipping(Long orderId);
 }

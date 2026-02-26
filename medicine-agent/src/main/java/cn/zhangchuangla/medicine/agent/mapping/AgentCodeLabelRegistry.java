@@ -1,9 +1,6 @@
 package cn.zhangchuangla.medicine.agent.mapping;
 
-import cn.zhangchuangla.medicine.model.enums.DeliveryTypeEnum;
-import cn.zhangchuangla.medicine.model.enums.OrderStatusEnum;
-import cn.zhangchuangla.medicine.model.enums.PayTypeEnum;
-import cn.zhangchuangla.medicine.model.enums.WalletChangeTypeEnum;
+import cn.zhangchuangla.medicine.model.enums.*;
 
 import java.util.LinkedHashMap;
 import java.util.Map;
@@ -53,6 +50,36 @@ public final class AgentCodeLabelRegistry {
      */
     public static final String AGENT_USER_WALLET_CHANGE_TYPE = "agent.user.wallet.changeType";
 
+    /**
+     * 售后类型映射。
+     */
+    public static final String AGENT_AFTER_SALE_TYPE = "agent.afterSale.type";
+
+    /**
+     * 售后状态映射。
+     */
+    public static final String AGENT_AFTER_SALE_STATUS = "agent.afterSale.status";
+
+    /**
+     * 售后申请原因映射。
+     */
+    public static final String AGENT_AFTER_SALE_REASON = "agent.afterSale.reason";
+
+    /**
+     * 收货状态映射。
+     */
+    public static final String AGENT_AFTER_SALE_RECEIVE_STATUS = "agent.afterSale.receiveStatus";
+
+    /**
+     * 订单事件类型映射。
+     */
+    public static final String AGENT_ORDER_EVENT_TYPE = "agent.order.eventType";
+
+    /**
+     * 操作方类型映射。
+     */
+    public static final String AGENT_OPERATOR_TYPE = "agent.operator.type";
+
     private static final Map<String, Map<String, String>> DICT = buildDict();
 
     private AgentCodeLabelRegistry() {
@@ -86,6 +113,12 @@ public final class AgentCodeLabelRegistry {
         dict.put(AGENT_USER_STATUS, buildUserStatusDict());
         dict.put(AGENT_USER_WALLET_STATUS, buildWalletStatusDict());
         dict.put(AGENT_USER_WALLET_CHANGE_TYPE, buildWalletChangeTypeDict());
+        dict.put(AGENT_AFTER_SALE_TYPE, buildAfterSaleTypeDict());
+        dict.put(AGENT_AFTER_SALE_STATUS, buildAfterSaleStatusDict());
+        dict.put(AGENT_AFTER_SALE_REASON, buildAfterSaleReasonDict());
+        dict.put(AGENT_AFTER_SALE_RECEIVE_STATUS, buildReceiveStatusDict());
+        dict.put(AGENT_ORDER_EVENT_TYPE, buildOrderEventTypeDict());
+        dict.put(AGENT_OPERATOR_TYPE, buildOperatorTypeDict());
         return Map.copyOf(dict);
     }
 
@@ -146,6 +179,54 @@ public final class AgentCodeLabelRegistry {
         Map<String, String> mapping = new LinkedHashMap<>();
         for (WalletChangeTypeEnum changeTypeEnum : WalletChangeTypeEnum.values()) {
             mapping.put(String.valueOf(changeTypeEnum.getCode()), changeTypeEnum.getName());
+        }
+        return Map.copyOf(mapping);
+    }
+
+    private static Map<String, String> buildAfterSaleTypeDict() {
+        Map<String, String> mapping = new LinkedHashMap<>();
+        for (AfterSaleTypeEnum afterSaleTypeEnum : AfterSaleTypeEnum.values()) {
+            mapping.put(afterSaleTypeEnum.getType(), afterSaleTypeEnum.getName());
+        }
+        return Map.copyOf(mapping);
+    }
+
+    private static Map<String, String> buildAfterSaleStatusDict() {
+        Map<String, String> mapping = new LinkedHashMap<>();
+        for (AfterSaleStatusEnum afterSaleStatusEnum : AfterSaleStatusEnum.values()) {
+            mapping.put(afterSaleStatusEnum.getStatus(), afterSaleStatusEnum.getName());
+        }
+        return Map.copyOf(mapping);
+    }
+
+    private static Map<String, String> buildAfterSaleReasonDict() {
+        Map<String, String> mapping = new LinkedHashMap<>();
+        for (AfterSaleReasonEnum afterSaleReasonEnum : AfterSaleReasonEnum.values()) {
+            mapping.put(afterSaleReasonEnum.getReason(), afterSaleReasonEnum.getName());
+        }
+        return Map.copyOf(mapping);
+    }
+
+    private static Map<String, String> buildReceiveStatusDict() {
+        Map<String, String> mapping = new LinkedHashMap<>();
+        for (ReceiveStatusEnum receiveStatusEnum : ReceiveStatusEnum.values()) {
+            mapping.put(receiveStatusEnum.getStatus(), receiveStatusEnum.getName());
+        }
+        return Map.copyOf(mapping);
+    }
+
+    private static Map<String, String> buildOrderEventTypeDict() {
+        Map<String, String> mapping = new LinkedHashMap<>();
+        for (OrderEventTypeEnum orderEventTypeEnum : OrderEventTypeEnum.values()) {
+            mapping.put(orderEventTypeEnum.getType(), orderEventTypeEnum.getName());
+        }
+        return Map.copyOf(mapping);
+    }
+
+    private static Map<String, String> buildOperatorTypeDict() {
+        Map<String, String> mapping = new LinkedHashMap<>();
+        for (OperatorTypeEnum operatorTypeEnum : OperatorTypeEnum.values()) {
+            mapping.put(operatorTypeEnum.getType(), operatorTypeEnum.getName());
         }
         return Map.copyOf(mapping);
     }

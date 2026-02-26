@@ -8,6 +8,8 @@ import cn.zhangchuangla.medicine.common.core.utils.BeanCotyUtils;
 import cn.zhangchuangla.medicine.model.dto.OrderDetailDto;
 import cn.zhangchuangla.medicine.model.dto.OrderWithProductDto;
 import cn.zhangchuangla.medicine.model.request.MallOrderListRequest;
+import cn.zhangchuangla.medicine.model.vo.MallOrderTimelineVo;
+import cn.zhangchuangla.medicine.model.vo.OrderShippingVo;
 import cn.zhangchuangla.medicine.rpc.admin.AdminAgentOrderRpcService;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import org.apache.dubbo.config.annotation.DubboReference;
@@ -37,6 +39,16 @@ public class MallOrderServiceImpl implements MallOrderService {
     public List<OrderDetailVo> getOrderDetail(List<String> orderNos) {
         List<OrderDetailDto> details = adminAgentOrderRpcService.getOrderDetailsByOrderNos(orderNos);
         return details.stream().map(this::toAdminOrderDetail).toList();
+    }
+
+    @Override
+    public List<MallOrderTimelineVo> getOrderTimeline(Long orderId) {
+        return adminAgentOrderRpcService.getOrderTimeline(orderId);
+    }
+
+    @Override
+    public OrderShippingVo getOrderShipping(Long orderId) {
+        return adminAgentOrderRpcService.getOrderShipping(orderId);
     }
 
     private Page<OrderWithProductDto> toPage(PageResult<OrderWithProductDto> result) {

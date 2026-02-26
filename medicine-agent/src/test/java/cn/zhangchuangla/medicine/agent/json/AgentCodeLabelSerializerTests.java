@@ -85,6 +85,28 @@ class AgentCodeLabelSerializerTests {
         assertEquals("支出", node.get("amountDirection").get("description").asText());
     }
 
+    @Test
+    void shouldUseAfterSaleStatusDictMapping() {
+        AfterSaleStatusSample sample = new AfterSaleStatusSample();
+        sample.setAfterSaleStatus("PENDING");
+
+        JsonNode node = serializeToNode(sample);
+
+        assertEquals("待审核", node.get("afterSaleStatus").get("description").asText());
+        assertEquals("PENDING", node.get("afterSaleStatus").get("value").asText());
+    }
+
+    @Test
+    void shouldUseAfterSaleReasonDictMapping() {
+        AfterSaleReasonSample sample = new AfterSaleReasonSample();
+        sample.setApplyReason("DAMAGED");
+
+        JsonNode node = serializeToNode(sample);
+
+        assertEquals("收到商品损坏了", node.get("applyReason").get("description").asText());
+        assertEquals("DAMAGED", node.get("applyReason").get("value").asText());
+    }
+
     private JsonNode serializeToNode(Object value) {
         try {
             return objectMapper.readTree(objectMapper.writeValueAsBytes(value));
@@ -127,5 +149,19 @@ class AgentCodeLabelSerializerTests {
 
         @AgentCodeLabel(dictKey = AgentCodeLabelRegistry.AGENT_USER_WALLET_CHANGE_TYPE)
         private Integer amountDirection;
+    }
+
+    @Data
+    private static class AfterSaleStatusSample {
+
+        @AgentCodeLabel(dictKey = AgentCodeLabelRegistry.AGENT_AFTER_SALE_STATUS)
+        private String afterSaleStatus;
+    }
+
+    @Data
+    private static class AfterSaleReasonSample {
+
+        @AgentCodeLabel(dictKey = AgentCodeLabelRegistry.AGENT_AFTER_SALE_REASON)
+        private String applyReason;
     }
 }

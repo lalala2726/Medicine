@@ -112,7 +112,7 @@ public class AgentUserController extends BaseController {
     /**
      * 分页查询用户钱包流水。
      *
-     * @param userId 用户ID
+     * @param userId  用户ID
      * @param request 分页参数
      * @return 钱包流水分页列表
      */
@@ -128,7 +128,7 @@ public class AgentUserController extends BaseController {
     /**
      * 分页查询用户消费信息。
      *
-     * @param userId 用户ID
+     * @param userId  用户ID
      * @param request 分页参数
      * @return 用户消费分页列表
      */

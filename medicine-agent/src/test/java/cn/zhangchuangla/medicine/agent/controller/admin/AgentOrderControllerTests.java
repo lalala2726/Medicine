@@ -5,6 +5,8 @@ import cn.zhangchuangla.medicine.agent.model.vo.admin.AdminMallOrderListVo;
 import cn.zhangchuangla.medicine.agent.model.vo.admin.OrderDetailVo;
 import cn.zhangchuangla.medicine.agent.service.MallOrderService;
 import cn.zhangchuangla.medicine.model.dto.OrderWithProductDto;
+import cn.zhangchuangla.medicine.model.vo.MallOrderTimelineVo;
+import cn.zhangchuangla.medicine.model.vo.OrderShippingVo;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import org.junit.jupiter.api.Test;
 
@@ -124,6 +126,40 @@ class AgentOrderControllerTests {
         assertEquals(2, result.getData().size());
     }
 
+    /**
+     * 测试订单流程查询是否正确委托给 Service。
+     */
+    @Test
+    void getOrderTimeline_ShouldDelegateToService() {
+        Long orderId = 1L;
+        orderService.timeline = createSampleTimeline();
+
+        var result = controller.getOrderTimeline(orderId);
+
+        assertEquals(200, result.getCode());
+        assertTrue(orderService.getOrderTimelineInvoked);
+        assertEquals(orderId, orderService.capturedTimelineOrderId);
+        assertNotNull(result.getData());
+        assertEquals(1, result.getData().size());
+    }
+
+    /**
+     * 测试发货记录查询是否正确委托给 Service。
+     */
+    @Test
+    void getOrderShipping_ShouldDelegateToService() {
+        Long orderId = 1L;
+        orderService.shipping = createSampleShipping();
+
+        var result = controller.getOrderShipping(orderId);
+
+        assertEquals(200, result.getCode());
+        assertTrue(orderService.getOrderShippingInvoked);
+        assertEquals(orderId, orderService.capturedShippingOrderId);
+        assertNotNull(result.getData());
+        assertEquals("SF1234567890", result.getData().getTrackingNumber());
+    }
+
     // ==================== Helper Methods ====================
 
     private Page<OrderWithProductDto> createSampleOrderPage() {
@@ -183,18 +219,48 @@ class AgentOrderControllerTests {
         return List.of(detail1, detail2);
     }
 
+    private List<MallOrderTimelineVo> createSampleTimeline() {
+        MallOrderTimelineVo timeline = new MallOrderTimelineVo();
+        timeline.setId(1L);
+        timeline.setOrderId(1L);
+        timeline.setEventType("SHIP");
+        timeline.setEventStatus("SUCCESS");
+        timeline.setOperatorType("ADMIN");
+        timeline.setDescription("订单已发货");
+        timeline.setCreatedTime(new Date());
+        return List.of(timeline);
+    }
+
+    private OrderShippingVo createSampleShipping() {
+        OrderShippingVo shippingVo = new OrderShippingVo();
+        shippingVo.setOrderId(1L);
+        shippingVo.setOrderNo("O202510312122");
+        shippingVo.setLogisticsCompany("顺丰速运");
+        shippingVo.setTrackingNumber("SF1234567890");
+        shippingVo.setStatus("IN_TRANSIT");
+        shippingVo.setStatusName("运输中");
+        shippingVo.setDeliverTime(new Date());
+        return shippingVo;
+    }
+
     // ==================== Stub Service ====================
 
     private static class StubMallOrderService implements MallOrderService {
 
         private Page<OrderWithProductDto> orderPage = new Page<>();
         private List<OrderDetailVo> orderDetails = List.of();
+        private List<MallOrderTimelineVo> timeline = List.of();
+        private OrderShippingVo shipping;
 
         private boolean listOrdersInvoked;
         private boolean getOrderDetailInvoked;
+        private boolean getOrderTimelineInvoked;
+        private boolean getOrderShippingInvoked;
 
         private AdminMallOrderListRequest capturedRequest;
         private List<String> capturedOrderNos;
+        private Long capturedTimelineOrderId;
+        private Long capturedShippingOrderId;
 
         @Override
         public Page<OrderWithProductDto> listOrders(AdminMallOrderListRequest request) {
@@ -208,6 +274,20 @@ class AgentOrderControllerTests {
             this.getOrderDetailInvoked = true;
             this.capturedOrderNos = orderNos;
             return orderDetails;
+        }
+
+        @Override
+        public List<MallOrderTimelineVo> getOrderTimeline(Long orderId) {
+            this.getOrderTimelineInvoked = true;
+            this.capturedTimelineOrderId = orderId;
+            return timeline;
+        }
+
+        @Override
+        public OrderShippingVo getOrderShipping(Long orderId) {
+            this.getOrderShippingInvoked = true;
+            this.capturedShippingOrderId = orderId;
+            return shipping;
         }
     }
 }

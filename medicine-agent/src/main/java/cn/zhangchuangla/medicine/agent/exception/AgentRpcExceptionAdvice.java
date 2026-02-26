@@ -35,7 +35,7 @@ public class AgentRpcExceptionAdvice {
      * 返回统一的“业务模块未就绪”语义化错误；否则保持现有全局异常处理逻辑。
      *
      * @param exception RPC 调用异常
-     * @param request 当前 HTTP 请求
+     * @param request   当前 HTTP 请求
      * @return 统一响应结果
      */
     @ExceptionHandler(RpcException.class)
