@@ -1,7 +1,6 @@
 package cn.zhangchuangla.medicine.agent.support;
 
-import cn.zhangchuangla.medicine.agent.annotation.AgentFieldDesc;
-import cn.zhangchuangla.medicine.agent.annotation.AgentVoDesc;
+import cn.zhangchuangla.medicine.agent.annotation.FieldDescription;
 import org.springframework.stereotype.Component;
 
 import java.lang.reflect.*;
@@ -20,7 +19,7 @@ public class AgentVoDescriptionResolver {
      * 解析指定类型的描述元数据。
      *
      * @param type 待解析类型
-     * @return 元数据（未标注 {@link AgentVoDesc} 时返回 empty）
+     * @return 元数据（未标注 {@link FieldDescription} 时返回 empty）
      */
     public Optional<Meta> resolve(Class<?> type) {
         if (type == null) {
@@ -31,8 +30,8 @@ public class AgentVoDescriptionResolver {
     }
 
     private Optional<Meta> resolveInternal(Class<?> type) {
-        AgentVoDesc voDesc = type.getAnnotation(AgentVoDesc.class);
-        if (voDesc == null) {
+        FieldDescription classDescription = type.getAnnotation(FieldDescription.class);
+        if (classDescription == null || classDescription.description().isBlank()) {
             return Optional.empty();
         }
 
@@ -40,7 +39,7 @@ public class AgentVoDescriptionResolver {
         collectFieldDescriptions(type, "", fieldDescriptions, ConcurrentHashMap.newKeySet());
 
         Map<String, String> immutableDescriptions = Collections.unmodifiableMap(new LinkedHashMap<>(fieldDescriptions));
-        return Optional.of(new Meta(voDesc.value(), immutableDescriptions));
+        return Optional.of(new Meta(classDescription.description(), immutableDescriptions));
     }
 
     private void collectFieldDescriptions(Class<?> type,
@@ -60,9 +59,9 @@ public class AgentVoDescriptionResolver {
             String fieldName = field.getName();
             String currentPath = prefix.isBlank() ? fieldName : prefix + "." + fieldName;
 
-            AgentFieldDesc fieldDesc = field.getAnnotation(AgentFieldDesc.class);
-            if (fieldDesc != null && !fieldDesc.value().isBlank()) {
-                result.put(currentPath, fieldDesc.value());
+            FieldDescription fieldDescription = field.getAnnotation(FieldDescription.class);
+            if (fieldDescription != null && !fieldDescription.description().isBlank()) {
+                result.put(currentPath, fieldDescription.description());
             }
 
             appendNestedDescriptions(field, currentPath, result, visiting);
@@ -136,7 +135,11 @@ public class AgentVoDescriptionResolver {
     }
 
     private boolean isAgentVo(Class<?> type) {
-        return type != null && type.getAnnotation(AgentVoDesc.class) != null;
+        if (type == null) {
+            return false;
+        }
+        FieldDescription classDescription = type.getAnnotation(FieldDescription.class);
+        return classDescription != null && !classDescription.description().isBlank();
     }
 
     private List<Field> getAllFields(Class<?> type) {

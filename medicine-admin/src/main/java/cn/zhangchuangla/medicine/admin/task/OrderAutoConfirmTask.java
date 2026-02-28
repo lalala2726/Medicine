@@ -35,7 +35,7 @@ public class OrderAutoConfirmTask {
      * 每天凌晨2点执行
      * </p>
      */
-    @Scheduled(cron = "0 0 2 * * ?")
+    @Scheduled(cron = "0 * * * * ?")
     public void autoConfirmOrders() {
         log.info("开始执行订单自动确认收货任务");
 
