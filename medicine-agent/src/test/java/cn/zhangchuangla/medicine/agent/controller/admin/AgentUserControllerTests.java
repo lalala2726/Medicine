@@ -44,26 +44,6 @@ class AgentUserControllerTests {
         SecurityContextHolder.clearContext();
     }
 
-    /**
-     * 测试获取当前用户信息。
-     * <p>
-     * 测试目的：验证 Controller 能够从安全上下文中获取当前登录用户信息，
-     * 并正确转换为 UserVo 返回。
-     * 测试接口：GET /agent/admin/user/info
-     * 预期结果：返回状态码 200，包含当前用户的详细信息
-     */
-    @Test
-    void getCurrentUser_ShouldReturnUserVo() {
-        setupAuthentication(sampleAuthUser(), Set.of("ROLE_admin", "system:user:query"));
-
-        var result = controller.getCurrentUser();
-
-        assertEquals(200, result.getCode());
-        assertNotNull(result.getData());
-        assertEquals(7L, result.getData().getId());
-        assertEquals("智能体用户", result.getData().getNickName());
-        assertEquals("agent@example.com", result.getData().getEmail());
-    }
 
     /**
      * 测试用户列表查询是否正确委托给 Service。

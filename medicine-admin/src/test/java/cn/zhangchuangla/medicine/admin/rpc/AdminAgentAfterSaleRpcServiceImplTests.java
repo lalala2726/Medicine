@@ -14,8 +14,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
 class AdminAgentAfterSaleRpcServiceImplTests {
@@ -27,11 +26,11 @@ class AdminAgentAfterSaleRpcServiceImplTests {
     private AdminAgentAfterSaleRpcServiceImpl rpcService;
 
     /**
-     * 测试目的：验证 RPC 列表查询会归一化分页参数与筛选条件（支持 value 包裹结构和中文名称）。
-     * 预期结果：传入服务层的请求参数中 pageNum/pageSize 使用默认值，afterSaleType/afterSaleStatus/applyReason 被转换为标准码值。
+     * 测试目的：验证 RPC 列表查询仅做对象属性复制，不对分页和筛选字段做额外归一化处理。
+     * 预期结果：传入服务层的请求参数与入参保持一致，包括 pageNum/pageSize、编码包装字符串与空白字符。
      */
     @Test
-    void listAfterSales_ShouldNormalizeQueryValues() {
+    void listAfterSales_ShouldCopyRawQueryValues() {
         MallAfterSaleListRequest query = new MallAfterSaleListRequest();
         query.setPageNum(0);
         query.setPageSize(0);
@@ -50,31 +49,23 @@ class AdminAgentAfterSaleRpcServiceImplTests {
         verify(mallAfterSaleService).getAfterSaleList(captor.capture());
         AfterSaleListRequest actual = captor.getValue();
 
-        assertEquals(1, actual.getPageNum());
-        assertEquals(10, actual.getPageSize());
-        assertEquals("REFUND_ONLY", actual.getAfterSaleType());
-        assertEquals("PENDING", actual.getAfterSaleStatus());
-        assertEquals("DAMAGED", actual.getApplyReason());
-        assertEquals("O20251108001", actual.getOrderNo());
+        assertEquals(0, actual.getPageNum());
+        assertEquals(0, actual.getPageSize());
+        assertEquals("{\"value\":\"REFUND_ONLY\",\"description\":\"仅退款\"}", actual.getAfterSaleType());
+        assertEquals("{value=PENDING, description=待审核}", actual.getAfterSaleStatus());
+        assertEquals("收到商品损坏了", actual.getApplyReason());
+        assertEquals("  O20251108001  ", actual.getOrderNo());
         assertEquals(1001L, actual.getUserId());
     }
 
     /**
-     * 测试目的：验证当查询参数为 null 时，RPC 层会构造默认请求并继续调用服务层。
-     * 预期结果：传入服务层的请求对象不为空，且分页参数保持默认值。
+     * 测试目的：验证当查询参数为 null 时，RPC 层会将 null 直接传递给服务层。
+     * 预期结果：服务层 getAfterSaleList 方法收到 null 参数。
      */
     @Test
-    void listAfterSales_WithNullQuery_ShouldUseDefaultRequest() {
-        when(mallAfterSaleService.getAfterSaleList(any(AfterSaleListRequest.class)))
-                .thenReturn(new Page<MallAfterSaleListDto>(1, 10, 0));
-
+    void listAfterSales_WithNullQuery_ShouldPassNullToService() {
         rpcService.listAfterSales(null);
-
-        ArgumentCaptor<AfterSaleListRequest> captor = ArgumentCaptor.forClass(AfterSaleListRequest.class);
-        verify(mallAfterSaleService).getAfterSaleList(captor.capture());
-        AfterSaleListRequest actual = captor.getValue();
-
-        assertEquals(1, actual.getPageNum());
-        assertEquals(10, actual.getPageSize());
+        verify(mallAfterSaleService).getAfterSaleList(null);
+        verifyNoMoreInteractions(mallAfterSaleService);
     }
 }

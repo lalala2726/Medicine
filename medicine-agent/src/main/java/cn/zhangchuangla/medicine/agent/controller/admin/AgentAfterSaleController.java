@@ -12,7 +12,6 @@ import cn.zhangchuangla.medicine.model.dto.AfterSaleDetailDto;
 import cn.zhangchuangla.medicine.model.dto.MallAfterSaleListDto;
 import cn.zhangchuangla.medicine.model.request.MallAfterSaleListRequest;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -38,7 +37,6 @@ import java.util.List;
 @RequiredArgsConstructor
 public class AgentAfterSaleController extends BaseController {
 
-    private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
 
     private final MallAfterSaleService mallAfterSaleService;
 

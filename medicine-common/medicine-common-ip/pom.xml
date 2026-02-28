@@ -7,29 +7,21 @@
         <artifactId>medicine-common</artifactId>
         <version>0.1</version>
     </parent>
-    <artifactId>medicine-common-log</artifactId>
-    <name>medicine-common-log</name>
+    <artifactId>medicine-common-ip</artifactId>
+    <name>medicine-common-ip</name>
 
     <dependencies>
         <dependency>
-            <groupId>cn.zhangchuangla.medicine</groupId>
-            <artifactId>medicine-common-core</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>cn.zhangchuangla.medicine</groupId>
-            <artifactId>medicine-common-ip</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>cn.zhangchuangla.medicine</groupId>
-            <artifactId>medicine-common-security</artifactId>
-        </dependency>
-        <dependency>
             <groupId>org.springframework.boot</groupId>
-            <artifactId>spring-boot-autoconfigure</artifactId>
+            <artifactId>spring-boot-starter-web</artifactId>
         </dependency>
         <dependency>
-            <groupId>org.springframework.boot</groupId>
-            <artifactId>spring-boot-starter-aop</artifactId>
+            <groupId>org.apache.commons</groupId>
+            <artifactId>commons-lang3</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.lionsoul</groupId>
+            <artifactId>ip2region</artifactId>
         </dependency>
         <dependency>
             <groupId>org.projectlombok</groupId>
