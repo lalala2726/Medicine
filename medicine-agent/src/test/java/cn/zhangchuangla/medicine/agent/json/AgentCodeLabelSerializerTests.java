@@ -1,7 +1,6 @@
 package cn.zhangchuangla.medicine.agent.json;
 
 import cn.zhangchuangla.medicine.agent.annotation.AgentCodeLabel;
-import cn.zhangchuangla.medicine.agent.annotation.AgentCodePair;
 import cn.zhangchuangla.medicine.agent.mapping.AgentCodeLabelRegistry;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -17,8 +16,8 @@ class AgentCodeLabelSerializerTests {
     private final ObjectMapper objectMapper = JsonMapper.builder().findAndAddModules().build();
 
     @Test
-    void shouldUsePairsMappingWhenMatched() {
-        PairSample sample = new PairSample();
+    void shouldUseProductStatusDictMappingWhenMatched() {
+        ProductStatusSample sample = new ProductStatusSample();
         sample.setStatus(1);
 
         JsonNode node = serializeToNode(sample);
@@ -28,7 +27,7 @@ class AgentCodeLabelSerializerTests {
     }
 
     @Test
-    void shouldUseDictMappingWhenPairsNotConfigured() {
+    void shouldUseDeliveryTypeDictMapping() {
         DictSample sample = new DictSample();
         sample.setDeliveryType(2);
 
@@ -60,8 +59,8 @@ class AgentCodeLabelSerializerTests {
     }
 
     @Test
-    void shouldSupportIntegerCodeInPairs() {
-        PairSample sample = new PairSample();
+    void shouldSupportIntegerCodeInProductStatusDict() {
+        ProductStatusSample sample = new ProductStatusSample();
         sample.setStatus(0);
 
         JsonNode node = serializeToNode(sample);
@@ -116,14 +115,9 @@ class AgentCodeLabelSerializerTests {
     }
 
     @Data
-    private static class PairSample {
+    private static class ProductStatusSample {
 
-        @AgentCodeLabel(
-                pairs = {
-                        @AgentCodePair(code = "1", label = "上架"),
-                        @AgentCodePair(code = "0", label = "下架")
-                }
-        )
+        @AgentCodeLabel(dictKey = AgentCodeLabelRegistry.AGENT_PRODUCT_STATUS)
         private Integer status;
     }
 

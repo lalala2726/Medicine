@@ -18,7 +18,7 @@ import org.springframework.web.servlet.mvc.method.annotation.ResponseBodyAdvice;
 import java.util.*;
 
 /**
- * 为标注 {@code @AgentVoDesc} 的响应数据自动追加字段语义说明。
+ * 为标注 {@code @FieldDescription}（类级）的响应数据自动追加字段语义说明。
  */
 @RestControllerAdvice(basePackages = "cn.zhangchuangla.medicine.agent.controller")
 @RequiredArgsConstructor

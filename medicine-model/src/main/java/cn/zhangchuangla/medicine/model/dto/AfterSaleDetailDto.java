@@ -1,4 +1,4 @@
-package cn.zhangchuangla.medicine.model.vo;
+package cn.zhangchuangla.medicine.model.dto;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.AllArgsConstructor;
@@ -13,17 +13,17 @@ import java.util.Date;
 import java.util.List;
 
 /**
- * 售后详情视图对象
+ * 售后详情传输对象。
  *
  * @author Chuang
- * created 2025/11/08
+ * created 2026/02/28
  */
 @Data
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-@Schema(description = "售后详情")
-public class AfterSaleDetailVo implements Serializable {
+@Schema(description = "售后详情DTO")
+public class AfterSaleDetailDto implements Serializable {
 
     @Serial
     private static final long serialVersionUID = 1L;
@@ -49,13 +49,13 @@ public class AfterSaleDetailVo implements Serializable {
     @Schema(description = "用户昵称", example = "张三")
     private String userNickname;
 
-    @Schema(description = "售后类型", example = "REFUND")
+    @Schema(description = "售后类型编码", example = "REFUND")
     private String afterSaleType;
 
     @Schema(description = "售后类型名称", example = "仅退款")
     private String afterSaleTypeName;
 
-    @Schema(description = "售后状态", example = "PENDING")
+    @Schema(description = "售后状态编码", example = "PENDING")
     private String afterSaleStatus;
 
     @Schema(description = "售后状态名称", example = "待审核")
@@ -64,8 +64,9 @@ public class AfterSaleDetailVo implements Serializable {
     @Schema(description = "退款金额", example = "99.99")
     private BigDecimal refundAmount;
 
-    @Schema(description = "申请原因", example = "PRODUCT_DAMAGE")
+    @Schema(description = "申请原因编码", example = "PRODUCT_DAMAGE")
     private String applyReason;
+
     @Schema(description = "申请原因名称", example = "商品损坏")
     private String applyReasonName;
 
@@ -75,7 +76,7 @@ public class AfterSaleDetailVo implements Serializable {
     @Schema(description = "凭证图片列表", example = "[\"http://example.com/image1.jpg\",\"http://example.com/image2.jpg\"]")
     private List<String> evidenceImages;
 
-    @Schema(description = "收货状态", example = "RECEIVED")
+    @Schema(description = "收货状态编码", example = "RECEIVED")
     private String receiveStatus;
 
     @Schema(description = "收货状态名称", example = "已收货")
@@ -100,16 +101,16 @@ public class AfterSaleDetailVo implements Serializable {
     private ProductInfo productInfo;
 
     @Schema(description = "时间线列表")
-    private List<AfterSaleTimelineVo> timeline;
+    private List<AfterSaleTimelineDto> timeline;
 
     /**
-     * 商品信息
+     * 售后商品信息传输对象。
      */
     @Data
     @Builder
     @NoArgsConstructor
     @AllArgsConstructor
-    @Schema(description = "商品信息")
+    @Schema(description = "售后商品信息DTO")
     public static class ProductInfo implements Serializable {
 
         @Serial
