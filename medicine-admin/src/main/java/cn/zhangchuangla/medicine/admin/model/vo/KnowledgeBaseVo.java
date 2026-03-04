@@ -13,22 +13,34 @@ import java.util.Date;
 public class KnowledgeBaseVo {
 
     @Schema(description = "主键ID", example = "1")
-    private Integer id;
+    private Long id;
 
-    @Schema(description = "知识库名称", example = "常见用药知识库")
-    private String name;
+    @Schema(description = "知识库唯一名称（业务键）", example = "common_medicine_kb")
+    private String knowledgeName;
 
-    @Schema(description = "知识库描述", example = "覆盖常见用药相关的问答内容")
+    @Schema(description = "知识库展示名称", example = "常见用药知识库")
+    private String displayName;
+
+    @Schema(description = "知识库描述", example = "覆盖常见用药相关问答内容")
     private String description;
 
-    @Schema(description = "封面", example = "https://example.com/cover.jpg")
-    private String cover;
+    @Schema(description = "Milvus 集合名称", example = "kb_common_medicine")
+    private String milvusCollectionName;
+
+    @Schema(description = "向量模型标识", example = "text-embedding-3-large")
+    private String embeddingModel;
+
+    @Schema(description = "向量维度", example = "1024")
+    private Integer embeddingDim;
+
+    @Schema(description = "状态", example = "ACTIVE")
+    private String status;
 
     @Schema(description = "创建时间")
-    private Date createTime;
+    private Date createdAt;
 
     @Schema(description = "更新时间")
-    private Date updateTime;
+    private Date updatedAt;
 
     @Schema(description = "创建人")
     private String createBy;

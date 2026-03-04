@@ -58,7 +58,7 @@ public class IPUtils {
      * 构造 IP 工具组件。
      *
      * @param ip2RegionConfig {@link IP2RegionConfig} IP2Region 配置对象，默认值来自 application 配置。
-     * @param resourceLoader {@link ResourceLoader} Spring 资源加载器，用于读取 classpath 与文件系统资源。
+     * @param resourceLoader  {@link ResourceLoader} Spring 资源加载器，用于读取 classpath 与文件系统资源。
      * @return 无返回值。
      * @throws NullPointerException 当 Spring 注入失败导致任一参数为 null 时抛出。
      */
@@ -390,7 +390,7 @@ public class IPUtils {
      * 构造省市合并后的详细地区文本。
      *
      * @param province {@link String} 省份文本，默认空字符串表示未知。
-     * @param city {@link String} 城市文本，默认空字符串表示未知。
+     * @param city     {@link String} 城市文本，默认空字符串表示未知。
      * @return {@link String} 拼接后的地区字符串；无有效信息时返回“未知”。
      * @throws 无显式抛出。
      */
@@ -412,7 +412,7 @@ public class IPUtils {
      * 向地区文本中按需追加片段。
      *
      * @param regionBuilder {@link StringBuilder} 结果拼接器，默认由调用方初始化为空。
-     * @param value {@link String} 候选片段，为空或“未知”时会被忽略。
+     * @param value         {@link String} 候选片段，为空或“未知”时会被忽略。
      * @return 无返回值。
      * @throws NullPointerException 当 regionBuilder 为 null 时抛出。
      */
@@ -430,7 +430,7 @@ public class IPUtils {
      * 原子替换当前搜索器实例并关闭旧实例。
      *
      * @param newSearcher {@link Searcher} 新构建的搜索器实例。
-     * @param mode {@link String} 新实例模式，取值 FILE 或 BUFFER。
+     * @param mode        {@link String} 新实例模式，取值 FILE 或 BUFFER。
      * @return 无返回值。
      * @throws NullPointerException 当 newSearcher 或 mode 为 null 时抛出。
      */

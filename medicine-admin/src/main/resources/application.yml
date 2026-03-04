@@ -16,12 +16,13 @@ spring:
     version: 0.1
   servlet:
     multipart:
+      enabled: true
       # 单个上传文件最大大小。
       # 示例: 50MB
       max-file-size: 50MB
       # 单次请求上传总大小上限。
       # 示例: 50MB
-      max-request-size: 50MB
+      max-request-size: 100MB
   data:
     mongodb:
       # MongoDB 连接串。
@@ -154,11 +155,32 @@ minio:
   # 示例: medicine
   bucket-name: ${MINIO_BUCKET_NAME:medicine}
 
+knowledge-base:
+  ai:
+    # 知识库 AI 服务地址。
+    # 示例: http://localhost:8000
+    base-url: ${KNOWLEDGE_BASE_AI_BASE_URL:http://localhost:8000}
+
 file:
   upload:
-    # 允许上传的 MIME 类型。
-    # 示例: image/jpeg,image/png,application/pdf
-    allowed-types: image/jpeg,image/png,image/gif,image/webp,application/pdf
+    # 允许上传的 MIME 类型或文件扩展名。
+    # 示例: [image/jpeg, image/png, application/pdf, .docx]
+    allowed-types:
+      - image/jpeg
+      - image/png
+      - image/gif
+      - image/webp
+      - application/pdf
+      - text/plain
+      - .txt
+      - .md
+      - .pdf
+      - .docx
+      - .doc
+      - .pptx
+      - .ppt
+      - .xlsx
+      - .xls
 
 ip2region:
   # 是否启用 IP 地理位置解析。

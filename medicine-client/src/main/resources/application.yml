@@ -153,9 +153,24 @@ minio:
 
 file:
   upload:
-    # 允许上传的 MIME 类型。
-    # 示例: image/jpeg,image/png,application/pdf
-    allowed-types: image/jpeg,image/png,image/gif,image/webp,application/pdf
+    # 允许上传的 MIME 类型或文件扩展名。
+    # 示例: [image/jpeg, image/png, application/pdf, .docx]
+    allowed-types:
+      - image/jpeg
+      - image/png
+      - image/gif
+      - image/webp
+      - application/pdf
+      - text/plain
+      - .txt
+      - .md
+      - .pdf
+      - .docx
+      - .doc
+      - .pptx
+      - .ppt
+      - .xlsx
+      - .xls
 
 ip2region:
   # 是否启用 IP 地理位置解析。

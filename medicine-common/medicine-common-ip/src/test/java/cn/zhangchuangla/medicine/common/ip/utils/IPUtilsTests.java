@@ -156,9 +156,9 @@ class IPUtilsTests {
     /**
      * 功能描述：创建 IPUtils 测试实例并注入指定配置。
      *
-     * @param enabled {@code boolean} 是否启用 ip2region，默认 true。
+     * @param enabled      {@code boolean} 是否启用 ip2region，默认 true。
      * @param cacheEnabled {@code boolean} 是否使用内存缓存，默认 true。
-     * @param dbPath {@link String} 数据库路径，支持 classpath: 与本地路径。
+     * @param dbPath       {@link String} 数据库路径，支持 classpath: 与本地路径。
      * @return {@link IPUtils} 绑定指定配置的工具实例。
      * @throws 无显式异常。
      */

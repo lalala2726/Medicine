@@ -13,6 +13,7 @@ import org.springframework.web.multipart.MultipartFile;
 
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
+import java.util.Locale;
 import java.util.Set;
 import java.util.UUID;
 
@@ -44,11 +45,11 @@ public class FileUploadServiceImpl implements FileUploadService {
             if (originalFilename == null || originalFilename.isEmpty()) {
                 throw new IllegalArgumentException("文件名不能为空");
             }
-            // 文件类型校验
+
             String contentType = file.getContentType();
-//            if (contentType == null || !isAllowedFileType(contentType)) {
-//                throw new IllegalArgumentException("不支持的文件类型: " + contentType);
-//            }
+            if (!isAllowedFileType(originalFilename, contentType)) {
+                throw new IllegalArgumentException("不支持的文件类型, 文件名: " + originalFilename + ", Content-Type: " + contentType);
+            }
 
             // 生成年月文件夹路径
             String folderPath = generateYearMonthFolderPath();
@@ -106,14 +107,48 @@ public class FileUploadServiceImpl implements FileUploadService {
     }
 
     /**
-     * 检查文件类型是否允许
+     * 功能描述：校验上传文件类型是否在白名单中，支持 MIME 类型与文件扩展名两种匹配方式。
+     * <p>
+     * 参数说明：
      *
-     * @param contentType 文件类型
-     * @return 是否允许
+     * @param originalFilename String 原始文件名，用于提取文件扩展名。
+     * @param contentType      String 文件 MIME 类型，可能为空。
+     *                         返回值：boolean，返回 true 表示类型合法；返回 false 表示类型不在白名单中。
+     *                         异常说明：无。
      */
-    private boolean isAllowedFileType(String contentType) {
+    private boolean isAllowedFileType(String originalFilename, String contentType) {
         Set<String> allowedTypeSet = fileUploadProperties.getAllowedTypeSet();
-        return allowedTypeSet.contains(contentType);
+        if (allowedTypeSet.isEmpty()) {
+            return false;
+        }
+
+        if (contentType != null && allowedTypeSet.contains(contentType.toLowerCase(Locale.ROOT))) {
+            return true;
+        }
+
+        String extension = extractFileExtension(originalFilename);
+        return !extension.isEmpty() && allowedTypeSet.contains(extension);
+    }
+
+    /**
+     * 功能描述：从原始文件名中提取扩展名并标准化为小写（包含 "." 前缀）。
+     * <p>
+     * 参数说明：
+     *
+     * @param originalFilename String 原始文件名。
+     *                         返回值：String，文件扩展名（如 ".pdf"）；当不存在扩展名时返回空字符串。
+     *                         异常说明：无。
+     */
+    private String extractFileExtension(String originalFilename) {
+        if (originalFilename == null || originalFilename.isBlank()) {
+            return "";
+        }
+
+        int lastDotIndex = originalFilename.lastIndexOf(".");
+        if (lastDotIndex < 0 || lastDotIndex == originalFilename.length() - 1) {
+            return "";
+        }
+        return originalFilename.substring(lastDotIndex).toLowerCase(Locale.ROOT);
     }
 
     private String resolveBucketName() {

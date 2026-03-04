@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="cn.zhangchuangla.medicine.admin.mapper.KbDocumentIndexMapper">
+
+    <resultMap id="BaseResultMap" type="cn.zhangchuangla.medicine.model.entity.KbDocumentIndex">
+        <id property="id" column="id"/>
+        <result property="knowledgeBaseId" column="knowledge_base_id"/>
+        <result property="documentId" column="document_id"/>
+        <result property="indexVersion" column="index_version"/>
+        <result property="indexStatus" column="index_status"/>
+        <result property="chunkCount" column="chunk_count"/>
+        <result property="tokenCount" column="token_count"/>
+        <result property="chunkStrategy" column="chunk_strategy"/>
+        <result property="chunkSize" column="chunk_size"/>
+        <result property="tokenSize" column="token_size"/>
+        <result property="chunkOverlap" column="chunk_overlap"/>
+        <result property="embeddingModel" column="embedding_model"/>
+        <result property="embeddingDim" column="embedding_dim"/>
+        <result property="milvusCollectionName" column="milvus_collection_name"/>
+        <result property="sourceHash" column="source_hash"/>
+        <result property="lastIndexedAt" column="last_indexed_at"/>
+        <result property="errorMessage" column="error_message"/>
+        <result property="createBy" column="create_by"/>
+        <result property="updateBy" column="update_by"/>
+        <result property="createdAt" column="created_at"/>
+        <result property="updatedAt" column="updated_at"/>
+        <result property="isDeleted" column="is_deleted"/>
+        <result property="deletedAt" column="deleted_at"/>
+    </resultMap>
+
+    <sql id="Base_Column_List">
+        id,knowledge_base_id,document_id,index_version,index_status,chunk_count,
+        token_count,chunk_strategy,chunk_size,token_size,chunk_overlap,
+        embedding_model,embedding_dim,milvus_collection_name,source_hash,last_indexed_at,
+        error_message,create_by,update_by,created_at,updated_at,
+        is_deleted,deleted_at
+    </sql>
+</mapper>
