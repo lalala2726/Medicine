@@ -1,6 +1,6 @@
 package cn.zhangchuangla.medicine.admin.service.impl;
 
-import cn.zhangchuangla.medicine.admin.integration.KnowledgeBaseAiClient;
+import cn.zhangchuangla.medicine.admin.integration.MedicineAgentClient;
 import cn.zhangchuangla.medicine.admin.mapper.KbBaseMapper;
 import cn.zhangchuangla.medicine.admin.model.request.KnowledgeBaseAddRequest;
 import cn.zhangchuangla.medicine.admin.model.request.KnowledgeBaseListRequest;
@@ -14,7 +14,6 @@ import cn.zhangchuangla.medicine.model.entity.KbBase;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import lombok.RequiredArgsConstructor;
-import org.springframework.dao.DuplicateKeyException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -30,16 +29,16 @@ public class KbBaseServiceImpl extends ServiceImpl<KbBaseMapper, KbBase>
         implements KbBaseService, BaseService {
 
     /**
-     * Milvus 集合名称固定前缀。
+     * 启用状态：0。
      */
-    private static final String KB_PREFIX = "kb_";
+    private static final int STATUS_ENABLED = 0;
 
     /**
-     * 创建重试上限（处理极端并发下的唯一键冲突）。
+     * 禁用状态：1。
      */
-    private static final int MAX_CREATE_RETRY = 5;
+    private static final int STATUS_DISABLED = 1;
 
-    private final KnowledgeBaseAiClient knowledgeBaseAiClient;
+    private final MedicineAgentClient medicineAgentClient;
 
     @Override
     public Page<KbBase> listKnowledgeBase(KnowledgeBaseListRequest request) {
@@ -67,35 +66,19 @@ public class KbBaseServiceImpl extends ServiceImpl<KbBaseMapper, KbBase>
             throw new ServiceException(ResponseCode.OPERATION_ERROR, "知识库名称已存在");
         }
 
-        for (int i = 0; i < MAX_CREATE_RETRY; i++) {
-            String milvusCollectionName = generateMilvusCollectionName();
-            if (isMilvusCollectionNameExists(milvusCollectionName)) {
-                continue;
-            }
+        medicineAgentClient.createKnowledgeBase(request.getKnowledgeName(), request.getEmbeddingDim(), request.getDescription());
 
-            // 约束：必须先确保 AI 服务端创建成功，再插入本地库。
-            knowledgeBaseAiClient.createKnowledgeBase(milvusCollectionName, request.getEmbeddingDim(), request.getDescription());
-
-            KbBase kbBase = copyProperties(request, KbBase.class);
-            kbBase.setMilvusCollectionName(milvusCollectionName);
-            kbBase.setCreateBy(getUsername());
-            try {
-                boolean saved = save(kbBase);
-                if (!saved) {
-                    throw new ServiceException(ResponseCode.OPERATION_ERROR, "创建知识库失败");
-                }
-                return true;
-            } catch (DuplicateKeyException ex) {
-                if (isKnowledgeNameExists(request.getKnowledgeName())) {
-                    throw new ServiceException(ResponseCode.OPERATION_ERROR, "知识库名称已存在");
-                }
-                if (i == MAX_CREATE_RETRY - 1) {
-                    throw new ServiceException(ResponseCode.OPERATION_ERROR, "创建知识库失败，请稍后重试");
-                }
+        KbBase kbBase = copyProperties(request, KbBase.class);
+        kbBase.setCreateBy(getUsername());
+        try {
+            boolean saved = save(kbBase);
+            if (!saved) {
+                throw new ServiceException(ResponseCode.OPERATION_ERROR, "创建知识库失败");
             }
+            return true;
+        } catch (org.springframework.dao.DuplicateKeyException ex) {
+            throw new ServiceException(ResponseCode.OPERATION_ERROR, "知识库名称已存在");
         }
-
-        throw new ServiceException(ResponseCode.OPERATION_ERROR, "创建知识库失败，请稍后重试");
     }
 
     @Override
@@ -107,10 +90,47 @@ public class KbBaseServiceImpl extends ServiceImpl<KbBaseMapper, KbBase>
 
         existingKbBase.setDisplayName(request.getDisplayName());
         existingKbBase.setDescription(request.getDescription());
-        existingKbBase.setStatus(request.getStatus());
         existingKbBase.setUpdateBy(getUsername());
         existingKbBase.setUpdatedAt(new Date());
         return updateById(existingKbBase);
+    }
+
+    @Override
+    public boolean enableKnowledgeBase(Long id) {
+        Assert.isPositive(id, "知识库ID必须大于0");
+        KbBase kbBase = getById(id);
+        Assert.isTrue(kbBase != null, "知识库不存在");
+
+        if (Integer.valueOf(STATUS_ENABLED).equals(kbBase.getStatus())) {
+            return true;
+        }
+        Assert.notEmpty(kbBase.getKnowledgeName(), "知识库名称不能为空");
+
+        medicineAgentClient.loadKnowledgeBase(kbBase.getKnowledgeName());
+
+        kbBase.setStatus(STATUS_ENABLED);
+        kbBase.setUpdateBy(getUsername());
+        kbBase.setUpdatedAt(new Date());
+        return updateById(kbBase);
+    }
+
+    @Override
+    public boolean disableKnowledgeBase(Long id) {
+        Assert.isPositive(id, "知识库ID必须大于0");
+        KbBase kbBase = getById(id);
+        Assert.isTrue(kbBase != null, "知识库不存在");
+
+        if (Integer.valueOf(STATUS_DISABLED).equals(kbBase.getStatus())) {
+            return true;
+        }
+        Assert.notEmpty(kbBase.getKnowledgeName(), "知识库名称不能为空");
+
+        medicineAgentClient.releaseKnowledgeBase(kbBase.getKnowledgeName());
+
+        kbBase.setStatus(STATUS_DISABLED);
+        kbBase.setUpdateBy(getUsername());
+        kbBase.setUpdatedAt(new Date());
+        return updateById(kbBase);
     }
 
     @Override
@@ -120,7 +140,7 @@ public class KbBaseServiceImpl extends ServiceImpl<KbBaseMapper, KbBase>
     }
 
     /**
-     * 判断业务知识库名称在未删除记录中是否已被占用。
+     * 判断业务知识库名称是否已被占用。
      *
      * @param knowledgeName 业务知识库名称
      * @return true: 已存在；false: 不存在
@@ -128,32 +148,6 @@ public class KbBaseServiceImpl extends ServiceImpl<KbBaseMapper, KbBase>
     boolean isKnowledgeNameExists(String knowledgeName) {
         return lambdaQuery()
                 .eq(KbBase::getKnowledgeName, knowledgeName)
-                .eq(KbBase::getIsDeleted, 0)
                 .count() > 0;
     }
-
-    /**
-     * 判断 Milvus 集合名称是否已存在。
-     *
-     * @param milvusCollectionName Milvus 集合名称
-     * @return true: 已存在；false: 不存在
-     */
-    boolean isMilvusCollectionNameExists(String milvusCollectionName) {
-        return lambdaQuery()
-                .eq(KbBase::getMilvusCollectionName, milvusCollectionName)
-                .count() > 0;
-    }
-
-    /**
-     * 生成 Milvus 集合名称。
-     * <p>
-     * 规则：kb_ + 当前毫秒时间戳，不限制总长度。
-     * </p>
-     *
-     * @return 形如 kb_1741096505123 的 Milvus 集合名称
-     */
-    String generateMilvusCollectionName() {
-        return KB_PREFIX + System.currentTimeMillis();
-    }
-
 }

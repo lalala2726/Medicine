@@ -22,9 +22,6 @@ public class KnowledgeBaseListRequest extends PageRequest {
     @Schema(description = "知识库描述（模糊）", example = "覆盖常见用药相关问答内容")
     private String description;
 
-    @Schema(description = "Milvus 集合名称（模糊）", example = "kb_common_medicine")
-    private String milvusCollectionName;
-
     @Schema(description = "向量模型标识（模糊）", example = "text-embedding")
     private String embeddingModel;
 

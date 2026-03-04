@@ -36,11 +36,6 @@ public class KbBase {
     private String description;
 
     /**
-     * 绑定的 Milvus 集合名称
-     */
-    private String milvusCollectionName;
-
-    /**
      * 向量模型标识
      */
     private String embeddingModel;
@@ -74,14 +69,4 @@ public class KbBase {
      * 最后更新时间
      */
     private Date updatedAt;
-
-    /**
-     * 逻辑删除标记
-     */
-    private Integer isDeleted;
-
-    /**
-     * 逻辑删除时间
-     */
-    private Date deletedAt;
 }

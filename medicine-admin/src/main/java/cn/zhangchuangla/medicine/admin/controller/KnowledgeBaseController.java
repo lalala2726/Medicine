@@ -93,6 +93,32 @@ public class KnowledgeBaseController extends BaseController {
     }
 
     /**
+     * 启用知识库
+     *
+     * @param id 主键ID
+     * @return 启用结果
+     */
+    @PostMapping("/{id:\\d+}/enable")
+    @Operation(summary = "启用知识库")
+    public AjaxResult<Void> enableKnowledgeBase(@PathVariable Long id) {
+        boolean result = kbBaseService.enableKnowledgeBase(id);
+        return toAjax(result);
+    }
+
+    /**
+     * 禁用知识库
+     *
+     * @param id 主键ID
+     * @return 禁用结果
+     */
+    @PostMapping("/{id:\\d+}/disable")
+    @Operation(summary = "禁用知识库")
+    public AjaxResult<Void> disableKnowledgeBase(@PathVariable Long id) {
+        boolean result = kbBaseService.disableKnowledgeBase(id);
+        return toAjax(result);
+    }
+
+    /**
      * 删除知识库
      *
      * @param ids 主键ID集合

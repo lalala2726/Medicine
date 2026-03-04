@@ -47,6 +47,22 @@ public interface KbBaseService extends IService<KbBase> {
     boolean updateKnowledgeBase(KnowledgeBaseUpdateRequest request);
 
     /**
+     * 启用知识库
+     *
+     * @param id 知识库ID
+     * @return 启用结果
+     */
+    boolean enableKnowledgeBase(Long id);
+
+    /**
+     * 禁用知识库
+     *
+     * @param id 知识库ID
+     * @return 禁用结果
+     */
+    boolean disableKnowledgeBase(Long id);
+
+    /**
      * 删除知识库
      *
      * @param ids 主键ID列表

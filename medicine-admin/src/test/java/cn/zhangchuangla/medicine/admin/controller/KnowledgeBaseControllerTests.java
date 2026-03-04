@@ -86,6 +86,26 @@ class KnowledgeBaseControllerTests {
     }
 
     @Test
+    void enableKnowledgeBase_ShouldDelegateToService() {
+        when(kbBaseService.enableKnowledgeBase(1L)).thenReturn(true);
+
+        var result = knowledgeBaseController.enableKnowledgeBase(1L);
+
+        assertEquals(200, result.getCode());
+        verify(kbBaseService).enableKnowledgeBase(1L);
+    }
+
+    @Test
+    void disableKnowledgeBase_ShouldDelegateToService() {
+        when(kbBaseService.disableKnowledgeBase(1L)).thenReturn(true);
+
+        var result = knowledgeBaseController.disableKnowledgeBase(1L);
+
+        assertEquals(200, result.getCode());
+        verify(kbBaseService).disableKnowledgeBase(1L);
+    }
+
+    @Test
     void deleteKnowledgeBase_ShouldDelegateToService() {
         when(kbBaseService.deleteKnowledgeBase(List.of(1L, 2L))).thenReturn(true);
 

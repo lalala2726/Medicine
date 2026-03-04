@@ -9,7 +9,6 @@
         <result property="knowledgeName" column="knowledge_name"/>
         <result property="displayName" column="display_name"/>
         <result property="description" column="description"/>
-        <result property="milvusCollectionName" column="milvus_collection_name"/>
         <result property="embeddingModel" column="embedding_model"/>
         <result property="embeddingDim" column="embedding_dim"/>
         <result property="status" column="status"/>
@@ -17,14 +16,11 @@
         <result property="updateBy" column="update_by"/>
         <result property="createdAt" column="created_at"/>
         <result property="updatedAt" column="updated_at"/>
-        <result property="isDeleted" column="is_deleted"/>
-        <result property="deletedAt" column="deleted_at"/>
     </resultMap>
 
     <sql id="Base_Column_List">
-        id,knowledge_name,display_name,description,milvus_collection_name,embedding_model,
-        embedding_dim,status,create_by,update_by,created_at,
-        updated_at,is_deleted,deleted_at
+        id,knowledge_name,display_name,description,embedding_model,
+        embedding_dim,status,create_by,update_by,created_at,updated_at
     </sql>
 
     <select id="listKnowledgeBase" resultMap="BaseResultMap">
@@ -32,7 +28,6 @@
         <include refid="Base_Column_List"/>
         FROM kb_base kb
         <where>
-            kb.is_deleted = 0
             <if test="request.knowledgeName != null and request.knowledgeName != ''">
                 AND kb.knowledge_name LIKE CONCAT('%', #{request.knowledgeName}, '%')
             </if>
@@ -41,9 +36,6 @@
             </if>
             <if test="request.description != null and request.description != ''">
                 AND kb.description LIKE CONCAT('%', #{request.description}, '%')
-            </if>
-            <if test="request.milvusCollectionName != null and request.milvusCollectionName != ''">
-                AND kb.milvus_collection_name LIKE CONCAT('%', #{request.milvusCollectionName}, '%')
             </if>
             <if test="request.embeddingModel != null and request.embeddingModel != ''">
                 AND kb.embedding_model LIKE CONCAT('%', #{request.embeddingModel}, '%')

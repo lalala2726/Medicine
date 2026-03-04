@@ -24,9 +24,6 @@ public class KnowledgeBaseVo {
     @Schema(description = "知识库描述", example = "覆盖常见用药相关问答内容")
     private String description;
 
-    @Schema(description = "Milvus 集合名称", example = "kb_common_medicine")
-    private String milvusCollectionName;
-
     @Schema(description = "向量模型标识", example = "text-embedding-3-large")
     private String embeddingModel;
 
