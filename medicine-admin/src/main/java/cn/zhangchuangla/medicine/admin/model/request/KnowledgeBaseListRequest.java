@@ -31,7 +31,7 @@ public class KnowledgeBaseListRequest extends PageRequest {
     @Schema(description = "向量维度（精确）", example = "1024")
     private Integer embeddingDim;
 
-    @Schema(description = "状态（精确）", example = "ACTIVE")
-    private String status;
+    @Schema(description = "状态（精确，0启用 1停用）", example = "0")
+    private Integer status;
 
 }

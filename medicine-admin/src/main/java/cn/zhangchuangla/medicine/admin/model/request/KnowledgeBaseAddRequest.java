@@ -1,6 +1,7 @@
 package cn.zhangchuangla.medicine.admin.model.request;
 
 import io.swagger.v3.oas.annotations.media.Schema;
+import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
@@ -33,7 +34,9 @@ public class KnowledgeBaseAddRequest {
     @Min(value = 1L, message = "向量维度必须大于0")
     private Integer embeddingDim;
 
-    @Schema(description = "状态", example = "ACTIVE")
-    private String status;
+    @Schema(description = "状态（0启用 1停用）", example = "0")
+    @Min(value = 0L, message = "状态值不合法")
+    @Max(value = 1L, message = "状态值不合法")
+    private Integer status;
 
 }

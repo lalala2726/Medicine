@@ -34,7 +34,7 @@ class KbBaseServiceImplTests {
         request.setDescription("覆盖常见用药相关问答内容");
         request.setEmbeddingModel("text-embedding-3-large");
         request.setEmbeddingDim(1024);
-        request.setStatus("ACTIVE");
+        request.setStatus(0);
 
         doReturn(false).when(kbBaseService).isKnowledgeNameExists("drug_faq");
         doReturn("kb_1741096505123").when(kbBaseService).generateMilvusCollectionName();
@@ -130,7 +130,7 @@ class KbBaseServiceImplTests {
         existing.setEmbeddingDim(1024);
         existing.setDisplayName("旧名称");
         existing.setDescription("旧描述");
-        existing.setStatus("ACTIVE");
+        existing.setStatus(0);
         existing.setUpdateBy("old_admin");
         existing.setUpdatedAt(new Date(1_700_000_000_000L));
 
@@ -138,7 +138,7 @@ class KbBaseServiceImplTests {
         request.setId(1L);
         request.setDisplayName("新名称");
         request.setDescription("新描述");
-        request.setStatus("DISABLED");
+        request.setStatus(1);
 
         doReturn(existing).when(kbBaseService).getById(1L);
         doReturn("admin").when(kbBaseService).getUsername();
@@ -156,7 +156,7 @@ class KbBaseServiceImplTests {
         assertEquals(1024, updated.getEmbeddingDim());
         assertEquals("新名称", updated.getDisplayName());
         assertEquals("新描述", updated.getDescription());
-        assertEquals("DISABLED", updated.getStatus());
+        assertEquals(1, updated.getStatus());
         assertEquals("admin", updated.getUpdateBy());
         assertNotNull(updated.getUpdatedAt());
         assertTrue(updated.getUpdatedAt().after(new Date(1_700_000_000_000L)));

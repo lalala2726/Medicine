@@ -51,7 +51,7 @@
             <if test="request.embeddingDim != null">
                 AND kb.embedding_dim = #{request.embeddingDim}
             </if>
-            <if test="request.status != null and request.status != ''">
+            <if test="request.status != null">
                 AND kb.status = #{request.status}
             </if>
         </where>

@@ -51,9 +51,9 @@ public class KbBase {
     private Integer embeddingDim;
 
     /**
-     * 记录状态
+     * 记录状态（0启用 1停用）
      */
-    private String status;
+    private Integer status;
 
     /**
      * 创建人账号

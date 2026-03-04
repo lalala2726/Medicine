@@ -33,8 +33,8 @@ public class KnowledgeBaseVo {
     @Schema(description = "向量维度", example = "1024")
     private Integer embeddingDim;
 
-    @Schema(description = "状态", example = "ACTIVE")
-    private String status;
+    @Schema(description = "状态（0启用 1停用）", example = "0")
+    private Integer status;
 
     @Schema(description = "创建时间")
     private Date createdAt;

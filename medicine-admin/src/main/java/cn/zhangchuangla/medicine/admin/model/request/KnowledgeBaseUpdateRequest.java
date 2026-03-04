@@ -25,7 +25,9 @@ public class KnowledgeBaseUpdateRequest {
     @Schema(description = "知识库描述", example = "覆盖常见用药相关问答内容")
     private String description;
 
-    @Schema(description = "状态", example = "ACTIVE")
-    private String status;
+    @Schema(description = "状态（0启用 1停用）", example = "0")
+    @Min(value = 0L, message = "状态值不合法")
+    @Max(value = 1L, message = "状态值不合法")
+    private Integer status;
 
 }
