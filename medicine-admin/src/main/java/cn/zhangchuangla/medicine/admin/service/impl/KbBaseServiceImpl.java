@@ -38,6 +38,16 @@ public class KbBaseServiceImpl extends ServiceImpl<KbBaseMapper, KbBase>
      */
     private static final int STATUS_DISABLED = 1;
 
+    /**
+     * 向量维度最小值。
+     */
+    private static final int MIN_EMBEDDING_DIM = 128;
+
+    /**
+     * 向量维度最大值（2^13）。
+     */
+    private static final int MAX_EMBEDDING_DIM = 1 << 13;
+
     private final MedicineAgentClient medicineAgentClient;
 
     @Override
@@ -60,7 +70,7 @@ public class KbBaseServiceImpl extends ServiceImpl<KbBaseMapper, KbBase>
     public boolean addKnowledgeBase(KnowledgeBaseAddRequest request) {
         Assert.notNull(request, "知识库信息不能为空");
         Assert.notEmpty(request.getKnowledgeName(), "知识库名称不能为空");
-        Assert.isPositive(request.getEmbeddingDim(), "向量维度必须大于0");
+        validateEmbeddingDim(request.getEmbeddingDim());
 
         if (isKnowledgeNameExists(request.getKnowledgeName())) {
             throw new ServiceException(ResponseCode.OPERATION_ERROR, "知识库名称已存在");
@@ -149,5 +159,17 @@ public class KbBaseServiceImpl extends ServiceImpl<KbBaseMapper, KbBase>
         return lambdaQuery()
                 .eq(KbBase::getKnowledgeName, knowledgeName)
                 .count() > 0;
+    }
+
+    /**
+     * 校验向量维度：范围 [128, 8192] 且必须为 2 的幂。
+     *
+     * @param embeddingDim 向量维度
+     */
+    private void validateEmbeddingDim(Integer embeddingDim) {
+        Assert.notNull(embeddingDim, "向量维度不能为空");
+        Assert.isParamTrue(embeddingDim >= MIN_EMBEDDING_DIM && embeddingDim <= MAX_EMBEDDING_DIM,
+                "向量维度必须在128到8192之间");
+        Assert.isParamTrue((embeddingDim & (embeddingDim - 1)) == 0, "向量维度必须是2的幂");
     }
 }

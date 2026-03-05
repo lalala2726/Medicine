@@ -28,6 +28,8 @@ public class MedicineAgentClient {
     private static final String CREATE_PATH = "/knowledge_base";
     private static final String LOAD_PATH = "/knowledge_base/load";
     private static final String RELEASE_PATH = "/knowledge_base/release";
+    private static final int MIN_EMBEDDING_DIM = 128;
+    private static final int MAX_EMBEDDING_DIM = 1 << 13;
 
     private final KnowledgeBaseAiProperties properties;
 
@@ -36,7 +38,7 @@ public class MedicineAgentClient {
      */
     public void createKnowledgeBase(String knowledgeName, Integer embeddingDim, String description) {
         Assert.notEmpty(knowledgeName, "知识库名称不能为空");
-        Assert.isPositive(embeddingDim, "向量维度必须大于0");
+        validateEmbeddingDim(embeddingDim);
 
         String url = buildUrl(CREATE_PATH);
         CreateKnowledgeBasePayload payload = new CreateKnowledgeBasePayload(knowledgeName, embeddingDim, description);
@@ -121,6 +123,18 @@ public class MedicineAgentClient {
             return baseUrl.substring(0, baseUrl.length() - 1) + path;
         }
         return baseUrl + path;
+    }
+
+    /**
+     * 校验向量维度：范围 [128, 8192] 且必须为 2 的幂。
+     *
+     * @param embeddingDim 向量维度
+     */
+    private void validateEmbeddingDim(Integer embeddingDim) {
+        Assert.notNull(embeddingDim, "向量维度不能为空");
+        Assert.isParamTrue(embeddingDim >= MIN_EMBEDDING_DIM && embeddingDim <= MAX_EMBEDDING_DIM,
+                "向量维度必须在128到8192之间");
+        Assert.isParamTrue((embeddingDim & (embeddingDim - 1)) == 0, "向量维度必须是2的幂");
     }
 
     private record CreateKnowledgeBasePayload(String knowledge_name, Integer embedding_dim, String description) {

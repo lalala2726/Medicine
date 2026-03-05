@@ -24,12 +24,6 @@ public class KnowledgeBaseListVo {
     @Schema(description = "知识库描述", example = "覆盖常见用药相关问答内容")
     private String description;
 
-    @Schema(description = "向量模型标识", example = "text-embedding-3-large")
-    private String embeddingModel;
-
-    @Schema(description = "向量维度", example = "1024")
-    private Integer embeddingDim;
-
     @Schema(description = "状态（0启用 1停用）", example = "0")
     private Integer status;
 

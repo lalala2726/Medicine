@@ -16,8 +16,8 @@ import org.springframework.web.bind.annotation.RestController;
  */
 @RestController
 @RequestMapping("/agent/callback")
-@Tag(name = "智能体回调接口，请不要主动调用", description = "智能体回调接口，请不要主动调用")
-public class AgentCallBackController {
+@Tag(name = "智能体回调接口", description = "智能体回调接口，请不要主动调用")
+public class _AgentCallBackController {
 
 
     @PostMapping("/knowlage_base_import")

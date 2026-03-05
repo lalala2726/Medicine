@@ -1,6 +1,7 @@
 package cn.zhangchuangla.medicine.admin.integration;
 
 import cn.zhangchuangla.medicine.admin.config.KnowledgeBaseAiProperties;
+import cn.zhangchuangla.medicine.common.core.exception.ParamException;
 import cn.zhangchuangla.medicine.common.core.exception.ServiceException;
 import cn.zhangchuangla.medicine.common.core.utils.JSONUtils;
 import cn.zhangchuangla.medicine.common.http.exception.HttpClientException;
@@ -15,6 +16,16 @@ import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.*;
 
 class MedicineAgentClientTests {
+
+    @Test
+    void createKnowledgeBase_WhenEmbeddingDimNotPowerOfTwo_ShouldThrowParamException() {
+        MedicineAgentClient client = spy(newClient("http://localhost:8000"));
+
+        ParamException exception = assertThrows(ParamException.class,
+                () -> client.createKnowledgeBase("kb_123", 1000, "desc"));
+        assertEquals("向量维度必须是2的幂", exception.getMessage());
+        verify(client, never()).executePostRequest(anyString(), anyString());
+    }
 
     @Test
     void createKnowledgeBase_ShouldSendCorrectRequest() {

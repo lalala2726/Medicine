@@ -3,6 +3,7 @@ package cn.zhangchuangla.medicine.admin.service.impl;
 import cn.zhangchuangla.medicine.admin.integration.MedicineAgentClient;
 import cn.zhangchuangla.medicine.admin.model.request.KnowledgeBaseAddRequest;
 import cn.zhangchuangla.medicine.admin.model.request.KnowledgeBaseUpdateRequest;
+import cn.zhangchuangla.medicine.common.core.exception.ParamException;
 import cn.zhangchuangla.medicine.common.core.exception.ServiceException;
 import cn.zhangchuangla.medicine.model.entity.KbBase;
 import org.junit.jupiter.api.Test;
@@ -109,6 +110,34 @@ class KbBaseServiceImplTests {
         ServiceException exception = assertThrows(ServiceException.class, () -> kbBaseService.addKnowledgeBase(request));
         assertEquals("知识库名称已存在", exception.getMessage());
         verify(medicineAgentClient).createKnowledgeBase("drug_faq", 1024, "覆盖常见用药相关问答内容");
+    }
+
+    @Test
+    void addKnowledgeBase_WhenEmbeddingDimTooSmall_ShouldThrowParamException() {
+        KnowledgeBaseAddRequest request = new KnowledgeBaseAddRequest();
+        request.setKnowledgeName("drug_faq");
+        request.setDisplayName("常见用药知识库");
+        request.setEmbeddingModel("text-embedding-3-large");
+        request.setEmbeddingDim(64);
+
+        ParamException exception = assertThrows(ParamException.class, () -> kbBaseService.addKnowledgeBase(request));
+        assertEquals("向量维度必须在128到8192之间", exception.getMessage());
+        verify(medicineAgentClient, never()).createKnowledgeBase(anyString(), anyInt(), any());
+        verify(kbBaseService, never()).save(any(KbBase.class));
+    }
+
+    @Test
+    void addKnowledgeBase_WhenEmbeddingDimNotPowerOfTwo_ShouldThrowParamException() {
+        KnowledgeBaseAddRequest request = new KnowledgeBaseAddRequest();
+        request.setKnowledgeName("drug_faq");
+        request.setDisplayName("常见用药知识库");
+        request.setEmbeddingModel("text-embedding-3-large");
+        request.setEmbeddingDim(1000);
+
+        ParamException exception = assertThrows(ParamException.class, () -> kbBaseService.addKnowledgeBase(request));
+        assertEquals("向量维度必须是2的幂", exception.getMessage());
+        verify(medicineAgentClient, never()).createKnowledgeBase(anyString(), anyInt(), any());
+        verify(kbBaseService, never()).save(any(KbBase.class));
     }
 
     @Test

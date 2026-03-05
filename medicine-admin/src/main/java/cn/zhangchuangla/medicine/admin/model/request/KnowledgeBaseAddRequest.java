@@ -31,7 +31,8 @@ public class KnowledgeBaseAddRequest {
 
     @Schema(description = "向量维度", example = "1024")
     @NotNull(message = "向量维度不能为空")
-    @Min(value = 1L, message = "向量维度必须大于0")
+    @Min(value = 128L, message = "向量维度不能小于128")
+    @Max(value = 8192L, message = "向量维度不能大于8192")
     private Integer embeddingDim;
 
     @Schema(description = "状态（0启用 1停用）", example = "0")
