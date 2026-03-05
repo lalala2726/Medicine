@@ -107,6 +107,7 @@ mybatis-plus:
   configuration:
     # SQL 日志实现类。
     # 示例: org.apache.ibatis.logging.stdout.StdOutImpl
+    #log-impl: org.apache.ibatis.logging.slf4j.Slf4jImpl
     log-impl: org.apache.ibatis.logging.stdout.StdOutImpl
   # 实体别名包路径。
   # 示例: cn.zhangchuangla.medicine.**.entity

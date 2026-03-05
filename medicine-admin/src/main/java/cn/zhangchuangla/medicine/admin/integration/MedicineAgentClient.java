@@ -14,6 +14,7 @@ import cn.zhangchuangla.medicine.common.systemauth.client.SystemAuthRequestClien
 import com.google.gson.reflect.TypeToken;
 import lombok.Data;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 
 import java.lang.reflect.Type;
@@ -23,6 +24,7 @@ import java.util.List;
 /**
  * 知识库 Agent 服务调用客户端。
  */
+@Slf4j
 @Component
 @RequiredArgsConstructor
 public class MedicineAgentClient {
@@ -88,12 +90,15 @@ public class MedicineAgentClient {
         String url = buildUrl(DOCUMENT_CHUNK_LIST_PATH);
         List<DocumentChunkRow> rows = new ArrayList<>();
         int page = 1;
+        log.info("开始拉取 AI 文档切片: knowledge_name={}, document_id={}", knowledgeName, documentId);
         while (true) {
             DocumentChunkPageData pageData = fetchDocumentChunkPage(url, knowledgeName, documentId, page);
             if (pageData != null && pageData.getRows() != null && !pageData.getRows().isEmpty()) {
                 rows.addAll(pageData.getRows());
             }
             if (pageData == null || !Boolean.TRUE.equals(pageData.getHas_next())) {
+                log.info("完成拉取 AI 文档切片: knowledge_name={}, document_id={}, page_count={}, chunk_count={}",
+                        knowledgeName, documentId, page, rows.size());
                 return rows;
             }
             page++;
