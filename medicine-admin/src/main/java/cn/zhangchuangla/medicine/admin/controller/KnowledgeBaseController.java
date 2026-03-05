@@ -34,7 +34,6 @@ import java.util.List;
 @RestController
 @RequestMapping("/knowledge_base")
 @RequiredArgsConstructor
-@PreAuthorize("hasRole('admin') or hasRole('super_admin')")
 @Tag(name = "知识库管理", description = "知识库 CRUD 接口")
 public class KnowledgeBaseController extends BaseController {
 
@@ -49,6 +48,7 @@ public class KnowledgeBaseController extends BaseController {
      */
     @GetMapping("/list")
     @Operation(summary = "知识库列表")
+    @PreAuthorize("hasAuthority('system:knowledge_base:list') or hasRole('super_admin')")
     public AjaxResult<TableDataResult> listKnowledgeBase(KnowledgeBaseListRequest request) {
         Page<KbBase> page = kbBaseService.listKnowledgeBase(request);
         List<KnowledgeBaseListVo> rows = copyListProperties(page, KnowledgeBaseListVo.class);
@@ -63,6 +63,7 @@ public class KnowledgeBaseController extends BaseController {
      */
     @GetMapping("/{id:\\d+}")
     @Operation(summary = "知识库详情")
+    @PreAuthorize("hasAuthority('system:knowledge_base:query') or hasRole('super_admin')")
     public AjaxResult<KnowledgeBaseVo> getKnowledgeBaseById(@PathVariable Long id) {
         KbBase kbBase = kbBaseService.getKnowledgeBaseById(id);
         KnowledgeBaseVo vo = copyProperties(kbBase, KnowledgeBaseVo.class);
@@ -77,6 +78,7 @@ public class KnowledgeBaseController extends BaseController {
      */
     @PostMapping
     @Operation(summary = "添加知识库")
+    @PreAuthorize("hasAuthority('system:knowledge_base:add') or hasRole('super_admin')")
     public AjaxResult<Void> addKnowledgeBase(@Validated @RequestBody KnowledgeBaseAddRequest request) {
         boolean result = kbBaseService.addKnowledgeBase(request);
         return toAjax(result);
@@ -90,6 +92,7 @@ public class KnowledgeBaseController extends BaseController {
      */
     @PutMapping
     @Operation(summary = "修改知识库")
+    @PreAuthorize("hasAuthority('system:knowledge_base:update') or hasRole('super_admin')")
     public AjaxResult<Void> updateKnowledgeBase(@Validated @RequestBody KnowledgeBaseUpdateRequest request) {
         boolean result = kbBaseService.updateKnowledgeBase(request);
         return toAjax(result);
@@ -103,6 +106,7 @@ public class KnowledgeBaseController extends BaseController {
      */
     @PostMapping("/{id:\\d+}/enable")
     @Operation(summary = "启用知识库")
+    @PreAuthorize("hasAuthority('system:knowledge_base:enable') or hasRole('super_admin')")
     public AjaxResult<Void> enableKnowledgeBase(@PathVariable Long id) {
         boolean result = kbBaseService.enableKnowledgeBase(id);
         return toAjax(result);
@@ -116,6 +120,7 @@ public class KnowledgeBaseController extends BaseController {
      */
     @PostMapping("/{id:\\d+}/disable")
     @Operation(summary = "禁用知识库")
+    @PreAuthorize("hasAuthority('system:knowledge_base:disable') or hasRole('super_admin')")
     public AjaxResult<Void> disableKnowledgeBase(@PathVariable Long id) {
         boolean result = kbBaseService.disableKnowledgeBase(id);
         return toAjax(result);
@@ -129,6 +134,7 @@ public class KnowledgeBaseController extends BaseController {
      */
     @DeleteMapping("/{ids:\\d+(?:,\\d+)*}")
     @Operation(summary = "删除知识库")
+    @PreAuthorize("hasAuthority('system:knowledge_base:delete') or hasRole('super_admin')")
     public AjaxResult<Void> deleteKnowledgeBase(@PathVariable List<Long> ids) {
         boolean result = kbBaseService.deleteKnowledgeBase(ids);
         return toAjax(result);
@@ -142,6 +148,7 @@ public class KnowledgeBaseController extends BaseController {
      */
     @PostMapping("/import")
     @Operation(summary = "导入知识库文档")
+    @PreAuthorize("hasAuthority('system:knowledge_base:import') or hasRole('super_admin')")
     public AjaxResult<Void> importKnowledge(@Validated @RequestBody KnowledgeBaseImportRequest request) {
         kbDocumentService.importKnowledge(request);
         return success();
