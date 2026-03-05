@@ -24,4 +24,11 @@ public interface KbDocumentService extends IService<KbDocument> {
      */
     void handleImportResult(KnowledgeImportResultMessage message);
 
+    /**
+     * 处理切片同步消息。
+     *
+     * @param message 切片同步消息
+     */
+    void handleChunkUpdateResult(KnowledgeImportResultMessage message);
+
 }

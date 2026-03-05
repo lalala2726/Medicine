@@ -1,8 +1,10 @@
 package cn.zhangchuangla.medicine.admin.service.impl;
 
+import cn.zhangchuangla.medicine.admin.integration.MedicineAgentClient;
 import cn.zhangchuangla.medicine.admin.model.request.KnowledgeBaseImportRequest;
 import cn.zhangchuangla.medicine.admin.publisher.KnowledgeImportPublisher;
 import cn.zhangchuangla.medicine.admin.service.KbBaseService;
+import cn.zhangchuangla.medicine.admin.service.KbDocumentChunkService;
 import cn.zhangchuangla.medicine.common.core.exception.ServiceException;
 import cn.zhangchuangla.medicine.common.redis.core.RedisCache;
 import cn.zhangchuangla.medicine.model.entity.KbBase;
@@ -21,11 +23,10 @@ import org.springframework.data.redis.core.ValueOperations;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyLong;
+import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
+import static org.mockito.Mockito.anyList;
 
 @ExtendWith(MockitoExtension.class)
 class KbDocumentServiceImplTests {
@@ -42,12 +43,19 @@ class KbDocumentServiceImplTests {
     @Mock
     private KnowledgeImportPublisher knowledgeImportPublisher;
 
+    @Mock
+    private MedicineAgentClient medicineAgentClient;
+
+    @Mock
+    private KbDocumentChunkService kbDocumentChunkService;
+
     private KbDocumentServiceImpl kbDocumentService;
 
     @BeforeEach
     void setUp() {
         RedisCache redisCache = new RedisCache(redisTemplate);
-        kbDocumentService = spy(new KbDocumentServiceImpl(kbBaseService, redisCache, knowledgeImportPublisher));
+        kbDocumentService = spy(new KbDocumentServiceImpl(
+                kbBaseService, redisCache, knowledgeImportPublisher, medicineAgentClient, kbDocumentChunkService));
         lenient().when(redisTemplate.opsForValue()).thenReturn(valueOperations);
     }
 
@@ -120,6 +128,7 @@ class KbDocumentServiceImplTests {
         verify(kbDocumentService).updateById(captor.capture());
         KbDocument updated = captor.getValue();
         assertEquals("FAILED", updated.getStatus());
+        assertEquals("END", updated.getStageDetail());
         assertEquals("mq error", updated.getLastError());
     }
 
@@ -138,10 +147,11 @@ class KbDocumentServiceImplTests {
 
         verify(kbDocumentService, never()).getById(anyLong());
         verify(kbDocumentService, never()).updateById(any(KbDocument.class));
+        verify(knowledgeImportPublisher, never()).publishChunkUpdate(any(KnowledgeImportResultMessage.class));
     }
 
     @Test
-    void handleImportResult_WhenLatest_ShouldUpdateStatusAndError() {
+    void handleImportResult_WhenLatestFailed_ShouldUpdateStatusAndError() {
         KnowledgeImportResultMessage message = KnowledgeImportResultMessage.builder()
                 .task_uuid("task-2")
                 .biz_key("drug_faq:1001")
@@ -163,8 +173,130 @@ class KbDocumentServiceImplTests {
         verify(kbDocumentService).updateById(captor.capture());
         KbDocument updated = captor.getValue();
         assertEquals("FAILED", updated.getStatus());
+        assertEquals("END", updated.getStageDetail());
         assertEquals("parse failed", updated.getLastError());
         assertEquals("system", updated.getUpdateBy());
+        verify(knowledgeImportPublisher, never()).publishChunkUpdate(any(KnowledgeImportResultMessage.class));
+    }
+
+    @Test
+    void handleImportResult_WhenProcessing_ShouldStoreNormalizedStageDetail() {
+        KnowledgeImportResultMessage message = KnowledgeImportResultMessage.builder()
+                .task_uuid("task-2-1")
+                .biz_key("drug_faq:1001")
+                .version(2L)
+                .document_id(1001L)
+                .stage("processing")
+                .stage_detail("chunking")
+                .build();
+        when(valueOperations.get("kb:latest:drug_faq:1001")).thenReturn(2L);
+        KbDocument existing = new KbDocument();
+        existing.setId(1001L);
+        existing.setStatus("PENDING");
+        doReturn(existing).when(kbDocumentService).getById(1001L);
+        doReturn(true).when(kbDocumentService).updateById(any(KbDocument.class));
+
+        kbDocumentService.handleImportResult(message);
+
+        ArgumentCaptor<KbDocument> captor = ArgumentCaptor.forClass(KbDocument.class);
+        verify(kbDocumentService).updateById(captor.capture());
+        KbDocument updated = captor.getValue();
+        assertEquals("PROCESSING", updated.getStatus());
+        assertEquals("CHUNKING", updated.getStageDetail());
+        assertNull(updated.getLastError());
+    }
+
+    @Test
+    void handleImportResult_WhenLatestCompleted_ShouldSetInsertingAndPublishChunkUpdate() {
+        KnowledgeImportResultMessage message = KnowledgeImportResultMessage.builder()
+                .task_uuid("task-3")
+                .biz_key("drug_faq:1001")
+                .version(2L)
+                .document_id(1001L)
+                .stage("COMPLETED")
+                .knowledge_name("drug_faq")
+                .build();
+        when(valueOperations.get("kb:latest:drug_faq:1001")).thenReturn(2L);
+        KbDocument existing = new KbDocument();
+        existing.setId(1001L);
+        existing.setStatus("PENDING");
+        doReturn(existing).when(kbDocumentService).getById(1001L);
+        doReturn(true).when(kbDocumentService).updateById(any(KbDocument.class));
+
+        kbDocumentService.handleImportResult(message);
+
+        ArgumentCaptor<KbDocument> captor = ArgumentCaptor.forClass(KbDocument.class);
+        verify(kbDocumentService).updateById(captor.capture());
+        KbDocument updated = captor.getValue();
+        assertEquals("INSERTING", updated.getStatus());
+        assertEquals("INSERTING", updated.getStageDetail());
+        assertNull(updated.getLastError());
+        verify(knowledgeImportPublisher).publishChunkUpdate(message);
+    }
+
+    @Test
+    void handleChunkUpdateResult_WhenSyncSuccess_ShouldReplaceChunksAndMarkCompleted() {
+        KnowledgeImportResultMessage message = KnowledgeImportResultMessage.builder()
+                .task_uuid("task-4")
+                .biz_key("drug_faq:1001")
+                .version(3L)
+                .document_id(1001L)
+                .knowledge_name("drug_faq")
+                .stage("COMPLETED")
+                .build();
+        when(valueOperations.get("kb:latest:drug_faq:1001")).thenReturn(3L);
+        KbDocument existing = new KbDocument();
+        existing.setId(1001L);
+        existing.setStatus("INSERTING");
+        doReturn(existing).when(kbDocumentService).getById(1001L);
+        doReturn(true).when(kbDocumentService).updateById(any(KbDocument.class));
+
+        MedicineAgentClient.DocumentChunkRow row = new MedicineAgentClient.DocumentChunkRow();
+        row.setId(900001L);
+        row.setDocument_id(1001L);
+        row.setChunk_index(1);
+        row.setContent("切片内容");
+        row.setChar_count(128);
+        when(medicineAgentClient.listDocumentChunks("drug_faq", 1001L)).thenReturn(List.of(row));
+
+        kbDocumentService.handleChunkUpdateResult(message);
+
+        verify(kbDocumentChunkService).replaceByDocumentId(eq("1001"), anyList());
+        ArgumentCaptor<KbDocument> captor = ArgumentCaptor.forClass(KbDocument.class);
+        verify(kbDocumentService).updateById(captor.capture());
+        KbDocument updated = captor.getValue();
+        assertEquals("COMPLETED", updated.getStatus());
+        assertEquals("END", updated.getStageDetail());
+        assertNull(updated.getLastError());
+    }
+
+    @Test
+    void handleChunkUpdateResult_WhenSyncFailed_ShouldRetryAndMarkFailed() {
+        KnowledgeImportResultMessage message = KnowledgeImportResultMessage.builder()
+                .task_uuid("task-5")
+                .biz_key("drug_faq:1001")
+                .version(3L)
+                .document_id(1001L)
+                .knowledge_name("drug_faq")
+                .stage("COMPLETED")
+                .build();
+        when(valueOperations.get("kb:latest:drug_faq:1001")).thenReturn(3L);
+        KbDocument existing = new KbDocument();
+        existing.setId(1001L);
+        existing.setStatus("INSERTING");
+        doReturn(existing).when(kbDocumentService).getById(1001L);
+        doReturn(true).when(kbDocumentService).updateById(any(KbDocument.class));
+        doThrow(new ServiceException("sync error")).when(medicineAgentClient).listDocumentChunks("drug_faq", 1001L);
+
+        kbDocumentService.handleChunkUpdateResult(message);
+
+        verify(medicineAgentClient, times(3)).listDocumentChunks("drug_faq", 1001L);
+        ArgumentCaptor<KbDocument> captor = ArgumentCaptor.forClass(KbDocument.class);
+        verify(kbDocumentService).updateById(captor.capture());
+        KbDocument updated = captor.getValue();
+        assertEquals("FAILED", updated.getStatus());
+        assertEquals("INSERTING", updated.getStageDetail());
+        assertEquals("sync error", updated.getLastError());
     }
 
     private KnowledgeBaseImportRequest newImportRequest() {

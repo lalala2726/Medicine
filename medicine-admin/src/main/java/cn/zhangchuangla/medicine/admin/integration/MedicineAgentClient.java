@@ -12,10 +12,16 @@ import cn.zhangchuangla.medicine.common.http.model.ClientRequest;
 import cn.zhangchuangla.medicine.common.http.model.HttpMethod;
 import cn.zhangchuangla.medicine.common.http.model.HttpResult;
 import cn.zhangchuangla.medicine.common.security.utils.SecurityUtils;
+import com.google.gson.reflect.TypeToken;
+import lombok.Data;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Component;
+
+import java.lang.reflect.Type;
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * 知识库 Agent 服务调用客户端。
@@ -28,8 +34,13 @@ public class MedicineAgentClient {
     private static final String CREATE_PATH = "/knowledge_base";
     private static final String LOAD_PATH = "/knowledge_base/load";
     private static final String RELEASE_PATH = "/knowledge_base/release";
+    private static final String DOCUMENT_CHUNK_LIST_PATH = "/knowledge_base/document/chunks/list";
     private static final int MIN_EMBEDDING_DIM = 128;
     private static final int MAX_EMBEDDING_DIM = 1 << 13;
+    private static final int CHUNK_PAGE_SIZE = 50;
+    private static final int MAX_CHUNK_PAGE = 10_000;
+    private static final Type DOCUMENT_CHUNK_PAGE_DATA_TYPE = new TypeToken<DocumentChunkPageData>() {
+    }.getType();
 
     private final KnowledgeBaseAiProperties properties;
 
@@ -67,6 +78,35 @@ public class MedicineAgentClient {
     }
 
     /**
+     * 分页拉取文档切片列表。
+     *
+     * @param knowledgeName 知识库名称
+     * @param documentId    文档ID
+     * @return 全量切片行
+     */
+    public List<DocumentChunkRow> listDocumentChunks(String knowledgeName, Long documentId) {
+        Assert.notEmpty(knowledgeName, "知识库名称不能为空");
+        Assert.isPositive(documentId, "文档ID必须大于0");
+
+        String url = buildUrl(DOCUMENT_CHUNK_LIST_PATH);
+        List<DocumentChunkRow> rows = new ArrayList<>();
+        int page = 1;
+        while (true) {
+            DocumentChunkPageData pageData = fetchDocumentChunkPage(url, knowledgeName, documentId, page, CHUNK_PAGE_SIZE);
+            if (pageData != null && pageData.getRows() != null && !pageData.getRows().isEmpty()) {
+                rows.addAll(pageData.getRows());
+            }
+            if (pageData == null || !Boolean.TRUE.equals(pageData.getHas_next())) {
+                return rows;
+            }
+            page++;
+            if (page > MAX_CHUNK_PAGE) {
+                throw new ServiceException(ResponseCode.OPERATION_ERROR, "文档切片分页超过上限");
+            }
+        }
+    }
+
+    /**
      * 发送 POST 请求，并验证响应结果。
      *
      * @param url         Agent 服务完整请求地址
@@ -79,6 +119,17 @@ public class MedicineAgentClient {
             BaseResponse.extractData(result);
         } catch (HttpClientException ex) {
             throw new ServiceException(ResponseCode.OPERATION_ERROR, errorPrefix + ex.getMessage());
+        }
+    }
+
+    private DocumentChunkPageData fetchDocumentChunkPage(String url, String knowledgeName,
+                                                         Long documentId, int page, int pageSize) {
+        try {
+            ClientRequest request = buildChunkListRequest(url, knowledgeName, documentId, page, pageSize);
+            HttpResult<String> result = executeGetRequest(request);
+            return BaseResponse.extractData(result, DOCUMENT_CHUNK_PAGE_DATA_TYPE);
+        } catch (HttpClientException ex) {
+            throw new ServiceException(ResponseCode.OPERATION_ERROR, "调用Agent服务拉取文档切片失败: " + ex.getMessage());
         }
     }
 
@@ -108,6 +159,21 @@ public class MedicineAgentClient {
             }
         }
         return RequestClient.post(requestBuilder.build(), String.class);
+    }
+
+    ClientRequest buildChunkListRequest(String url, String knowledgeName, Long documentId, int page, int pageSize) {
+        return ClientRequest.builder()
+                .method(HttpMethod.GET)
+                .url(url)
+                .addQueryParameter("knowledge_name", knowledgeName)
+                .addQueryParameter("document_id", String.valueOf(documentId))
+                .addQueryParameter("page", String.valueOf(page))
+                .addQueryParameter("page_size", String.valueOf(pageSize))
+                .build();
+    }
+
+    HttpResult<String> executeGetRequest(ClientRequest request) {
+        return RequestClient.get(request, String.class);
     }
 
     /**
@@ -141,5 +207,28 @@ public class MedicineAgentClient {
     }
 
     private record CollectionPayload(String collection_name) {
+    }
+
+    @Data
+    public static class DocumentChunkPageData {
+        private List<DocumentChunkRow> rows;
+        private Integer total;
+        private Integer page_num;
+        private Integer page_size;
+        private Boolean has_next;
+    }
+
+    @Data
+    public static class DocumentChunkRow {
+        private Long id;
+        private Long document_id;
+        private Integer chunk_index;
+        private String content;
+        private Integer char_count;
+        private String chunk_strategy;
+        private Integer chunk_size;
+        private Integer token_size;
+        private String source_hash;
+        private Long created_at_ts;
     }
 }

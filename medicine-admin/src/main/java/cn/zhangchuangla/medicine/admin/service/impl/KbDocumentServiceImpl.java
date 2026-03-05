@@ -1,9 +1,11 @@
 package cn.zhangchuangla.medicine.admin.service.impl;
 
+import cn.zhangchuangla.medicine.admin.integration.MedicineAgentClient;
 import cn.zhangchuangla.medicine.admin.mapper.KbDocumentMapper;
 import cn.zhangchuangla.medicine.admin.model.request.KnowledgeBaseImportRequest;
 import cn.zhangchuangla.medicine.admin.publisher.KnowledgeImportPublisher;
 import cn.zhangchuangla.medicine.admin.service.KbBaseService;
+import cn.zhangchuangla.medicine.admin.service.KbDocumentChunkService;
 import cn.zhangchuangla.medicine.admin.service.KbDocumentService;
 import cn.zhangchuangla.medicine.common.core.enums.ResponseCode;
 import cn.zhangchuangla.medicine.common.core.exception.ServiceException;
@@ -12,6 +14,7 @@ import cn.zhangchuangla.medicine.common.redis.core.RedisCache;
 import cn.zhangchuangla.medicine.common.security.base.BaseService;
 import cn.zhangchuangla.medicine.model.entity.KbBase;
 import cn.zhangchuangla.medicine.model.entity.KbDocument;
+import cn.zhangchuangla.medicine.model.entity.KbDocumentChunk;
 import cn.zhangchuangla.medicine.model.mq.KnowledgeImportCommandMessage;
 import cn.zhangchuangla.medicine.model.mq.KnowledgeImportResultMessage;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
@@ -25,9 +28,7 @@ import java.net.URI;
 import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
 import java.time.format.DateTimeFormatter;
-import java.util.Date;
-import java.util.Locale;
-import java.util.UUID;
+import java.util.*;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -40,7 +41,20 @@ public class KbDocumentServiceImpl extends ServiceImpl<KbDocumentMapper, KbDocum
         implements KbDocumentService, BaseService {
 
     private static final String STATUS_PENDING = "PENDING";
+    private static final String STATUS_STARTED = "STARTED";
+    private static final String STATUS_PROCESSING = "PROCESSING";
+    private static final String STATUS_INSERTING = "INSERTING";
+    private static final String STATUS_COMPLETED = "COMPLETED";
     private static final String STATUS_FAILED = "FAILED";
+
+    private static final String STAGE_DETAIL_STARTED = "STARTED";
+    private static final String STAGE_DETAIL_INSERTING = "INSERTING";
+    private static final String STAGE_DETAIL_END = "END";
+
+    private static final int CHUNK_STATUS_ENABLED = 0;
+    private static final int CHUNK_SYNC_MAX_RETRY = 3;
+    private static final long CHUNK_SYNC_RETRY_INTERVAL_MS = 200L;
+
     private static final String REDIS_LATEST_VERSION_KEY_PREFIX = "kb:latest:";
     private static final long REDIS_LATEST_VERSION_TTL_DAYS = 7L;
     private static final String COMMAND_MESSAGE_TYPE = "knowledge_import_command";
@@ -49,6 +63,8 @@ public class KbDocumentServiceImpl extends ServiceImpl<KbDocumentMapper, KbDocum
     private final KbBaseService kbBaseService;
     private final RedisCache redisCache;
     private final KnowledgeImportPublisher knowledgeImportPublisher;
+    private final MedicineAgentClient medicineAgentClient;
+    private final KbDocumentChunkService kbDocumentChunkService;
 
     /**
      * 发起知识库文档导入。
@@ -90,7 +106,7 @@ public class KbDocumentServiceImpl extends ServiceImpl<KbDocumentMapper, KbDocum
      * 处理知识库导入结果消息。
      * <p>
      * 仅处理最新版本事件；若收到旧版本消息则直接丢弃。
-     * 对最新事件，回写文档状态与错误信息。
+     * 收到 COMPLETED 时先将文档置为 INSERTING，并投递切片同步消息。
      * </p>
      *
      * @param message AI 回传的导入结果消息
@@ -100,22 +116,16 @@ public class KbDocumentServiceImpl extends ServiceImpl<KbDocumentMapper, KbDocum
         if (message == null) {
             return;
         }
-
-        String bizKey = message.getBiz_key();
-        Long messageVersion = message.getVersion();
-        Long latestVersion = getLatestVersion(bizKey);
-        if (latestVersion != null && messageVersion != null && messageVersion < latestVersion) {
-            log.info("丢弃知识库导入旧结果: task_uuid={}, biz_key={}, version={}, latest_version={}, stage={}",
-                    message.getTask_uuid(), bizKey, messageVersion, latestVersion, message.getStage());
+        if (isStaleVersionMessage(message)) {
             return;
         }
 
         log.info("接收知识库导入结果: task_uuid={}, biz_key={}, version={}, stage={}, message={}",
-                message.getTask_uuid(), bizKey, messageVersion, message.getStage(), message.getMessage());
+                message.getTask_uuid(), message.getBiz_key(), message.getVersion(), message.getStage(), message.getMessage());
 
         Long documentId = message.getDocument_id();
         if (documentId == null || documentId <= 0) {
-            log.warn("知识库导入结果缺少有效 document_id: task_uuid={}, biz_key={}", message.getTask_uuid(), bizKey);
+            log.warn("知识库导入结果缺少有效 document_id: task_uuid={}, biz_key={}", message.getTask_uuid(), message.getBiz_key());
             return;
         }
 
@@ -126,9 +136,14 @@ public class KbDocumentServiceImpl extends ServiceImpl<KbDocumentMapper, KbDocum
         }
 
         String stage = normalizeStage(message.getStage());
+        String stageDetail = normalizeStageDetail(message.getStage_detail());
+        boolean completedStage = STATUS_COMPLETED.equalsIgnoreCase(stage);
         if (StringUtils.hasText(stage)) {
-            document.setStatus(stage);
+            document.setStatus(completedStage ? STATUS_INSERTING : stage);
         }
+        document.setStageDetail(completedStage
+                ? STAGE_DETAIL_INSERTING
+                : resolveStageDetail(stage, stageDetail));
         if (STATUS_FAILED.equalsIgnoreCase(stage)) {
             document.setLastError(message.getMessage());
         } else {
@@ -139,6 +154,78 @@ public class KbDocumentServiceImpl extends ServiceImpl<KbDocumentMapper, KbDocum
         boolean updated = updateById(document);
         if (!updated) {
             log.warn("更新知识库导入状态失败: document_id={}, task_uuid={}", documentId, message.getTask_uuid());
+            return;
+        }
+
+        if (!completedStage) {
+            return;
+        }
+
+        try {
+            knowledgeImportPublisher.publishChunkUpdate(message);
+        } catch (Exception ex) {
+            log.error("投递切片同步消息失败: task_uuid={}, document_id={}", message.getTask_uuid(), documentId, ex);
+            markDocumentFailed(documentId, ex.getMessage(), SYSTEM_UPDATER, STAGE_DETAIL_INSERTING);
+        }
+    }
+
+    /**
+     * 处理切片同步消息。
+     * <p>
+     * 拉取切片并写库成功后再将文档状态改为 COMPLETED。
+     * </p>
+     *
+     * @param message 切片同步消息
+     */
+    @Override
+    public void handleChunkUpdateResult(KnowledgeImportResultMessage message) {
+        if (message == null) {
+            return;
+        }
+        if (isStaleVersionMessage(message)) {
+            return;
+        }
+        if (!STATUS_COMPLETED.equalsIgnoreCase(normalizeStage(message.getStage()))) {
+            log.info("跳过非 COMPLETED 切片同步消息: task_uuid={}, stage={}", message.getTask_uuid(), message.getStage());
+            return;
+        }
+
+        Long documentId = message.getDocument_id();
+        if (documentId == null || documentId <= 0) {
+            log.warn("切片同步消息缺少有效 document_id: task_uuid={}, biz_key={}", message.getTask_uuid(), message.getBiz_key());
+            return;
+        }
+        KbDocument document = getById(documentId);
+        if (document == null) {
+            log.warn("切片同步消息对应文档不存在: document_id={}, task_uuid={}", documentId, message.getTask_uuid());
+            return;
+        }
+
+        String knowledgeName = resolveKnowledgeName(message);
+        if (!StringUtils.hasText(knowledgeName)) {
+            markDocumentFailed(documentId, "知识库名称不能为空", SYSTEM_UPDATER, STAGE_DETAIL_INSERTING);
+            return;
+        }
+
+        for (int attempt = 1; attempt <= CHUNK_SYNC_MAX_RETRY; attempt++) {
+            try {
+                List<MedicineAgentClient.DocumentChunkRow> rows =
+                        medicineAgentClient.listDocumentChunks(knowledgeName, documentId);
+                List<KbDocumentChunk> chunks = mapDocumentChunks(rows, documentId);
+                kbDocumentChunkService.replaceByDocumentId(String.valueOf(documentId), chunks);
+                markDocumentCompleted(documentId);
+                log.info("知识库切片同步成功: task_uuid={}, document_id={}, chunk_count={}",
+                        message.getTask_uuid(), documentId, chunks.size());
+                return;
+            } catch (Exception ex) {
+                log.warn("知识库切片同步失败: task_uuid={}, document_id={}, attempt={}/{}, error={}",
+                        message.getTask_uuid(), documentId, attempt, CHUNK_SYNC_MAX_RETRY, extractErrorMessage(ex));
+                if (attempt < CHUNK_SYNC_MAX_RETRY) {
+                    sleepBeforeRetry(attempt);
+                } else {
+                    markDocumentFailed(documentId, extractErrorMessage(ex), SYSTEM_UPDATER, STAGE_DETAIL_INSERTING);
+                }
+            }
         }
     }
 
@@ -157,6 +244,7 @@ public class KbDocumentServiceImpl extends ServiceImpl<KbDocumentMapper, KbDocum
         document.setFileUrl(fileUrl);
         document.setFileName(extractFileName(fileUrl));
         document.setStatus(STATUS_PENDING);
+        document.setStageDetail(STAGE_DETAIL_STARTED);
         document.setCreateBy(username);
         document.setUpdateBy(username);
         document.setCreatedAt(now);
@@ -258,6 +346,92 @@ public class KbDocumentServiceImpl extends ServiceImpl<KbDocumentMapper, KbDocum
     }
 
     /**
+     * 判断当前消息是否为旧版本。
+     */
+    private boolean isStaleVersionMessage(KnowledgeImportResultMessage message) {
+        String bizKey = message.getBiz_key();
+        Long messageVersion = message.getVersion();
+        Long latestVersion = getLatestVersion(bizKey);
+        if (latestVersion != null && messageVersion != null && messageVersion < latestVersion) {
+            log.info("丢弃知识库导入旧结果: task_uuid={}, biz_key={}, version={}, latest_version={}, stage={}",
+                    message.getTask_uuid(), bizKey, messageVersion, latestVersion, message.getStage());
+            return true;
+        }
+        return false;
+    }
+
+    private List<KbDocumentChunk> mapDocumentChunks(List<MedicineAgentClient.DocumentChunkRow> rows, Long fallbackDocumentId) {
+        List<KbDocumentChunk> chunks = new ArrayList<>();
+        if (rows == null || rows.isEmpty()) {
+            return chunks;
+        }
+        Date now = new Date();
+        for (MedicineAgentClient.DocumentChunkRow row : rows) {
+            if (row == null) {
+                continue;
+            }
+            KbDocumentChunk chunk = new KbDocumentChunk();
+            Long rowDocumentId = row.getDocument_id() == null ? fallbackDocumentId : row.getDocument_id();
+            chunk.setDocumentId(String.valueOf(rowDocumentId));
+            chunk.setChunkIndex(row.getChunk_index());
+            chunk.setContent(row.getContent());
+            chunk.setVectorId(row.getId() == null ? null : String.valueOf(row.getId()));
+            chunk.setCharCount(row.getChar_count());
+            chunk.setStatus(CHUNK_STATUS_ENABLED);
+            chunk.setCreatedAt(toDate(row.getCreated_at_ts(), now));
+            chunk.setUpdatedAt(now);
+            chunks.add(chunk);
+        }
+        return chunks;
+    }
+
+    private Date toDate(Long milliseconds, Date fallback) {
+        if (milliseconds == null || milliseconds <= 0) {
+            return fallback;
+        }
+        return new Date(milliseconds);
+    }
+
+    private String resolveKnowledgeName(KnowledgeImportResultMessage message) {
+        if (StringUtils.hasText(message.getKnowledge_name())) {
+            return message.getKnowledge_name().trim();
+        }
+        String bizKey = message.getBiz_key();
+        if (!StringUtils.hasText(bizKey)) {
+            return null;
+        }
+        int separatorIndex = bizKey.indexOf(':');
+        if (separatorIndex <= 0) {
+            return null;
+        }
+        return bizKey.substring(0, separatorIndex);
+    }
+
+    private void sleepBeforeRetry(int attempt) {
+        try {
+            Thread.sleep(CHUNK_SYNC_RETRY_INTERVAL_MS * attempt);
+        } catch (InterruptedException ex) {
+            Thread.currentThread().interrupt();
+        }
+    }
+
+    private void markDocumentCompleted(Long documentId) {
+        KbDocument completedDocument = getById(documentId);
+        if (completedDocument == null) {
+            return;
+        }
+        completedDocument.setStatus(STATUS_COMPLETED);
+        completedDocument.setStageDetail(STAGE_DETAIL_END);
+        completedDocument.setLastError(null);
+        completedDocument.setUpdateBy(SYSTEM_UPDATER);
+        completedDocument.setUpdatedAt(new Date());
+        boolean updated = updateById(completedDocument);
+        if (!updated) {
+            log.warn("更新知识库文档完成状态失败: document_id={}", documentId);
+        }
+    }
+
+    /**
      * 将指定文档标记为失败状态。
      *
      * @param documentId   文档ID
@@ -265,15 +439,30 @@ public class KbDocumentServiceImpl extends ServiceImpl<KbDocumentMapper, KbDocum
      * @param username     操作人账号
      */
     private void markDocumentFailed(Long documentId, String errorMessage, String username) {
+        markDocumentFailed(documentId, errorMessage, username, STAGE_DETAIL_END);
+    }
+
+    private void markDocumentFailed(Long documentId, String errorMessage, String username, String stageDetail) {
         KbDocument failedDocument = getById(documentId);
         if (failedDocument == null) {
             return;
         }
         failedDocument.setStatus(STATUS_FAILED);
-        failedDocument.setLastError(errorMessage);
+        failedDocument.setStageDetail(normalizeStageDetailDefault(stageDetail, STAGE_DETAIL_END));
+        failedDocument.setLastError(StringUtils.hasText(errorMessage) ? errorMessage : "unknown error");
         failedDocument.setUpdateBy(username);
         failedDocument.setUpdatedAt(new Date());
-        updateById(failedDocument);
+        boolean updated = updateById(failedDocument);
+        if (!updated) {
+            log.warn("更新知识库文档失败状态失败: document_id={}", documentId);
+        }
+    }
+
+    private String extractErrorMessage(Exception ex) {
+        if (ex == null || !StringUtils.hasText(ex.getMessage())) {
+            return "unknown error";
+        }
+        return ex.getMessage();
     }
 
     /**
@@ -307,6 +496,37 @@ public class KbDocumentServiceImpl extends ServiceImpl<KbDocumentMapper, KbDocum
             return null;
         }
         return stage.trim().toUpperCase(Locale.ROOT);
+    }
+
+    private String normalizeStageDetail(String stageDetail) {
+        if (!StringUtils.hasText(stageDetail)) {
+            return null;
+        }
+        return stageDetail.trim().toUpperCase(Locale.ROOT);
+    }
+
+    private String normalizeStageDetailDefault(String stageDetail, String fallback) {
+        String normalized = normalizeStageDetail(stageDetail);
+        if (StringUtils.hasText(normalized)) {
+            return normalized;
+        }
+        return fallback;
+    }
+
+    private String resolveStageDetail(String stage, String stageDetail) {
+        if (STATUS_PROCESSING.equalsIgnoreCase(stage)) {
+            return normalizeStageDetailDefault(stageDetail, STAGE_DETAIL_STARTED);
+        }
+        if (STATUS_STARTED.equalsIgnoreCase(stage)) {
+            return STAGE_DETAIL_STARTED;
+        }
+        if (STATUS_FAILED.equalsIgnoreCase(stage)) {
+            return normalizeStageDetailDefault(stageDetail, STAGE_DETAIL_END);
+        }
+        if (STATUS_COMPLETED.equalsIgnoreCase(stage)) {
+            return STAGE_DETAIL_END;
+        }
+        return normalizeStageDetailDefault(stageDetail, STAGE_DETAIL_STARTED);
     }
 
     /**

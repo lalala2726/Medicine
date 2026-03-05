@@ -51,6 +51,11 @@ public class KbDocument {
     private String status;
 
     /**
+     * 导入阶段明细
+     */
+    private String stageDetail;
+
+    /**
      * 最近一次处理失败错误信息
      */
     private String lastError;
