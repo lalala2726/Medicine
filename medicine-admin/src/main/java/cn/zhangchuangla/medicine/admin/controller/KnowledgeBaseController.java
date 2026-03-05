@@ -1,11 +1,13 @@
 package cn.zhangchuangla.medicine.admin.controller;
 
 import cn.zhangchuangla.medicine.admin.model.request.KnowledgeBaseAddRequest;
+import cn.zhangchuangla.medicine.admin.model.request.KnowledgeBaseImportRequest;
 import cn.zhangchuangla.medicine.admin.model.request.KnowledgeBaseListRequest;
 import cn.zhangchuangla.medicine.admin.model.request.KnowledgeBaseUpdateRequest;
 import cn.zhangchuangla.medicine.admin.model.vo.KnowledgeBaseListVo;
 import cn.zhangchuangla.medicine.admin.model.vo.KnowledgeBaseVo;
 import cn.zhangchuangla.medicine.admin.service.KbBaseService;
+import cn.zhangchuangla.medicine.admin.service.KbDocumentService;
 import cn.zhangchuangla.medicine.common.core.base.AjaxResult;
 import cn.zhangchuangla.medicine.common.core.base.TableDataResult;
 import cn.zhangchuangla.medicine.common.security.base.BaseController;
@@ -37,6 +39,7 @@ import java.util.List;
 public class KnowledgeBaseController extends BaseController {
 
     private final KbBaseService kbBaseService;
+    private final KbDocumentService kbDocumentService;
 
     /**
      * 查询知识库列表
@@ -129,6 +132,19 @@ public class KnowledgeBaseController extends BaseController {
     public AjaxResult<Void> deleteKnowledgeBase(@PathVariable List<Long> ids) {
         boolean result = kbBaseService.deleteKnowledgeBase(ids);
         return toAjax(result);
+    }
+
+    /**
+     * 导入知识库文档。
+     *
+     * @param request 导入请求
+     * @return 导入结果
+     */
+    @PostMapping("/import")
+    @Operation(summary = "导入知识库文档")
+    public AjaxResult<Void> importKnowledge(@Validated @RequestBody KnowledgeBaseImportRequest request) {
+        kbDocumentService.importKnowledge(request);
+        return success();
     }
 
 }

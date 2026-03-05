@@ -20,15 +20,27 @@ public class KnowledgeBaseRabbitConfiguration {
     }
 
     @Bean
-    public Queue knowledgeBaseImportQueue() {
-        return QueueBuilder.durable(KnowledgeBaseQueueConstants.QUEUE).build();
+    public Queue knowledgeBaseImportCommandQueue() {
+        return QueueBuilder.durable(KnowledgeBaseQueueConstants.COMMAND_QUEUE).build();
     }
 
     @Bean
-    public Binding knowledgeBaseImportBinding(Queue knowledgeBaseImportQueue, DirectExchange knowledgeBaseImportExchange) {
-        return BindingBuilder.bind(knowledgeBaseImportQueue)
+    public Queue knowledgeBaseImportResultQueue() {
+        return QueueBuilder.durable(KnowledgeBaseQueueConstants.RESULT_QUEUE).build();
+    }
+
+    @Bean
+    public Binding knowledgeBaseImportCommandBinding(Queue knowledgeBaseImportCommandQueue, DirectExchange knowledgeBaseImportExchange) {
+        return BindingBuilder.bind(knowledgeBaseImportCommandQueue)
                 .to(knowledgeBaseImportExchange)
-                .with(KnowledgeBaseQueueConstants.ROUTING_IMPORT);
+                .with(KnowledgeBaseQueueConstants.ROUTING_COMMAND);
+    }
+
+    @Bean
+    public Binding knowledgeBaseImportResultBinding(Queue knowledgeBaseImportResultQueue, DirectExchange knowledgeBaseImportExchange) {
+        return BindingBuilder.bind(knowledgeBaseImportResultQueue)
+                .to(knowledgeBaseImportExchange)
+                .with(KnowledgeBaseQueueConstants.ROUTING_RESULT);
     }
 
     @Bean

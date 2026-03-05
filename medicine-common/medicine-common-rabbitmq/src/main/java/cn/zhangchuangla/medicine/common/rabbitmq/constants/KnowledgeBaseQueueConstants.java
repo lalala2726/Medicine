@@ -8,15 +8,37 @@ public final class KnowledgeBaseQueueConstants {
     /**
      * 知识库导入交换机。
      */
-    public static final String EXCHANGE = "kb.import.exchange";
+    public static final String EXCHANGE = "knowledge.import";
     /**
-     * 知识库导入队列。
+     * 知识库导入 command 队列。
      */
-    public static final String QUEUE = "kb.import.queue";
+    public static final String COMMAND_QUEUE = "knowledge.import.command.q";
     /**
-     * 知识库导入路由键。
+     * 知识库导入 result 队列。
      */
-    public static final String ROUTING_IMPORT = "kb.import";
+    public static final String RESULT_QUEUE = "knowledge.import.result.q";
+
+    /**
+     * 知识库导入 command 路由键。
+     */
+    public static final String ROUTING_COMMAND = "knowledge.import.command";
+
+    /**
+     * 知识库导入 result 路由键。
+     */
+    public static final String ROUTING_RESULT = "knowledge.import.result";
+
+    /**
+     * @deprecated 使用 {@link #COMMAND_QUEUE}
+     */
+    @Deprecated
+    public static final String QUEUE = COMMAND_QUEUE;
+
+    /**
+     * @deprecated 使用 {@link #ROUTING_COMMAND}
+     */
+    @Deprecated
+    public static final String ROUTING_IMPORT = ROUTING_COMMAND;
 
     /**
      * 知识库向量删除队列。
