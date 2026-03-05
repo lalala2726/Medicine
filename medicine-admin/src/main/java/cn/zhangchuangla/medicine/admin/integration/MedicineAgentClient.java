@@ -16,6 +16,7 @@ import lombok.Data;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
+import org.springframework.util.StringUtils;
 
 import java.lang.reflect.Type;
 import java.util.ArrayList;
@@ -116,22 +117,62 @@ public class MedicineAgentClient {
      * @param errorPrefix 错误信息前缀
      */
     private void doPostWithValidation(String url, String body, String errorPrefix) {
+        HttpResult<String> result = null;
         try {
-            HttpResult<String> result = executePostRequest(url, body);
+            result = executePostRequest(url, body);
             BaseResponse.extractData(result);
         } catch (HttpClientException ex) {
-            throw new ServiceException(ResponseCode.OPERATION_ERROR, errorPrefix + ex.getMessage());
+            throw new ServiceException(ResponseCode.OPERATION_ERROR,
+                    errorPrefix + resolveDetailedErrorMessage(result, ex.getMessage()));
         }
     }
 
     private DocumentChunkPageData fetchDocumentChunkPage(String url, String knowledgeName,
                                                          Long documentId, int page) {
+        HttpResult<String> result = null;
         try {
             ClientRequest request = buildChunkListRequest(url, knowledgeName, documentId, page, MedicineAgentClient.CHUNK_PAGE_SIZE);
-            HttpResult<String> result = executeGetRequest(request);
+            result = executeGetRequest(request);
             return BaseResponse.extractData(result, DOCUMENT_CHUNK_PAGE_DATA_TYPE);
         } catch (HttpClientException ex) {
-            throw new ServiceException(ResponseCode.OPERATION_ERROR, "调用Agent服务拉取文档切片失败: " + ex.getMessage());
+            throw new ServiceException(ResponseCode.OPERATION_ERROR,
+                    "调用Agent服务拉取文档切片失败: " + resolveDetailedErrorMessage(result, ex.getMessage()));
+        }
+    }
+
+    /**
+     * 优先提取 AI 响应体中的业务 message，便于上层直接写入 lastError。
+     * 若响应体中没有有效 message，再退回到业务 code、HTTP 状态码或底层异常信息。
+     */
+    private String resolveDetailedErrorMessage(HttpResult<String> result, String fallbackMessage) {
+        ErrorResponseSummary errorSummary = parseErrorResponse(result == null ? null : result.getBody());
+        if (StringUtils.hasText(errorSummary.message())) {
+            return errorSummary.message().trim();
+        }
+        if (result != null && !result.isSuccessful()) {
+            return "请求失败，HTTP 状态码: " + result.getStatusCode();
+        }
+        if (errorSummary.code() != null && errorSummary.code() != 200) {
+            return "业务失败，code=" + errorSummary.code();
+        }
+        return fallbackMessage;
+    }
+
+    /**
+     * 尝试从标准 BaseResponse 结构中提取 code/message。
+     */
+    private ErrorResponseSummary parseErrorResponse(String responseBody) {
+        if (!StringUtils.hasText(responseBody)) {
+            return ErrorResponseSummary.empty();
+        }
+        try {
+            BaseResponse<Object> response = BaseResponse.fromJson(responseBody, Object.class);
+            if (response == null) {
+                return ErrorResponseSummary.empty();
+            }
+            return new ErrorResponseSummary(response.getCode(), response.getMessage());
+        } catch (RuntimeException ex) {
+            return ErrorResponseSummary.empty();
         }
     }
 
@@ -205,8 +246,18 @@ public class MedicineAgentClient {
     private record CollectionPayload(String collection_name) {
     }
 
+    /**
+     * 错误响应摘要。
+     */
+    private record ErrorResponseSummary(Integer code, String message) {
+        private static ErrorResponseSummary empty() {
+            return new ErrorResponseSummary(null, null);
+        }
+    }
+
     @Data
     public static class DocumentChunkPageData {
+
         /**
          * 当前页切片列表。
          */

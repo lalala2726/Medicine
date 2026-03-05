@@ -55,18 +55,33 @@ class MedicineAgentClientTests {
     void createKnowledgeBase_WhenHttpStatusFailed_ShouldThrowException() {
         SystemAuthRequestClient requestClient = mock(SystemAuthRequestClient.class);
         MedicineAgentClient client = newClient("http://localhost:8000", requestClient);
-        when(requestClient.post(any(ClientRequest.class))).thenReturn(httpError("{\"code\":200,\"message\":\"ok\"}"));
+        when(requestClient.post(any(ClientRequest.class))).thenReturn(httpError("{\"code\":500,\"message\":\"知识库已存在\"}"));
 
-        assertThrows(ServiceException.class, () -> client.createKnowledgeBase("kb_123", 1024, "desc"));
+        ServiceException exception = assertThrows(ServiceException.class,
+                () -> client.createKnowledgeBase("kb_123", 1024, "desc"));
+        assertEquals("调用Agent服务创建知识库失败: 知识库已存在", exception.getMessage());
     }
 
     @Test
     void createKnowledgeBase_WhenBodyCodeFailed_ShouldThrowException() {
         SystemAuthRequestClient requestClient = mock(SystemAuthRequestClient.class);
         MedicineAgentClient client = newClient("http://localhost:8000", requestClient);
-        when(requestClient.post(any(ClientRequest.class))).thenReturn(httpOk("{\"code\":500,\"message\":\"failed\"}"));
+        when(requestClient.post(any(ClientRequest.class))).thenReturn(httpOk("{\"code\":500,\"message\":\"向量维度不合法\"}"));
 
-        assertThrows(ServiceException.class, () -> client.createKnowledgeBase("kb_123", 1024, "desc"));
+        ServiceException exception = assertThrows(ServiceException.class,
+                () -> client.createKnowledgeBase("kb_123", 1024, "desc"));
+        assertEquals("调用Agent服务创建知识库失败: 向量维度不合法", exception.getMessage());
+    }
+
+    @Test
+    void createKnowledgeBase_WhenHttpStatusFailedAndBodyMessageBlank_ShouldFallbackToStatusCode() {
+        SystemAuthRequestClient requestClient = mock(SystemAuthRequestClient.class);
+        MedicineAgentClient client = newClient("http://localhost:8000", requestClient);
+        when(requestClient.post(any(ClientRequest.class))).thenReturn(httpError("{\"code\":500,\"message\":\"\"}"));
+
+        ServiceException exception = assertThrows(ServiceException.class,
+                () -> client.createKnowledgeBase("kb_123", 1024, "desc"));
+        assertEquals("调用Agent服务创建知识库失败: 请求失败，HTTP 状态码: 500", exception.getMessage());
     }
 
     @Test
@@ -164,9 +179,11 @@ class MedicineAgentClientTests {
     void listDocumentChunks_WhenBodyCodeFailed_ShouldThrowException() {
         SystemAuthRequestClient requestClient = mock(SystemAuthRequestClient.class);
         MedicineAgentClient client = newClient("http://localhost:8000", requestClient);
-        when(requestClient.get(any(ClientRequest.class))).thenReturn(httpOk("{\"code\":500,\"message\":\"failed\"}"));
+        when(requestClient.get(any(ClientRequest.class))).thenReturn(httpOk("{\"code\":500,\"message\":\"文档不存在\"}"));
 
-        assertThrows(ServiceException.class, () -> client.listDocumentChunks("kb_123", 1001L));
+        ServiceException exception = assertThrows(ServiceException.class,
+                () -> client.listDocumentChunks("kb_123", 1001L));
+        assertEquals("调用Agent服务拉取文档切片失败: 文档不存在", exception.getMessage());
     }
 
     @Test
