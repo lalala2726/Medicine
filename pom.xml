@@ -111,6 +111,11 @@
             </dependency>
             <dependency>
                 <groupId>cn.zhangchuangla.medicine</groupId>
+                <artifactId>medicine-common-system-auth</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>cn.zhangchuangla.medicine</groupId>
                 <artifactId>medicine-common-storage</artifactId>
                 <version>${project.version}</version>
             </dependency>

@@ -55,6 +55,32 @@ security:
   # 示例: 25920000
   refresh-token-expire-time: 25920000
 
+system-auth:
+  # 系统鉴权总开关。
+  # 示例: true
+  enabled: ${SYSTEM_AUTH_ENABLED:true}
+  # 时间戳容差（秒）。
+  # 示例: 300
+  max-skew-seconds: ${SYSTEM_AUTH_MAX_SKEW_SECONDS:300}
+  # nonce 存活时间（秒）。
+  # 示例: 600
+  nonce-ttl-seconds: ${SYSTEM_AUTH_NONCE_TTL_SECONDS:600}
+  # nonce Redis key 前缀。
+  # 示例: system_auth:nonce
+  nonce-key-prefix: ${SYSTEM_AUTH_NONCE_KEY_PREFIX:system_auth:nonce}
+  # 客户端注册信息 JSON（app_id/secret/enabled）。
+  # 示例: [{"app_id":"medicine-admin","secret":"xxx","enabled":true}]
+  clients-json: ${SYSTEM_AUTH_CLIENTS_JSON:[]}
+  # 默认签名版本。
+  # 示例: v1
+  default-sign-version: ${SYSTEM_AUTH_DEFAULT_SIGN_VERSION:v1}
+  # 本方 app_id（出站签名使用）。
+  # 示例: medicine-agent
+  x-agent-key: ${MEDICINE_AGENT_X_AGENT_KEY:medicine-agent}
+  # 本方签名 secret（出站签名使用）。
+  # 示例: your-local-secret
+  local-secret: ${MEDICINE_AGENT_SYSTEM_AUTH_LOCAL_SECRET:}
+
 minio:
   # MinIO 服务地址。
   # 示例: http://127.0.0.1:9000

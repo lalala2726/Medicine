@@ -32,7 +32,7 @@
         </dependency>
         <dependency>
             <groupId>cn.zhangchuangla.medicine</groupId>
-            <artifactId>medicine-common-http-client</artifactId>
+            <artifactId>medicine-common-system-auth</artifactId>
         </dependency>
         <dependency>
             <groupId>cn.zhangchuangla.medicine</groupId>

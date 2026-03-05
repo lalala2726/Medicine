@@ -5,18 +5,15 @@ import cn.zhangchuangla.medicine.common.core.enums.ResponseCode;
 import cn.zhangchuangla.medicine.common.core.exception.ServiceException;
 import cn.zhangchuangla.medicine.common.core.utils.Assert;
 import cn.zhangchuangla.medicine.common.core.utils.JSONUtils;
-import cn.zhangchuangla.medicine.common.http.RequestClient;
 import cn.zhangchuangla.medicine.common.http.exception.HttpClientException;
 import cn.zhangchuangla.medicine.common.http.model.BaseResponse;
 import cn.zhangchuangla.medicine.common.http.model.ClientRequest;
 import cn.zhangchuangla.medicine.common.http.model.HttpMethod;
 import cn.zhangchuangla.medicine.common.http.model.HttpResult;
-import cn.zhangchuangla.medicine.common.security.utils.SecurityUtils;
+import cn.zhangchuangla.medicine.common.systemauth.client.SystemAuthRequestClient;
 import com.google.gson.reflect.TypeToken;
 import lombok.Data;
 import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
-import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Component;
 
 import java.lang.reflect.Type;
@@ -26,7 +23,6 @@ import java.util.List;
 /**
  * 知识库 Agent 服务调用客户端。
  */
-@Slf4j
 @Component
 @RequiredArgsConstructor
 public class MedicineAgentClient {
@@ -43,6 +39,7 @@ public class MedicineAgentClient {
     }.getType();
 
     private final KnowledgeBaseAiProperties properties;
+    private final SystemAuthRequestClient systemAuthRequestClient;
 
     /**
      * 调用 Agent 服务创建知识库。
@@ -92,7 +89,7 @@ public class MedicineAgentClient {
         List<DocumentChunkRow> rows = new ArrayList<>();
         int page = 1;
         while (true) {
-            DocumentChunkPageData pageData = fetchDocumentChunkPage(url, knowledgeName, documentId, page, CHUNK_PAGE_SIZE);
+            DocumentChunkPageData pageData = fetchDocumentChunkPage(url, knowledgeName, documentId, page);
             if (pageData != null && pageData.getRows() != null && !pageData.getRows().isEmpty()) {
                 rows.addAll(pageData.getRows());
             }
@@ -123,9 +120,9 @@ public class MedicineAgentClient {
     }
 
     private DocumentChunkPageData fetchDocumentChunkPage(String url, String knowledgeName,
-                                                         Long documentId, int page, int pageSize) {
+                                                         Long documentId, int page) {
         try {
-            ClientRequest request = buildChunkListRequest(url, knowledgeName, documentId, page, pageSize);
+            ClientRequest request = buildChunkListRequest(url, knowledgeName, documentId, page, MedicineAgentClient.CHUNK_PAGE_SIZE);
             HttpResult<String> result = executeGetRequest(request);
             return BaseResponse.extractData(result, DOCUMENT_CHUNK_PAGE_DATA_TYPE);
         } catch (HttpClientException ex) {
@@ -134,33 +131,24 @@ public class MedicineAgentClient {
     }
 
     /**
-     * 发送 Agent POST 请求，并在可用时透传当前登录态的 Authorization 头。
+     * 使用系统签名客户端发送 Agent POST 请求。
      *
      * @param url  Agent 服务完整请求地址
      * @param body JSON 请求体
      * @return HTTP 响应结果
      */
     HttpResult<String> executePostRequest(String url, String body) {
-        ClientRequest.Builder requestBuilder = ClientRequest.builder()
+        ClientRequest request = ClientRequest.builder()
                 .method(HttpMethod.POST)
                 .url(url)
-                .body(body);
-
-        Authentication authentication = SecurityUtils.getAuthentication();
-        if (authentication != null && authentication.isAuthenticated()) {
-            try {
-                String token = SecurityUtils.getToken();
-                if (token != null && !token.isBlank()) {
-                    requestBuilder.addHeader("Authorization", "Bearer " + token);
-                }
-            } catch (RuntimeException ignored) {
-                // 非 Web 请求上下文下可能无 request，按无鉴权头继续
-                log.error("非 Web 请求上下文下可能无 request，按无鉴权头无法请求 {}", url);
-            }
-        }
-        return RequestClient.post(requestBuilder.build(), String.class);
+                .body(body)
+                .build();
+        return systemAuthRequestClient.post(request);
     }
 
+    /**
+     * 构造文档切片分页查询请求。
+     */
     ClientRequest buildChunkListRequest(String url, String knowledgeName, Long documentId, int page, int pageSize) {
         return ClientRequest.builder()
                 .method(HttpMethod.GET)
@@ -172,8 +160,11 @@ public class MedicineAgentClient {
                 .build();
     }
 
+    /**
+     * 使用系统签名客户端发送 Agent GET 请求。
+     */
     HttpResult<String> executeGetRequest(ClientRequest request) {
-        return RequestClient.get(request, String.class);
+        return systemAuthRequestClient.get(request);
     }
 
     /**
@@ -211,24 +202,82 @@ public class MedicineAgentClient {
 
     @Data
     public static class DocumentChunkPageData {
+        /**
+         * 当前页切片列表。
+         */
         private List<DocumentChunkRow> rows;
+
+        /**
+         * 切片总数。
+         */
         private Integer total;
+
+        /**
+         * 当前页码，从 1 开始。
+         */
         private Integer page_num;
+
+        /**
+         * 当前页大小。
+         */
         private Integer page_size;
+
+        /**
+         * 是否存在下一页。
+         */
         private Boolean has_next;
     }
 
     @Data
     public static class DocumentChunkRow {
+        /**
+         * 上游向量记录主键。
+         */
         private Long id;
+
+        /**
+         * 所属文档 ID。
+         */
         private Long document_id;
+
+        /**
+         * 切片序号。
+         */
         private Integer chunk_index;
+
+        /**
+         * 切片文本内容。
+         */
         private String content;
+
+        /**
+         * 切片字符数。
+         */
         private Integer char_count;
+
+        /**
+         * 切片策略。
+         */
         private String chunk_strategy;
+
+        /**
+         * 切片大小。
+         */
         private Integer chunk_size;
+
+        /**
+         * token 数量。
+         */
         private Integer token_size;
+
+        /**
+         * 内容来源哈希。
+         */
         private String source_hash;
+
+        /**
+         * 创建时间戳，毫秒。
+         */
         private Long created_at_ts;
     }
 }
