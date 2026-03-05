@@ -10,7 +10,7 @@ import java.util.Date;
 /**
  * 知识库文档切片表
  */
-@TableName(value ="kb_document_chunk")
+@TableName(value = "kb_document_chunk")
 @Data
 public class KbDocumentChunk {
 
