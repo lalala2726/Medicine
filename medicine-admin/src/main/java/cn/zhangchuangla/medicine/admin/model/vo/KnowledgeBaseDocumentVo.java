@@ -24,27 +24,30 @@ public class KnowledgeBaseDocumentVo {
     private Long id;
 
     @Schema(description = "知识库ID", example = "1")
-    private Integer knowledgeBaseId;
+    private Long knowledgeBaseId;
 
     @Schema(description = "文件名", example = "1.pdf")
     private String fileName;
 
-    @Schema(description = "文件大小", example = "1.0MB")
-    private String fileSize;
+    @Schema(description = "文件 URL", example = "https://example.com/file.pdf")
+    private String fileUrl;
 
-    @Schema(description = "文件分块数", example = "1")
-    private Integer chunk;
+    @Schema(description = "文件大小（字节）", example = "1024")
+    private Long fileSize;
 
-    @Schema(description = "文件状态", example = "分片中")
+    @Schema(description = "文件 MIME 类型", example = "application/pdf")
+    private String mimeType;
+
+    @Schema(description = "索引状态", example = "PENDING")
     private String status;
 
-    @Schema(description = "文件类型", example = "pdf")
-    private String fileType;
+    @Schema(description = "最近一次处理失败错误信息", example = "文件解析失败")
+    private String lastError;
 
-    @Schema(description = "上传时间", example = "2025-12-05 00:00:00")
-    private Date uploadTime;
+    @Schema(description = "创建时间", example = "2025-12-05 00:00:00")
+    private Date createdAt;
 
     @Schema(description = "更新时间", example = "2025-12-05 00:00:00")
-    private Date updateTime;
+    private Date updatedAt;
 
 }

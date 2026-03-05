@@ -17,7 +17,7 @@ public class KnowledgeBaseImportRequest {
 
     @NotNull(message = "知识库ID不能为空")
     @Schema(description = "知识库ID", requiredMode = Schema.RequiredMode.REQUIRED, example = "1")
-    public Integer knowledgeBaseId;
+    private Long knowledgeBaseId;
 
     @Schema(description = "导入文件(文件地址)", example = "https://example.com/file.pdf")
     private List<String> fileUrls;

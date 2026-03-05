@@ -36,11 +36,6 @@ public class KbDocument {
     private String fileUrl;
 
     /**
-     * 文件内容 SHA-256 哈希
-     */
-    private String fileSha256;
-
-    /**
      * 文件大小（字节）
      */
     private Long fileSize;
@@ -49,11 +44,6 @@ public class KbDocument {
      * 文件 MIME 类型
      */
     private String mimeType;
-
-    /**
-     * 预留文档版本字段
-     */
-    private Integer version;
 
     /**
      * 索引状态
@@ -84,14 +74,4 @@ public class KbDocument {
      * 最后更新时间
      */
     private Date updatedAt;
-
-    /**
-     * 逻辑删除标记
-     */
-    private Integer isDeleted;
-
-    /**
-     * 逻辑删除时间
-     */
-    private Date deletedAt;
 }
