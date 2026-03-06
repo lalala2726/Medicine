@@ -2,7 +2,6 @@ package cn.zhangchuangla.medicine.admin.controller;
 
 import cn.zhangchuangla.medicine.admin.model.request.DocumentDeleteRequest;
 import cn.zhangchuangla.medicine.admin.model.request.DocumentListRequest;
-import cn.zhangchuangla.medicine.admin.model.request.DocumentSliceUpdateRequest;
 import cn.zhangchuangla.medicine.admin.model.request.KnowledgeBaseImportRequest;
 import cn.zhangchuangla.medicine.admin.service.KbDocumentService;
 import cn.zhangchuangla.medicine.model.entity.KbDocument;
@@ -31,19 +30,18 @@ class KbDocumentControllerTests {
     @Test
     void listDocument_ShouldReturnPagedResult() {
         DocumentListRequest request = new DocumentListRequest();
-        request.setKnowledgeBaseId(1L);
         Page<KbDocument> page = new Page<>(1, 10, 1);
         KbDocument document = new KbDocument();
         document.setId(1001L);
         document.setKnowledgeBaseId(1L);
         document.setFileName("guide.pdf");
         page.setRecords(List.of(document));
-        when(kbDocumentService.listDocument(request)).thenReturn(page);
+        when(kbDocumentService.listDocument(1L, request)).thenReturn(page);
 
-        var result = kbDocumentController.listDocument(request);
+        var result = kbDocumentController.listDocument(1L, request);
 
         assertEquals(200, result.getCode());
-        verify(kbDocumentService).listDocument(request);
+        verify(kbDocumentService).listDocument(1L, request);
     }
 
     @Test
@@ -62,19 +60,6 @@ class KbDocumentControllerTests {
     }
 
     @Test
-    void updateDocumentChunkStatus_ShouldDelegateToService() {
-        DocumentSliceUpdateRequest request = new DocumentSliceUpdateRequest();
-        request.setChunkId(2001L);
-        request.setStatus(1);
-        when(kbDocumentService.updateDocumentChunkStatus(request)).thenReturn(true);
-
-        var result = kbDocumentController.updateDocumentChunkStatus(request);
-
-        assertEquals(200, result.getCode());
-        verify(kbDocumentService).updateDocumentChunkStatus(request);
-    }
-
-    @Test
     void deleteDocument_ShouldDelegateToService() {
         DocumentDeleteRequest request = new DocumentDeleteRequest();
         request.setDocumentIds(List.of(1001L, 1002L));
@@ -89,7 +74,7 @@ class KbDocumentControllerTests {
     @Test
     void importDocument_ShouldDelegateToService() {
         KnowledgeBaseImportRequest request = new KnowledgeBaseImportRequest();
-        request.setKnowledgeName("drug_faq");
+        request.setKnowledgeBaseId(1L);
         request.setFileUrls(List.of("https://example.com/file.pdf"));
         request.setChunkStrategy("character");
         request.setChunkSize(500);

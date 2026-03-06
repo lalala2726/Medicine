@@ -25,4 +25,23 @@
         mime_type,status,stage_detail,last_error,create_by,
         update_by,created_at,updated_at
     </sql>
+
+    <select id="listDocument" resultMap="BaseResultMap">
+        SELECT
+        <include refid="Base_Column_List"/>
+        FROM kb_document
+        <where>
+            knowledge_base_id = #{knowledgeBaseId}
+            <if test="request.fileName != null and request.fileName != ''">
+                AND file_name LIKE CONCAT('%', TRIM(#{request.fileName}), '%')
+            </if>
+            <if test="request.fileType != null and request.fileType != ''">
+                AND (
+                file_name LIKE CONCAT('%', '.', TRIM(#{request.fileType}), '%')
+                OR mime_type LIKE CONCAT('%', TRIM(#{request.fileType}), '%')
+                )
+            </if>
+        </where>
+        ORDER BY created_at DESC, id DESC
+    </select>
 </mapper>

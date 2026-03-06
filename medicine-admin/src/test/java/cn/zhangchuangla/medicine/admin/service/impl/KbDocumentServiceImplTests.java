@@ -1,8 +1,9 @@
 package cn.zhangchuangla.medicine.admin.service.impl;
 
 import cn.zhangchuangla.medicine.admin.integration.MedicineAgentClient;
+import cn.zhangchuangla.medicine.admin.mapper.KbDocumentMapper;
 import cn.zhangchuangla.medicine.admin.model.request.DocumentDeleteRequest;
-import cn.zhangchuangla.medicine.admin.model.request.DocumentSliceUpdateRequest;
+import cn.zhangchuangla.medicine.admin.model.request.DocumentListRequest;
 import cn.zhangchuangla.medicine.admin.model.request.KnowledgeBaseImportRequest;
 import cn.zhangchuangla.medicine.admin.publisher.KnowledgeImportPublisher;
 import cn.zhangchuangla.medicine.admin.service.KbBaseService;
@@ -22,6 +23,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.data.redis.core.ValueOperations;
+import org.springframework.test.util.ReflectionTestUtils;
 
 import java.util.List;
 import java.util.concurrent.TimeUnit;
@@ -49,6 +51,9 @@ class KbDocumentServiceImplTests {
     private MedicineAgentClient medicineAgentClient;
 
     @Mock
+    private KbDocumentMapper kbDocumentMapper;
+
+    @Mock
     private KbDocumentChunkService kbDocumentChunkService;
 
     private KbDocumentServiceImpl kbDocumentService;
@@ -58,13 +63,25 @@ class KbDocumentServiceImplTests {
         RedisCache redisCache = new RedisCache(redisTemplate);
         kbDocumentService = spy(new KbDocumentServiceImpl(
                 kbBaseService, redisCache, knowledgeImportPublisher, medicineAgentClient, kbDocumentChunkService));
+        ReflectionTestUtils.setField(kbDocumentService, "baseMapper", kbDocumentMapper);
         lenient().when(redisTemplate.opsForValue()).thenReturn(valueOperations);
+    }
+
+    @Test
+    void listDocument_WhenKnowledgeBaseNotFound_ShouldThrowException() {
+        DocumentListRequest request = new DocumentListRequest();
+        when(kbBaseService.getKnowledgeBaseById(1L)).thenReturn(null);
+
+        ServiceException ex = assertThrows(ServiceException.class, () -> kbDocumentService.listDocument(1L, request));
+
+        assertEquals("知识库不存在", ex.getMessage());
+        verify(kbDocumentMapper, never()).listDocument(any(), anyLong(), any());
     }
 
     @Test
     void importDocument_WhenKnowledgeBaseNotFound_ShouldThrowException() {
         KnowledgeBaseImportRequest request = newImportRequest();
-        doReturn(null).when(kbDocumentService).findKnowledgeBaseByName("drug_faq");
+        when(kbBaseService.getKnowledgeBaseById(1L)).thenReturn(null);
 
         ServiceException ex = assertThrows(ServiceException.class, () -> kbDocumentService.importDocument(request));
 
@@ -77,7 +94,7 @@ class KbDocumentServiceImplTests {
     void importDocument_ShouldSaveDocumentAndPublishCommand() {
         KnowledgeBaseImportRequest request = newImportRequest();
         KbBase kbBase = newKbBase();
-        doReturn(kbBase).when(kbDocumentService).findKnowledgeBaseByName("drug_faq");
+        when(kbBaseService.getKnowledgeBaseById(1L)).thenReturn(kbBase);
         doReturn("admin").when(kbDocumentService).getUsername();
         doAnswer(invocation -> {
             KbDocument doc = invocation.getArgument(0);
@@ -108,7 +125,7 @@ class KbDocumentServiceImplTests {
     void importDocument_WhenPublishFailed_ShouldMarkDocumentFailedAndThrow() {
         KnowledgeBaseImportRequest request = newImportRequest();
         KbBase kbBase = newKbBase();
-        doReturn(kbBase).when(kbDocumentService).findKnowledgeBaseByName("drug_faq");
+        when(kbBaseService.getKnowledgeBaseById(1L)).thenReturn(kbBase);
         doReturn("admin").when(kbDocumentService).getUsername();
         doAnswer(invocation -> {
             KbDocument doc = invocation.getArgument(0);
@@ -258,38 +275,6 @@ class KbDocumentServiceImplTests {
     }
 
     @Test
-    void updateDocumentChunkStatus_ShouldCallAgentAndUpdateLocalChunkStatus() {
-        DocumentSliceUpdateRequest request = new DocumentSliceUpdateRequest();
-        request.setChunkId(2001L);
-        request.setStatus(1);
-
-        KbDocumentChunk chunk = new KbDocumentChunk();
-        chunk.setId(2001L);
-        chunk.setDocumentId(1001L);
-        chunk.setVectorId("900001");
-        chunk.setStatus(0);
-        when(kbDocumentChunkService.getById(2001L)).thenReturn(chunk);
-
-        KbDocument document = newDocument(1001L, 1L);
-        doReturn(document).when(kbDocumentService).getById(1001L);
-
-        KbBase kbBase = newKbBase();
-        kbBase.setId(1L);
-        when(kbBaseService.getKnowledgeBaseById(1L)).thenReturn(kbBase);
-        when(kbDocumentChunkService.updateById(any(KbDocumentChunk.class))).thenReturn(true);
-
-        boolean result = kbDocumentService.updateDocumentChunkStatus(request);
-
-        assertTrue(result);
-        verify(medicineAgentClient).updateDocumentChunkStatus("drug_faq", 900001L, 1);
-        ArgumentCaptor<KbDocumentChunk> captor = ArgumentCaptor.forClass(KbDocumentChunk.class);
-        verify(kbDocumentChunkService).updateById(captor.capture());
-        KbDocumentChunk updated = captor.getValue();
-        assertEquals(1, updated.getStatus());
-        assertNotNull(updated.getUpdatedAt());
-    }
-
-    @Test
     void handleChunkUpdateResult_WhenSyncSuccess_ShouldReplaceChunksAndMarkCompleted() {
         KnowledgeImportResultMessage message = KnowledgeImportResultMessage.builder()
                 .task_uuid("task-4")
@@ -362,7 +347,7 @@ class KbDocumentServiceImplTests {
 
     private KnowledgeBaseImportRequest newImportRequest() {
         KnowledgeBaseImportRequest request = new KnowledgeBaseImportRequest();
-        request.setKnowledgeName("drug_faq");
+        request.setKnowledgeBaseId(1L);
         request.setFileUrls(List.of("https://example.com/docs/guide.pdf"));
         request.setChunkStrategy("character");
         request.setChunkSize(500);

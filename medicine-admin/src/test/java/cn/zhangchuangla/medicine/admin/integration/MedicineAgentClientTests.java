@@ -152,38 +152,6 @@ class MedicineAgentClientTests {
     }
 
     @Test
-    void updateDocumentChunkStatus_ShouldSendCorrectRequest() {
-        SystemAuthRequestClient requestClient = mock(SystemAuthRequestClient.class);
-        MedicineAgentClient client = newClient("http://localhost:8000", requestClient);
-        ArgumentCaptor<ClientRequest> requestCaptor = ArgumentCaptor.forClass(ClientRequest.class);
-        when(requestClient.execute(requestCaptor.capture(), eq(String.class)))
-                .thenReturn(httpOk("{\"code\":200,\"message\":\"ok\"}"));
-
-        client.updateDocumentChunkStatus("kb_123", 900001L, 1);
-
-        ClientRequest request = requestCaptor.getValue();
-        assertEquals(HttpMethod.PUT, request.getMethod());
-        assertEquals("http://localhost:8000/knowledge_base/document/status", request.getUrl().toString());
-        JsonObject bodyJson = JSONUtils.parseObject(request.getBody());
-        assertEquals("kb_123", bodyJson.get("knowledge_name").getAsString());
-        assertEquals(900001L, bodyJson.get("vector_id").getAsLong());
-        assertEquals(1, bodyJson.get("status").getAsInt());
-        assertNull(request.getHeaders() == null ? null : request.getHeaders().get("Authorization"));
-    }
-
-    @Test
-    void updateDocumentChunkStatus_WhenStatusInvalid_ShouldThrowParamException() {
-        SystemAuthRequestClient requestClient = mock(SystemAuthRequestClient.class);
-        MedicineAgentClient client = newClient("http://localhost:8000", requestClient);
-
-        ParamException exception = assertThrows(ParamException.class,
-                () -> client.updateDocumentChunkStatus("kb_123", 900001L, 2));
-
-        assertEquals("切片状态只允许为0或1", exception.getMessage());
-        verify(requestClient, never()).execute(any(ClientRequest.class), eq(String.class));
-    }
-
-    @Test
     void deleteDocuments_ShouldSendCorrectRequest() {
         SystemAuthRequestClient requestClient = mock(SystemAuthRequestClient.class);
         MedicineAgentClient client = newClient("http://localhost:8000", requestClient);

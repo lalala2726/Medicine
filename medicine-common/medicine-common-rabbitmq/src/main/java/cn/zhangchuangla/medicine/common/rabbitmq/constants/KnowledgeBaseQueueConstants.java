@@ -67,6 +67,31 @@ public final class KnowledgeBaseQueueConstants {
      */
     public static final String ROUTING_CHUNK_UPDATE = "kb.chunk.update";
 
+    /**
+     * 单切片重建交换机。
+     */
+    public static final String CHUNK_REBUILD_EXCHANGE = "knowledge.chunk_rebuild";
+
+    /**
+     * 单切片重建 command 队列。
+     */
+    public static final String CHUNK_REBUILD_COMMAND_QUEUE = "knowledge.chunk_rebuild.command.q";
+
+    /**
+     * 单切片重建 result 队列。
+     */
+    public static final String CHUNK_REBUILD_RESULT_QUEUE = "knowledge.chunk_rebuild.result.q";
+
+    /**
+     * 单切片重建 command 路由键。
+     */
+    public static final String ROUTING_CHUNK_REBUILD_COMMAND = "knowledge.chunk_rebuild.command";
+
+    /**
+     * 单切片重建 result 路由键。
+     */
+    public static final String ROUTING_CHUNK_REBUILD_RESULT = "knowledge.chunk_rebuild.result";
+
     private KnowledgeBaseQueueConstants() {
     }
 }

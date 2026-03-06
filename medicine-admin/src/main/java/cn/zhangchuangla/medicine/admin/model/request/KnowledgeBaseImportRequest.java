@@ -4,6 +4,7 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotEmpty;
+import jakarta.validation.constraints.NotNull;
 import lombok.Data;
 
 import java.util.List;
@@ -17,9 +18,10 @@ import java.util.List;
 @Schema(description = "知识库导入请求参数")
 public class KnowledgeBaseImportRequest {
 
-    @NotBlank(message = "知识库名称不能为空")
-    @Schema(description = "知识库业务名称", requiredMode = Schema.RequiredMode.REQUIRED, example = "drug_faq")
-    private String knowledgeName;
+    @NotNull(message = "知识库ID不能为空")
+    @Min(value = 1, message = "知识库ID必须大于0")
+    @Schema(description = "知识库ID", requiredMode = Schema.RequiredMode.REQUIRED, example = "1")
+    private Long knowledgeBaseId;
 
     //todo 切片策略定义为枚举，并且根据枚举下面的属性进行校验
 

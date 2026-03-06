@@ -4,7 +4,6 @@ import cn.zhangchuangla.medicine.admin.integration.MedicineAgentClient;
 import cn.zhangchuangla.medicine.admin.mapper.KbDocumentMapper;
 import cn.zhangchuangla.medicine.admin.model.request.DocumentDeleteRequest;
 import cn.zhangchuangla.medicine.admin.model.request.DocumentListRequest;
-import cn.zhangchuangla.medicine.admin.model.request.DocumentSliceUpdateRequest;
 import cn.zhangchuangla.medicine.admin.model.request.KnowledgeBaseImportRequest;
 import cn.zhangchuangla.medicine.admin.publisher.KnowledgeImportPublisher;
 import cn.zhangchuangla.medicine.admin.service.KbBaseService;
@@ -20,8 +19,6 @@ import cn.zhangchuangla.medicine.model.entity.KbDocument;
 import cn.zhangchuangla.medicine.model.entity.KbDocumentChunk;
 import cn.zhangchuangla.medicine.model.mq.KnowledgeImportCommandMessage;
 import cn.zhangchuangla.medicine.model.mq.KnowledgeImportResultMessage;
-import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
-import com.baomidou.mybatisplus.core.toolkit.Wrappers;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import lombok.RequiredArgsConstructor;
@@ -98,11 +95,6 @@ public class KbDocumentServiceImpl extends ServiceImpl<KbDocumentMapper, KbDocum
     private static final int CHUNK_STATUS_ENABLED = 0;
 
     /**
-     * 切片禁用状态。
-     */
-    private static final int CHUNK_STATUS_DISABLED = 1;
-
-    /**
      * 切片同步最大重试次数。
      */
     private static final int CHUNK_SYNC_MAX_RETRY = 3;
@@ -139,25 +131,13 @@ public class KbDocumentServiceImpl extends ServiceImpl<KbDocumentMapper, KbDocum
     private final KbDocumentChunkService kbDocumentChunkService;
 
     @Override
-    public Page<KbDocument> listDocument(DocumentListRequest request) {
+    public Page<KbDocument> listDocument(Long knowledgeBaseId, DocumentListRequest request) {
         Assert.notNull(request, "查询参数不能为空");
-        LambdaQueryWrapper<KbDocument> queryWrapper = Wrappers.lambdaQuery();
-        if (request.getKnowledgeBaseId() != null) {
-            Assert.isPositive(request.getKnowledgeBaseId(), "知识库ID必须大于0");
-            queryWrapper.eq(KbDocument::getKnowledgeBaseId, request.getKnowledgeBaseId());
-        }
-        if (StringUtils.hasText(request.getFileName())) {
-            queryWrapper.like(KbDocument::getFileName, request.getFileName().trim());
-        }
-        if (StringUtils.hasText(request.getFileType())) {
-            String fileType = request.getFileType().trim();
-            queryWrapper.and(wrapper -> wrapper
-                    .like(KbDocument::getFileName, "." + fileType)
-                    .or()
-                    .like(KbDocument::getMimeType, fileType));
-        }
-        queryWrapper.orderByDesc(KbDocument::getCreatedAt, KbDocument::getId);
-        return page(request.toPage(), queryWrapper);
+        Assert.isPositive(knowledgeBaseId, "知识库ID必须大于0");
+        KbBase kbBase = kbBaseService.getKnowledgeBaseById(knowledgeBaseId);
+        Assert.isTrue(kbBase != null, "知识库不存在");
+        Page<KbDocument> page = request.toPage();
+        return baseMapper.listDocument(page, knowledgeBaseId, request);
     }
 
     @Override
@@ -194,45 +174,19 @@ public class KbDocumentServiceImpl extends ServiceImpl<KbDocumentMapper, KbDocum
         return deleteDocumentsInternal(kbBase, documents);
     }
 
-    @Override
-    @Transactional(rollbackFor = Exception.class)
-    public boolean updateDocumentChunkStatus(@Validated DocumentSliceUpdateRequest request) {
-        Assert.notNull(request, "切片状态更新请求不能为空");
-        Assert.isPositive(request.getChunkId(), "切片ID必须大于0");
-        validateChunkStatus(request.getStatus());
-
-        KbDocumentChunk chunk = kbDocumentChunkService.getById(request.getChunkId());
-        Assert.isTrue(chunk != null, "文档切片不存在");
-
-        Long documentId = chunk.getDocumentId();
-        Assert.isPositive(documentId, "文档ID无效");
-        Long vectorId = parseStoredPositiveLong(chunk.getVectorId());
-
-        KbDocument document = getDocumentById(documentId);
-        KbBase kbBase = kbBaseService.getKnowledgeBaseById(document.getKnowledgeBaseId());
-        Assert.notEmpty(kbBase.getKnowledgeName(), "知识库名称不能为空");
-
-        medicineAgentClient.updateDocumentChunkStatus(kbBase.getKnowledgeName(), vectorId, request.getStatus());
-
-        chunk.setStatus(request.getStatus());
-        chunk.setUpdatedAt(new Date());
-        boolean updated = kbDocumentChunkService.updateById(chunk);
-        Assert.isTrue(updated, "更新文档切片状态失败");
-        return true;
-    }
-
     /**
      * 发起文档导入。
      * <p>
-     * 流程：按知识库名称读取配置 -> 为每个 URL 新建文档记录 ->
+     * 流程：按知识库ID读取配置 -> 为每个 URL 新建文档记录 ->
      * 生成/写入最新版本号 -> 发送 MQ command。
      * </p>
      *
-     * @param request 导入请求参数（知识库名称、文件地址集合、切片参数）
+     * @param request 导入请求参数（知识库ID、文件地址集合、切片参数）
      */
     @Override
     public void importDocument(@Validated KnowledgeBaseImportRequest request) {
-        KbBase kbBase = findKnowledgeBaseByName(request.getKnowledgeName());
+        Assert.isPositive(request.getKnowledgeBaseId(), "知识库ID必须大于0");
+        KbBase kbBase = kbBaseService.getKnowledgeBaseById(request.getKnowledgeBaseId());
         Assert.isTrue(kbBase != null, "知识库不存在");
         Assert.notEmpty(kbBase.getEmbeddingModel(), "知识库向量模型未配置");
 
@@ -649,27 +603,6 @@ public class KbDocumentServiceImpl extends ServiceImpl<KbDocumentMapper, KbDocum
     }
 
     /**
-     * 将数据库中以字符串存储的正整数主键解析为 Long。
-     *
-     * @param value 待解析的字符串值
-     * @return 解析后的正整数值
-     */
-    private Long parseStoredPositiveLong(String value) {
-        if (!StringUtils.hasText(value)) {
-            throw new ServiceException(ResponseCode.OPERATION_ERROR, "向量ID无效");
-        }
-        try {
-            long parsed = Long.parseLong(value.trim());
-            if (parsed <= 0) {
-                throw new NumberFormatException("not positive");
-            }
-            return parsed;
-        } catch (NumberFormatException ex) {
-            throw new ServiceException(ResponseCode.OPERATION_ERROR, "向量ID无效");
-        }
-    }
-
-    /**
      * 标准化切片状态。
      *
      * @param status AI 端返回的切片状态
@@ -680,16 +613,6 @@ public class KbDocumentServiceImpl extends ServiceImpl<KbDocumentMapper, KbDocum
             return CHUNK_STATUS_ENABLED;
         }
         return status;
-    }
-
-    /**
-     * 校验切片状态是否在允许范围内。
-     *
-     * @param status 待校验的切片状态，仅允许 0 或 1
-     */
-    private void validateChunkStatus(Integer status) {
-        Assert.notNull(status, "切片状态不能为空");
-        Assert.isParamTrue(status == CHUNK_STATUS_ENABLED || status == CHUNK_STATUS_DISABLED, "切片状态只允许为0或1");
     }
 
     /**
@@ -845,15 +768,4 @@ public class KbDocumentServiceImpl extends ServiceImpl<KbDocumentMapper, KbDocum
         return normalizeStageDetailDefault(stageDetail, STAGE_DETAIL_STARTED);
     }
 
-    /**
-     * 按业务名称查询知识库配置。
-     *
-     * @param knowledgeName 知识库名称
-     * @return 知识库实体，不存在时返回 null
-     */
-    KbBase findKnowledgeBaseByName(String knowledgeName) {
-        return kbBaseService.lambdaQuery()
-                .eq(KbBase::getKnowledgeName, knowledgeName)
-                .one();
-    }
 }

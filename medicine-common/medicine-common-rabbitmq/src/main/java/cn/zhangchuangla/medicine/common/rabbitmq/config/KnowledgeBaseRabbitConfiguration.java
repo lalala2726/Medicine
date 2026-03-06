@@ -2,6 +2,7 @@ package cn.zhangchuangla.medicine.common.rabbitmq.config;
 
 import cn.zhangchuangla.medicine.common.rabbitmq.constants.KnowledgeBaseQueueConstants;
 import org.springframework.amqp.core.*;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
@@ -30,14 +31,18 @@ public class KnowledgeBaseRabbitConfiguration {
     }
 
     @Bean
-    public Binding knowledgeBaseImportCommandBinding(Queue knowledgeBaseImportCommandQueue, DirectExchange knowledgeBaseImportExchange) {
+    public Binding knowledgeBaseImportCommandBinding(Queue knowledgeBaseImportCommandQueue,
+                                                     @Qualifier("knowledgeBaseImportExchange")
+                                                     DirectExchange knowledgeBaseImportExchange) {
         return BindingBuilder.bind(knowledgeBaseImportCommandQueue)
                 .to(knowledgeBaseImportExchange)
                 .with(KnowledgeBaseQueueConstants.ROUTING_COMMAND);
     }
 
     @Bean
-    public Binding knowledgeBaseImportResultBinding(Queue knowledgeBaseImportResultQueue, DirectExchange knowledgeBaseImportExchange) {
+    public Binding knowledgeBaseImportResultBinding(Queue knowledgeBaseImportResultQueue,
+                                                    @Qualifier("knowledgeBaseImportExchange")
+                                                    DirectExchange knowledgeBaseImportExchange) {
         return BindingBuilder.bind(knowledgeBaseImportResultQueue)
                 .to(knowledgeBaseImportExchange)
                 .with(KnowledgeBaseQueueConstants.ROUTING_RESULT);
@@ -50,6 +55,7 @@ public class KnowledgeBaseRabbitConfiguration {
 
     @Bean
     public Binding knowledgeBaseVectorDeleteBinding(Queue knowledgeBaseVectorDeleteQueue,
+                                                    @Qualifier("knowledgeBaseImportExchange")
                                                     DirectExchange knowledgeBaseImportExchange) {
         return BindingBuilder.bind(knowledgeBaseVectorDeleteQueue)
                 .to(knowledgeBaseImportExchange)
@@ -63,6 +69,7 @@ public class KnowledgeBaseRabbitConfiguration {
 
     @Bean
     public Binding knowledgeBaseDeleteBinding(Queue knowledgeBaseDeleteQueue,
+                                              @Qualifier("knowledgeBaseImportExchange")
                                               DirectExchange knowledgeBaseImportExchange) {
         return BindingBuilder.bind(knowledgeBaseDeleteQueue)
                 .to(knowledgeBaseImportExchange)
@@ -76,9 +83,46 @@ public class KnowledgeBaseRabbitConfiguration {
 
     @Bean
     public Binding knowledgeBaseChunkUpdateBinding(Queue knowledgeBaseChunkUpdateQueue,
+                                                   @Qualifier("knowledgeBaseImportExchange")
                                                    DirectExchange knowledgeBaseImportExchange) {
         return BindingBuilder.bind(knowledgeBaseChunkUpdateQueue)
                 .to(knowledgeBaseImportExchange)
                 .with(KnowledgeBaseQueueConstants.ROUTING_CHUNK_UPDATE);
+    }
+
+    @Bean
+    public DirectExchange knowledgeChunkRebuildExchange() {
+        return ExchangeBuilder
+                .directExchange(KnowledgeBaseQueueConstants.CHUNK_REBUILD_EXCHANGE)
+                .durable(true)
+                .build();
+    }
+
+    @Bean
+    public Queue knowledgeChunkRebuildCommandQueue() {
+        return QueueBuilder.durable(KnowledgeBaseQueueConstants.CHUNK_REBUILD_COMMAND_QUEUE).build();
+    }
+
+    @Bean
+    public Queue knowledgeChunkRebuildResultQueue() {
+        return QueueBuilder.durable(KnowledgeBaseQueueConstants.CHUNK_REBUILD_RESULT_QUEUE).build();
+    }
+
+    @Bean
+    public Binding knowledgeChunkRebuildCommandBinding(Queue knowledgeChunkRebuildCommandQueue,
+                                                       @Qualifier("knowledgeChunkRebuildExchange")
+                                                       DirectExchange knowledgeChunkRebuildExchange) {
+        return BindingBuilder.bind(knowledgeChunkRebuildCommandQueue)
+                .to(knowledgeChunkRebuildExchange)
+                .with(KnowledgeBaseQueueConstants.ROUTING_CHUNK_REBUILD_COMMAND);
+    }
+
+    @Bean
+    public Binding knowledgeChunkRebuildResultBinding(Queue knowledgeChunkRebuildResultQueue,
+                                                      @Qualifier("knowledgeChunkRebuildExchange")
+                                                      DirectExchange knowledgeChunkRebuildExchange) {
+        return BindingBuilder.bind(knowledgeChunkRebuildResultQueue)
+                .to(knowledgeChunkRebuildExchange)
+                .with(KnowledgeBaseQueueConstants.ROUTING_CHUNK_REBUILD_RESULT);
     }
 }

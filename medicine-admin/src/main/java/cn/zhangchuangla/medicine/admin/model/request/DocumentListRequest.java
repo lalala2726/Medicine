@@ -15,9 +15,6 @@ import lombok.EqualsAndHashCode;
 @EqualsAndHashCode(callSuper = true)
 public class DocumentListRequest extends PageRequest {
 
-    @Schema(description = "知识库ID", example = "1")
-    private Long knowledgeBaseId;
-
     @Schema(description = "文件类型", example = "pdf")
     private String fileType;
 

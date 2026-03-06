@@ -12,12 +12,23 @@
         <result property="vectorId" column="vector_id"/>
         <result property="charCount" column="char_count"/>
         <result property="status" column="status"/>
+        <result property="editStatus" column="edit_status"/>
         <result property="createdAt" column="created_at"/>
         <result property="updatedAt" column="updated_at"/>
     </resultMap>
 
     <sql id="Base_Column_List">
         id,document_id,chunk_index,content,vector_id,char_count,
-        status,created_at,updated_at
+        status,edit_status,created_at,updated_at
     </sql>
+
+    <select id="listDocumentChunk" resultMap="BaseResultMap">
+        SELECT
+        <include refid="Base_Column_List"/>
+        FROM kb_document_chunk
+        <where>
+            document_id = #{documentId}
+        </where>
+        ORDER BY chunk_index ASC, id ASC
+    </select>
 </mapper>

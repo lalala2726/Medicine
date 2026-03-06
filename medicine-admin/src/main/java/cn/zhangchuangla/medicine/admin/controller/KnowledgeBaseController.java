@@ -32,7 +32,7 @@ import java.util.List;
 @RestController
 @RequestMapping("/knowledge_base")
 @RequiredArgsConstructor
-@Tag(name = "知识库管理", description = "知识库 CRUD 接口")
+@Tag(name = "知识库管理", description = "知识库管理接口")
 public class KnowledgeBaseController extends BaseController {
 
     private final KbBaseService kbBaseService;

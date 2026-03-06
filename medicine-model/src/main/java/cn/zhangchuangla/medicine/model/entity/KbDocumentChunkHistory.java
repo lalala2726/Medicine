@@ -11,17 +11,17 @@ import lombok.NoArgsConstructor;
 import java.util.Date;
 
 /**
- * 知识库文档切片表
+ * 知识库文档切片历史表
  */
-@TableName(value = "kb_document_chunk")
+@TableName(value = "kb_document_chunk_history")
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
 @Builder
-public class KbDocumentChunk {
+public class KbDocumentChunkHistory {
 
     /**
-     * 主键ID
+     * 历史记录主键
      */
     @TableId(type = IdType.AUTO)
     private Long id;
@@ -32,42 +32,37 @@ public class KbDocumentChunk {
     private Long documentId;
 
     /**
-     * 切片序号（按上游返回值存储，当前接口从1开始）
+     * 业务切片ID，对应 knowledge_document_chunk.id
      */
-    private Integer chunkIndex;
+    private Long chunkId;
 
     /**
-     * 切片内容
+     * 知识库名称
      */
-    private String content;
+    private String knowledgeName;
 
     /**
-     * 向量库记录ID（Milvus主键）
+     * Milvus 向量主键ID
      */
-    private String vectorId;
+    private Long vectorId;
 
     /**
-     * 切片字符数
+     * 修改前旧内容
      */
-    private Integer charCount;
+    private String oldContent;
 
     /**
-     * 状态：0启用，1禁用（禁用后不参与向量检索）
+     * 本次编辑对应任务ID
      */
-    private Integer status;
+    private String taskId;
 
     /**
-     * 编辑状态
+     * 操作人ID，可为空
      */
-    private String editStatus;
+    private Long operatorId;
 
     /**
      * 创建时间
      */
     private Date createdAt;
-
-    /**
-     * 更新时间
-     */
-    private Date updatedAt;
 }

@@ -10,16 +10,16 @@ import lombok.Data;
  * 文档切片状态更新请求。
  */
 @Data
-@Schema(description = "更新文档切片状态请求参数")
-public class DocumentSliceUpdateRequest {
+@Schema(description = "文档切片状态更新请求")
+public class DocumentChunkUpdateStatusRequest {
 
     @NotNull(message = "切片ID不能为空")
-    @Schema(description = "切片ID", requiredMode = Schema.RequiredMode.REQUIRED, example = "2001")
-    private Long chunkId;
+    @Schema(description = "切片ID", example = "2001", requiredMode = Schema.RequiredMode.REQUIRED)
+    private Long id;
 
     @NotNull(message = "切片状态不能为空")
     @Min(value = 0, message = "切片状态只允许为0或1")
     @Max(value = 1, message = "切片状态只允许为0或1")
-    @Schema(description = "切片状态：0启用，1禁用", requiredMode = Schema.RequiredMode.REQUIRED, example = "1")
+    @Schema(description = "切片状态：0启用，1禁用", example = "1", requiredMode = Schema.RequiredMode.REQUIRED)
     private Integer status;
 }

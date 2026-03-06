@@ -2,7 +2,6 @@ package cn.zhangchuangla.medicine.admin.controller;
 
 import cn.zhangchuangla.medicine.admin.model.request.DocumentDeleteRequest;
 import cn.zhangchuangla.medicine.admin.model.request.DocumentListRequest;
-import cn.zhangchuangla.medicine.admin.model.request.DocumentSliceUpdateRequest;
 import cn.zhangchuangla.medicine.admin.model.request.KnowledgeBaseImportRequest;
 import cn.zhangchuangla.medicine.admin.model.vo.KnowledgeBaseDocumentVo;
 import cn.zhangchuangla.medicine.admin.service.KbDocumentService;
@@ -40,14 +39,16 @@ public class KbDocumentController extends BaseController {
     /**
      * 查询文档列表
      *
+     * @param knowledgeBaseId 知识库ID
      * @param request 查询参数
      * @return 文档列表分页
      */
-    @GetMapping("/list")
+    @GetMapping("/{knowledgeBaseId:\\d+}/list")
     @Operation(summary = "文档列表")
     @PreAuthorize("hasAuthority('system:kb_document:list') or hasRole('super_admin')")
-    public AjaxResult<TableDataResult> listDocument(DocumentListRequest request) {
-        Page<KbDocument> page = kbDocumentService.listDocument(request);
+    public AjaxResult<TableDataResult> listDocument(@PathVariable Long knowledgeBaseId,
+                                                    @Validated DocumentListRequest request) {
+        Page<KbDocument> page = kbDocumentService.listDocument(knowledgeBaseId, request);
         List<KnowledgeBaseDocumentVo> rows = copyListProperties(page, KnowledgeBaseDocumentVo.class);
         return getTableData(page, rows);
     }
@@ -65,20 +66,6 @@ public class KbDocumentController extends BaseController {
         KbDocument document = kbDocumentService.getDocumentById(id);
         KnowledgeBaseDocumentVo vo = copyProperties(document, KnowledgeBaseDocumentVo.class);
         return success(vo);
-    }
-
-    /**
-     * 修改文档切片状态
-     *
-     * @param request 更新参数
-     * @return 更新结果
-     */
-    @PutMapping("/status")
-    @Operation(summary = "修改文档切片状态")
-    @PreAuthorize("hasAuthority('system:kb_document:update') or hasRole('super_admin')")
-    public AjaxResult<Void> updateDocumentChunkStatus(@Validated @RequestBody DocumentSliceUpdateRequest request) {
-        boolean result = kbDocumentService.updateDocumentChunkStatus(request);
-        return toAjax(result);
     }
 
     /**

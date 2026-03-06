@@ -34,13 +34,11 @@ public class MedicineAgentClient {
     private static final String CREATE_PATH = "/knowledge_base";
     private static final String LOAD_PATH = "/knowledge_base/load";
     private static final String RELEASE_PATH = "/knowledge_base/release";
-    private static final String DOCUMENT_STATUS_PATH = "/knowledge_base/document/status";
     private static final String DOCUMENT_DELETE_PATH = "/knowledge_base/document";
     private static final String DOCUMENT_CHUNK_LIST_PATH = "/knowledge_base/document/chunks/list";
     private static final int MIN_EMBEDDING_DIM = 128;
     private static final int MAX_EMBEDDING_DIM = 1 << 13;
     private static final int CHUNK_STATUS_ENABLED = 0;
-    private static final int CHUNK_STATUS_DISABLED = 1;
     private static final int CHUNK_PAGE_SIZE = 50;
     private static final int MAX_CHUNK_PAGE = 10_000;
     private static final Type DOCUMENT_CHUNK_PAGE_DATA_TYPE = new TypeToken<DocumentChunkPageData>() {
@@ -80,19 +78,6 @@ public class MedicineAgentClient {
         String url = buildUrl(RELEASE_PATH);
         String requestBody = JSONUtils.toJson(new CollectionPayload(knowledgeName));
         doPostWithValidation(url, requestBody, "调用Agent服务关闭知识库失败: ");
-    }
-
-    /**
-     * 调用 Agent 服务修改文档切片状态。
-     */
-    public void updateDocumentChunkStatus(String knowledgeName, Long vectorId, Integer status) {
-        Assert.notEmpty(knowledgeName, "知识库名称不能为空");
-        Assert.isPositive(vectorId, "向量ID必须大于0");
-        validateChunkStatus(status);
-
-        String url = buildUrl(DOCUMENT_STATUS_PATH);
-        String requestBody = JSONUtils.toJson(new DocumentStatusPayload(knowledgeName, vectorId, status));
-        doRequestWithValidation(HttpMethod.PUT, url, requestBody, "调用Agent服务更新文档切片状态失败: ");
     }
 
     /**
@@ -296,11 +281,6 @@ public class MedicineAgentClient {
         Assert.isParamTrue((embeddingDim & (embeddingDim - 1)) == 0, "向量维度必须是2的幂");
     }
 
-    private void validateChunkStatus(Integer status) {
-        Assert.notNull(status, "切片状态不能为空");
-        Assert.isParamTrue(status == CHUNK_STATUS_ENABLED || status == CHUNK_STATUS_DISABLED, "切片状态只允许为0或1");
-    }
-
     private List<Long> normalizeDocumentIds(List<Long> documentIds) {
         Assert.notEmpty(documentIds, "文档ID不能为空");
         LinkedHashSet<Long> distinctIds = new LinkedHashSet<>();
@@ -315,9 +295,6 @@ public class MedicineAgentClient {
     }
 
     private record CollectionPayload(String collection_name) {
-    }
-
-    private record DocumentStatusPayload(String knowledge_name, Long vector_id, Integer status) {
     }
 
     private record DocumentDeletePayload(String knowledge_name, List<Long> document_ids) {
