@@ -1,5 +1,6 @@
 package cn.zhangchuangla.medicine.admin.controller;
 
+import cn.zhangchuangla.medicine.admin.model.request.DocumentChunkAddRequest;
 import cn.zhangchuangla.medicine.admin.model.request.DocumentChunkListRequest;
 import cn.zhangchuangla.medicine.admin.model.request.DocumentChunkUpdateContentRequest;
 import cn.zhangchuangla.medicine.admin.model.request.DocumentChunkUpdateStatusRequest;
@@ -57,6 +58,19 @@ class KbDocumentChunkControllerTests {
 
         assertEquals(200, result.getCode());
         verify(kbDocumentChunkService).updateDocumentChunkContent(request);
+    }
+
+    @Test
+    void addDocumentChunk_ShouldDelegateToService() {
+        DocumentChunkAddRequest request = new DocumentChunkAddRequest();
+        request.setDocumentId(1001L);
+        request.setContent("新增切片内容");
+        when(kbDocumentChunkService.addDocumentChunk(request)).thenReturn(true);
+
+        var result = kbDocumentChunkController.addDocumentChunk(request);
+
+        assertEquals(200, result.getCode());
+        verify(kbDocumentChunkService).addDocumentChunk(request);
     }
 
     @Test

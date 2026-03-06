@@ -125,4 +125,40 @@ public class KnowledgeBaseRabbitConfiguration {
                 .to(knowledgeChunkRebuildExchange)
                 .with(KnowledgeBaseQueueConstants.ROUTING_CHUNK_REBUILD_RESULT);
     }
+
+    @Bean
+    public DirectExchange knowledgeChunkAddExchange() {
+        return ExchangeBuilder
+                .directExchange(KnowledgeBaseQueueConstants.CHUNK_ADD_EXCHANGE)
+                .durable(true)
+                .build();
+    }
+
+    @Bean
+    public Queue knowledgeChunkAddCommandQueue() {
+        return QueueBuilder.durable(KnowledgeBaseQueueConstants.CHUNK_ADD_COMMAND_QUEUE).build();
+    }
+
+    @Bean
+    public Queue knowledgeChunkAddResultQueue() {
+        return QueueBuilder.durable(KnowledgeBaseQueueConstants.CHUNK_ADD_RESULT_QUEUE).build();
+    }
+
+    @Bean
+    public Binding knowledgeChunkAddCommandBinding(Queue knowledgeChunkAddCommandQueue,
+                                                   @Qualifier("knowledgeChunkAddExchange")
+                                                   DirectExchange knowledgeChunkAddExchange) {
+        return BindingBuilder.bind(knowledgeChunkAddCommandQueue)
+                .to(knowledgeChunkAddExchange)
+                .with(KnowledgeBaseQueueConstants.ROUTING_CHUNK_ADD_COMMAND);
+    }
+
+    @Bean
+    public Binding knowledgeChunkAddResultBinding(Queue knowledgeChunkAddResultQueue,
+                                                  @Qualifier("knowledgeChunkAddExchange")
+                                                  DirectExchange knowledgeChunkAddExchange) {
+        return BindingBuilder.bind(knowledgeChunkAddResultQueue)
+                .to(knowledgeChunkAddExchange)
+                .with(KnowledgeBaseQueueConstants.ROUTING_CHUNK_ADD_RESULT);
+    }
 }

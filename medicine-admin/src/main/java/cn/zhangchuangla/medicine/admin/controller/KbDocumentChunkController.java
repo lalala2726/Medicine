@@ -1,5 +1,6 @@
 package cn.zhangchuangla.medicine.admin.controller;
 
+import cn.zhangchuangla.medicine.admin.model.request.DocumentChunkAddRequest;
 import cn.zhangchuangla.medicine.admin.model.request.DocumentChunkListRequest;
 import cn.zhangchuangla.medicine.admin.model.request.DocumentChunkUpdateContentRequest;
 import cn.zhangchuangla.medicine.admin.model.request.DocumentChunkUpdateStatusRequest;
@@ -45,6 +46,19 @@ public class KbDocumentChunkController extends BaseController {
         Page<KbDocumentChunk> page = kbDocumentChunkService.listDocumentChunk(documentId, request);
         List<DocumentChunkVo> rows = copyListProperties(page, DocumentChunkVo.class);
         return getTableData(page, rows);
+    }
+
+    /**
+     * 新增单个手工补充切片，并触发异步向量化。
+     *
+     * @param request 新增请求
+     * @return 新增结果
+     */
+    @PostMapping
+    @Operation(summary = "新增文档切片")
+    @PreAuthorize("hasAuthority('system:kb_document_chunk:add') or hasRole('super_admin')")
+    public AjaxResult<Void> addDocumentChunk(@Validated @RequestBody DocumentChunkAddRequest request) {
+        return toAjax(kbDocumentChunkService.addDocumentChunk(request));
     }
 
     /**

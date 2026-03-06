@@ -1,9 +1,11 @@
 package cn.zhangchuangla.medicine.admin.service;
 
+import cn.zhangchuangla.medicine.admin.model.request.DocumentChunkAddRequest;
 import cn.zhangchuangla.medicine.admin.model.request.DocumentChunkListRequest;
 import cn.zhangchuangla.medicine.admin.model.request.DocumentChunkUpdateContentRequest;
 import cn.zhangchuangla.medicine.admin.model.request.DocumentChunkUpdateStatusRequest;
 import cn.zhangchuangla.medicine.model.entity.KbDocumentChunk;
+import cn.zhangchuangla.medicine.model.mq.KnowledgeChunkAddResultMessage;
 import cn.zhangchuangla.medicine.model.mq.KnowledgeChunkRebuildResultMessage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.IService;
@@ -31,6 +33,14 @@ public interface KbDocumentChunkService extends IService<KbDocumentChunk> {
      * @return 切片详情
      */
     KbDocumentChunk getDocumentChunkById(Long id);
+
+    /**
+     * 新增手工补充切片并发起异步向量化。
+     *
+     * @param request 新增请求
+     * @return 处理结果
+     */
+    boolean addDocumentChunk(DocumentChunkAddRequest request);
 
     /**
      * 修改切片内容并发起异步重建。
@@ -78,5 +88,12 @@ public interface KbDocumentChunkService extends IService<KbDocumentChunk> {
      * @param message 结果消息
      */
     void handleChunkRebuildResult(KnowledgeChunkRebuildResultMessage message);
+
+    /**
+     * 处理 AI 回传的切片新增结果。
+     *
+     * @param message 结果消息
+     */
+    void handleChunkAddResult(KnowledgeChunkAddResultMessage message);
 
 }

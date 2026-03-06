@@ -22,6 +22,14 @@ public interface KbDocumentChunkMapper extends BaseMapper<KbDocumentChunk> {
     Page<KbDocumentChunk> listDocumentChunk(Page<KbDocumentChunk> page,
                                             @Param("documentId") Long documentId,
                                             @Param("request") DocumentChunkListRequest request);
+
+    /**
+     * 查询指定文档当前最大切片序号。
+     *
+     * @param documentId 文档ID
+     * @return 最大切片序号
+     */
+    Integer selectMaxChunkIndex(@Param("documentId") Long documentId);
 }
 
 
