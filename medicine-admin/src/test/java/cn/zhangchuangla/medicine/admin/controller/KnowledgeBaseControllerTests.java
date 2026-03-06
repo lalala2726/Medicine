@@ -1,11 +1,9 @@
 package cn.zhangchuangla.medicine.admin.controller;
 
 import cn.zhangchuangla.medicine.admin.model.request.KnowledgeBaseAddRequest;
-import cn.zhangchuangla.medicine.admin.model.request.KnowledgeBaseImportRequest;
 import cn.zhangchuangla.medicine.admin.model.request.KnowledgeBaseListRequest;
 import cn.zhangchuangla.medicine.admin.model.request.KnowledgeBaseUpdateRequest;
 import cn.zhangchuangla.medicine.admin.service.KbBaseService;
-import cn.zhangchuangla.medicine.admin.service.KbDocumentService;
 import cn.zhangchuangla.medicine.model.entity.KbBase;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import org.junit.jupiter.api.Test;
@@ -25,9 +23,6 @@ class KnowledgeBaseControllerTests {
 
     @Mock
     private KbBaseService kbBaseService;
-
-    @Mock
-    private KbDocumentService kbDocumentService;
 
     @InjectMocks
     private KnowledgeBaseController knowledgeBaseController;
@@ -118,20 +113,5 @@ class KnowledgeBaseControllerTests {
 
         assertEquals(200, result.getCode());
         verify(kbBaseService).deleteKnowledgeBase(List.of(1L, 2L));
-    }
-
-    @Test
-    void importKnowledge_ShouldDelegateToDocumentService() {
-        KnowledgeBaseImportRequest request = new KnowledgeBaseImportRequest();
-        request.setKnowledgeName("drug_faq");
-        request.setFileUrls(List.of("https://example.com/file.pdf"));
-        request.setChunkStrategy("character");
-        request.setChunkSize(500);
-        request.setTokenSize(100);
-
-        var result = knowledgeBaseController.importKnowledge(request);
-
-        assertEquals(200, result.getCode());
-        verify(kbDocumentService).importKnowledge(request);
     }
 }

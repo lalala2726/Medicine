@@ -6,6 +6,7 @@ import cn.zhangchuangla.medicine.common.core.exception.ServiceException;
 import cn.zhangchuangla.medicine.common.core.utils.JSONUtils;
 import cn.zhangchuangla.medicine.common.http.exception.HttpClientException;
 import cn.zhangchuangla.medicine.common.http.model.ClientRequest;
+import cn.zhangchuangla.medicine.common.http.model.HttpMethod;
 import cn.zhangchuangla.medicine.common.http.model.HttpResult;
 import cn.zhangchuangla.medicine.common.systemauth.client.SystemAuthRequestClient;
 import com.google.gson.JsonObject;
@@ -148,6 +149,59 @@ class MedicineAgentClientTests {
         when(requestClient.post(any(ClientRequest.class))).thenThrow(new HttpClientException("network error"));
 
         assertThrows(ServiceException.class, () -> client.releaseKnowledgeBase("kb_123"));
+    }
+
+    @Test
+    void updateDocumentChunkStatus_ShouldSendCorrectRequest() {
+        SystemAuthRequestClient requestClient = mock(SystemAuthRequestClient.class);
+        MedicineAgentClient client = newClient("http://localhost:8000", requestClient);
+        ArgumentCaptor<ClientRequest> requestCaptor = ArgumentCaptor.forClass(ClientRequest.class);
+        when(requestClient.execute(requestCaptor.capture(), eq(String.class)))
+                .thenReturn(httpOk("{\"code\":200,\"message\":\"ok\"}"));
+
+        client.updateDocumentChunkStatus("kb_123", 900001L, 1);
+
+        ClientRequest request = requestCaptor.getValue();
+        assertEquals(HttpMethod.PUT, request.getMethod());
+        assertEquals("http://localhost:8000/knowledge_base/document/status", request.getUrl().toString());
+        JsonObject bodyJson = JSONUtils.parseObject(request.getBody());
+        assertEquals("kb_123", bodyJson.get("knowledge_name").getAsString());
+        assertEquals(900001L, bodyJson.get("vector_id").getAsLong());
+        assertEquals(1, bodyJson.get("status").getAsInt());
+        assertNull(request.getHeaders() == null ? null : request.getHeaders().get("Authorization"));
+    }
+
+    @Test
+    void updateDocumentChunkStatus_WhenStatusInvalid_ShouldThrowParamException() {
+        SystemAuthRequestClient requestClient = mock(SystemAuthRequestClient.class);
+        MedicineAgentClient client = newClient("http://localhost:8000", requestClient);
+
+        ParamException exception = assertThrows(ParamException.class,
+                () -> client.updateDocumentChunkStatus("kb_123", 900001L, 2));
+
+        assertEquals("切片状态只允许为0或1", exception.getMessage());
+        verify(requestClient, never()).execute(any(ClientRequest.class), eq(String.class));
+    }
+
+    @Test
+    void deleteDocuments_ShouldSendCorrectRequest() {
+        SystemAuthRequestClient requestClient = mock(SystemAuthRequestClient.class);
+        MedicineAgentClient client = newClient("http://localhost:8000", requestClient);
+        ArgumentCaptor<ClientRequest> requestCaptor = ArgumentCaptor.forClass(ClientRequest.class);
+        when(requestClient.execute(requestCaptor.capture(), eq(String.class)))
+                .thenReturn(httpOk("{\"code\":200,\"message\":\"ok\"}"));
+
+        client.deleteDocuments("kb_123", List.of(1001L, 1002L, 1001L));
+
+        ClientRequest request = requestCaptor.getValue();
+        assertEquals(HttpMethod.DELETE, request.getMethod());
+        assertEquals("http://localhost:8000/knowledge_base/document", request.getUrl().toString());
+        JsonObject bodyJson = JSONUtils.parseObject(request.getBody());
+        assertEquals("kb_123", bodyJson.get("knowledge_name").getAsString());
+        assertEquals(2, bodyJson.getAsJsonArray("document_ids").size());
+        assertEquals(1001L, bodyJson.getAsJsonArray("document_ids").get(0).getAsLong());
+        assertEquals(1002L, bodyJson.getAsJsonArray("document_ids").get(1).getAsLong());
+        assertNull(request.getHeaders() == null ? null : request.getHeaders().get("Authorization"));
     }
 
     @Test

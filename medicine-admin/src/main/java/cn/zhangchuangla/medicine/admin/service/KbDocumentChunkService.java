@@ -16,6 +16,14 @@ public interface KbDocumentChunkService extends IService<KbDocumentChunk> {
      * @param documentId 文档ID
      * @param chunks     新切片列表
      */
-    void replaceByDocumentId(String documentId, List<KbDocumentChunk> chunks);
+    void replaceByDocumentId(Long documentId, List<KbDocumentChunk> chunks);
+
+    /**
+     * 按文档ID集合批量删除切片。
+     *
+     * @param documentIds 文档ID集合
+     * @return 删除结果
+     */
+    boolean removeByDocumentIds(List<Long> documentIds);
 
 }

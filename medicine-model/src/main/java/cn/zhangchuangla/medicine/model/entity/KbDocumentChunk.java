@@ -3,7 +3,10 @@ package cn.zhangchuangla.medicine.model.entity;
 import com.baomidou.mybatisplus.annotation.IdType;
 import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableName;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Data;
+import lombok.NoArgsConstructor;
 
 import java.util.Date;
 
@@ -12,6 +15,9 @@ import java.util.Date;
  */
 @TableName(value = "kb_document_chunk")
 @Data
+@AllArgsConstructor
+@NoArgsConstructor
+@Builder
 public class KbDocumentChunk {
 
     /**
@@ -23,7 +29,7 @@ public class KbDocumentChunk {
     /**
      * 文档ID
      */
-    private String documentId;
+    private Long documentId;
 
     /**
      * 切片序号（按上游返回值存储，当前接口从1开始）

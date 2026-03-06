@@ -1,6 +1,8 @@
 package cn.zhangchuangla.medicine.admin.service.impl;
 
 import cn.zhangchuangla.medicine.admin.integration.MedicineAgentClient;
+import cn.zhangchuangla.medicine.admin.model.request.DocumentDeleteRequest;
+import cn.zhangchuangla.medicine.admin.model.request.DocumentSliceUpdateRequest;
 import cn.zhangchuangla.medicine.admin.model.request.KnowledgeBaseImportRequest;
 import cn.zhangchuangla.medicine.admin.publisher.KnowledgeImportPublisher;
 import cn.zhangchuangla.medicine.admin.service.KbBaseService;
@@ -9,6 +11,7 @@ import cn.zhangchuangla.medicine.common.core.exception.ServiceException;
 import cn.zhangchuangla.medicine.common.redis.core.RedisCache;
 import cn.zhangchuangla.medicine.model.entity.KbBase;
 import cn.zhangchuangla.medicine.model.entity.KbDocument;
+import cn.zhangchuangla.medicine.model.entity.KbDocumentChunk;
 import cn.zhangchuangla.medicine.model.mq.KnowledgeImportCommandMessage;
 import cn.zhangchuangla.medicine.model.mq.KnowledgeImportResultMessage;
 import org.junit.jupiter.api.BeforeEach;
@@ -26,7 +29,6 @@ import java.util.concurrent.TimeUnit;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
-import static org.mockito.Mockito.anyList;
 
 @ExtendWith(MockitoExtension.class)
 class KbDocumentServiceImplTests {
@@ -60,11 +62,11 @@ class KbDocumentServiceImplTests {
     }
 
     @Test
-    void importKnowledge_WhenKnowledgeBaseNotFound_ShouldThrowException() {
+    void importDocument_WhenKnowledgeBaseNotFound_ShouldThrowException() {
         KnowledgeBaseImportRequest request = newImportRequest();
         doReturn(null).when(kbDocumentService).findKnowledgeBaseByName("drug_faq");
 
-        ServiceException ex = assertThrows(ServiceException.class, () -> kbDocumentService.importKnowledge(request));
+        ServiceException ex = assertThrows(ServiceException.class, () -> kbDocumentService.importDocument(request));
 
         assertEquals("知识库不存在", ex.getMessage());
         verify(kbDocumentService, never()).save(any(KbDocument.class));
@@ -72,7 +74,7 @@ class KbDocumentServiceImplTests {
     }
 
     @Test
-    void importKnowledge_ShouldSaveDocumentAndPublishCommand() {
+    void importDocument_ShouldSaveDocumentAndPublishCommand() {
         KnowledgeBaseImportRequest request = newImportRequest();
         KbBase kbBase = newKbBase();
         doReturn(kbBase).when(kbDocumentService).findKnowledgeBaseByName("drug_faq");
@@ -85,7 +87,7 @@ class KbDocumentServiceImplTests {
         when(valueOperations.increment("kb:latest:drug_faq:1001")).thenReturn(1L);
         when(redisTemplate.expire("kb:latest:drug_faq:1001", 7L, TimeUnit.DAYS)).thenReturn(true);
 
-        kbDocumentService.importKnowledge(request);
+        kbDocumentService.importDocument(request);
 
         ArgumentCaptor<KnowledgeImportCommandMessage> msgCaptor = ArgumentCaptor.forClass(KnowledgeImportCommandMessage.class);
         verify(knowledgeImportPublisher).publishCommand(msgCaptor.capture());
@@ -103,7 +105,7 @@ class KbDocumentServiceImplTests {
     }
 
     @Test
-    void importKnowledge_WhenPublishFailed_ShouldMarkDocumentFailedAndThrow() {
+    void importDocument_WhenPublishFailed_ShouldMarkDocumentFailedAndThrow() {
         KnowledgeBaseImportRequest request = newImportRequest();
         KbBase kbBase = newKbBase();
         doReturn(kbBase).when(kbDocumentService).findKnowledgeBaseByName("drug_faq");
@@ -122,7 +124,7 @@ class KbDocumentServiceImplTests {
         doReturn(existing).when(kbDocumentService).getById(1001L);
         doReturn(true).when(kbDocumentService).updateById(any(KbDocument.class));
 
-        assertThrows(ServiceException.class, () -> kbDocumentService.importKnowledge(request));
+        assertThrows(ServiceException.class, () -> kbDocumentService.importDocument(request));
 
         ArgumentCaptor<KbDocument> captor = ArgumentCaptor.forClass(KbDocument.class);
         verify(kbDocumentService).updateById(captor.capture());
@@ -235,6 +237,59 @@ class KbDocumentServiceImplTests {
     }
 
     @Test
+    void deleteDocuments_ShouldCallAgentAndRemoveLocalData() {
+        DocumentDeleteRequest request = new DocumentDeleteRequest();
+        request.setDocumentIds(List.of(1001L, 1002L, 1001L));
+
+        KbBase kbBase = newKbBase();
+        kbBase.setId(1L);
+        when(kbBaseService.getKnowledgeBaseById(1L)).thenReturn(kbBase);
+        doReturn(List.of(newDocument(1001L, 1L), newDocument(1002L, 1L)))
+                .when(kbDocumentService).listByIds(List.of(1001L, 1002L));
+        doReturn(true).when(kbDocumentService).removeByIds(List.of(1001L, 1002L));
+        when(kbDocumentChunkService.removeByDocumentIds(List.of(1001L, 1002L))).thenReturn(true);
+
+        boolean result = kbDocumentService.deleteDocuments(request);
+
+        assertTrue(result);
+        verify(medicineAgentClient).deleteDocuments("drug_faq", List.of(1001L, 1002L));
+        verify(kbDocumentChunkService).removeByDocumentIds(List.of(1001L, 1002L));
+        verify(kbDocumentService).removeByIds(List.of(1001L, 1002L));
+    }
+
+    @Test
+    void updateDocumentChunkStatus_ShouldCallAgentAndUpdateLocalChunkStatus() {
+        DocumentSliceUpdateRequest request = new DocumentSliceUpdateRequest();
+        request.setChunkId(2001L);
+        request.setStatus(1);
+
+        KbDocumentChunk chunk = new KbDocumentChunk();
+        chunk.setId(2001L);
+        chunk.setDocumentId(1001L);
+        chunk.setVectorId("900001");
+        chunk.setStatus(0);
+        when(kbDocumentChunkService.getById(2001L)).thenReturn(chunk);
+
+        KbDocument document = newDocument(1001L, 1L);
+        doReturn(document).when(kbDocumentService).getById(1001L);
+
+        KbBase kbBase = newKbBase();
+        kbBase.setId(1L);
+        when(kbBaseService.getKnowledgeBaseById(1L)).thenReturn(kbBase);
+        when(kbDocumentChunkService.updateById(any(KbDocumentChunk.class))).thenReturn(true);
+
+        boolean result = kbDocumentService.updateDocumentChunkStatus(request);
+
+        assertTrue(result);
+        verify(medicineAgentClient).updateDocumentChunkStatus("drug_faq", 900001L, 1);
+        ArgumentCaptor<KbDocumentChunk> captor = ArgumentCaptor.forClass(KbDocumentChunk.class);
+        verify(kbDocumentChunkService).updateById(captor.capture());
+        KbDocumentChunk updated = captor.getValue();
+        assertEquals(1, updated.getStatus());
+        assertNotNull(updated.getUpdatedAt());
+    }
+
+    @Test
     void handleChunkUpdateResult_WhenSyncSuccess_ShouldReplaceChunksAndMarkCompleted() {
         KnowledgeImportResultMessage message = KnowledgeImportResultMessage.builder()
                 .task_uuid("task-4")
@@ -257,11 +312,17 @@ class KbDocumentServiceImplTests {
         row.setChunk_index(1);
         row.setContent("切片内容");
         row.setChar_count(128);
+        row.setStatus(1);
         when(medicineAgentClient.listDocumentChunks("drug_faq", 1001L)).thenReturn(List.of(row));
 
         kbDocumentService.handleChunkUpdateResult(message);
 
-        verify(kbDocumentChunkService).replaceByDocumentId(eq("1001"), anyList());
+        ArgumentCaptor<List> chunksCaptor = ArgumentCaptor.forClass(List.class);
+        verify(kbDocumentChunkService).replaceByDocumentId(eq(1001L), chunksCaptor.capture());
+        List<KbDocumentChunk> chunks = chunksCaptor.getValue();
+        assertEquals(1, chunks.size());
+        assertEquals(1, chunks.get(0).getStatus());
+        assertEquals(1001L, chunks.get(0).getDocumentId());
         ArgumentCaptor<KbDocument> captor = ArgumentCaptor.forClass(KbDocument.class);
         verify(kbDocumentService).updateById(captor.capture());
         KbDocument updated = captor.getValue();
@@ -315,5 +376,12 @@ class KbDocumentServiceImplTests {
         kbBase.setKnowledgeName("drug_faq");
         kbBase.setEmbeddingModel("text-embedding-3-large");
         return kbBase;
+    }
+
+    private KbDocument newDocument(Long id, Long knowledgeBaseId) {
+        KbDocument document = new KbDocument();
+        document.setId(id);
+        document.setKnowledgeBaseId(knowledgeBaseId);
+        return document;
     }
 }

@@ -20,6 +20,7 @@ import org.springframework.util.StringUtils;
 
 import java.lang.reflect.Type;
 import java.util.ArrayList;
+import java.util.LinkedHashSet;
 import java.util.List;
 
 /**
@@ -33,9 +34,13 @@ public class MedicineAgentClient {
     private static final String CREATE_PATH = "/knowledge_base";
     private static final String LOAD_PATH = "/knowledge_base/load";
     private static final String RELEASE_PATH = "/knowledge_base/release";
+    private static final String DOCUMENT_STATUS_PATH = "/knowledge_base/document/status";
+    private static final String DOCUMENT_DELETE_PATH = "/knowledge_base/document";
     private static final String DOCUMENT_CHUNK_LIST_PATH = "/knowledge_base/document/chunks/list";
     private static final int MIN_EMBEDDING_DIM = 128;
     private static final int MAX_EMBEDDING_DIM = 1 << 13;
+    private static final int CHUNK_STATUS_ENABLED = 0;
+    private static final int CHUNK_STATUS_DISABLED = 1;
     private static final int CHUNK_PAGE_SIZE = 50;
     private static final int MAX_CHUNK_PAGE = 10_000;
     private static final Type DOCUMENT_CHUNK_PAGE_DATA_TYPE = new TypeToken<DocumentChunkPageData>() {
@@ -78,6 +83,31 @@ public class MedicineAgentClient {
     }
 
     /**
+     * 调用 Agent 服务修改文档切片状态。
+     */
+    public void updateDocumentChunkStatus(String knowledgeName, Long vectorId, Integer status) {
+        Assert.notEmpty(knowledgeName, "知识库名称不能为空");
+        Assert.isPositive(vectorId, "向量ID必须大于0");
+        validateChunkStatus(status);
+
+        String url = buildUrl(DOCUMENT_STATUS_PATH);
+        String requestBody = JSONUtils.toJson(new DocumentStatusPayload(knowledgeName, vectorId, status));
+        doRequestWithValidation(HttpMethod.PUT, url, requestBody, "调用Agent服务更新文档切片状态失败: ");
+    }
+
+    /**
+     * 调用 Agent 服务批量删除文档。
+     */
+    public void deleteDocuments(String knowledgeName, List<Long> documentIds) {
+        Assert.notEmpty(knowledgeName, "知识库名称不能为空");
+        List<Long> normalizedDocumentIds = normalizeDocumentIds(documentIds);
+
+        String url = buildUrl(DOCUMENT_DELETE_PATH);
+        String requestBody = JSONUtils.toJson(new DocumentDeletePayload(knowledgeName, normalizedDocumentIds));
+        doRequestWithValidation(HttpMethod.DELETE, url, requestBody, "调用Agent服务批量删除文档失败: ");
+    }
+
+    /**
      * 分页拉取文档切片列表。
      *
      * @param knowledgeName 知识库名称
@@ -117,9 +147,23 @@ public class MedicineAgentClient {
      * @param errorPrefix 错误信息前缀
      */
     private void doPostWithValidation(String url, String body, String errorPrefix) {
+        doRequestWithValidation(HttpMethod.POST, url, body, errorPrefix);
+    }
+
+    /**
+     * 发送 JSON 请求，并验证响应结果。
+     *
+     * @param method      HTTP 方法
+     * @param url         Agent 服务完整请求地址
+     * @param body        JSON 请求体
+     * @param errorPrefix 错误信息前缀
+     */
+    private void doRequestWithValidation(HttpMethod method, String url, String body, String errorPrefix) {
         HttpResult<String> result = null;
         try {
-            result = executePostRequest(url, body);
+            result = method == HttpMethod.POST
+                    ? executePostRequest(url, body)
+                    : executeJsonRequest(method, url, body);
             BaseResponse.extractData(result);
         } catch (HttpClientException ex) {
             throw new ServiceException(ResponseCode.OPERATION_ERROR,
@@ -193,6 +237,18 @@ public class MedicineAgentClient {
     }
 
     /**
+     * 使用系统签名客户端发送 Agent JSON 请求。
+     */
+    HttpResult<String> executeJsonRequest(HttpMethod method, String url, String body) {
+        ClientRequest request = ClientRequest.builder()
+                .method(method)
+                .url(url)
+                .body(body)
+                .build();
+        return systemAuthRequestClient.execute(request, String.class);
+    }
+
+    /**
      * 构造文档切片分页查询请求。
      */
     ClientRequest buildChunkListRequest(String url, String knowledgeName, Long documentId, int page, int pageSize) {
@@ -240,10 +296,31 @@ public class MedicineAgentClient {
         Assert.isParamTrue((embeddingDim & (embeddingDim - 1)) == 0, "向量维度必须是2的幂");
     }
 
+    private void validateChunkStatus(Integer status) {
+        Assert.notNull(status, "切片状态不能为空");
+        Assert.isParamTrue(status == CHUNK_STATUS_ENABLED || status == CHUNK_STATUS_DISABLED, "切片状态只允许为0或1");
+    }
+
+    private List<Long> normalizeDocumentIds(List<Long> documentIds) {
+        Assert.notEmpty(documentIds, "文档ID不能为空");
+        LinkedHashSet<Long> distinctIds = new LinkedHashSet<>();
+        for (Long documentId : documentIds) {
+            Assert.isPositive(documentId, "文档ID必须大于0");
+            distinctIds.add(documentId);
+        }
+        return new ArrayList<>(distinctIds);
+    }
+
     private record CreateKnowledgeBasePayload(String knowledge_name, Integer embedding_dim, String description) {
     }
 
     private record CollectionPayload(String collection_name) {
+    }
+
+    private record DocumentStatusPayload(String knowledge_name, Long vector_id, Integer status) {
+    }
+
+    private record DocumentDeletePayload(String knowledge_name, List<Long> document_ids) {
     }
 
     /**
@@ -330,6 +407,11 @@ public class MedicineAgentClient {
          * 内容来源哈希。
          */
         private String source_hash;
+
+        /**
+         * 切片状态：0启用，1禁用。
+         */
+        private Integer status;
 
         /**
          * 创建时间戳，毫秒。

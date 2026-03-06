@@ -24,8 +24,8 @@ public class KbDocumentChunkServiceImpl extends ServiceImpl<KbDocumentChunkMappe
 
     @Override
     @Transactional(rollbackFor = Exception.class)
-    public void replaceByDocumentId(String documentId, List<KbDocumentChunk> chunks) {
-        Assert.notEmpty(documentId, "文档ID不能为空");
+    public void replaceByDocumentId(Long documentId, List<KbDocumentChunk> chunks) {
+        Assert.isPositive(documentId, "文档ID不能为空");
 
         lambdaUpdate()
                 .eq(KbDocumentChunk::getDocumentId, documentId)
@@ -38,5 +38,13 @@ public class KbDocumentChunkServiceImpl extends ServiceImpl<KbDocumentChunkMappe
         if (!saved) {
             throw new ServiceException(ResponseCode.OPERATION_ERROR, "保存文档切片失败");
         }
+    }
+
+    @Override
+    public boolean removeByDocumentIds(List<Long> documentIds) {
+        Assert.notEmpty(documentIds, "文档ID不能为空");
+        return lambdaUpdate()
+                .in(KbDocumentChunk::getDocumentId, documentIds)
+                .remove();
     }
 }

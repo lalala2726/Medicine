@@ -2,6 +2,9 @@ package cn.zhangchuangla.medicine.admin.service.impl;
 
 import cn.zhangchuangla.medicine.admin.integration.MedicineAgentClient;
 import cn.zhangchuangla.medicine.admin.mapper.KbDocumentMapper;
+import cn.zhangchuangla.medicine.admin.model.request.DocumentDeleteRequest;
+import cn.zhangchuangla.medicine.admin.model.request.DocumentListRequest;
+import cn.zhangchuangla.medicine.admin.model.request.DocumentSliceUpdateRequest;
 import cn.zhangchuangla.medicine.admin.model.request.KnowledgeBaseImportRequest;
 import cn.zhangchuangla.medicine.admin.publisher.KnowledgeImportPublisher;
 import cn.zhangchuangla.medicine.admin.service.KbBaseService;
@@ -17,10 +20,14 @@ import cn.zhangchuangla.medicine.model.entity.KbDocument;
 import cn.zhangchuangla.medicine.model.entity.KbDocumentChunk;
 import cn.zhangchuangla.medicine.model.mq.KnowledgeImportCommandMessage;
 import cn.zhangchuangla.medicine.model.mq.KnowledgeImportResultMessage;
+import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.baomidou.mybatisplus.core.toolkit.Wrappers;
+import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
 import org.springframework.validation.annotation.Validated;
 
@@ -40,24 +47,89 @@ import java.util.concurrent.TimeUnit;
 public class KbDocumentServiceImpl extends ServiceImpl<KbDocumentMapper, KbDocument>
         implements KbDocumentService, BaseService {
 
+    /**
+     * 文档待处理状态。
+     */
     private static final String STATUS_PENDING = "PENDING";
+
+    /**
+     * 文档导入已启动状态。
+     */
     private static final String STATUS_STARTED = "STARTED";
+
+    /**
+     * 文档处理中状态。
+     */
     private static final String STATUS_PROCESSING = "PROCESSING";
+
+    /**
+     * 文档切片入库中状态。
+     */
     private static final String STATUS_INSERTING = "INSERTING";
+
+    /**
+     * 文档处理完成状态。
+     */
     private static final String STATUS_COMPLETED = "COMPLETED";
+
+    /**
+     * 文档处理失败状态。
+     */
     private static final String STATUS_FAILED = "FAILED";
 
+    /**
+     * 导入启动阶段明细。
+     */
     private static final String STAGE_DETAIL_STARTED = "STARTED";
+
+    /**
+     * 切片同步阶段明细。
+     */
     private static final String STAGE_DETAIL_INSERTING = "INSERTING";
+
+    /**
+     * 导入流程结束阶段明细。
+     */
     private static final String STAGE_DETAIL_END = "END";
 
+    /**
+     * 切片启用状态。
+     */
     private static final int CHUNK_STATUS_ENABLED = 0;
+
+    /**
+     * 切片禁用状态。
+     */
+    private static final int CHUNK_STATUS_DISABLED = 1;
+
+    /**
+     * 切片同步最大重试次数。
+     */
     private static final int CHUNK_SYNC_MAX_RETRY = 3;
+
+    /**
+     * 切片同步失败后的重试间隔，单位毫秒。
+     */
     private static final long CHUNK_SYNC_RETRY_INTERVAL_MS = 200L;
 
+    /**
+     * Redis 中记录文档最新版本号的 Key 前缀。
+     */
     private static final String REDIS_LATEST_VERSION_KEY_PREFIX = "kb:latest:";
+
+    /**
+     * Redis 最新版本号缓存保留天数。
+     */
     private static final long REDIS_LATEST_VERSION_TTL_DAYS = 7L;
+
+    /**
+     * 知识库导入 command 消息类型。
+     */
     private static final String COMMAND_MESSAGE_TYPE = "knowledge_import_command";
+
+    /**
+     * 系统回写文档状态时使用的更新人标识。
+     */
     private static final String SYSTEM_UPDATER = "system";
 
     private final KbBaseService kbBaseService;
@@ -66,8 +138,91 @@ public class KbDocumentServiceImpl extends ServiceImpl<KbDocumentMapper, KbDocum
     private final MedicineAgentClient medicineAgentClient;
     private final KbDocumentChunkService kbDocumentChunkService;
 
+    @Override
+    public Page<KbDocument> listDocument(DocumentListRequest request) {
+        Assert.notNull(request, "查询参数不能为空");
+        LambdaQueryWrapper<KbDocument> queryWrapper = Wrappers.lambdaQuery();
+        if (request.getKnowledgeBaseId() != null) {
+            Assert.isPositive(request.getKnowledgeBaseId(), "知识库ID必须大于0");
+            queryWrapper.eq(KbDocument::getKnowledgeBaseId, request.getKnowledgeBaseId());
+        }
+        if (StringUtils.hasText(request.getFileName())) {
+            queryWrapper.like(KbDocument::getFileName, request.getFileName().trim());
+        }
+        if (StringUtils.hasText(request.getFileType())) {
+            String fileType = request.getFileType().trim();
+            queryWrapper.and(wrapper -> wrapper
+                    .like(KbDocument::getFileName, "." + fileType)
+                    .or()
+                    .like(KbDocument::getMimeType, fileType));
+        }
+        queryWrapper.orderByDesc(KbDocument::getCreatedAt, KbDocument::getId);
+        return page(request.toPage(), queryWrapper);
+    }
+
+    @Override
+    public KbDocument getDocumentById(Long id) {
+        Assert.isPositive(id, "文档ID必须大于0");
+        KbDocument document = getById(id);
+        Assert.isTrue(document != null, "文档不存在");
+        return document;
+    }
+
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public boolean deleteDocument(Long id) {
+        KbDocument document = getDocumentById(id);
+        KbBase kbBase = kbBaseService.getKnowledgeBaseById(document.getKnowledgeBaseId());
+        return deleteDocumentsInternal(kbBase, List.of(document));
+    }
+
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public boolean deleteDocuments(@Validated DocumentDeleteRequest request) {
+        Assert.notNull(request, "删除文档请求不能为空");
+        List<Long> documentIds = normalizeDocumentIds(request.getDocumentIds());
+
+        List<KbDocument> documents = listByIds(documentIds);
+        Assert.isTrue(documents.size() == documentIds.size(), "文档不存在");
+        Set<Long> knowledgeBaseIds = new LinkedHashSet<>();
+        for (KbDocument document : documents) {
+            Assert.notNull(document.getKnowledgeBaseId(), "文档知识库ID不能为空");
+            knowledgeBaseIds.add(document.getKnowledgeBaseId());
+        }
+        Assert.isTrue(knowledgeBaseIds.size() == 1, "仅支持删除同一知识库下的文档");
+        KbBase kbBase = kbBaseService.getKnowledgeBaseById(knowledgeBaseIds.iterator().next());
+        return deleteDocumentsInternal(kbBase, documents);
+    }
+
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public boolean updateDocumentChunkStatus(@Validated DocumentSliceUpdateRequest request) {
+        Assert.notNull(request, "切片状态更新请求不能为空");
+        Assert.isPositive(request.getChunkId(), "切片ID必须大于0");
+        validateChunkStatus(request.getStatus());
+
+        KbDocumentChunk chunk = kbDocumentChunkService.getById(request.getChunkId());
+        Assert.isTrue(chunk != null, "文档切片不存在");
+
+        Long documentId = chunk.getDocumentId();
+        Assert.isPositive(documentId, "文档ID无效");
+        Long vectorId = parseStoredPositiveLong(chunk.getVectorId());
+
+        KbDocument document = getDocumentById(documentId);
+        KbBase kbBase = kbBaseService.getKnowledgeBaseById(document.getKnowledgeBaseId());
+        Assert.notEmpty(kbBase.getKnowledgeName(), "知识库名称不能为空");
+
+        medicineAgentClient.updateDocumentChunkStatus(kbBase.getKnowledgeName(), vectorId, request.getStatus());
+
+        chunk.setStatus(request.getStatus());
+        chunk.setUpdatedAt(new Date());
+        boolean updated = kbDocumentChunkService.updateById(chunk);
+        Assert.isTrue(updated, "更新文档切片状态失败");
+        return true;
+    }
+
     /**
-     * 发起知识库文档导入。
+     * 发起文档导入。
      * <p>
      * 流程：按知识库名称读取配置 -> 为每个 URL 新建文档记录 ->
      * 生成/写入最新版本号 -> 发送 MQ command。
@@ -76,7 +231,7 @@ public class KbDocumentServiceImpl extends ServiceImpl<KbDocumentMapper, KbDocum
      * @param request 导入请求参数（知识库名称、文件地址集合、切片参数）
      */
     @Override
-    public void importKnowledge(@Validated KnowledgeBaseImportRequest request) {
+    public void importDocument(@Validated KnowledgeBaseImportRequest request) {
         KbBase kbBase = findKnowledgeBaseByName(request.getKnowledgeName());
         Assert.isTrue(kbBase != null, "知识库不存在");
         Assert.notEmpty(kbBase.getEmbeddingModel(), "知识库向量模型未配置");
@@ -212,7 +367,7 @@ public class KbDocumentServiceImpl extends ServiceImpl<KbDocumentMapper, KbDocum
                 List<MedicineAgentClient.DocumentChunkRow> rows =
                         medicineAgentClient.listDocumentChunks(knowledgeName, documentId);
                 List<KbDocumentChunk> chunks = mapDocumentChunks(rows, documentId);
-                kbDocumentChunkService.replaceByDocumentId(String.valueOf(documentId), chunks);
+                kbDocumentChunkService.replaceByDocumentId(documentId, chunks);
                 markDocumentCompleted(documentId);
                 log.info("知识库切片同步成功: task_uuid={}, document_id={}, chunk_count={}",
                         message.getTask_uuid(), documentId, chunks.size());
@@ -347,6 +502,9 @@ public class KbDocumentServiceImpl extends ServiceImpl<KbDocumentMapper, KbDocum
 
     /**
      * 判断当前消息是否为旧版本。
+     *
+     * @param message 当前收到的导入结果消息
+     * @return true 表示消息版本落后于 Redis 中记录的最新版本；false 表示可继续处理
      */
     private boolean isStaleVersionMessage(KnowledgeImportResultMessage message) {
         String bizKey = message.getBiz_key();
@@ -360,6 +518,13 @@ public class KbDocumentServiceImpl extends ServiceImpl<KbDocumentMapper, KbDocum
         return false;
     }
 
+    /**
+     * 将 AI 端返回的切片列表映射为本地切片实体。
+     *
+     * @param rows               AI 端返回的切片行列表
+     * @param fallbackDocumentId 当单条切片缺少文档ID时使用的兜底文档ID
+     * @return 可直接写入本地数据库的切片实体列表
+     */
     private List<KbDocumentChunk> mapDocumentChunks(List<MedicineAgentClient.DocumentChunkRow> rows, Long fallbackDocumentId) {
         List<KbDocumentChunk> chunks = new ArrayList<>();
         if (rows == null || rows.isEmpty()) {
@@ -370,21 +535,29 @@ public class KbDocumentServiceImpl extends ServiceImpl<KbDocumentMapper, KbDocum
             if (row == null) {
                 continue;
             }
-            KbDocumentChunk chunk = new KbDocumentChunk();
             Long rowDocumentId = row.getDocument_id() == null ? fallbackDocumentId : row.getDocument_id();
-            chunk.setDocumentId(String.valueOf(rowDocumentId));
-            chunk.setChunkIndex(row.getChunk_index());
-            chunk.setContent(row.getContent());
-            chunk.setVectorId(row.getId() == null ? null : String.valueOf(row.getId()));
-            chunk.setCharCount(row.getChar_count());
-            chunk.setStatus(CHUNK_STATUS_ENABLED);
-            chunk.setCreatedAt(toDate(row.getCreated_at_ts(), now));
-            chunk.setUpdatedAt(now);
+            KbDocumentChunk chunk = KbDocumentChunk.builder()
+                    .documentId(rowDocumentId)
+                    .chunkIndex(row.getChunk_index())
+                    .content(row.getContent())
+                    .vectorId(row.getId() == null ? null : String.valueOf(row.getId()))
+                    .charCount(row.getChar_count())
+                    .status(resolveChunkStatus(row.getStatus()))
+                    .createdAt(toDate(row.getCreated_at_ts(), now))
+                    .updatedAt(now)
+                    .build();
             chunks.add(chunk);
         }
         return chunks;
     }
 
+    /**
+     * 将毫秒时间戳转换为 {@link Date} 对象。
+     *
+     * @param milliseconds 毫秒时间戳
+     * @param fallback     当时间戳为空或非法时返回的兜底时间
+     * @return 转换后的时间对象；无效时返回 fallback
+     */
     private Date toDate(Long milliseconds, Date fallback) {
         if (milliseconds == null || milliseconds <= 0) {
             return fallback;
@@ -392,6 +565,15 @@ public class KbDocumentServiceImpl extends ServiceImpl<KbDocumentMapper, KbDocum
         return new Date(milliseconds);
     }
 
+    /**
+     * 从消息中解析知识库业务名称。
+     * <p>
+     * 优先读取 message 中的 knowledge_name，缺失时再从 biz_key 的前缀解析。
+     * </p>
+     *
+     * @param message 导入结果或切片同步消息
+     * @return 解析出的知识库名称；无法解析时返回 null
+     */
     private String resolveKnowledgeName(KnowledgeImportResultMessage message) {
         if (StringUtils.hasText(message.getKnowledge_name())) {
             return message.getKnowledge_name().trim();
@@ -407,6 +589,11 @@ public class KbDocumentServiceImpl extends ServiceImpl<KbDocumentMapper, KbDocum
         return bizKey.substring(0, separatorIndex);
     }
 
+    /**
+     * 在切片同步失败后按次数进行短暂等待，避免立即重试。
+     *
+     * @param attempt 当前重试次数，从 1 开始
+     */
     private void sleepBeforeRetry(int attempt) {
         try {
             Thread.sleep(CHUNK_SYNC_RETRY_INTERVAL_MS * attempt);
@@ -415,6 +602,101 @@ public class KbDocumentServiceImpl extends ServiceImpl<KbDocumentMapper, KbDocum
         }
     }
 
+    /**
+     * 删除文档的通用实现。
+     * <p>
+     * 先调用 AI 端删除向量数据，再删除本地切片和文档记录。
+     * </p>
+     *
+     * @param kbBase    文档所属知识库
+     * @param documents 待删除文档列表
+     * @return true 表示删除成功
+     */
+    private boolean deleteDocumentsInternal(KbBase kbBase, List<KbDocument> documents) {
+        Assert.notNull(kbBase, "知识库不存在");
+        Assert.notEmpty(kbBase.getKnowledgeName(), "知识库名称不能为空");
+        Assert.notEmpty(documents, "文档不存在");
+
+        List<Long> documentIds = documents.stream()
+                .map(KbDocument::getId)
+                .filter(Objects::nonNull)
+                .distinct()
+                .toList();
+        Assert.notEmpty(documentIds, "文档不存在");
+
+        medicineAgentClient.deleteDocuments(kbBase.getKnowledgeName(), documentIds);
+        kbDocumentChunkService.removeByDocumentIds(documentIds);
+
+        boolean removed = removeByIds(documentIds);
+        Assert.isTrue(removed, "删除文档失败");
+        return true;
+    }
+
+    /**
+     * 对外部传入的文档ID列表进行去重和正整数校验。
+     *
+     * @param documentIds 原始文档ID列表
+     * @return 去重后的文档ID列表，保持原有顺序
+     */
+    private List<Long> normalizeDocumentIds(List<Long> documentIds) {
+        Assert.notEmpty(documentIds, "文档ID不能为空");
+        LinkedHashSet<Long> distinctIds = new LinkedHashSet<>();
+        for (Long documentId : documentIds) {
+            Assert.isPositive(documentId, "文档ID必须大于0");
+            distinctIds.add(documentId);
+        }
+        return new ArrayList<>(distinctIds);
+    }
+
+    /**
+     * 将数据库中以字符串存储的正整数主键解析为 Long。
+     *
+     * @param value 待解析的字符串值
+     * @return 解析后的正整数值
+     */
+    private Long parseStoredPositiveLong(String value) {
+        if (!StringUtils.hasText(value)) {
+            throw new ServiceException(ResponseCode.OPERATION_ERROR, "向量ID无效");
+        }
+        try {
+            long parsed = Long.parseLong(value.trim());
+            if (parsed <= 0) {
+                throw new NumberFormatException("not positive");
+            }
+            return parsed;
+        } catch (NumberFormatException ex) {
+            throw new ServiceException(ResponseCode.OPERATION_ERROR, "向量ID无效");
+        }
+    }
+
+    /**
+     * 标准化切片状态。
+     *
+     * @param status AI 端返回的切片状态
+     * @return 当 status 为空时返回启用状态，否则返回原始状态值
+     */
+    private Integer resolveChunkStatus(Integer status) {
+        if (status == null) {
+            return CHUNK_STATUS_ENABLED;
+        }
+        return status;
+    }
+
+    /**
+     * 校验切片状态是否在允许范围内。
+     *
+     * @param status 待校验的切片状态，仅允许 0 或 1
+     */
+    private void validateChunkStatus(Integer status) {
+        Assert.notNull(status, "切片状态不能为空");
+        Assert.isParamTrue(status == CHUNK_STATUS_ENABLED || status == CHUNK_STATUS_DISABLED, "切片状态只允许为0或1");
+    }
+
+    /**
+     * 将指定文档标记为导入完成状态。
+     *
+     * @param documentId 文档ID
+     */
     private void markDocumentCompleted(Long documentId) {
         KbDocument completedDocument = getById(documentId);
         if (completedDocument == null) {
@@ -442,6 +724,14 @@ public class KbDocumentServiceImpl extends ServiceImpl<KbDocumentMapper, KbDocum
         markDocumentFailed(documentId, errorMessage, username, STAGE_DETAIL_END);
     }
 
+    /**
+     * 将指定文档标记为失败状态，并记录阶段明细和错误信息。
+     *
+     * @param documentId   文档ID
+     * @param errorMessage 错误信息
+     * @param username     操作人账号
+     * @param stageDetail  失败时写入的阶段明细
+     */
     private void markDocumentFailed(Long documentId, String errorMessage, String username, String stageDetail) {
         KbDocument failedDocument = getById(documentId);
         if (failedDocument == null) {
@@ -458,6 +748,12 @@ public class KbDocumentServiceImpl extends ServiceImpl<KbDocumentMapper, KbDocum
         }
     }
 
+    /**
+     * 提取异常中的可读错误信息。
+     *
+     * @param ex 异常对象
+     * @return 异常消息；当异常或消息为空时返回 unknown error
+     */
     private String extractErrorMessage(Exception ex) {
         if (ex == null || !StringUtils.hasText(ex.getMessage())) {
             return "unknown error";
@@ -498,6 +794,12 @@ public class KbDocumentServiceImpl extends ServiceImpl<KbDocumentMapper, KbDocum
         return stage.trim().toUpperCase(Locale.ROOT);
     }
 
+    /**
+     * 标准化阶段明细字符串，统一去空格并转为大写。
+     *
+     * @param stageDetail 原始阶段明细
+     * @return 标准化后的阶段明细；为空时返回 null
+     */
     private String normalizeStageDetail(String stageDetail) {
         if (!StringUtils.hasText(stageDetail)) {
             return null;
@@ -505,6 +807,13 @@ public class KbDocumentServiceImpl extends ServiceImpl<KbDocumentMapper, KbDocum
         return stageDetail.trim().toUpperCase(Locale.ROOT);
     }
 
+    /**
+     * 标准化阶段明细，并在为空时返回默认值。
+     *
+     * @param stageDetail 原始阶段明细
+     * @param fallback    兜底阶段明细
+     * @return 标准化后的阶段明细或 fallback
+     */
     private String normalizeStageDetailDefault(String stageDetail, String fallback) {
         String normalized = normalizeStageDetail(stageDetail);
         if (StringUtils.hasText(normalized)) {
@@ -513,6 +822,13 @@ public class KbDocumentServiceImpl extends ServiceImpl<KbDocumentMapper, KbDocum
         return fallback;
     }
 
+    /**
+     * 根据导入主状态推导应写入的阶段明细。
+     *
+     * @param stage       文档主状态
+     * @param stageDetail 原始阶段明细
+     * @return 最终写入数据库的阶段明细
+     */
     private String resolveStageDetail(String stage, String stageDetail) {
         if (STATUS_PROCESSING.equalsIgnoreCase(stage)) {
             return normalizeStageDetailDefault(stageDetail, STAGE_DETAIL_STARTED);
