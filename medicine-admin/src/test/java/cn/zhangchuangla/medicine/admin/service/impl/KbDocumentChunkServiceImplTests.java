@@ -2,8 +2,10 @@ package cn.zhangchuangla.medicine.admin.service.impl;
 
 import cn.zhangchuangla.medicine.admin.mapper.KbDocumentChunkMapper;
 import cn.zhangchuangla.medicine.admin.mapper.KbDocumentMapper;
+import cn.zhangchuangla.medicine.admin.model.request.DocumentChunkAddRequest;
 import cn.zhangchuangla.medicine.admin.model.request.DocumentChunkListRequest;
 import cn.zhangchuangla.medicine.admin.model.request.DocumentChunkUpdateContentRequest;
+import cn.zhangchuangla.medicine.admin.publisher.KnowledgeChunkAddPublisher;
 import cn.zhangchuangla.medicine.admin.publisher.KnowledgeChunkRebuildPublisher;
 import cn.zhangchuangla.medicine.admin.service.KbBaseService;
 import cn.zhangchuangla.medicine.admin.service.KbDocumentChunkHistoryService;
@@ -13,6 +15,8 @@ import cn.zhangchuangla.medicine.model.entity.KbBase;
 import cn.zhangchuangla.medicine.model.entity.KbDocument;
 import cn.zhangchuangla.medicine.model.entity.KbDocumentChunk;
 import cn.zhangchuangla.medicine.model.entity.KbDocumentChunkHistory;
+import cn.zhangchuangla.medicine.model.mq.KnowledgeChunkAddCommandMessage;
+import cn.zhangchuangla.medicine.model.mq.KnowledgeChunkAddResultMessage;
 import cn.zhangchuangla.medicine.model.mq.KnowledgeChunkRebuildCommandMessage;
 import cn.zhangchuangla.medicine.model.mq.KnowledgeChunkRebuildResultMessage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
@@ -51,6 +55,9 @@ class KbDocumentChunkServiceImplTests {
     private KbDocumentChunkHistoryService kbDocumentChunkHistoryService;
 
     @Mock
+    private KnowledgeChunkAddPublisher knowledgeChunkAddPublisher;
+
+    @Mock
     private KnowledgeChunkRebuildPublisher knowledgeChunkRebuildPublisher;
 
     @Mock
@@ -72,6 +79,7 @@ class KbDocumentChunkServiceImplTests {
                 kbBaseService,
                 kbDocumentChunkHistoryService,
                 redisCache,
+                knowledgeChunkAddPublisher,
                 knowledgeChunkRebuildPublisher,
                 transactionManager
         );
@@ -108,6 +116,96 @@ class KbDocumentChunkServiceImplTests {
                 () -> kbDocumentChunkService.getDocumentChunkById(2001L));
 
         assertEquals("文档切片不存在", ex.getMessage());
+    }
+
+    @Test
+    void addDocumentChunk_ShouldInsertPlaceholderAndPublishCommand() {
+        DocumentChunkAddRequest request = new DocumentChunkAddRequest();
+        request.setDocumentId(1001L);
+        request.setContent("  manual content  ");
+
+        when(kbDocumentMapper.selectById(1001L)).thenReturn(newDocument());
+        when(kbBaseService.getKnowledgeBaseById(1L)).thenReturn(newKbBase());
+        when(kbDocumentChunkMapper.selectMaxChunkIndex(1001L)).thenReturn(9);
+        when(kbDocumentChunkMapper.insert(any(KbDocumentChunk.class))).thenAnswer(invocation -> {
+            KbDocumentChunk chunk = invocation.getArgument(0);
+            chunk.setId(3001L);
+            return 1;
+        });
+
+        boolean result = kbDocumentChunkService.addDocumentChunk(request);
+
+        assertTrue(result);
+        ArgumentCaptor<KbDocumentChunk> chunkCaptor = ArgumentCaptor.forClass(KbDocumentChunk.class);
+        verify(kbDocumentChunkMapper).insert(chunkCaptor.capture());
+        KbDocumentChunk chunk = chunkCaptor.getValue();
+        assertEquals(1001L, chunk.getDocumentId());
+        assertEquals("manual content", chunk.getContent());
+        assertEquals(14, chunk.getCharCount());
+        assertEquals(10, chunk.getChunkIndex());
+        assertEquals("PENDING", chunk.getEditStatus());
+        assertEquals(0, chunk.getStatus());
+        assertNull(chunk.getVectorId());
+
+        ArgumentCaptor<KnowledgeChunkAddCommandMessage> messageCaptor =
+                ArgumentCaptor.forClass(KnowledgeChunkAddCommandMessage.class);
+        verify(knowledgeChunkAddPublisher).publishCommand(messageCaptor.capture());
+        KnowledgeChunkAddCommandMessage message = messageCaptor.getValue();
+        assertEquals("knowledge_chunk_add_command", message.getMessage_type());
+        assertEquals(3001L, message.getChunk_id());
+        assertEquals("drug_faq", message.getKnowledge_name());
+        assertEquals(1001L, message.getDocument_id());
+        assertEquals("manual content", message.getContent());
+        assertEquals("text-embedding-v4", message.getEmbedding_model());
+        assertNotNull(message.getTask_uuid());
+        assertNotNull(message.getCreated_at());
+    }
+
+    @Test
+    void addDocumentChunk_WhenDocumentNotCompleted_ShouldThrow() {
+        DocumentChunkAddRequest request = new DocumentChunkAddRequest();
+        request.setDocumentId(1001L);
+        request.setContent("manual content");
+
+        KbDocument document = newDocument();
+        document.setStatus("STARTED");
+        when(kbDocumentMapper.selectById(1001L)).thenReturn(document);
+
+        ServiceException ex = assertThrows(ServiceException.class,
+                () -> kbDocumentChunkService.addDocumentChunk(request));
+
+        assertEquals("仅支持在已完成的文档下新增切片", ex.getMessage());
+        verify(kbDocumentChunkMapper, never()).insert(any(KbDocumentChunk.class));
+        verify(knowledgeChunkAddPublisher, never()).publishCommand(any(KnowledgeChunkAddCommandMessage.class));
+    }
+
+    @Test
+    void addDocumentChunk_WhenPublishFails_ShouldMarkFailed() {
+        DocumentChunkAddRequest request = new DocumentChunkAddRequest();
+        request.setDocumentId(1001L);
+        request.setContent("manual content");
+
+        when(kbDocumentMapper.selectById(1001L)).thenReturn(newDocument());
+        when(kbBaseService.getKnowledgeBaseById(1L)).thenReturn(newKbBase());
+        when(kbDocumentChunkMapper.selectMaxChunkIndex(1001L)).thenReturn(9);
+        when(kbDocumentChunkMapper.insert(any(KbDocumentChunk.class))).thenAnswer(invocation -> {
+            KbDocumentChunk chunk = invocation.getArgument(0);
+            chunk.setId(3001L);
+            return 1;
+        });
+        when(kbDocumentChunkMapper.updateById(any(KbDocumentChunk.class))).thenReturn(1);
+        doThrow(new ServiceException("mq error"))
+                .when(knowledgeChunkAddPublisher)
+                .publishCommand(any(KnowledgeChunkAddCommandMessage.class));
+
+        ServiceException ex = assertThrows(ServiceException.class,
+                () -> kbDocumentChunkService.addDocumentChunk(request));
+
+        assertEquals("内容已保存，但切片新增未成功提交: mq error", ex.getMessage());
+        ArgumentCaptor<KbDocumentChunk> captor = ArgumentCaptor.forClass(KbDocumentChunk.class);
+        verify(kbDocumentChunkMapper).updateById(captor.capture());
+        assertEquals(3001L, captor.getValue().getId());
+        assertEquals("FAILED", captor.getValue().getEditStatus());
     }
 
     @Test
@@ -318,6 +416,119 @@ class KbDocumentChunkServiceImplTests {
         verify(kbDocumentChunkMapper, never()).updateById(any(KbDocumentChunk.class));
     }
 
+    @Test
+    void handleChunkAddResult_WhenStarted_ShouldUpdateEditStatus() {
+        KnowledgeChunkAddResultMessage message = KnowledgeChunkAddResultMessage.builder()
+                .task_uuid("task-add-1")
+                .chunk_id(3001L)
+                .document_id(1001L)
+                .stage("STARTED")
+                .build();
+        KbDocumentChunk chunk = newChunk("旧的切片内容");
+        chunk.setId(3001L);
+        chunk.setVectorId(null);
+        chunk.setEditStatus("PENDING");
+        when(kbDocumentChunkMapper.selectById(3001L)).thenReturn(chunk);
+        when(kbDocumentChunkMapper.updateById(any(KbDocumentChunk.class))).thenReturn(1);
+
+        kbDocumentChunkService.handleChunkAddResult(message);
+
+        ArgumentCaptor<KbDocumentChunk> captor = ArgumentCaptor.forClass(KbDocumentChunk.class);
+        verify(kbDocumentChunkMapper).updateById(captor.capture());
+        assertEquals("STARTED", captor.getValue().getEditStatus());
+    }
+
+    @Test
+    void handleChunkAddResult_WhenCompleted_ShouldUpdateChunkIndexVectorIdAndStatus() {
+        KnowledgeChunkAddResultMessage message = KnowledgeChunkAddResultMessage.builder()
+                .task_uuid("task-add-2")
+                .chunk_id(3001L)
+                .document_id(1001L)
+                .stage("COMPLETED")
+                .vector_id(900010L)
+                .chunk_index(11)
+                .build();
+        KbDocumentChunk chunk = newChunk("旧的切片内容");
+        chunk.setId(3001L);
+        chunk.setVectorId(null);
+        chunk.setEditStatus("PENDING");
+        when(kbDocumentChunkMapper.selectById(3001L)).thenReturn(chunk);
+        when(kbDocumentChunkMapper.updateById(any(KbDocumentChunk.class))).thenReturn(1);
+
+        kbDocumentChunkService.handleChunkAddResult(message);
+
+        ArgumentCaptor<KbDocumentChunk> captor = ArgumentCaptor.forClass(KbDocumentChunk.class);
+        verify(kbDocumentChunkMapper).updateById(captor.capture());
+        KbDocumentChunk updated = captor.getValue();
+        assertEquals("COMPLETED", updated.getEditStatus());
+        assertEquals("900010", updated.getVectorId());
+        assertEquals(11, updated.getChunkIndex());
+    }
+
+    @Test
+    void handleChunkAddResult_WhenFailed_ShouldUpdateEditStatus() {
+        KnowledgeChunkAddResultMessage message = KnowledgeChunkAddResultMessage.builder()
+                .task_uuid("task-add-3")
+                .chunk_id(3001L)
+                .document_id(1001L)
+                .stage("FAILED")
+                .message("embedding failed")
+                .build();
+        KbDocumentChunk chunk = newChunk("旧的切片内容");
+        chunk.setId(3001L);
+        chunk.setVectorId(null);
+        chunk.setEditStatus("STARTED");
+        when(kbDocumentChunkMapper.selectById(3001L)).thenReturn(chunk);
+        when(kbDocumentChunkMapper.updateById(any(KbDocumentChunk.class))).thenReturn(1);
+
+        kbDocumentChunkService.handleChunkAddResult(message);
+
+        ArgumentCaptor<KbDocumentChunk> captor = ArgumentCaptor.forClass(KbDocumentChunk.class);
+        verify(kbDocumentChunkMapper).updateById(captor.capture());
+        assertEquals("FAILED", captor.getValue().getEditStatus());
+    }
+
+    @Test
+    void handleChunkAddResult_WhenCompletedPayloadInvalid_ShouldMarkFailed() {
+        KnowledgeChunkAddResultMessage message = KnowledgeChunkAddResultMessage.builder()
+                .task_uuid("task-add-4")
+                .chunk_id(3001L)
+                .document_id(1001L)
+                .stage("COMPLETED")
+                .chunk_index(11)
+                .build();
+        KbDocumentChunk chunk = newChunk("旧的切片内容");
+        chunk.setId(3001L);
+        chunk.setVectorId(null);
+        chunk.setEditStatus("PENDING");
+        when(kbDocumentChunkMapper.selectById(3001L)).thenReturn(chunk);
+        when(kbDocumentChunkMapper.updateById(any(KbDocumentChunk.class))).thenReturn(1);
+
+        kbDocumentChunkService.handleChunkAddResult(message);
+
+        ArgumentCaptor<KbDocumentChunk> captor = ArgumentCaptor.forClass(KbDocumentChunk.class);
+        verify(kbDocumentChunkMapper).updateById(captor.capture());
+        assertEquals("FAILED", captor.getValue().getEditStatus());
+        assertNull(captor.getValue().getVectorId());
+    }
+
+    @Test
+    void handleChunkAddResult_WhenDocumentMismatch_ShouldIgnore() {
+        KnowledgeChunkAddResultMessage message = KnowledgeChunkAddResultMessage.builder()
+                .task_uuid("task-add-5")
+                .chunk_id(3001L)
+                .document_id(1002L)
+                .stage("STARTED")
+                .build();
+        KbDocumentChunk chunk = newChunk("旧的切片内容");
+        chunk.setId(3001L);
+        when(kbDocumentChunkMapper.selectById(3001L)).thenReturn(chunk);
+
+        kbDocumentChunkService.handleChunkAddResult(message);
+
+        verify(kbDocumentChunkMapper, never()).updateById(any(KbDocumentChunk.class));
+    }
+
     private KbDocumentChunk newChunk(String content) {
         KbDocumentChunk chunk = new KbDocumentChunk();
         chunk.setId(2001L);
@@ -331,6 +542,7 @@ class KbDocumentChunkServiceImplTests {
         KbDocument document = new KbDocument();
         document.setId(1001L);
         document.setKnowledgeBaseId(1L);
+        document.setStatus("COMPLETED");
         return document;
     }
 

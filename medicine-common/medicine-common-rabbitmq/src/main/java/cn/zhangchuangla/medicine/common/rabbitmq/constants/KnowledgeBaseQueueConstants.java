@@ -92,6 +92,31 @@ public final class KnowledgeBaseQueueConstants {
      */
     public static final String ROUTING_CHUNK_REBUILD_RESULT = "knowledge.chunk_rebuild.result";
 
+    /**
+     * 文档切片新增交换机。
+     */
+    public static final String CHUNK_ADD_EXCHANGE = "knowledge.chunk_add";
+
+    /**
+     * 文档切片新增 command 队列。
+     */
+    public static final String CHUNK_ADD_COMMAND_QUEUE = "knowledge.chunk_add.command.q";
+
+    /**
+     * 文档切片新增 result 队列。
+     */
+    public static final String CHUNK_ADD_RESULT_QUEUE = "knowledge.chunk_add.result.q";
+
+    /**
+     * 文档切片新增 command 路由键。
+     */
+    public static final String ROUTING_CHUNK_ADD_COMMAND = "knowledge.chunk_add.command";
+
+    /**
+     * 文档切片新增 result 路由键。
+     */
+    public static final String ROUTING_CHUNK_ADD_RESULT = "knowledge.chunk_add.result";
+
     private KnowledgeBaseQueueConstants() {
     }
 }

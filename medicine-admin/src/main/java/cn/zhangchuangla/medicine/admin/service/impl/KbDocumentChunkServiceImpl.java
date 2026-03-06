@@ -2,9 +2,11 @@ package cn.zhangchuangla.medicine.admin.service.impl;
 
 import cn.zhangchuangla.medicine.admin.mapper.KbDocumentChunkMapper;
 import cn.zhangchuangla.medicine.admin.mapper.KbDocumentMapper;
+import cn.zhangchuangla.medicine.admin.model.request.DocumentChunkAddRequest;
 import cn.zhangchuangla.medicine.admin.model.request.DocumentChunkListRequest;
 import cn.zhangchuangla.medicine.admin.model.request.DocumentChunkUpdateContentRequest;
 import cn.zhangchuangla.medicine.admin.model.request.DocumentChunkUpdateStatusRequest;
+import cn.zhangchuangla.medicine.admin.publisher.KnowledgeChunkAddPublisher;
 import cn.zhangchuangla.medicine.admin.publisher.KnowledgeChunkRebuildPublisher;
 import cn.zhangchuangla.medicine.admin.service.KbBaseService;
 import cn.zhangchuangla.medicine.admin.service.KbDocumentChunkHistoryService;
@@ -18,6 +20,8 @@ import cn.zhangchuangla.medicine.model.entity.KbBase;
 import cn.zhangchuangla.medicine.model.entity.KbDocument;
 import cn.zhangchuangla.medicine.model.entity.KbDocumentChunk;
 import cn.zhangchuangla.medicine.model.entity.KbDocumentChunkHistory;
+import cn.zhangchuangla.medicine.model.mq.KnowledgeChunkAddCommandMessage;
+import cn.zhangchuangla.medicine.model.mq.KnowledgeChunkAddResultMessage;
 import cn.zhangchuangla.medicine.model.mq.KnowledgeChunkRebuildCommandMessage;
 import cn.zhangchuangla.medicine.model.mq.KnowledgeChunkRebuildResultMessage;
 import com.baomidou.mybatisplus.core.toolkit.Wrappers;
@@ -85,6 +89,11 @@ public class KbDocumentChunkServiceImpl extends ServiceImpl<KbDocumentChunkMappe
     private static final String EDIT_STATUS_FAILED = "FAILED";
 
     /**
+     * 文档处理完成状态。
+     */
+    private static final String DOCUMENT_STATUS_COMPLETED = "COMPLETED";
+
+    /**
      * 切片正在等待重建或处理中时的提示文案。
      */
     private static final String EDIT_IN_PROGRESS_MESSAGE = "当前切片已提交修改，必须等待完成后才能继续修改";
@@ -93,6 +102,11 @@ public class KbDocumentChunkServiceImpl extends ServiceImpl<KbDocumentChunkMappe
      * 单切片重建 command 消息类型。
      */
     private static final String CHUNK_REBUILD_COMMAND_MESSAGE_TYPE = "knowledge_chunk_rebuild_command";
+
+    /**
+     * 文档切片新增 command 消息类型。
+     */
+    private static final String CHUNK_ADD_COMMAND_MESSAGE_TYPE = "knowledge_chunk_add_command";
 
     /**
      * AI 返回“旧版本已被替代”时的关键字。
@@ -113,6 +127,7 @@ public class KbDocumentChunkServiceImpl extends ServiceImpl<KbDocumentChunkMappe
     private final KbBaseService kbBaseService;
     private final KbDocumentChunkHistoryService kbDocumentChunkHistoryService;
     private final RedisCache redisCache;
+    private final KnowledgeChunkAddPublisher knowledgeChunkAddPublisher;
     private final KnowledgeChunkRebuildPublisher knowledgeChunkRebuildPublisher;
     private final PlatformTransactionManager transactionManager;
 
@@ -142,6 +157,42 @@ public class KbDocumentChunkServiceImpl extends ServiceImpl<KbDocumentChunkMappe
         KbDocumentChunk chunk = baseMapper.selectById(id);
         Assert.isTrue(chunk != null, "文档切片不存在");
         return chunk;
+    }
+
+    /**
+     * 新增手工补充切片，并通过 MQ 触发 AI 侧异步向量化。
+     *
+     * @param request 新增请求
+     * @return true 表示处理成功
+     */
+    @Override
+    public boolean addDocumentChunk(DocumentChunkAddRequest request) {
+        Assert.notNull(request, "切片新增请求不能为空");
+        Assert.isPositive(request.getDocumentId(), "文档ID必须大于0");
+
+        String content = request.getContent() == null ? null : request.getContent().trim();
+        Assert.notEmpty(content, "切片内容不能为空");
+
+        KbDocument document = getDocument(request.getDocumentId());
+        Assert.isTrue(DOCUMENT_STATUS_COMPLETED.equalsIgnoreCase(document.getStatus()), "仅支持在已完成的文档下新增切片");
+        Assert.notNull(document.getKnowledgeBaseId(), "文档知识库ID不能为空");
+
+        KbBase kbBase = kbBaseService.getKnowledgeBaseById(document.getKnowledgeBaseId());
+        Assert.notEmpty(kbBase.getKnowledgeName(), "知识库名称不能为空");
+        Assert.notEmpty(kbBase.getEmbeddingModel(), "知识库向量模型未配置");
+
+        KbDocumentChunk chunk = buildPendingChunk(document.getId(), content);
+        Assert.isTrue(baseMapper.insert(chunk) > 0 && chunk.getId() != null, "保存文档切片失败");
+
+        String taskUuid = UUID.randomUUID().toString();
+        try {
+            knowledgeChunkAddPublisher.publishCommand(buildChunkAddCommand(kbBase, chunk, taskUuid));
+            return true;
+        } catch (Exception ex) {
+            markChunkEditFailed(chunk.getId(), "切片新增提交失败后");
+            throw new ServiceException(ResponseCode.OPERATION_ERROR,
+                    "内容已保存，但切片新增未成功提交: " + extractErrorMessage(ex));
+        }
     }
 
     /**
@@ -179,7 +230,7 @@ public class KbDocumentChunkServiceImpl extends ServiceImpl<KbDocumentChunkMappe
                     kbBase, chunk.getDocumentId(), vectorId, version, content, taskUuid));
             return true;
         } catch (Exception ex) {
-            markChunkEditFailed(chunk.getId());
+            markChunkEditFailed(chunk.getId(), "切片重建提交失败后");
             throw new ServiceException(ResponseCode.OPERATION_ERROR,
                     "内容已保存，但向量重建未成功提交: " + extractErrorMessage(ex));
         }
@@ -274,6 +325,82 @@ public class KbDocumentChunkServiceImpl extends ServiceImpl<KbDocumentChunkMappe
     }
 
     /**
+     * 处理 AI 回传的切片新增结果，并回写本地占位切片。
+     *
+     * @param message AI 回传的结果消息
+     */
+    @Override
+    public void handleChunkAddResult(KnowledgeChunkAddResultMessage message) {
+        if (message == null) {
+            return;
+        }
+        Long chunkId = message.getChunk_id();
+        Long documentId = message.getDocument_id();
+        if (chunkId == null || chunkId <= 0 || documentId == null || documentId <= 0) {
+            log.warn("忽略无效切片新增结果: task_uuid={}, chunk_id={}, document_id={}",
+                    message.getTask_uuid(), chunkId, documentId);
+            return;
+        }
+
+        String editStatus = normalizeEditStatus(message.getStage());
+        if (!StringUtils.hasText(editStatus)) {
+            log.warn("忽略未知切片新增阶段: task_uuid={}, chunk_id={}, stage={}",
+                    message.getTask_uuid(), chunkId, message.getStage());
+            return;
+        }
+
+        KbDocumentChunk chunk = baseMapper.selectById(chunkId);
+        if (chunk == null) {
+            log.warn("切片新增结果未命中本地切片: task_uuid={}, chunk_id={}", message.getTask_uuid(), chunkId);
+            return;
+        }
+        if (!Objects.equals(chunk.getDocumentId(), documentId)) {
+            log.warn("切片新增结果文档不一致: task_uuid={}, chunk_id={}, local_document_id={}, message_document_id={}",
+                    message.getTask_uuid(), chunkId, chunk.getDocumentId(), documentId);
+            return;
+        }
+        if (shouldIgnoreChunkAddResult(chunk, message, editStatus)) {
+            return;
+        }
+
+        if (EDIT_STATUS_COMPLETED.equals(editStatus)
+                && !hasValidChunkAddPayload(message.getVector_id(), message.getChunk_index())) {
+            log.warn("切片新增完成结果缺少必要字段: task_uuid={}, chunk_id={}, vector_id={}, chunk_index={}",
+                    message.getTask_uuid(), chunkId, message.getVector_id(), message.getChunk_index());
+            markChunkEditFailed(chunkId, "切片新增完成结果缺少必要字段后");
+            return;
+        }
+
+        KbDocumentChunk updateEntity = new KbDocumentChunk();
+        updateEntity.setId(chunkId);
+        updateEntity.setEditStatus(editStatus);
+        updateEntity.setUpdatedAt(new Date());
+        if (EDIT_STATUS_COMPLETED.equals(editStatus)) {
+            updateEntity.setVectorId(String.valueOf(message.getVector_id()));
+            updateEntity.setChunkIndex(message.getChunk_index());
+        }
+        if (baseMapper.updateById(updateEntity) <= 0) {
+            log.warn("更新切片新增状态失败: chunk_id={}, task_uuid={}, stage={}",
+                    chunkId, message.getTask_uuid(), message.getStage());
+            return;
+        }
+
+        if (EDIT_STATUS_FAILED.equals(editStatus)) {
+            log.warn("切片新增失败: chunk_id={}, task_uuid={}, message={}",
+                    chunkId, message.getTask_uuid(), message.getMessage());
+            return;
+        }
+
+        if (EDIT_STATUS_STARTED.equals(editStatus)) {
+            log.info("切片新增已开始处理: chunk_id={}, task_uuid={}", chunkId, message.getTask_uuid());
+            return;
+        }
+
+        log.info("切片新增结果已回写: chunk_id={}, task_uuid={}, vector_id={}, chunk_index={}, stage={}",
+                chunkId, message.getTask_uuid(), message.getVector_id(), message.getChunk_index(), editStatus);
+    }
+
+    /**
      * 按文档ID替换切片数据，先删后插。
      *
      * @param documentId 文档ID
@@ -345,6 +472,42 @@ public class KbDocumentChunkServiceImpl extends ServiceImpl<KbDocumentChunkMappe
                     .build();
             Assert.isTrue(kbDocumentChunkHistoryService.save(history), "保存文档切片历史失败");
         });
+    }
+
+    /**
+     * 构建新增切片的本地占位记录。
+     *
+     * @param documentId 文档ID
+     * @param content    切片内容
+     * @return 待持久化的切片实体
+     */
+    private KbDocumentChunk buildPendingChunk(Long documentId, String content) {
+        Date now = new Date();
+        return KbDocumentChunk.builder()
+                .documentId(documentId)
+                .chunkIndex(nextChunkIndex(documentId))
+                .content(content)
+                .vectorId(null)
+                .charCount(content.length())
+                .status(CHUNK_STATUS_ENABLED)
+                .editStatus(EDIT_STATUS_PENDING)
+                .createdAt(now)
+                .updatedAt(now)
+                .build();
+    }
+
+    /**
+     * 查询指定文档下一条临时切片序号。
+     *
+     * @param documentId 文档ID
+     * @return 临时切片序号
+     */
+    private int nextChunkIndex(Long documentId) {
+        Integer maxChunkIndex = baseMapper.selectMaxChunkIndex(documentId);
+        if (maxChunkIndex == null || maxChunkIndex < 0) {
+            return 1;
+        }
+        return maxChunkIndex + 1;
     }
 
     /**
@@ -433,6 +596,59 @@ public class KbDocumentChunkServiceImpl extends ServiceImpl<KbDocumentChunkMappe
     }
 
     /**
+     * 判断切片新增结果是否应按幂等忽略。
+     *
+     * @param chunk      本地切片
+     * @param message    AI 回传结果
+     * @param editStatus 标准化后的编辑状态
+     * @return true 表示应忽略
+     */
+    private boolean shouldIgnoreChunkAddResult(KbDocumentChunk chunk, KnowledgeChunkAddResultMessage message, String editStatus) {
+        String currentEditStatus = chunk.getEditStatus();
+        if (!isTerminalEditStatus(currentEditStatus)) {
+            return false;
+        }
+        if (EDIT_STATUS_COMPLETED.equals(currentEditStatus) && EDIT_STATUS_COMPLETED.equals(editStatus)) {
+            if (matchesCompletedChunkAddResult(chunk, message)) {
+                log.info("忽略重复切片新增完成消息: chunk_id={}, task_uuid={}", chunk.getId(), message.getTask_uuid());
+                return true;
+            }
+            log.warn("忽略不一致的重复切片新增完成消息: chunk_id={}, task_uuid={}, local_vector_id={}, message_vector_id={}, local_chunk_index={}, message_chunk_index={}",
+                    chunk.getId(), message.getTask_uuid(), chunk.getVectorId(), message.getVector_id(),
+                    chunk.getChunkIndex(), message.getChunk_index());
+            return true;
+        }
+        log.info("忽略终态后的切片新增结果: chunk_id={}, task_uuid={}, current_status={}, incoming_stage={}",
+                chunk.getId(), message.getTask_uuid(), currentEditStatus, editStatus);
+        return true;
+    }
+
+    /**
+     * 判断本地切片是否已处于终态。
+     *
+     * @param editStatus 当前编辑状态
+     * @return true 表示已完成或失败
+     */
+    private boolean isTerminalEditStatus(String editStatus) {
+        return EDIT_STATUS_COMPLETED.equalsIgnoreCase(editStatus) || EDIT_STATUS_FAILED.equalsIgnoreCase(editStatus);
+    }
+
+    /**
+     * 判断重复的 COMPLETED 消息是否与本地已完成数据一致。
+     *
+     * @param chunk   本地切片
+     * @param message AI 回传结果
+     * @return true 表示一致
+     */
+    private boolean matchesCompletedChunkAddResult(KbDocumentChunk chunk, KnowledgeChunkAddResultMessage message) {
+        if (!hasValidChunkAddPayload(message.getVector_id(), message.getChunk_index())) {
+            return false;
+        }
+        return Objects.equals(chunk.getVectorId(), String.valueOf(message.getVector_id()))
+                && Objects.equals(chunk.getChunkIndex(), message.getChunk_index());
+    }
+
+    /**
      * 组装单切片重建 command 消息。
      *
      * @param kbBase     知识库实体
@@ -460,17 +676,38 @@ public class KbDocumentChunkServiceImpl extends ServiceImpl<KbDocumentChunkMappe
     }
 
     /**
+     * 组装切片新增 command 消息。
+     *
+     * @param kbBase   知识库实体
+     * @param chunk    本地占位切片
+     * @param taskUuid 任务ID
+     * @return 可发送到 MQ 的 command 消息体
+     */
+    private KnowledgeChunkAddCommandMessage buildChunkAddCommand(KbBase kbBase, KbDocumentChunk chunk, String taskUuid) {
+        return KnowledgeChunkAddCommandMessage.builder()
+                .message_type(CHUNK_ADD_COMMAND_MESSAGE_TYPE)
+                .task_uuid(taskUuid)
+                .chunk_id(chunk.getId())
+                .knowledge_name(kbBase.getKnowledgeName())
+                .document_id(chunk.getDocumentId())
+                .content(chunk.getContent())
+                .embedding_model(kbBase.getEmbeddingModel())
+                .created_at(DateTimeFormatter.ISO_OFFSET_DATE_TIME.format(OffsetDateTime.now(ZoneOffset.UTC)))
+                .build();
+    }
+
+    /**
      * 当 MQ 提交失败时，将本地切片编辑状态回写为 FAILED。
      *
      * @param chunkId 切片ID
      */
-    private void markChunkEditFailed(Long chunkId) {
+    private void markChunkEditFailed(Long chunkId, String scene) {
         KbDocumentChunk updateEntity = new KbDocumentChunk();
         updateEntity.setId(chunkId);
         updateEntity.setEditStatus(EDIT_STATUS_FAILED);
         updateEntity.setUpdatedAt(new Date());
         if (baseMapper.updateById(updateEntity) <= 0) {
-            log.warn("切片重建提交失败后回写 FAILED 失败: chunk_id={}", chunkId);
+            log.warn("{}回写 FAILED 失败: chunk_id={}", scene, chunkId);
         }
     }
 
@@ -551,6 +788,17 @@ public class KbDocumentChunkServiceImpl extends ServiceImpl<KbDocumentChunkMappe
             return EDIT_STATUS_FAILED;
         }
         return null;
+    }
+
+    /**
+     * 判断向量ID和切片序号是否均为正数。
+     *
+     * @param vectorId   向量ID
+     * @param chunkIndex 切片序号
+     * @return true 表示合法
+     */
+    private boolean hasValidChunkAddPayload(Long vectorId, Integer chunkIndex) {
+        return vectorId != null && vectorId > 0 && chunkIndex != null && chunkIndex > 0;
     }
 
     /**

@@ -31,4 +31,10 @@
         </where>
         ORDER BY chunk_index ASC, id ASC
     </select>
+
+    <select id="selectMaxChunkIndex" resultType="java.lang.Integer">
+        SELECT COALESCE(MAX(chunk_index), 0)
+        FROM kb_document_chunk
+        WHERE document_id = #{documentId}
+    </select>
 </mapper>
