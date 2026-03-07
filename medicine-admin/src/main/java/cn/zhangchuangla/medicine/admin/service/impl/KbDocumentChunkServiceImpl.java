@@ -6,8 +6,7 @@ import cn.zhangchuangla.medicine.admin.model.request.DocumentChunkAddRequest;
 import cn.zhangchuangla.medicine.admin.model.request.DocumentChunkListRequest;
 import cn.zhangchuangla.medicine.admin.model.request.DocumentChunkUpdateContentRequest;
 import cn.zhangchuangla.medicine.admin.model.request.DocumentChunkUpdateStatusRequest;
-import cn.zhangchuangla.medicine.admin.publisher.KnowledgeChunkAddPublisher;
-import cn.zhangchuangla.medicine.admin.publisher.KnowledgeChunkRebuildPublisher;
+import cn.zhangchuangla.medicine.admin.publisher.KnowledgePublisher;
 import cn.zhangchuangla.medicine.admin.service.KbBaseService;
 import cn.zhangchuangla.medicine.admin.service.KbDocumentChunkHistoryService;
 import cn.zhangchuangla.medicine.admin.service.KbDocumentChunkService;
@@ -105,8 +104,7 @@ public class KbDocumentChunkServiceImpl extends ServiceImpl<KbDocumentChunkMappe
     private final KbBaseService kbBaseService;
     private final KbDocumentChunkHistoryService kbDocumentChunkHistoryService;
     private final RedisCache redisCache;
-    private final KnowledgeChunkAddPublisher knowledgeChunkAddPublisher;
-    private final KnowledgeChunkRebuildPublisher knowledgeChunkRebuildPublisher;
+    private final KnowledgePublisher knowledgePublisher;
     private final PlatformTransactionManager transactionManager;
 
     /**
@@ -164,7 +162,7 @@ public class KbDocumentChunkServiceImpl extends ServiceImpl<KbDocumentChunkMappe
 
         String taskUuid = UUID.randomUUID().toString();
         try {
-            knowledgeChunkAddPublisher.publishCommand(buildChunkAddCommand(kbBase, chunk, taskUuid));
+            knowledgePublisher.publishChunkAddCommand(buildChunkAddCommand(kbBase, chunk, taskUuid));
             return true;
         } catch (Exception ex) {
             markChunkStageFailed(chunk.getId(), "切片新增提交失败后");
@@ -204,7 +202,7 @@ public class KbDocumentChunkServiceImpl extends ServiceImpl<KbDocumentChunkMappe
             long version = nextChunkEditVersionAndSetLatest(vectorId);
             log.info("切片内容更新已落库，准备发布重建命令: chunk_id={}, document_id={}, vector_id={}, version={}, task_uuid={};",
                     chunk.getId(), chunk.getDocumentId(), vectorId, version, taskUuid);
-            knowledgeChunkRebuildPublisher.publishCommand(buildChunkRebuildCommand(
+            knowledgePublisher.publishChunkRebuildCommand(buildChunkRebuildCommand(
                     kbBase, chunk.getDocumentId(), vectorId, version, content, taskUuid));
             return true;
         } catch (Exception ex) {

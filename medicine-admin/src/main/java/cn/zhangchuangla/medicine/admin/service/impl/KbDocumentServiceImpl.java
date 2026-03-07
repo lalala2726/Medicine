@@ -5,7 +5,7 @@ import cn.zhangchuangla.medicine.admin.mapper.KbDocumentMapper;
 import cn.zhangchuangla.medicine.admin.model.request.DocumentDeleteRequest;
 import cn.zhangchuangla.medicine.admin.model.request.DocumentListRequest;
 import cn.zhangchuangla.medicine.admin.model.request.KnowledgeBaseImportRequest;
-import cn.zhangchuangla.medicine.admin.publisher.KnowledgeImportPublisher;
+import cn.zhangchuangla.medicine.admin.publisher.KnowledgePublisher;
 import cn.zhangchuangla.medicine.admin.service.KbBaseService;
 import cn.zhangchuangla.medicine.admin.service.KbDocumentChunkService;
 import cn.zhangchuangla.medicine.admin.service.KbDocumentService;
@@ -82,7 +82,7 @@ public class KbDocumentServiceImpl extends ServiceImpl<KbDocumentMapper, KbDocum
 
     private final KbBaseService kbBaseService;
     private final RedisCache redisCache;
-    private final KnowledgeImportPublisher knowledgeImportPublisher;
+    private final KnowledgePublisher knowledgePublisher;
     private final MedicineAgentClient medicineAgentClient;
     private final KbDocumentChunkService kbDocumentChunkService;
 
@@ -159,7 +159,7 @@ public class KbDocumentServiceImpl extends ServiceImpl<KbDocumentMapper, KbDocum
             Long version = nextVersionAndSetLatest(bizKey);
             KnowledgeImportCommandMessage command = buildCommandMessage(request, kbBase, document, bizKey, version);
             try {
-                knowledgeImportPublisher.publishCommand(command);
+                knowledgePublisher.publishImportCommand(command);
             } catch (Exception ex) {
                 markDocumentFailed(document.getId(), ex.getMessage(), username);
                 throw ex;
@@ -228,7 +228,7 @@ public class KbDocumentServiceImpl extends ServiceImpl<KbDocumentMapper, KbDocum
         }
 
         try {
-            knowledgeImportPublisher.publishChunkUpdate(message);
+            knowledgePublisher.publishImportChunkUpdate(message);
         } catch (Exception ex) {
             log.error("投递切片同步消息失败: task_uuid={}, document_id={}", message.getTask_uuid(), documentId, ex);
             markDocumentFailed(documentId, ex.getMessage(), SYSTEM_UPDATER);
@@ -305,16 +305,16 @@ public class KbDocumentServiceImpl extends ServiceImpl<KbDocumentMapper, KbDocum
      */
     private KbDocument buildPendingDocument(Long knowledgeBaseId, String fileUrl, String username) {
         Date now = new Date();
-        KbDocument document = new KbDocument();
-        document.setKnowledgeBaseId(knowledgeBaseId);
-        document.setFileUrl(fileUrl);
-        document.setFileName(extractFileName(fileUrl));
-        document.setStage(KbDocumentStageEnum.PENDING.getCode());
-        document.setCreateBy(username);
-        document.setUpdateBy(username);
-        document.setCreatedAt(now);
-        document.setUpdatedAt(now);
-        return document;
+        return KbDocument.builder()
+                .knowledgeBaseId(knowledgeBaseId)
+                .fileUrl(fileUrl)
+                .fileName(extractFileName(fileUrl))
+                .stage(KbDocumentStageEnum.PENDING.getCode())
+                .createBy(username)
+                .updateBy(username)
+                .createdAt(now)
+                .updatedAt(now)
+                .build();
     }
 
     /**
