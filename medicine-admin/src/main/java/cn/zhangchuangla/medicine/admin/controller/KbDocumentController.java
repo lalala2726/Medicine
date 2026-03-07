@@ -40,7 +40,7 @@ public class KbDocumentController extends BaseController {
      * 查询文档列表
      *
      * @param knowledgeBaseId 知识库ID
-     * @param request 查询参数
+     * @param request         查询参数
      * @return 文档列表分页
      */
     @GetMapping("/{knowledgeBaseId:\\d+}/list")

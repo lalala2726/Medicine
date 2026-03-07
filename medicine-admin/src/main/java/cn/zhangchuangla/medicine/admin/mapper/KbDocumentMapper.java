@@ -14,9 +14,9 @@ public interface KbDocumentMapper extends BaseMapper<KbDocument> {
     /**
      * 分页查询知识库文档列表。
      *
-     * @param page 分页参数
+     * @param page            分页参数
      * @param knowledgeBaseId 知识库ID
-     * @param request 查询条件
+     * @param request         查询条件
      * @return 文档分页结果
      */
     Page<KbDocument> listDocument(Page<KbDocument> page,

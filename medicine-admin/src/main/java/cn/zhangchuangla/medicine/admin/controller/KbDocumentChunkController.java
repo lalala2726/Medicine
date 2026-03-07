@@ -35,7 +35,7 @@ public class KbDocumentChunkController extends BaseController {
      * 分页查询指定文档下的切片列表。
      *
      * @param documentId 文档ID
-     * @param request 查询参数
+     * @param request    查询参数
      * @return 切片分页结果
      */
     @GetMapping("/{documentId:\\d+}/list")

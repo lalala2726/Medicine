@@ -576,8 +576,8 @@ public class KbDocumentChunkServiceImpl extends ServiceImpl<KbDocumentChunkMappe
     /**
      * 判断切片新增结果是否应按幂等忽略。
      *
-     * @param chunk      本地切片
-     * @param message    AI 回传结果
+     * @param chunk         本地切片
+     * @param message       AI 回传结果
      * @param incomingStage 标准化后的切片阶段
      * @return true 表示应忽略
      */

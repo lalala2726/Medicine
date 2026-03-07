@@ -4,8 +4,8 @@ import cn.zhangchuangla.medicine.model.entity.KbDocumentChunkHistory;
 import com.baomidou.mybatisplus.extension.service.IService;
 
 /**
-* @author zhangchuang
-*/
+ * @author zhangchuang
+ */
 public interface KbDocumentChunkHistoryService extends IService<KbDocumentChunkHistory> {
 
 }

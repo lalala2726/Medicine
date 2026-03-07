@@ -21,7 +21,7 @@ public interface KbDocumentChunkService extends IService<KbDocumentChunk> {
      * 分页查询指定文档下的切片。
      *
      * @param documentId 文档ID
-     * @param request 查询参数
+     * @param request    查询参数
      * @return 分页结果
      */
     Page<KbDocumentChunk> listDocumentChunk(Long documentId, DocumentChunkListRequest request);

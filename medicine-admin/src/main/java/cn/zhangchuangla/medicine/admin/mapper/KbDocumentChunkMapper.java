@@ -14,9 +14,9 @@ public interface KbDocumentChunkMapper extends BaseMapper<KbDocumentChunk> {
     /**
      * 分页查询指定文档下的切片列表。
      *
-     * @param page 分页参数
+     * @param page       分页参数
      * @param documentId 文档ID
-     * @param request 查询参数
+     * @param request    查询参数
      * @return 切片分页结果
      */
     Page<KbDocumentChunk> listDocumentChunk(Page<KbDocumentChunk> page,

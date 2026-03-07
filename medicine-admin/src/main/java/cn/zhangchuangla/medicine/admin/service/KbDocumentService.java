@@ -17,7 +17,7 @@ public interface KbDocumentService extends IService<KbDocument> {
      * 分页查询文档列表。
      *
      * @param knowledgeBaseId 知识库ID
-     * @param request 查询参数
+     * @param request         查询参数
      * @return 分页结果
      */
     Page<KbDocument> listDocument(Long knowledgeBaseId, DocumentListRequest request);
