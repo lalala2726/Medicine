@@ -5,8 +5,7 @@ import cn.zhangchuangla.medicine.admin.mapper.KbDocumentMapper;
 import cn.zhangchuangla.medicine.admin.model.request.DocumentChunkAddRequest;
 import cn.zhangchuangla.medicine.admin.model.request.DocumentChunkListRequest;
 import cn.zhangchuangla.medicine.admin.model.request.DocumentChunkUpdateContentRequest;
-import cn.zhangchuangla.medicine.admin.publisher.KnowledgeChunkAddPublisher;
-import cn.zhangchuangla.medicine.admin.publisher.KnowledgeChunkRebuildPublisher;
+import cn.zhangchuangla.medicine.admin.publisher.KnowledgePublisher;
 import cn.zhangchuangla.medicine.admin.service.KbBaseService;
 import cn.zhangchuangla.medicine.admin.service.KbDocumentChunkHistoryService;
 import cn.zhangchuangla.medicine.common.core.exception.ServiceException;
@@ -58,10 +57,7 @@ class KbDocumentChunkServiceImplTests {
     private KbDocumentChunkHistoryService kbDocumentChunkHistoryService;
 
     @Mock
-    private KnowledgeChunkAddPublisher knowledgeChunkAddPublisher;
-
-    @Mock
-    private KnowledgeChunkRebuildPublisher knowledgeChunkRebuildPublisher;
+    private KnowledgePublisher knowledgePublisher;
 
     @Mock
     private RedisTemplate<String, Object> redisTemplate;
@@ -82,8 +78,7 @@ class KbDocumentChunkServiceImplTests {
                 kbBaseService,
                 kbDocumentChunkHistoryService,
                 redisCache,
-                knowledgeChunkAddPublisher,
-                knowledgeChunkRebuildPublisher,
+                knowledgePublisher,
                 transactionManager
         );
         ReflectionTestUtils.setField(kbDocumentChunkService, "baseMapper", kbDocumentChunkMapper);
@@ -152,7 +147,7 @@ class KbDocumentChunkServiceImplTests {
 
         ArgumentCaptor<KnowledgeChunkAddCommandMessage> messageCaptor =
                 ArgumentCaptor.forClass(KnowledgeChunkAddCommandMessage.class);
-        verify(knowledgeChunkAddPublisher).publishCommand(messageCaptor.capture());
+        verify(knowledgePublisher).publishChunkAddCommand(messageCaptor.capture());
         KnowledgeChunkAddCommandMessage message = messageCaptor.getValue();
         assertEquals("knowledge_chunk_add_command", message.getMessage_type());
         assertEquals(3001L, message.getChunk_id());
@@ -179,7 +174,7 @@ class KbDocumentChunkServiceImplTests {
 
         assertEquals("仅支持在已完成的文档下新增切片", ex.getMessage());
         verify(kbDocumentChunkMapper, never()).insert(any(KbDocumentChunk.class));
-        verify(knowledgeChunkAddPublisher, never()).publishCommand(any(KnowledgeChunkAddCommandMessage.class));
+        verify(knowledgePublisher, never()).publishChunkAddCommand(any(KnowledgeChunkAddCommandMessage.class));
     }
 
     @Test
@@ -198,8 +193,8 @@ class KbDocumentChunkServiceImplTests {
         });
         when(kbDocumentChunkMapper.updateById(any(KbDocumentChunk.class))).thenReturn(1);
         doThrow(new ServiceException("mq error"))
-                .when(knowledgeChunkAddPublisher)
-                .publishCommand(any(KnowledgeChunkAddCommandMessage.class));
+                .when(knowledgePublisher)
+                .publishChunkAddCommand(any(KnowledgeChunkAddCommandMessage.class));
 
         ServiceException ex = assertThrows(ServiceException.class,
                 () -> kbDocumentChunkService.addDocumentChunk(request));
@@ -247,7 +242,7 @@ class KbDocumentChunkServiceImplTests {
 
         ArgumentCaptor<KnowledgeChunkRebuildCommandMessage> messageCaptor =
                 ArgumentCaptor.forClass(KnowledgeChunkRebuildCommandMessage.class);
-        verify(knowledgeChunkRebuildPublisher).publishCommand(messageCaptor.capture());
+        verify(knowledgePublisher).publishChunkRebuildCommand(messageCaptor.capture());
         KnowledgeChunkRebuildCommandMessage message = messageCaptor.getValue();
         assertEquals("knowledge_chunk_rebuild_command", message.getMessage_type());
         assertEquals("drug_faq", message.getKnowledge_name());
@@ -274,7 +269,7 @@ class KbDocumentChunkServiceImplTests {
         assertEquals("当前切片已提交修改，必须等待完成后才能继续修改", ex.getMessage());
         verify(kbDocumentChunkMapper, never()).updateById(any(KbDocumentChunk.class));
         verify(kbDocumentChunkHistoryService, never()).save(any(KbDocumentChunkHistory.class));
-        verify(knowledgeChunkRebuildPublisher, never()).publishCommand(any(KnowledgeChunkRebuildCommandMessage.class));
+        verify(knowledgePublisher, never()).publishChunkRebuildCommand(any(KnowledgeChunkRebuildCommandMessage.class));
         verify(valueOperations, never()).increment(any());
     }
 
@@ -290,7 +285,7 @@ class KbDocumentChunkServiceImplTests {
         assertTrue(result);
         verify(kbDocumentChunkMapper, never()).updateById(any(KbDocumentChunk.class));
         verify(kbDocumentChunkHistoryService, never()).save(any(KbDocumentChunkHistory.class));
-        verify(knowledgeChunkRebuildPublisher, never()).publishCommand(any(KnowledgeChunkRebuildCommandMessage.class));
+        verify(knowledgePublisher, never()).publishChunkRebuildCommand(any(KnowledgeChunkRebuildCommandMessage.class));
         verify(valueOperations, never()).increment(any());
     }
 
@@ -311,7 +306,7 @@ class KbDocumentChunkServiceImplTests {
 
         assertEquals("向量ID无效", ex.getMessage());
         verify(kbDocumentChunkHistoryService, never()).save(any(KbDocumentChunkHistory.class));
-        verify(knowledgeChunkRebuildPublisher, never()).publishCommand(any(KnowledgeChunkRebuildCommandMessage.class));
+        verify(knowledgePublisher, never()).publishChunkRebuildCommand(any(KnowledgeChunkRebuildCommandMessage.class));
     }
 
     @Test
@@ -328,8 +323,8 @@ class KbDocumentChunkServiceImplTests {
         when(valueOperations.increment("kb:chunk_edit:latest_version:900001")).thenReturn(4L);
         when(redisTemplate.expire("kb:chunk_edit:latest_version:900001", 7L, TimeUnit.DAYS)).thenReturn(true);
         doThrow(new ServiceException("mq error"))
-                .when(knowledgeChunkRebuildPublisher)
-                .publishCommand(any(KnowledgeChunkRebuildCommandMessage.class));
+                .when(knowledgePublisher)
+                .publishChunkRebuildCommand(any(KnowledgeChunkRebuildCommandMessage.class));
 
         ServiceException ex = assertThrows(ServiceException.class,
                 () -> kbDocumentChunkService.updateDocumentChunkContent(request));

@@ -5,7 +5,7 @@ import cn.zhangchuangla.medicine.admin.mapper.KbDocumentMapper;
 import cn.zhangchuangla.medicine.admin.model.request.DocumentDeleteRequest;
 import cn.zhangchuangla.medicine.admin.model.request.DocumentListRequest;
 import cn.zhangchuangla.medicine.admin.model.request.KnowledgeBaseImportRequest;
-import cn.zhangchuangla.medicine.admin.publisher.KnowledgeImportPublisher;
+import cn.zhangchuangla.medicine.admin.publisher.KnowledgePublisher;
 import cn.zhangchuangla.medicine.admin.service.KbBaseService;
 import cn.zhangchuangla.medicine.admin.service.KbDocumentChunkService;
 import cn.zhangchuangla.medicine.common.core.exception.ServiceException;
@@ -14,7 +14,7 @@ import cn.zhangchuangla.medicine.model.entity.KbBase;
 import cn.zhangchuangla.medicine.model.entity.KbDocument;
 import cn.zhangchuangla.medicine.model.entity.KbDocumentChunk;
 import cn.zhangchuangla.medicine.model.enums.KbDocumentStageEnum;
-import cn.zhangchuangla.medicine.model.mq.KnowledgeImportCommandMessage;
+import cn.zhangchuangla.medicine.model.mq.KnowledgeImportDocumentMessage;
 import cn.zhangchuangla.medicine.model.mq.KnowledgeImportResultMessage;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -46,7 +46,7 @@ class KbDocumentServiceImplTests {
     private ValueOperations<String, Object> valueOperations;
 
     @Mock
-    private KnowledgeImportPublisher knowledgeImportPublisher;
+    private KnowledgePublisher knowledgePublisher;
 
     @Mock
     private MedicineAgentClient medicineAgentClient;
@@ -63,7 +63,7 @@ class KbDocumentServiceImplTests {
     void setUp() {
         RedisCache redisCache = new RedisCache(redisTemplate);
         kbDocumentService = spy(new KbDocumentServiceImpl(
-                kbBaseService, redisCache, knowledgeImportPublisher, medicineAgentClient, kbDocumentChunkService));
+                kbBaseService, redisCache, knowledgePublisher, medicineAgentClient, kbDocumentChunkService));
         ReflectionTestUtils.setField(kbDocumentService, "baseMapper", kbDocumentMapper);
         lenient().when(redisTemplate.opsForValue()).thenReturn(valueOperations);
     }
@@ -88,11 +88,11 @@ class KbDocumentServiceImplTests {
 
         assertEquals("知识库不存在", ex.getMessage());
         verify(kbDocumentService, never()).save(any(KbDocument.class));
-        verify(knowledgeImportPublisher, never()).publishCommand(any(KnowledgeImportCommandMessage.class));
+        verify(knowledgePublisher, never()).publishImportDocument(any(KnowledgeImportDocumentMessage.class));
     }
 
     @Test
-    void importDocument_ShouldSaveDocumentAndPublishCommand() {
+    void importDocument_ShouldSaveDocumentAndPublishImportDocument() {
         KnowledgeBaseImportRequest request = newImportRequest();
         KbBase kbBase = newKbBase();
         when(kbBaseService.getKnowledgeBaseById(1L)).thenReturn(kbBase);
@@ -107,15 +107,21 @@ class KbDocumentServiceImplTests {
 
         kbDocumentService.importDocument(request);
 
-        ArgumentCaptor<KnowledgeImportCommandMessage> msgCaptor = ArgumentCaptor.forClass(KnowledgeImportCommandMessage.class);
-        verify(knowledgeImportPublisher).publishCommand(msgCaptor.capture());
-        KnowledgeImportCommandMessage message = msgCaptor.getValue();
+        ArgumentCaptor<KbDocument> documentCaptor = ArgumentCaptor.forClass(KbDocument.class);
+        verify(kbDocumentService).save(documentCaptor.capture());
+        KbDocument savedDocument = documentCaptor.getValue();
+        assertEquals("知识库导入说明.pdf", savedDocument.getFileName());
+        assertEquals("https://example.com/files/asset-001", savedDocument.getFileUrl());
+
+        ArgumentCaptor<KnowledgeImportDocumentMessage> msgCaptor = ArgumentCaptor.forClass(KnowledgeImportDocumentMessage.class);
+        verify(knowledgePublisher).publishImportDocument(msgCaptor.capture());
+        KnowledgeImportDocumentMessage message = msgCaptor.getValue();
         assertEquals("knowledge_import_command", message.getMessage_type());
         assertEquals("drug_faq:1001", message.getBiz_key());
         assertEquals(1L, message.getVersion());
         assertEquals("drug_faq", message.getKnowledge_name());
         assertEquals(1001L, message.getDocument_id());
-        assertEquals("https://example.com/docs/guide.pdf", message.getFile_url());
+        assertEquals("https://example.com/files/asset-001", message.getFile_url());
         assertEquals("text-embedding-3-large", message.getEmbedding_model());
         assertEquals("character", message.getChunk_strategy());
         assertEquals(500, message.getChunk_size());
@@ -135,8 +141,8 @@ class KbDocumentServiceImplTests {
         }).when(kbDocumentService).save(any(KbDocument.class));
         when(valueOperations.increment("kb:latest:drug_faq:1001")).thenReturn(1L);
         when(redisTemplate.expire("kb:latest:drug_faq:1001", 7L, TimeUnit.DAYS)).thenReturn(true);
-        doThrow(new ServiceException("mq error")).when(knowledgeImportPublisher)
-                .publishCommand(any(KnowledgeImportCommandMessage.class));
+        doThrow(new ServiceException("mq error")).when(knowledgePublisher)
+                .publishImportDocument(any(KnowledgeImportDocumentMessage.class));
         KbDocument existing = new KbDocument();
         existing.setId(1001L);
         doReturn(existing).when(kbDocumentService).getById(1001L);
@@ -166,7 +172,7 @@ class KbDocumentServiceImplTests {
 
         verify(kbDocumentService, never()).getById(anyLong());
         verify(kbDocumentService, never()).updateById(any(KbDocument.class));
-        verify(knowledgeImportPublisher, never()).publishChunkUpdate(any(KnowledgeImportResultMessage.class));
+        verify(knowledgePublisher, never()).publishImportChunkUpdate(any(KnowledgeImportResultMessage.class));
     }
 
     @Test
@@ -194,7 +200,7 @@ class KbDocumentServiceImplTests {
         assertEquals(KbDocumentStageEnum.FAILED.getCode(), updated.getStage());
         assertEquals("parse failed", updated.getLastError());
         assertEquals("system", updated.getUpdateBy());
-        verify(knowledgeImportPublisher, never()).publishChunkUpdate(any(KnowledgeImportResultMessage.class));
+        verify(knowledgePublisher, never()).publishImportChunkUpdate(any(KnowledgeImportResultMessage.class));
     }
 
     @Test
@@ -215,7 +221,7 @@ class KbDocumentServiceImplTests {
         kbDocumentService.handleImportResult(message);
 
         verify(kbDocumentService, never()).updateById(any(KbDocument.class));
-        verify(knowledgeImportPublisher, never()).publishChunkUpdate(any(KnowledgeImportResultMessage.class));
+        verify(knowledgePublisher, never()).publishImportChunkUpdate(any(KnowledgeImportResultMessage.class));
     }
 
     @Test
@@ -267,7 +273,7 @@ class KbDocumentServiceImplTests {
         KbDocument updated = captor.getValue();
         assertEquals(KbDocumentStageEnum.INSERTING.getCode(), updated.getStage());
         assertNull(updated.getLastError());
-        verify(knowledgeImportPublisher).publishChunkUpdate(message);
+        verify(knowledgePublisher).publishImportChunkUpdate(message);
     }
 
     @Test
@@ -363,7 +369,10 @@ class KbDocumentServiceImplTests {
     private KnowledgeBaseImportRequest newImportRequest() {
         KnowledgeBaseImportRequest request = new KnowledgeBaseImportRequest();
         request.setKnowledgeBaseId(1L);
-        request.setFileUrls(List.of("https://example.com/docs/guide.pdf"));
+        request.setFileDetails(List.of(KnowledgeBaseImportRequest.FileDetail.builder()
+                .fileName("知识库导入说明.pdf")
+                .fileUrl("https://example.com/files/asset-001")
+                .build()));
         request.setChunkStrategy("character");
         request.setChunkSize(500);
         request.setTokenSize(100);

@@ -18,7 +18,7 @@ import cn.zhangchuangla.medicine.model.entity.KbBase;
 import cn.zhangchuangla.medicine.model.entity.KbDocument;
 import cn.zhangchuangla.medicine.model.entity.KbDocumentChunk;
 import cn.zhangchuangla.medicine.model.enums.KbDocumentStageEnum;
-import cn.zhangchuangla.medicine.model.mq.KnowledgeImportCommandMessage;
+import cn.zhangchuangla.medicine.model.mq.KnowledgeImportDocumentMessage;
 import cn.zhangchuangla.medicine.model.mq.KnowledgeImportResultMessage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
@@ -29,7 +29,6 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
 import org.springframework.validation.annotation.Validated;
 
-import java.net.URI;
 import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
 import java.time.format.DateTimeFormatter;
@@ -71,9 +70,9 @@ public class KbDocumentServiceImpl extends ServiceImpl<KbDocumentMapper, KbDocum
     private static final long REDIS_LATEST_VERSION_TTL_DAYS = 7L;
 
     /**
-     * 知识库导入 command 消息类型。
+     * 知识库导入文档消息类型，协议值沿用 knowledge_import_command。
      */
-    private static final String COMMAND_MESSAGE_TYPE = "knowledge_import_command";
+    private static final String IMPORT_DOCUMENT_MESSAGE_TYPE = "knowledge_import_command";
 
     /**
      * 系统回写文档阶段时使用的更新人标识。
@@ -133,11 +132,11 @@ public class KbDocumentServiceImpl extends ServiceImpl<KbDocumentMapper, KbDocum
     /**
      * 发起文档导入。
      * <p>
-     * 流程：按知识库ID读取配置 -> 为每个 URL 新建文档记录 ->
-     * 生成/写入最新版本号 -> 发送 MQ command。
+     * 流程：按知识库ID读取配置 -> 为每个文件新建文档记录 ->
+     * 生成/写入最新版本号 -> 发送 MQ 导入文档消息。
      * </p>
      *
-     * @param request 导入请求参数（知识库ID、文件地址集合、切片参数）
+     * @param request 导入请求参数（知识库ID、文件详情集合、切片参数）
      */
     @Override
     public void importDocument(@Validated KnowledgeBaseImportRequest request) {
@@ -147,19 +146,23 @@ public class KbDocumentServiceImpl extends ServiceImpl<KbDocumentMapper, KbDocum
         Assert.notEmpty(kbBase.getEmbeddingModel(), "知识库向量模型未配置");
 
         String username = getUsername();
-        for (String rawFileUrl : request.getFileUrls()) {
-            String fileUrl = rawFileUrl == null ? null : rawFileUrl.trim();
+        for (KnowledgeBaseImportRequest.FileDetail rawFileDetail : request.getFileDetails()) {
+            Assert.notNull(rawFileDetail, "文件详情不能为空");
+            String fileUrl = StringUtils.trimWhitespace(rawFileDetail.getFileUrl());
+            String fileName = StringUtils.trimWhitespace(rawFileDetail.getFileName());
             Assert.notEmpty(fileUrl, "文件地址不能为空");
+            Assert.notEmpty(fileName, "文件名不能为空");
 
-            KbDocument document = buildPendingDocument(kbBase.getId(), fileUrl, username);
+            KbDocument document = buildPendingDocument(kbBase.getId(), fileUrl, fileName, username);
             boolean saved = save(document);
             Assert.isTrue(saved && document.getId() != null, "创建导入文档失败");
 
             String bizKey = buildBizKey(kbBase.getKnowledgeName(), document.getId());
             Long version = nextVersionAndSetLatest(bizKey);
-            KnowledgeImportCommandMessage command = buildCommandMessage(request, kbBase, document, bizKey, version);
+            KnowledgeImportDocumentMessage importDocumentMessage =
+                    buildImportDocumentMessage(request, kbBase, document, bizKey, version);
             try {
-                knowledgePublisher.publishImportCommand(command);
+                knowledgePublisher.publishImportDocument(importDocumentMessage);
             } catch (Exception ex) {
                 markDocumentFailed(document.getId(), ex.getMessage(), username);
                 throw ex;
@@ -300,15 +303,16 @@ public class KbDocumentServiceImpl extends ServiceImpl<KbDocumentMapper, KbDocum
      *
      * @param knowledgeBaseId 知识库主键
      * @param fileUrl         文件访问地址
+     * @param fileName        文件名
      * @param username        操作人账号
      * @return 待持久化的文档实体
      */
-    private KbDocument buildPendingDocument(Long knowledgeBaseId, String fileUrl, String username) {
+    private KbDocument buildPendingDocument(Long knowledgeBaseId, String fileUrl, String fileName, String username) {
         Date now = new Date();
         return KbDocument.builder()
                 .knowledgeBaseId(knowledgeBaseId)
                 .fileUrl(fileUrl)
-                .fileName(extractFileName(fileUrl))
+                .fileName(fileName)
                 .stage(KbDocumentStageEnum.PENDING.getCode())
                 .createBy(username)
                 .updateBy(username)
@@ -318,19 +322,19 @@ public class KbDocumentServiceImpl extends ServiceImpl<KbDocumentMapper, KbDocum
     }
 
     /**
-     * 组装知识库导入 command 消息体。
+     * 组装知识库导入文档消息体。
      *
      * @param request  导入请求
      * @param kbBase   知识库配置实体
      * @param document 文档实体（含 documentId）
      * @param bizKey   业务键
      * @param version  当前版本号
-     * @return 可投递到 MQ 的 command 消息
+     * @return 可投递到 MQ 的导入文档消息
      */
-    private KnowledgeImportCommandMessage buildCommandMessage(KnowledgeBaseImportRequest request, KbBase kbBase,
-                                                              KbDocument document, String bizKey, Long version) {
-        return KnowledgeImportCommandMessage.builder()
-                .message_type(COMMAND_MESSAGE_TYPE)
+    private KnowledgeImportDocumentMessage buildImportDocumentMessage(KnowledgeBaseImportRequest request, KbBase kbBase,
+                                                                      KbDocument document, String bizKey, Long version) {
+        return KnowledgeImportDocumentMessage.builder()
+                .message_type(IMPORT_DOCUMENT_MESSAGE_TYPE)
                 .task_uuid(UUID.randomUUID().toString())
                 .biz_key(bizKey)
                 .version(version)
@@ -624,26 +628,6 @@ public class KbDocumentServiceImpl extends ServiceImpl<KbDocumentMapper, KbDocum
             return "unknown error";
         }
         return ex.getMessage();
-    }
-
-    /**
-     * 从 URL 中提取文件名。
-     *
-     * @param fileUrl 文件地址
-     * @return 提取出的文件名；提取失败时回退为原始 URL
-     */
-    private String extractFileName(String fileUrl) {
-        try {
-            String path = URI.create(fileUrl).getPath();
-            if (!StringUtils.hasText(path)) {
-                return fileUrl;
-            }
-            int index = path.lastIndexOf('/');
-            String fileName = index >= 0 ? path.substring(index + 1) : path;
-            return StringUtils.hasText(fileName) ? fileName : fileUrl;
-        } catch (Exception ignored) {
-            return fileUrl;
-        }
     }
 
 }

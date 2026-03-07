@@ -75,7 +75,10 @@ class KbDocumentControllerTests {
     void importDocument_ShouldDelegateToService() {
         KnowledgeBaseImportRequest request = new KnowledgeBaseImportRequest();
         request.setKnowledgeBaseId(1L);
-        request.setFileUrls(List.of("https://example.com/file.pdf"));
+        request.setFileDetails(List.of(KnowledgeBaseImportRequest.FileDetail.builder()
+                .fileName("file.pdf")
+                .fileUrl("https://example.com/file.pdf")
+                .build()));
         request.setChunkStrategy("character");
         request.setChunkSize(500);
         request.setTokenSize(100);

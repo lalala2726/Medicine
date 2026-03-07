@@ -21,7 +21,7 @@ public class KnowledgeBaseRabbitConfiguration {
     }
 
     @Bean
-    public Queue knowledgeBaseImportCommandQueue() {
+    public Queue knowledgeBaseImportDocumentQueue() {
         return QueueBuilder.durable(KnowledgeBaseQueueConstants.COMMAND_QUEUE).build();
     }
 
@@ -31,10 +31,10 @@ public class KnowledgeBaseRabbitConfiguration {
     }
 
     @Bean
-    public Binding knowledgeBaseImportCommandBinding(Queue knowledgeBaseImportCommandQueue,
-                                                     @Qualifier("knowledgeBaseImportExchange")
-                                                     DirectExchange knowledgeBaseImportExchange) {
-        return BindingBuilder.bind(knowledgeBaseImportCommandQueue)
+    public Binding knowledgeBaseImportDocumentBinding(Queue knowledgeBaseImportDocumentQueue,
+                                                      @Qualifier("knowledgeBaseImportExchange")
+                                                      DirectExchange knowledgeBaseImportExchange) {
+        return BindingBuilder.bind(knowledgeBaseImportDocumentQueue)
                 .to(knowledgeBaseImportExchange)
                 .with(KnowledgeBaseQueueConstants.ROUTING_COMMAND);
     }

@@ -10,7 +10,7 @@ public final class KnowledgeBaseQueueConstants {
      */
     public static final String EXCHANGE = "knowledge.import";
     /**
-     * 知识库导入 command 队列。
+     * 知识库导入文档队列，协议队列名沿用 command。
      */
     public static final String COMMAND_QUEUE = "knowledge.import.command.q";
     /**
@@ -19,7 +19,7 @@ public final class KnowledgeBaseQueueConstants {
     public static final String RESULT_QUEUE = "knowledge.import.result.q";
 
     /**
-     * 知识库导入 command 路由键。
+     * 知识库导入文档路由键，协议路由键沿用 command。
      */
     public static final String ROUTING_COMMAND = "knowledge.import.command";
 

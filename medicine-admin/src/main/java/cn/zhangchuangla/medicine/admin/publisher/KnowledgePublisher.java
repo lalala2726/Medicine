@@ -5,7 +5,7 @@ import cn.zhangchuangla.medicine.common.core.exception.ServiceException;
 import cn.zhangchuangla.medicine.common.rabbitmq.constants.KnowledgeBaseQueueConstants;
 import cn.zhangchuangla.medicine.model.mq.KnowledgeChunkAddCommandMessage;
 import cn.zhangchuangla.medicine.model.mq.KnowledgeChunkRebuildCommandMessage;
-import cn.zhangchuangla.medicine.model.mq.KnowledgeImportCommandMessage;
+import cn.zhangchuangla.medicine.model.mq.KnowledgeImportDocumentMessage;
 import cn.zhangchuangla.medicine.model.mq.KnowledgeImportResultMessage;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -25,20 +25,20 @@ public class KnowledgePublisher {
     private final RabbitTemplate rabbitTemplate;
 
     /**
-     * 发布导入 command 消息到知识库导入交换机。
+     * 发布导入文档消息到知识库导入交换机。
      *
-     * @param message 导入 command 消息体
+     * @param message 导入文档消息体
      */
-    public void publishImportCommand(KnowledgeImportCommandMessage message) {
+    public void publishImportDocument(KnowledgeImportDocumentMessage message) {
         assertMessageNotNull(message, "导入消息不能为空");
         send(
                 message,
                 KnowledgeBaseQueueConstants.EXCHANGE,
                 KnowledgeBaseQueueConstants.ROUTING_COMMAND,
-                "知识库导入 command",
+                "知识库导入文档消息",
                 () -> String.format("task_uuid=%s, biz_key=%s, version=%s",
                         message.getTask_uuid(), message.getBiz_key(), message.getVersion()),
-                "发送导入消息失败",
+                "发送导入文档消息失败",
                 false
         );
     }

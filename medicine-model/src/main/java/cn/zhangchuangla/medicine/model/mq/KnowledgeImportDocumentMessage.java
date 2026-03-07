@@ -9,7 +9,7 @@ import java.io.Serial;
 import java.io.Serializable;
 
 /**
- * 知识库导入 command 消息体。
+ * 知识库导入文档消息体。
  * <p>
  * 字段定义遵循《knowledge-import-mq-integration.md》协议，
  * 采用 snake_case，避免跨语言对接时字段映射歧义。
@@ -19,13 +19,13 @@ import java.io.Serializable;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class KnowledgeImportCommandMessage implements Serializable {
+public class KnowledgeImportDocumentMessage implements Serializable {
 
     @Serial
     private static final long serialVersionUID = 1L;
 
     /**
-     * 消息类型，固定为 knowledge_import_command。
+     * 消息类型，协议值固定为 knowledge_import_command。
      */
     private String message_type;
 
