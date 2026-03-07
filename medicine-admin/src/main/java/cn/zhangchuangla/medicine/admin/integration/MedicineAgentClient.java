@@ -366,19 +366,14 @@ public class MedicineAgentClient {
         private Integer char_count;
 
         /**
-         * 切片策略。
-         */
-        private String chunk_strategy;
-
-        /**
          * 切片大小。
          */
         private Integer chunk_size;
 
         /**
-         * token 数量。
+         * 切片重叠大小。
          */
-        private Integer token_size;
+        private Integer chunk_overlap;
 
         /**
          * 内容来源哈希。

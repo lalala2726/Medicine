@@ -12,12 +12,12 @@ import org.springframework.amqp.rabbit.annotation.RabbitListener;
 import org.springframework.stereotype.Component;
 
 /**
- * 知识库结果消息统一消费者。
+ * 知识库 MQ 结果消息统一监听器。
  */
 @Slf4j
 @Component
 @RequiredArgsConstructor
-public class KnowledgeResultListener {
+public class KnowledgeMqResultListener {
 
     private final KbDocumentService kbDocumentService;
     private final KbDocumentChunkService kbDocumentChunkService;

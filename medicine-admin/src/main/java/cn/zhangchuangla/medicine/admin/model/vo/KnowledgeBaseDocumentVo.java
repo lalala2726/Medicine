@@ -32,11 +32,17 @@ public class KnowledgeBaseDocumentVo {
     @Schema(description = "文件 URL", example = "https://example.com/file.pdf")
     private String fileUrl;
 
-    @Schema(description = "文件大小（字节）", example = "1024")
-    private Long fileSize;
+    @Schema(description = "文件类型", example = "pdf")
+    private String fileType;
 
-    @Schema(description = "文件 MIME 类型", example = "application/pdf")
-    private String mimeType;
+    @Schema(description = "切片模式", example = "balancedMode")
+    private String chunkMode;
+
+    @Schema(description = "切片大小", example = "1000")
+    private Integer chunkSize;
+
+    @Schema(description = "切片重叠大小", example = "200")
+    private Integer chunkOverlap;
 
     @Schema(description = "索引阶段，取值见 KbDocumentStageEnum", example = "PENDING")
     private String stage;

@@ -17,7 +17,7 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 
 @ExtendWith(MockitoExtension.class)
-class KnowledgeResultListenerTests {
+class KnowledgeMqResultListenerTests {
 
     @Mock
     private KbDocumentService kbDocumentService;
@@ -26,7 +26,7 @@ class KnowledgeResultListenerTests {
     private KbDocumentChunkService kbDocumentChunkService;
 
     @InjectMocks
-    private KnowledgeResultListener listener;
+    private KnowledgeMqResultListener listener;
 
     @Test
     void handleImportResult_WhenMessageNull_ShouldSkip() {

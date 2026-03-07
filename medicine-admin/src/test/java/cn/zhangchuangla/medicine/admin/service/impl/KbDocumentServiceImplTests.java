@@ -8,12 +8,14 @@ import cn.zhangchuangla.medicine.admin.model.request.KnowledgeBaseImportRequest;
 import cn.zhangchuangla.medicine.admin.publisher.KnowledgePublisher;
 import cn.zhangchuangla.medicine.admin.service.KbBaseService;
 import cn.zhangchuangla.medicine.admin.service.KbDocumentChunkService;
+import cn.zhangchuangla.medicine.common.core.exception.ParamException;
 import cn.zhangchuangla.medicine.common.core.exception.ServiceException;
 import cn.zhangchuangla.medicine.common.redis.core.RedisCache;
 import cn.zhangchuangla.medicine.model.entity.KbBase;
 import cn.zhangchuangla.medicine.model.entity.KbDocument;
 import cn.zhangchuangla.medicine.model.entity.KbDocumentChunk;
 import cn.zhangchuangla.medicine.model.enums.KbDocumentStageEnum;
+import cn.zhangchuangla.medicine.model.enums.KnowledgeChunkModeEnum;
 import cn.zhangchuangla.medicine.model.mq.KnowledgeImportDocumentMessage;
 import cn.zhangchuangla.medicine.model.mq.KnowledgeImportResultMessage;
 import org.junit.jupiter.api.BeforeEach;
@@ -93,44 +95,71 @@ class KbDocumentServiceImplTests {
 
     @Test
     void importDocument_ShouldSaveDocumentAndPublishImportDocument() {
-        KnowledgeBaseImportRequest request = newImportRequest();
-        KbBase kbBase = newKbBase();
-        when(kbBaseService.getKnowledgeBaseById(1L)).thenReturn(kbBase);
-        doReturn("admin").when(kbDocumentService).getUsername();
-        doAnswer(invocation -> {
-            KbDocument doc = invocation.getArgument(0);
-            doc.setId(1001L);
-            return true;
-        }).when(kbDocumentService).save(any(KbDocument.class));
-        when(valueOperations.increment("kb:latest:drug_faq:1001")).thenReturn(1L);
-        when(redisTemplate.expire("kb:latest:drug_faq:1001", 7L, TimeUnit.DAYS)).thenReturn(true);
+        assertImportPublishesNormalizedChunkSettings(
+                newImportRequest(KnowledgeChunkModeEnum.BALANCED_MODE.getCode(), 12, 9999),
+                KnowledgeChunkModeEnum.BALANCED_MODE.getCode(),
+                1000,
+                200
+        );
+    }
 
-        kbDocumentService.importDocument(request);
+    @Test
+    void importDocument_WhenPrecisionMode_ShouldUsePresetValues() {
+        assertImportPublishesNormalizedChunkSettings(
+                newImportRequest(KnowledgeChunkModeEnum.PRECISION_MODE.getCode(), 1, 1),
+                KnowledgeChunkModeEnum.PRECISION_MODE.getCode(),
+                512,
+                100
+        );
+    }
 
-        ArgumentCaptor<KbDocument> documentCaptor = ArgumentCaptor.forClass(KbDocument.class);
-        verify(kbDocumentService).save(documentCaptor.capture());
-        KbDocument savedDocument = documentCaptor.getValue();
-        assertEquals("知识库导入说明.pdf", savedDocument.getFileName());
-        assertEquals("https://example.com/files/asset-001", savedDocument.getFileUrl());
+    @Test
+    void importDocument_WhenContextMode_ShouldUsePresetValues() {
+        assertImportPublishesNormalizedChunkSettings(
+                newImportRequest(KnowledgeChunkModeEnum.CONTEXT_MODE.getCode(), 300, 30),
+                KnowledgeChunkModeEnum.CONTEXT_MODE.getCode(),
+                2048,
+                400
+        );
+    }
 
-        ArgumentCaptor<KnowledgeImportDocumentMessage> msgCaptor = ArgumentCaptor.forClass(KnowledgeImportDocumentMessage.class);
-        verify(knowledgePublisher).publishImportDocument(msgCaptor.capture());
-        KnowledgeImportDocumentMessage message = msgCaptor.getValue();
-        assertEquals("knowledge_import_command", message.getMessage_type());
-        assertEquals("drug_faq:1001", message.getBiz_key());
-        assertEquals(1L, message.getVersion());
-        assertEquals("drug_faq", message.getKnowledge_name());
-        assertEquals(1001L, message.getDocument_id());
-        assertEquals("https://example.com/files/asset-001", message.getFile_url());
-        assertEquals("text-embedding-3-large", message.getEmbedding_model());
-        assertEquals("character", message.getChunk_strategy());
-        assertEquals(500, message.getChunk_size());
-        assertEquals(100, message.getToken_size());
+    @Test
+    void importDocument_WhenCustomMode_ShouldUseRequestValues() {
+        assertImportPublishesNormalizedChunkSettings(
+                newImportRequest(KnowledgeChunkModeEnum.CUSTOM.getCode(), 1536, 256),
+                KnowledgeChunkModeEnum.CUSTOM.getCode(),
+                1536,
+                256
+        );
+    }
+
+    @Test
+    void importDocument_WhenCustomModeChunkSizeMissing_ShouldThrowException() {
+        KnowledgeBaseImportRequest request = newImportRequest(KnowledgeChunkModeEnum.CUSTOM.getCode(), null, 128);
+        when(kbBaseService.getKnowledgeBaseById(1L)).thenReturn(newKbBase());
+
+        ParamException ex = assertThrows(ParamException.class, () -> kbDocumentService.importDocument(request));
+
+        assertEquals("自定义模式切片大小不能为空", ex.getMessage());
+        verify(kbDocumentService, never()).save(any(KbDocument.class));
+        verify(knowledgePublisher, never()).publishImportDocument(any(KnowledgeImportDocumentMessage.class));
+    }
+
+    @Test
+    void importDocument_WhenCustomModeChunkOverlapOutOfRange_ShouldThrowException() {
+        KnowledgeBaseImportRequest request = newImportRequest(KnowledgeChunkModeEnum.CUSTOM.getCode(), 500, 1001);
+        when(kbBaseService.getKnowledgeBaseById(1L)).thenReturn(newKbBase());
+
+        ParamException ex = assertThrows(ParamException.class, () -> kbDocumentService.importDocument(request));
+
+        assertEquals("自定义模式切片重叠大小必须在0到1000之间", ex.getMessage());
+        verify(kbDocumentService, never()).save(any(KbDocument.class));
+        verify(knowledgePublisher, never()).publishImportDocument(any(KnowledgeImportDocumentMessage.class));
     }
 
     @Test
     void importDocument_WhenPublishFailed_ShouldMarkDocumentFailedAndThrow() {
-        KnowledgeBaseImportRequest request = newImportRequest();
+        KnowledgeBaseImportRequest request = newImportRequest(KnowledgeChunkModeEnum.CUSTOM.getCode(), 580, 80);
         KbBase kbBase = newKbBase();
         when(kbBaseService.getKnowledgeBaseById(1L)).thenReturn(kbBase);
         doReturn("admin").when(kbDocumentService).getUsername();
@@ -145,6 +174,9 @@ class KbDocumentServiceImplTests {
                 .publishImportDocument(any(KnowledgeImportDocumentMessage.class));
         KbDocument existing = new KbDocument();
         existing.setId(1001L);
+        existing.setChunkMode(KnowledgeChunkModeEnum.CUSTOM.getCode());
+        existing.setChunkSize(580);
+        existing.setChunkOverlap(80);
         doReturn(existing).when(kbDocumentService).getById(1001L);
         doReturn(true).when(kbDocumentService).updateById(any(KbDocument.class));
 
@@ -155,6 +187,9 @@ class KbDocumentServiceImplTests {
         KbDocument updated = captor.getValue();
         assertEquals(KbDocumentStageEnum.FAILED.getCode(), updated.getStage());
         assertEquals("mq error", updated.getLastError());
+        assertEquals(KnowledgeChunkModeEnum.CUSTOM.getCode(), updated.getChunkMode());
+        assertEquals(580, updated.getChunkSize());
+        assertEquals(80, updated.getChunkOverlap());
     }
 
     @Test
@@ -257,6 +292,7 @@ class KbDocumentServiceImplTests {
                 .version(2L)
                 .document_id(1001L)
                 .stage(KbDocumentStageEnum.COMPLETED.getCode())
+                .file_type(".PDF")
                 .knowledge_name("drug_faq")
                 .build();
         when(valueOperations.get("kb:latest:drug_faq:1001")).thenReturn(2L);
@@ -272,6 +308,7 @@ class KbDocumentServiceImplTests {
         verify(kbDocumentService).updateById(captor.capture());
         KbDocument updated = captor.getValue();
         assertEquals(KbDocumentStageEnum.INSERTING.getCode(), updated.getStage());
+        assertEquals("pdf", updated.getFileType());
         assertNull(updated.getLastError());
         verify(knowledgePublisher).publishImportChunkUpdate(message);
     }
@@ -366,16 +403,66 @@ class KbDocumentServiceImplTests {
         assertEquals("sync error", updated.getLastError());
     }
 
+    private void assertImportPublishesNormalizedChunkSettings(KnowledgeBaseImportRequest request,
+                                                              String expectedChunkMode,
+                                                              int expectedChunkSize,
+                                                              int expectedChunkOverlap) {
+        KbBase kbBase = newKbBase();
+        when(kbBaseService.getKnowledgeBaseById(1L)).thenReturn(kbBase);
+        doReturn("admin").when(kbDocumentService).getUsername();
+        doAnswer(invocation -> {
+            KbDocument doc = invocation.getArgument(0);
+            doc.setId(1001L);
+            return true;
+        }).when(kbDocumentService).save(any(KbDocument.class));
+        when(valueOperations.increment("kb:latest:drug_faq:1001")).thenReturn(1L);
+        when(redisTemplate.expire("kb:latest:drug_faq:1001", 7L, TimeUnit.DAYS)).thenReturn(true);
+
+        kbDocumentService.importDocument(request);
+
+        ArgumentCaptor<KbDocument> documentCaptor = ArgumentCaptor.forClass(KbDocument.class);
+        verify(kbDocumentService).save(documentCaptor.capture());
+        KbDocument savedDocument = documentCaptor.getValue();
+        assertEquals("知识库导入说明.pdf", savedDocument.getFileName());
+        assertEquals("https://example.com/files/asset-001", savedDocument.getFileUrl());
+        assertEquals("pdf", savedDocument.getFileType());
+        assertEquals(expectedChunkMode, savedDocument.getChunkMode());
+        assertEquals(expectedChunkSize, savedDocument.getChunkSize());
+        assertEquals(expectedChunkOverlap, savedDocument.getChunkOverlap());
+
+        ArgumentCaptor<KnowledgeImportDocumentMessage> msgCaptor = ArgumentCaptor.forClass(KnowledgeImportDocumentMessage.class);
+        verify(knowledgePublisher).publishImportDocument(msgCaptor.capture());
+        KnowledgeImportDocumentMessage message = msgCaptor.getValue();
+        assertEquals("knowledge_import_command", message.getMessage_type());
+        assertEquals("drug_faq:1001", message.getBiz_key());
+        assertEquals(1L, message.getVersion());
+        assertEquals("drug_faq", message.getKnowledge_name());
+        assertEquals(1001L, message.getDocument_id());
+        assertEquals("https://example.com/files/asset-001", message.getFile_url());
+        assertEquals("text-embedding-3-large", message.getEmbedding_model());
+        assertEquals(expectedChunkSize, message.getChunk_size());
+        assertEquals(expectedChunkOverlap, message.getChunk_overlap());
+    }
+
     private KnowledgeBaseImportRequest newImportRequest() {
+        return newImportRequest(KnowledgeChunkModeEnum.BALANCED_MODE.getCode(), null, null);
+    }
+
+    private KnowledgeBaseImportRequest newImportRequest(String chunkMode, Integer chunkSize, Integer chunkOverlap) {
         KnowledgeBaseImportRequest request = new KnowledgeBaseImportRequest();
         request.setKnowledgeBaseId(1L);
         request.setFileDetails(List.of(KnowledgeBaseImportRequest.FileDetail.builder()
                 .fileName("知识库导入说明.pdf")
                 .fileUrl("https://example.com/files/asset-001")
+                .fileType("application/pdf")
                 .build()));
-        request.setChunkStrategy("character");
-        request.setChunkSize(500);
-        request.setTokenSize(100);
+        request.setChunkMode(chunkMode);
+        if (KnowledgeChunkModeEnum.CUSTOM.matches(chunkMode)) {
+            request.setCustomChunkMode(KnowledgeBaseImportRequest.CustomChunkMode.builder()
+                    .chunkSize(chunkSize)
+                    .chunkOverlap(chunkOverlap)
+                    .build());
+        }
         return request;
     }
 

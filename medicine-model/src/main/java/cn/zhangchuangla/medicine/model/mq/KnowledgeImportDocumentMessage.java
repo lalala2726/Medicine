@@ -65,19 +65,14 @@ public class KnowledgeImportDocumentMessage implements Serializable {
     private String embedding_model;
 
     /**
-     * 切片策略（由前端传入）。
-     */
-    private String chunk_strategy;
-
-    /**
-     * 切片大小（由前端传入，单位由 AI 侧策略解释）。
+     * 切片大小（单位：字符）。
      */
     private Integer chunk_size;
 
     /**
-     * token 窗口大小（由前端传入）。
+     * 切片重叠大小（单位：字符）。
      */
-    private Integer token_size;
+    private Integer chunk_overlap;
 
     /**
      * 消息创建时间（ISO8601，推荐 UTC）。

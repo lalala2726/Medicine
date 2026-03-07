@@ -27,30 +27,42 @@ public class KnowledgeBaseImportRequest {
     @Schema(description = "知识库ID", requiredMode = Schema.RequiredMode.REQUIRED, example = "1")
     private Long knowledgeBaseId;
 
-    //todo 切片策略定义为枚举，并且根据枚举下面的属性进行校验
-
     @NotEmpty(message = "导入文件不能为空")
     @Schema(description = "导入文件列表", requiredMode = Schema.RequiredMode.REQUIRED)
     private List<@NotNull(message = "文件详情不能为空") @Valid FileDetail> fileDetails;
 
-    @NotBlank(message = "切片策略不能为空")
-    @Schema(description = "切片策略", requiredMode = Schema.RequiredMode.REQUIRED, example = "character")
-    private String chunkStrategy;
+    @NotBlank(message = "切片模式不能为空")
+    @Schema(description = "切片模式", requiredMode = Schema.RequiredMode.REQUIRED, example = "balancedMode")
+    private String chunkMode;
 
-    @Min(value = 100, message = "切片大小必须大于0")
-    @Schema(description = "切片大小", requiredMode = Schema.RequiredMode.REQUIRED, example = "500")
-    private Integer chunkSize;
+    @Valid
+    @Schema(description = "自定义切片模式参数，chunkMode=custom 时使用", requiredMode = Schema.RequiredMode.AUTO)
+    private CustomChunkMode customChunkMode;
 
-    @Min(value = 100, message = "token大小必须大于100")
-    @Schema(description = "token大小", requiredMode = Schema.RequiredMode.REQUIRED, example = "100")
-    private Integer tokenSize;
-
-    @Schema(description = "文件详情")
-    @AllArgsConstructor
-    @NoArgsConstructor
     @Builder
     @Data
+    @AllArgsConstructor
+    @NoArgsConstructor
+    @Schema(description = "自定义切片模式参数")
+    public static class CustomChunkMode {
+        @Schema(description = "切片大小，custom 模式必填", requiredMode = Schema.RequiredMode.AUTO, example = "500")
+        private Integer chunkSize;
+
+        @Schema(description = "切片重叠大小，custom 模式必填", requiredMode = Schema.RequiredMode.AUTO, example = "50")
+        private Integer chunkOverlap;
+    }
+
+
+    @Builder
+    @Data
+    @AllArgsConstructor
+    @NoArgsConstructor
+    @Schema(description = "文件详情")
     public static class FileDetail {
+
+        @Schema(description = "文件类型，优先使用扩展名（如 pdf、docx）", requiredMode = Schema.RequiredMode.AUTO,
+                example = "pdf")
+        private String fileType;
 
         /**
          * 文件名

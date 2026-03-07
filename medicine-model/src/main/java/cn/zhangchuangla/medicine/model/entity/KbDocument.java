@@ -42,14 +42,24 @@ public class KbDocument {
     private String fileUrl;
 
     /**
-     * 文件大小（字节）
+     * 文件类型
      */
-    private Long fileSize;
+    private String fileType;
 
     /**
-     * 文件 MIME 类型
+     * 切片模式
      */
-    private String mimeType;
+    private String chunkMode;
+
+    /**
+     * 切片长度
+     */
+    private Integer chunkSize;
+
+    /**
+     * 切片重叠长度
+     */
+    private Integer chunkOverlap;
 
     /**
      * 索引阶段，取值见 @see cn.zhangchuangla.medicine.model.enums.KbDocumentStageEnum

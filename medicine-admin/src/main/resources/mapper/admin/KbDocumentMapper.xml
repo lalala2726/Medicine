@@ -9,8 +9,10 @@
         <result property="knowledgeBaseId" column="knowledge_base_id"/>
         <result property="fileName" column="file_name"/>
         <result property="fileUrl" column="file_url"/>
-        <result property="fileSize" column="file_size"/>
-        <result property="mimeType" column="mime_type"/>
+        <result property="fileType" column="file_type"/>
+        <result property="chunkMode" column="chunk_mode"/>
+        <result property="chunkSize" column="chunk_size"/>
+        <result property="chunkOverlap" column="chunk_overlap"/>
         <result property="stage" column="stage"/>
         <result property="lastError" column="last_error"/>
         <result property="createBy" column="create_by"/>
@@ -20,8 +22,8 @@
     </resultMap>
 
     <sql id="Base_Column_List">
-        id,knowledge_base_id,file_name,file_url,file_size,
-        mime_type,stage,last_error,create_by,
+        id,knowledge_base_id,file_name,file_url,
+        file_type,chunk_mode,chunk_size,chunk_overlap,stage,last_error,create_by,
         update_by,created_at,updated_at
     </sql>
 
@@ -35,10 +37,7 @@
                 AND file_name LIKE CONCAT('%', TRIM(#{request.fileName}), '%')
             </if>
             <if test="request.fileType != null and request.fileType != ''">
-                AND (
-                file_name LIKE CONCAT('%', '.', TRIM(#{request.fileType}), '%')
-                OR mime_type LIKE CONCAT('%', TRIM(#{request.fileType}), '%')
-                )
+                AND LOWER(file_type) = LOWER(REPLACE(TRIM(#{request.fileType}), '.', ''))
             </if>
         </where>
         ORDER BY created_at DESC, id DESC

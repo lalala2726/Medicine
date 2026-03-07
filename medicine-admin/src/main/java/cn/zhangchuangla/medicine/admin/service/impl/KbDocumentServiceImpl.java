@@ -18,6 +18,7 @@ import cn.zhangchuangla.medicine.model.entity.KbBase;
 import cn.zhangchuangla.medicine.model.entity.KbDocument;
 import cn.zhangchuangla.medicine.model.entity.KbDocumentChunk;
 import cn.zhangchuangla.medicine.model.enums.KbDocumentStageEnum;
+import cn.zhangchuangla.medicine.model.enums.KnowledgeChunkModeEnum;
 import cn.zhangchuangla.medicine.model.mq.KnowledgeImportDocumentMessage;
 import cn.zhangchuangla.medicine.model.mq.KnowledgeImportResultMessage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
@@ -144,23 +145,25 @@ public class KbDocumentServiceImpl extends ServiceImpl<KbDocumentMapper, KbDocum
         KbBase kbBase = kbBaseService.getKnowledgeBaseById(request.getKnowledgeBaseId());
         Assert.isTrue(kbBase != null, "知识库不存在");
         Assert.notEmpty(kbBase.getEmbeddingModel(), "知识库向量模型未配置");
+        NormalizedChunkSettings chunkSettings = normalizeChunkSettings(request);
 
         String username = getUsername();
         for (KnowledgeBaseImportRequest.FileDetail rawFileDetail : request.getFileDetails()) {
             Assert.notNull(rawFileDetail, "文件详情不能为空");
-            String fileUrl = StringUtils.trimWhitespace(rawFileDetail.getFileUrl());
-            String fileName = StringUtils.trimWhitespace(rawFileDetail.getFileName());
+            String fileUrl = strip(rawFileDetail.getFileUrl());
+            String fileName = strip(rawFileDetail.getFileName());
+            String fileType = resolveFileType(rawFileDetail);
             Assert.notEmpty(fileUrl, "文件地址不能为空");
             Assert.notEmpty(fileName, "文件名不能为空");
 
-            KbDocument document = buildPendingDocument(kbBase.getId(), fileUrl, fileName, username);
+            KbDocument document = buildPendingDocument(kbBase.getId(), fileUrl, fileName, fileType, chunkSettings, username);
             boolean saved = save(document);
             Assert.isTrue(saved && document.getId() != null, "创建导入文档失败");
 
             String bizKey = buildBizKey(kbBase.getKnowledgeName(), document.getId());
             Long version = nextVersionAndSetLatest(bizKey);
             KnowledgeImportDocumentMessage importDocumentMessage =
-                    buildImportDocumentMessage(request, kbBase, document, bizKey, version);
+                    buildImportDocumentMessage(kbBase, document, bizKey, version);
             try {
                 knowledgePublisher.publishImportDocument(importDocumentMessage);
             } catch (Exception ex) {
@@ -213,6 +216,10 @@ public class KbDocumentServiceImpl extends ServiceImpl<KbDocumentMapper, KbDocum
         document.setStage(completedStage
                 ? KbDocumentStageEnum.INSERTING.getCode()
                 : incomingStage.getCode());
+        String callbackFileType = normalizeFileType(strip(message.getFile_type()));
+        if (StringUtils.hasText(callbackFileType)) {
+            document.setFileType(callbackFileType);
+        }
         if (KbDocumentStageEnum.FAILED == incomingStage) {
             document.setLastError(message.getMessage());
         } else {
@@ -304,15 +311,22 @@ public class KbDocumentServiceImpl extends ServiceImpl<KbDocumentMapper, KbDocum
      * @param knowledgeBaseId 知识库主键
      * @param fileUrl         文件访问地址
      * @param fileName        文件名
+     * @param fileType        文件类型
+     * @param chunkSettings   归一化后的切片设置
      * @param username        操作人账号
      * @return 待持久化的文档实体
      */
-    private KbDocument buildPendingDocument(Long knowledgeBaseId, String fileUrl, String fileName, String username) {
+    private KbDocument buildPendingDocument(Long knowledgeBaseId, String fileUrl, String fileName, String fileType,
+                                            NormalizedChunkSettings chunkSettings, String username) {
         Date now = new Date();
         return KbDocument.builder()
                 .knowledgeBaseId(knowledgeBaseId)
                 .fileUrl(fileUrl)
                 .fileName(fileName)
+                .fileType(fileType)
+                .chunkMode(chunkSettings.chunkMode())
+                .chunkSize(chunkSettings.chunkSize())
+                .chunkOverlap(chunkSettings.chunkOverlap())
                 .stage(KbDocumentStageEnum.PENDING.getCode())
                 .createBy(username)
                 .updateBy(username)
@@ -324,15 +338,14 @@ public class KbDocumentServiceImpl extends ServiceImpl<KbDocumentMapper, KbDocum
     /**
      * 组装知识库导入文档消息体。
      *
-     * @param request  导入请求
      * @param kbBase   知识库配置实体
      * @param document 文档实体（含 documentId）
      * @param bizKey   业务键
      * @param version  当前版本号
      * @return 可投递到 MQ 的导入文档消息
      */
-    private KnowledgeImportDocumentMessage buildImportDocumentMessage(KnowledgeBaseImportRequest request, KbBase kbBase,
-                                                                      KbDocument document, String bizKey, Long version) {
+    private KnowledgeImportDocumentMessage buildImportDocumentMessage(KbBase kbBase, KbDocument document,
+                                                                      String bizKey, Long version) {
         return KnowledgeImportDocumentMessage.builder()
                 .message_type(IMPORT_DOCUMENT_MESSAGE_TYPE)
                 .task_uuid(UUID.randomUUID().toString())
@@ -342,11 +355,71 @@ public class KbDocumentServiceImpl extends ServiceImpl<KbDocumentMapper, KbDocum
                 .document_id(document.getId())
                 .file_url(document.getFileUrl())
                 .embedding_model(kbBase.getEmbeddingModel())
-                .chunk_strategy(request.getChunkStrategy())
-                .chunk_size(request.getChunkSize())
-                .token_size(request.getTokenSize())
+                .chunk_size(document.getChunkSize())
+                .chunk_overlap(document.getChunkOverlap())
                 .created_at(DateTimeFormatter.ISO_OFFSET_DATE_TIME.format(OffsetDateTime.now(ZoneOffset.UTC)))
                 .build();
+    }
+
+    /**
+     * 归一化导入请求中的切片设置。
+     *
+     * @param request 导入请求
+     * @return 归一化后的切片设置
+     */
+    private NormalizedChunkSettings normalizeChunkSettings(KnowledgeBaseImportRequest request) {
+        KnowledgeChunkModeEnum chunkMode = KnowledgeChunkModeEnum.fromCode(strip(request.getChunkMode()));
+        Assert.isParamTrue(chunkMode != null, "切片模式不支持");
+
+        if (!chunkMode.isCustom()) {
+            return new NormalizedChunkSettings(chunkMode.getCode(), chunkMode.getChunkSize(), chunkMode.getChunkOverlap());
+        }
+
+        KnowledgeBaseImportRequest.CustomChunkMode customChunkMode = request.getCustomChunkMode();
+        Assert.notNull(customChunkMode, "自定义模式参数不能为空");
+        Integer chunkSize = customChunkMode.getChunkSize();
+        Integer chunkOverlap = customChunkMode.getChunkOverlap();
+        Assert.notNull(chunkSize, "自定义模式切片大小不能为空");
+        Assert.notNull(chunkOverlap, "自定义模式切片重叠大小不能为空");
+        Assert.isParamTrue(chunkSize >= KnowledgeChunkModeEnum.CUSTOM_CHUNK_SIZE_MIN
+                        && chunkSize <= KnowledgeChunkModeEnum.CUSTOM_CHUNK_SIZE_MAX,
+                "自定义模式切片大小必须在100到6000之间");
+        Assert.isParamTrue(chunkOverlap >= KnowledgeChunkModeEnum.CUSTOM_CHUNK_OVERLAP_MIN
+                        && chunkOverlap <= KnowledgeChunkModeEnum.CUSTOM_CHUNK_OVERLAP_MAX,
+                "自定义模式切片重叠大小必须在0到1000之间");
+        return new NormalizedChunkSettings(chunkMode.getCode(), chunkSize, chunkOverlap);
+    }
+
+    private String strip(String value) {
+        return value == null ? null : value.strip();
+    }
+
+    private String resolveFileType(KnowledgeBaseImportRequest.FileDetail fileDetail) {
+        String fileName = strip(fileDetail.getFileName());
+        String extension = extractFileExtension(fileName);
+        if (StringUtils.hasText(extension)) {
+            return extension;
+        }
+        return normalizeFileType(strip(fileDetail.getFileType()));
+    }
+
+    private String extractFileExtension(String fileName) {
+        if (!StringUtils.hasText(fileName)) {
+            return null;
+        }
+        int lastDotIndex = fileName.lastIndexOf('.');
+        if (lastDotIndex < 0 || lastDotIndex == fileName.length() - 1) {
+            return null;
+        }
+        return normalizeFileType(fileName.substring(lastDotIndex + 1));
+    }
+
+    private String normalizeFileType(String fileType) {
+        if (!StringUtils.hasText(fileType)) {
+            return null;
+        }
+        String normalized = fileType.strip().toLowerCase(Locale.ROOT);
+        return normalized.startsWith(".") ? normalized.substring(1) : normalized;
     }
 
     /**
@@ -615,6 +688,16 @@ public class KbDocumentServiceImpl extends ServiceImpl<KbDocumentMapper, KbDocum
         if (!updated) {
             log.warn("更新知识库文档失败状态失败: document_id={}", documentId);
         }
+    }
+
+    /**
+     * 归一化后的切片设置。
+     *
+     * @param chunkMode    切片模式
+     * @param chunkSize    切片长度
+     * @param chunkOverlap 切片重叠长度
+     */
+    private record NormalizedChunkSettings(String chunkMode, Integer chunkSize, Integer chunkOverlap) {
     }
 
     /**

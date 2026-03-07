@@ -68,6 +68,11 @@ public class KnowledgeImportResultMessage implements Serializable {
     private String file_url;
 
     /**
+     * 文件类型。
+     */
+    private String file_type;
+
+    /**
      * 切片数量统计（可选）。
      */
     private Integer chunk_count;
