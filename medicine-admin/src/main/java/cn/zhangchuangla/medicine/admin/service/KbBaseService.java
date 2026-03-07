@@ -1,5 +1,6 @@
 package cn.zhangchuangla.medicine.admin.service;
 
+import cn.zhangchuangla.medicine.admin.model.dto.KnowledgeBaseListDto;
 import cn.zhangchuangla.medicine.admin.model.request.KnowledgeBaseAddRequest;
 import cn.zhangchuangla.medicine.admin.model.request.KnowledgeBaseListRequest;
 import cn.zhangchuangla.medicine.admin.model.request.KnowledgeBaseUpdateRequest;
@@ -18,7 +19,7 @@ public interface KbBaseService extends IService<KbBase> {
      * @param request 查询参数
      * @return 分页结果
      */
-    Page<KbBase> listKnowledgeBase(KnowledgeBaseListRequest request);
+    Page<KnowledgeBaseListDto> listKnowledgeBase(KnowledgeBaseListRequest request);
 
     /**
      * 根据ID查询知识库

@@ -2,6 +2,7 @@ package cn.zhangchuangla.medicine.admin.service.impl;
 
 import cn.zhangchuangla.medicine.admin.integration.MedicineAgentClient;
 import cn.zhangchuangla.medicine.admin.mapper.KbBaseMapper;
+import cn.zhangchuangla.medicine.admin.model.dto.KnowledgeBaseListDto;
 import cn.zhangchuangla.medicine.admin.model.request.KnowledgeBaseAddRequest;
 import cn.zhangchuangla.medicine.admin.model.request.KnowledgeBaseListRequest;
 import cn.zhangchuangla.medicine.admin.model.request.KnowledgeBaseUpdateRequest;
@@ -50,9 +51,9 @@ public class KbBaseServiceImpl extends ServiceImpl<KbBaseMapper, KbBase>
     private final MedicineAgentClient medicineAgentClient;
 
     @Override
-    public Page<KbBase> listKnowledgeBase(KnowledgeBaseListRequest request) {
+    public Page<KnowledgeBaseListDto> listKnowledgeBase(KnowledgeBaseListRequest request) {
         Assert.notNull(request, "查询参数不能为空");
-        Page<KbBase> page = request.toPage();
+        Page<KnowledgeBaseListDto> page = request.toPage();
         return baseMapper.listKnowledgeBase(page, request);
     }
 
@@ -69,7 +70,6 @@ public class KbBaseServiceImpl extends ServiceImpl<KbBaseMapper, KbBase>
     public boolean addKnowledgeBase(KnowledgeBaseAddRequest request) {
         Assert.notNull(request, "知识库信息不能为空");
         Assert.notEmpty(request.getKnowledgeName(), "知识库名称不能为空");
-        Assert.isParamTrue(request.getCover() != null && !request.getCover().isBlank(), "知识库封面不能为空");
         validateEmbeddingDim(request.getEmbeddingDim());
 
         if (isKnowledgeNameExists(request.getKnowledgeName())) {
@@ -79,6 +79,7 @@ public class KbBaseServiceImpl extends ServiceImpl<KbBaseMapper, KbBase>
         medicineAgentClient.createKnowledgeBase(request.getKnowledgeName(), request.getEmbeddingDim(), request.getDescription());
 
         KbBase kbBase = copyProperties(request, KbBase.class);
+        kbBase.setCover(normalizeCover(request.getCover()));
         kbBase.setCreateBy(getUsername());
         try {
             boolean saved = save(kbBase);
@@ -95,13 +96,12 @@ public class KbBaseServiceImpl extends ServiceImpl<KbBaseMapper, KbBase>
     public boolean updateKnowledgeBase(KnowledgeBaseUpdateRequest request) {
         Assert.notNull(request, "知识库信息不能为空");
         Assert.isPositive(request.getId(), "知识库ID必须大于0");
-        Assert.isParamTrue(request.getCover() != null && !request.getCover().isBlank(), "知识库封面不能为空");
         KbBase existingKbBase = getById(request.getId());
         Assert.isTrue(existingKbBase != null, "知识库不存在");
         applyStatusChangeIfNecessary(existingKbBase, request.getStatus());
 
         existingKbBase.setDisplayName(request.getDisplayName());
-        existingKbBase.setCover(request.getCover());
+        existingKbBase.setCover(normalizeCover(request.getCover()));
         existingKbBase.setDescription(request.getDescription());
         if (request.getStatus() != null) {
             existingKbBase.setStatus(request.getStatus());
@@ -156,5 +156,13 @@ public class KbBaseServiceImpl extends ServiceImpl<KbBaseMapper, KbBase>
             return;
         }
         medicineAgentClient.releaseKnowledgeBase(kbBase.getKnowledgeName());
+    }
+
+    private String normalizeCover(String cover) {
+        if (cover == null) {
+            return null;
+        }
+        String normalized = cover.strip();
+        return normalized.isEmpty() ? null : normalized;
     }
 }

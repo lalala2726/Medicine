@@ -347,6 +347,7 @@ class KbDocumentServiceImplTests {
         when(valueOperations.get("kb:latest:drug_faq:1001")).thenReturn(3L);
         KbDocument existing = new KbDocument();
         existing.setId(1001L);
+        existing.setKnowledgeBaseId(1L);
         existing.setStage(KbDocumentStageEnum.INSERTING.getCode());
         doReturn(existing).when(kbDocumentService).getById(1001L);
         doReturn(true).when(kbDocumentService).updateById(any(KbDocument.class));
@@ -368,6 +369,7 @@ class KbDocumentServiceImplTests {
         assertEquals(1, chunks.size());
         assertEquals(1, chunks.get(0).getStatus());
         assertEquals(1001L, chunks.get(0).getDocumentId());
+        assertEquals(1L, chunks.get(0).getKnowledgeBaseId());
         ArgumentCaptor<KbDocument> captor = ArgumentCaptor.forClass(KbDocument.class);
         verify(kbDocumentService).updateById(captor.capture());
         KbDocument updated = captor.getValue();

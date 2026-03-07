@@ -1,5 +1,6 @@
 package cn.zhangchuangla.medicine.admin.controller;
 
+import cn.zhangchuangla.medicine.admin.model.dto.KnowledgeBaseListDto;
 import cn.zhangchuangla.medicine.admin.model.request.KnowledgeBaseAddRequest;
 import cn.zhangchuangla.medicine.admin.model.request.KnowledgeBaseListRequest;
 import cn.zhangchuangla.medicine.admin.model.request.KnowledgeBaseUpdateRequest;
@@ -18,6 +19,7 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -47,9 +49,8 @@ public class KnowledgeBaseController extends BaseController {
     @Operation(summary = "知识库列表")
     @PreAuthorize("hasAuthority('system:knowledge_base:list') or hasRole('super_admin')")
     public AjaxResult<TableDataResult> listKnowledgeBase(KnowledgeBaseListRequest request) {
-        Page<KbBase> page = kbBaseService.listKnowledgeBase(request);
-        List<KnowledgeBaseListVo> rows = copyListProperties(page, KnowledgeBaseListVo.class);
-        return getTableData(page, rows);
+        Page<KnowledgeBaseListDto> page = kbBaseService.listKnowledgeBase(request);
+        return getTableData(page, toKnowledgeBaseListVo(page.getRecords()));
     }
 
     /**
@@ -107,6 +108,43 @@ public class KnowledgeBaseController extends BaseController {
     public AjaxResult<Void> deleteKnowledgeBase(@PathVariable Long id) {
         boolean result = kbBaseService.deleteKnowledgeBase(id);
         return toAjax(result);
+    }
+
+    private List<KnowledgeBaseListVo> toKnowledgeBaseListVo(List<KnowledgeBaseListDto> records) {
+        if (records == null || records.isEmpty()) {
+            return List.of();
+        }
+        List<KnowledgeBaseListVo> rows = new ArrayList<>(records.size());
+        for (KnowledgeBaseListDto dto : records) {
+            if (dto == null) {
+                continue;
+            }
+            rows.add(toKnowledgeBaseListVo(dto));
+        }
+        return rows;
+    }
+
+    private KnowledgeBaseListVo toKnowledgeBaseListVo(KnowledgeBaseListDto dto) {
+        KnowledgeBaseListVo vo = new KnowledgeBaseListVo();
+        vo.setId(dto.getId());
+        vo.setKnowledgeName(dto.getKnowledgeName());
+        vo.setDisplayName(dto.getDisplayName());
+        vo.setCover(dto.getCover());
+        vo.setDescription(dto.getDescription());
+        vo.setStatus(dto.getStatus());
+        vo.setDetail(toKnowledgeBaseListDetailVo(dto.getDetail()));
+        return vo;
+    }
+
+    private KnowledgeBaseListVo.Detail toKnowledgeBaseListDetailVo(KnowledgeBaseListDto.Detail detailDto) {
+        if (detailDto == null) {
+            return null;
+        }
+        KnowledgeBaseListVo.Detail detailVo = new KnowledgeBaseListVo.Detail();
+        detailVo.setUpdateTime(detailDto.getUpdateTime());
+        detailVo.setChunkCount(detailDto.getChunkCount());
+        detailVo.setFileCount(detailDto.getFileCount());
+        return detailVo;
     }
 
 }

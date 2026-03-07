@@ -32,6 +32,11 @@ public class KbDocumentChunk {
     private Long documentId;
 
     /**
+     * 所属知识库ID
+     */
+    private Long knowledgeBaseId;
+
+    /**
      * 切片序号（按上游返回值存储，当前接口从1开始）
      */
     private Integer chunkIndex;

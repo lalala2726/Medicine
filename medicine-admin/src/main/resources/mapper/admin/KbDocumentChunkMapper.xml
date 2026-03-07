@@ -7,6 +7,7 @@
     <resultMap id="BaseResultMap" type="cn.zhangchuangla.medicine.model.entity.KbDocumentChunk">
         <id property="id" column="id"/>
         <result property="documentId" column="document_id"/>
+        <result property="knowledgeBaseId" column="knowledge_base_id"/>
         <result property="chunkIndex" column="chunk_index"/>
         <result property="content" column="content"/>
         <result property="vectorId" column="vector_id"/>
@@ -18,7 +19,7 @@
     </resultMap>
 
     <sql id="Base_Column_List">
-        id,document_id,chunk_index,content,vector_id,char_count,
+        id,document_id,knowledge_base_id,chunk_index,content,vector_id,char_count,
         status,stage,created_at,updated_at
     </sql>
 

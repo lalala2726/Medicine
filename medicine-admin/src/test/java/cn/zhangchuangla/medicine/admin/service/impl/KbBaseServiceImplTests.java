@@ -193,29 +193,51 @@ class KbBaseServiceImplTests {
     }
 
     @Test
-    void addKnowledgeBase_WhenCoverBlank_ShouldThrowParamException() {
+    void addKnowledgeBase_WhenCoverBlank_ShouldSaveNullCover() {
         KnowledgeBaseAddRequest request = new KnowledgeBaseAddRequest();
         request.setKnowledgeName("drug_faq");
         request.setDisplayName("常见用药知识库");
         request.setCover(" ");
+        request.setDescription("覆盖常见用药相关问答内容");
         request.setEmbeddingModel("text-embedding-3-large");
         request.setEmbeddingDim(1024);
+        request.setStatus(0);
 
-        ParamException exception = assertThrows(ParamException.class, () -> kbBaseService.addKnowledgeBase(request));
-        assertEquals("知识库封面不能为空", exception.getMessage());
-        verify(medicineAgentClient, never()).createKnowledgeBase(anyString(), anyInt(), any());
-        verify(kbBaseService, never()).save(any(KbBase.class));
+        doReturn(false).when(kbBaseService).isKnowledgeNameExists("drug_faq");
+        doReturn("admin").when(kbBaseService).getUsername();
+        doReturn(true).when(kbBaseService).save(any(KbBase.class));
+
+        boolean result = kbBaseService.addKnowledgeBase(request);
+
+        assertTrue(result);
+        ArgumentCaptor<KbBase> captor = ArgumentCaptor.forClass(KbBase.class);
+        verify(kbBaseService).save(captor.capture());
+        assertNull(captor.getValue().getCover());
+        verify(medicineAgentClient).createKnowledgeBase("drug_faq", 1024, "覆盖常见用药相关问答内容");
     }
 
     @Test
-    void updateKnowledgeBase_WhenCoverBlank_ShouldThrowParamException() {
+    void updateKnowledgeBase_WhenCoverBlank_ShouldClearCover() {
+        KbBase existing = new KbBase();
+        existing.setId(1L);
+        existing.setKnowledgeName("drug_faq");
+        existing.setCover("https://example.com/old-cover.png");
+
         KnowledgeBaseUpdateRequest request = new KnowledgeBaseUpdateRequest();
         request.setId(1L);
         request.setCover(" ");
+        request.setDisplayName("新名称");
 
-        ParamException exception = assertThrows(ParamException.class, () -> kbBaseService.updateKnowledgeBase(request));
-        assertEquals("知识库封面不能为空", exception.getMessage());
-        verify(kbBaseService, never()).updateById(any(KbBase.class));
+        doReturn(existing).when(kbBaseService).getById(1L);
+        doReturn("admin").when(kbBaseService).getUsername();
+        doReturn(true).when(kbBaseService).updateById(any(KbBase.class));
+
+        boolean result = kbBaseService.updateKnowledgeBase(request);
+
+        assertTrue(result);
+        ArgumentCaptor<KbBase> captor = ArgumentCaptor.forClass(KbBase.class);
+        verify(kbBaseService).updateById(captor.capture());
+        assertNull(captor.getValue().getCover());
     }
 
     @Test

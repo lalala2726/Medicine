@@ -138,6 +138,7 @@ class KbDocumentChunkServiceImplTests {
         verify(kbDocumentChunkMapper).insert(chunkCaptor.capture());
         KbDocumentChunk chunk = chunkCaptor.getValue();
         assertEquals(1001L, chunk.getDocumentId());
+        assertEquals(1L, chunk.getKnowledgeBaseId());
         assertEquals("manual content", chunk.getContent());
         assertEquals(14, chunk.getCharCount());
         assertEquals(10, chunk.getChunkIndex());

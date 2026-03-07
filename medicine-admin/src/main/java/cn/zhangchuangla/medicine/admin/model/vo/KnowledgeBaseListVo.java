@@ -1,5 +1,6 @@
 package cn.zhangchuangla.medicine.admin.model.vo;
 
+import com.fasterxml.jackson.annotation.JsonFormat;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 
@@ -30,9 +31,23 @@ public class KnowledgeBaseListVo {
     @Schema(description = "状态（0启用 1停用）", example = "0")
     private Integer status;
 
-    @Schema(description = "创建时间")
-    private Date createdAt;
+    @Schema(description = "知识库详情")
+    private Detail detail;
 
-    @Schema(description = "更新时间")
-    private Date updatedAt;
+
+    @Data
+    @Schema(description = "知识库详情")
+    public static class Detail {
+
+        @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss", timezone = "GMT+8")
+        @Schema(description = "更新时间", example = "2023-07-01 12:00")
+        private Date updateTime;
+
+        @Schema(description = "切片数量", example = "10")
+        private Long chunkCount;
+
+        @Schema(description = "知识库文件数量", example = "5")
+        private Long fileCount;
+    }
+
 }

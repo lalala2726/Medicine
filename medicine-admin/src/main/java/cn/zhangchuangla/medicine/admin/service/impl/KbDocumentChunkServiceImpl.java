@@ -157,7 +157,7 @@ public class KbDocumentChunkServiceImpl extends ServiceImpl<KbDocumentChunkMappe
         Assert.notEmpty(kbBase.getKnowledgeName(), "知识库名称不能为空");
         Assert.notEmpty(kbBase.getEmbeddingModel(), "知识库向量模型未配置");
 
-        KbDocumentChunk chunk = buildPendingChunk(document.getId(), content);
+        KbDocumentChunk chunk = buildPendingChunk(document.getId(), document.getKnowledgeBaseId(), content);
         Assert.isTrue(baseMapper.insert(chunk) > 0 && chunk.getId() != null, "保存文档切片失败");
 
         String taskUuid = UUID.randomUUID().toString();
@@ -453,14 +453,16 @@ public class KbDocumentChunkServiceImpl extends ServiceImpl<KbDocumentChunkMappe
     /**
      * 构建新增切片的本地占位记录。
      *
-     * @param documentId 文档ID
-     * @param content    切片内容
+     * @param documentId      文档ID
+     * @param knowledgeBaseId 所属知识库ID
+     * @param content         切片内容
      * @return 待持久化的切片实体
      */
-    private KbDocumentChunk buildPendingChunk(Long documentId, String content) {
+    private KbDocumentChunk buildPendingChunk(Long documentId, Long knowledgeBaseId, String content) {
         Date now = new Date();
         return KbDocumentChunk.builder()
                 .documentId(documentId)
+                .knowledgeBaseId(knowledgeBaseId)
                 .chunkIndex(nextChunkIndex(documentId))
                 .content(content)
                 .vectorId(null)

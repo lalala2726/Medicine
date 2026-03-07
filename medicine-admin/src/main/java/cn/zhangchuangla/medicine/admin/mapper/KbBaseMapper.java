@@ -1,5 +1,6 @@
 package cn.zhangchuangla.medicine.admin.mapper;
 
+import cn.zhangchuangla.medicine.admin.model.dto.KnowledgeBaseListDto;
 import cn.zhangchuangla.medicine.admin.model.request.KnowledgeBaseListRequest;
 import cn.zhangchuangla.medicine.model.entity.KbBase;
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
@@ -20,7 +21,6 @@ public interface KbBaseMapper extends BaseMapper<KbBase> {
      * @param request 查询参数
      * @return 知识库分页
      */
-    Page<KbBase> listKnowledgeBase(Page<KbBase> page, @Param("request") KnowledgeBaseListRequest request);
+    Page<KnowledgeBaseListDto> listKnowledgeBase(Page<KnowledgeBaseListDto> page,
+                                                 @Param("request") KnowledgeBaseListRequest request);
 }
-
-

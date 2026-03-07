@@ -1,5 +1,6 @@
 package cn.zhangchuangla.medicine.admin.controller;
 
+import cn.zhangchuangla.medicine.admin.model.dto.KnowledgeBaseListDto;
 import cn.zhangchuangla.medicine.admin.model.request.KnowledgeBaseAddRequest;
 import cn.zhangchuangla.medicine.admin.model.request.KnowledgeBaseListRequest;
 import cn.zhangchuangla.medicine.admin.model.request.KnowledgeBaseUpdateRequest;
@@ -29,12 +30,16 @@ class KnowledgeBaseControllerTests {
     @Test
     void listKnowledgeBase_ShouldReturnPagedResult() {
         KnowledgeBaseListRequest request = new KnowledgeBaseListRequest();
-        Page<KbBase> page = new Page<>(1, 10, 1);
-        KbBase kbBase = new KbBase();
-        kbBase.setId(1L);
-        kbBase.setKnowledgeName("kb_abc1234");
-        kbBase.setCover("https://example.com/kb-cover.png");
-        page.setRecords(java.util.List.of(kbBase));
+        Page<KnowledgeBaseListDto> page = new Page<>(1, 10, 1);
+        KnowledgeBaseListDto rowDto = new KnowledgeBaseListDto();
+        rowDto.setId(1L);
+        rowDto.setKnowledgeName("kb_abc1234");
+        rowDto.setCover("https://example.com/kb-cover.png");
+        KnowledgeBaseListDto.Detail detail = new KnowledgeBaseListDto.Detail();
+        detail.setChunkCount(10L);
+        detail.setFileCount(5L);
+        rowDto.setDetail(detail);
+        page.setRecords(java.util.List.of(rowDto));
         when(kbBaseService.listKnowledgeBase(request)).thenReturn(page);
 
         var result = knowledgeBaseController.listKnowledgeBase(request);
@@ -42,6 +47,8 @@ class KnowledgeBaseControllerTests {
         assertEquals(200, result.getCode());
         KnowledgeBaseListVo row = (KnowledgeBaseListVo) result.getData().getRows().get(0);
         assertEquals("https://example.com/kb-cover.png", row.getCover());
+        assertEquals(10L, row.getDetail().getChunkCount());
+        assertEquals(5L, row.getDetail().getFileCount());
         verify(kbBaseService).listKnowledgeBase(request);
     }
 

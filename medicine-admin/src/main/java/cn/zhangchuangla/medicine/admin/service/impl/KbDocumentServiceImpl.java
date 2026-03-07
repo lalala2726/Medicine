@@ -287,7 +287,7 @@ public class KbDocumentServiceImpl extends ServiceImpl<KbDocumentMapper, KbDocum
             try {
                 List<MedicineAgentClient.DocumentChunkRow> rows =
                         medicineAgentClient.listDocumentChunks(knowledgeName, documentId);
-                List<KbDocumentChunk> chunks = mapDocumentChunks(rows, documentId);
+                List<KbDocumentChunk> chunks = mapDocumentChunks(rows, documentId, document.getKnowledgeBaseId());
                 kbDocumentChunkService.replaceByDocumentId(documentId, chunks);
                 markDocumentCompleted(documentId);
                 log.info("知识库切片同步成功: task_uuid={}, document_id={}, chunk_count={}",
@@ -508,11 +508,14 @@ public class KbDocumentServiceImpl extends ServiceImpl<KbDocumentMapper, KbDocum
     /**
      * 将 AI 端返回的切片列表映射为本地切片实体。
      *
-     * @param rows               AI 端返回的切片行列表
-     * @param fallbackDocumentId 当单条切片缺少文档ID时使用的兜底文档ID
+     * @param rows                    AI 端返回的切片行列表
+     * @param fallbackDocumentId      当单条切片缺少文档ID时使用的兜底文档ID
+     * @param fallbackKnowledgeBaseId 当单条切片缺少知识库ID时使用的兜底知识库ID
      * @return 可直接写入本地数据库的切片实体列表
      */
-    private List<KbDocumentChunk> mapDocumentChunks(List<MedicineAgentClient.DocumentChunkRow> rows, Long fallbackDocumentId) {
+    private List<KbDocumentChunk> mapDocumentChunks(List<MedicineAgentClient.DocumentChunkRow> rows,
+                                                    Long fallbackDocumentId,
+                                                    Long fallbackKnowledgeBaseId) {
         List<KbDocumentChunk> chunks = new ArrayList<>();
         if (rows == null || rows.isEmpty()) {
             return chunks;
@@ -525,6 +528,7 @@ public class KbDocumentServiceImpl extends ServiceImpl<KbDocumentMapper, KbDocum
             Long rowDocumentId = row.getDocument_id() == null ? fallbackDocumentId : row.getDocument_id();
             KbDocumentChunk chunk = KbDocumentChunk.builder()
                     .documentId(rowDocumentId)
+                    .knowledgeBaseId(fallbackKnowledgeBaseId)
                     .chunkIndex(row.getChunk_index())
                     .content(row.getContent())
                     .vectorId(row.getId() == null ? null : String.valueOf(row.getId()))
