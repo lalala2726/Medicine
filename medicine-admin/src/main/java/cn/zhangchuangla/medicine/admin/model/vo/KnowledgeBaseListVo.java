@@ -21,6 +21,9 @@ public class KnowledgeBaseListVo {
     @Schema(description = "知识库展示名称", example = "常见用药知识库")
     private String displayName;
 
+    @Schema(description = "知识库封面", example = "https://example.com/kb-cover.png")
+    private String cover;
+
     @Schema(description = "知识库描述", example = "覆盖常见用药相关问答内容")
     private String description;
 

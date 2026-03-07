@@ -8,6 +8,7 @@
         <id property="id" column="id"/>
         <result property="knowledgeName" column="knowledge_name"/>
         <result property="displayName" column="display_name"/>
+        <result property="cover" column="cover"/>
         <result property="description" column="description"/>
         <result property="embeddingModel" column="embedding_model"/>
         <result property="embeddingDim" column="embedding_dim"/>
@@ -19,7 +20,7 @@
     </resultMap>
 
     <sql id="Base_Column_List">
-        id,knowledge_name,display_name,description,embedding_model,
+        id,knowledge_name,display_name,cover,description,embedding_model,
         embedding_dim,status,create_by,update_by,created_at,updated_at
     </sql>
 

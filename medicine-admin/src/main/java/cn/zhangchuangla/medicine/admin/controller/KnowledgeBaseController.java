@@ -96,44 +96,16 @@ public class KnowledgeBaseController extends BaseController {
     }
 
     /**
-     * 启用知识库
-     *
-     * @param id 主键ID
-     * @return 启用结果
-     */
-    @PostMapping("/{id:\\d+}/enable")
-    @Operation(summary = "启用知识库")
-    @PreAuthorize("hasAuthority('system:knowledge_base:enable') or hasRole('super_admin')")
-    public AjaxResult<Void> enableKnowledgeBase(@PathVariable Long id) {
-        boolean result = kbBaseService.enableKnowledgeBase(id);
-        return toAjax(result);
-    }
-
-    /**
-     * 禁用知识库
-     *
-     * @param id 主键ID
-     * @return 禁用结果
-     */
-    @PostMapping("/{id:\\d+}/disable")
-    @Operation(summary = "禁用知识库")
-    @PreAuthorize("hasAuthority('system:knowledge_base:disable') or hasRole('super_admin')")
-    public AjaxResult<Void> disableKnowledgeBase(@PathVariable Long id) {
-        boolean result = kbBaseService.disableKnowledgeBase(id);
-        return toAjax(result);
-    }
-
-    /**
      * 删除知识库
      *
-     * @param ids 主键ID集合
+     * @param id 主键ID
      * @return 删除结果
      */
-    @DeleteMapping("/{ids:\\d+(?:,\\d+)*}")
+    @DeleteMapping("/{id:\\d+}")
     @Operation(summary = "删除知识库")
     @PreAuthorize("hasAuthority('system:knowledge_base:delete') or hasRole('super_admin')")
-    public AjaxResult<Void> deleteKnowledgeBase(@PathVariable List<Long> ids) {
-        boolean result = kbBaseService.deleteKnowledgeBase(ids);
+    public AjaxResult<Void> deleteKnowledgeBase(@PathVariable Long id) {
+        boolean result = kbBaseService.deleteKnowledgeBase(id);
         return toAjax(result);
     }
 

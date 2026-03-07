@@ -18,7 +18,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Date;
-import java.util.List;
 
 /**
  * @author Chuang
@@ -70,6 +69,7 @@ public class KbBaseServiceImpl extends ServiceImpl<KbBaseMapper, KbBase>
     public boolean addKnowledgeBase(KnowledgeBaseAddRequest request) {
         Assert.notNull(request, "知识库信息不能为空");
         Assert.notEmpty(request.getKnowledgeName(), "知识库名称不能为空");
+        Assert.isParamTrue(request.getCover() != null && !request.getCover().isBlank(), "知识库封面不能为空");
         validateEmbeddingDim(request.getEmbeddingDim());
 
         if (isKnowledgeNameExists(request.getKnowledgeName())) {
@@ -95,58 +95,26 @@ public class KbBaseServiceImpl extends ServiceImpl<KbBaseMapper, KbBase>
     public boolean updateKnowledgeBase(KnowledgeBaseUpdateRequest request) {
         Assert.notNull(request, "知识库信息不能为空");
         Assert.isPositive(request.getId(), "知识库ID必须大于0");
+        Assert.isParamTrue(request.getCover() != null && !request.getCover().isBlank(), "知识库封面不能为空");
         KbBase existingKbBase = getById(request.getId());
         Assert.isTrue(existingKbBase != null, "知识库不存在");
+        applyStatusChangeIfNecessary(existingKbBase, request.getStatus());
 
         existingKbBase.setDisplayName(request.getDisplayName());
+        existingKbBase.setCover(request.getCover());
         existingKbBase.setDescription(request.getDescription());
+        if (request.getStatus() != null) {
+            existingKbBase.setStatus(request.getStatus());
+        }
         existingKbBase.setUpdateBy(getUsername());
         existingKbBase.setUpdatedAt(new Date());
         return updateById(existingKbBase);
     }
 
     @Override
-    public boolean enableKnowledgeBase(Long id) {
+    public boolean deleteKnowledgeBase(Long id) {
         Assert.isPositive(id, "知识库ID必须大于0");
-        KbBase kbBase = getById(id);
-        Assert.isTrue(kbBase != null, "知识库不存在");
-
-        if (Integer.valueOf(STATUS_ENABLED).equals(kbBase.getStatus())) {
-            return true;
-        }
-        Assert.notEmpty(kbBase.getKnowledgeName(), "知识库名称不能为空");
-
-        medicineAgentClient.loadKnowledgeBase(kbBase.getKnowledgeName());
-
-        kbBase.setStatus(STATUS_ENABLED);
-        kbBase.setUpdateBy(getUsername());
-        kbBase.setUpdatedAt(new Date());
-        return updateById(kbBase);
-    }
-
-    @Override
-    public boolean disableKnowledgeBase(Long id) {
-        Assert.isPositive(id, "知识库ID必须大于0");
-        KbBase kbBase = getById(id);
-        Assert.isTrue(kbBase != null, "知识库不存在");
-
-        if (Integer.valueOf(STATUS_DISABLED).equals(kbBase.getStatus())) {
-            return true;
-        }
-        Assert.notEmpty(kbBase.getKnowledgeName(), "知识库名称不能为空");
-
-        medicineAgentClient.releaseKnowledgeBase(kbBase.getKnowledgeName());
-
-        kbBase.setStatus(STATUS_DISABLED);
-        kbBase.setUpdateBy(getUsername());
-        kbBase.setUpdatedAt(new Date());
-        return updateById(kbBase);
-    }
-
-    @Override
-    public boolean deleteKnowledgeBase(List<Long> ids) {
-        Assert.notEmpty(ids, "知识库ID不能为空");
-        return removeByIds(ids);
+        return removeById(id);
     }
 
     /**
@@ -171,5 +139,22 @@ public class KbBaseServiceImpl extends ServiceImpl<KbBaseMapper, KbBase>
         Assert.isParamTrue(embeddingDim >= MIN_EMBEDDING_DIM && embeddingDim <= MAX_EMBEDDING_DIM,
                 "向量维度必须在128到8192之间");
         Assert.isParamTrue((embeddingDim & (embeddingDim - 1)) == 0, "向量维度必须是2的幂");
+    }
+
+    private void applyStatusChangeIfNecessary(KbBase kbBase, Integer targetStatus) {
+        if (targetStatus == null) {
+            return;
+        }
+        Assert.isParamTrue(STATUS_ENABLED == targetStatus || STATUS_DISABLED == targetStatus, "状态值不合法");
+        Integer currentStatus = kbBase.getStatus();
+        if (currentStatus != null && currentStatus.equals(targetStatus)) {
+            return;
+        }
+        Assert.notEmpty(kbBase.getKnowledgeName(), "知识库名称不能为空");
+        if (STATUS_ENABLED == targetStatus) {
+            medicineAgentClient.loadKnowledgeBase(kbBase.getKnowledgeName());
+            return;
+        }
+        medicineAgentClient.releaseKnowledgeBase(kbBase.getKnowledgeName());
     }
 }

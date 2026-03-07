@@ -33,6 +33,7 @@ class KbBaseServiceImplTests {
         KnowledgeBaseAddRequest request = new KnowledgeBaseAddRequest();
         request.setKnowledgeName("drug_faq");
         request.setDisplayName("常见用药知识库");
+        request.setCover("https://example.com/kb-cover.png");
         request.setDescription("覆盖常见用药相关问答内容");
         request.setEmbeddingModel("text-embedding-3-large");
         request.setEmbeddingDim(1024);
@@ -50,6 +51,7 @@ class KbBaseServiceImplTests {
         KbBase saved = captor.getValue();
         assertEquals("drug_faq", saved.getKnowledgeName());
         assertEquals("常见用药知识库", saved.getDisplayName());
+        assertEquals("https://example.com/kb-cover.png", saved.getCover());
         assertEquals("text-embedding-3-large", saved.getEmbeddingModel());
         assertEquals(1024, saved.getEmbeddingDim());
 
@@ -68,6 +70,7 @@ class KbBaseServiceImplTests {
         KnowledgeBaseAddRequest request = new KnowledgeBaseAddRequest();
         request.setKnowledgeName("drug_faq");
         request.setDisplayName("常见用药知识库");
+        request.setCover("https://example.com/kb-cover.png");
         request.setEmbeddingModel("text-embedding-3-large");
         request.setEmbeddingDim(1024);
 
@@ -83,6 +86,7 @@ class KbBaseServiceImplTests {
         KnowledgeBaseAddRequest request = new KnowledgeBaseAddRequest();
         request.setKnowledgeName("drug_faq");
         request.setDisplayName("常见用药知识库");
+        request.setCover("https://example.com/kb-cover.png");
         request.setEmbeddingModel("text-embedding-3-large");
         request.setEmbeddingDim(1024);
 
@@ -99,6 +103,7 @@ class KbBaseServiceImplTests {
         KnowledgeBaseAddRequest request = new KnowledgeBaseAddRequest();
         request.setKnowledgeName("drug_faq");
         request.setDisplayName("常见用药知识库");
+        request.setCover("https://example.com/kb-cover.png");
         request.setDescription("覆盖常见用药相关问答内容");
         request.setEmbeddingModel("text-embedding-3-large");
         request.setEmbeddingDim(1024);
@@ -117,6 +122,7 @@ class KbBaseServiceImplTests {
         KnowledgeBaseAddRequest request = new KnowledgeBaseAddRequest();
         request.setKnowledgeName("drug_faq");
         request.setDisplayName("常见用药知识库");
+        request.setCover("https://example.com/kb-cover.png");
         request.setEmbeddingModel("text-embedding-3-large");
         request.setEmbeddingDim(64);
 
@@ -131,6 +137,7 @@ class KbBaseServiceImplTests {
         KnowledgeBaseAddRequest request = new KnowledgeBaseAddRequest();
         request.setKnowledgeName("drug_faq");
         request.setDisplayName("常见用药知识库");
+        request.setCover("https://example.com/kb-cover.png");
         request.setEmbeddingModel("text-embedding-3-large");
         request.setEmbeddingDim(1000);
 
@@ -148,6 +155,7 @@ class KbBaseServiceImplTests {
         existing.setEmbeddingModel("text-embedding-3-large");
         existing.setEmbeddingDim(1024);
         existing.setDisplayName("旧名称");
+        existing.setCover("https://example.com/old-cover.png");
         existing.setDescription("旧描述");
         existing.setStatus(0);
         existing.setUpdateBy("old_admin");
@@ -156,7 +164,9 @@ class KbBaseServiceImplTests {
         KnowledgeBaseUpdateRequest request = new KnowledgeBaseUpdateRequest();
         request.setId(1L);
         request.setDisplayName("新名称");
+        request.setCover("https://example.com/new-cover.png");
         request.setDescription("新描述");
+        request.setStatus(0);
 
         doReturn(existing).when(kbBaseService).getById(1L);
         doReturn("admin").when(kbBaseService).getUsername();
@@ -172,44 +182,121 @@ class KbBaseServiceImplTests {
         assertEquals("text-embedding-3-large", updated.getEmbeddingModel());
         assertEquals(1024, updated.getEmbeddingDim());
         assertEquals("新名称", updated.getDisplayName());
+        assertEquals("https://example.com/new-cover.png", updated.getCover());
         assertEquals("新描述", updated.getDescription());
         assertEquals(0, updated.getStatus());
         assertEquals("admin", updated.getUpdateBy());
         assertNotNull(updated.getUpdatedAt());
         assertTrue(updated.getUpdatedAt().after(new Date(1_700_000_000_000L)));
+        verify(medicineAgentClient, never()).loadKnowledgeBase(anyString());
+        verify(medicineAgentClient, never()).releaseKnowledgeBase(anyString());
     }
 
     @Test
-    void enableKnowledgeBase_WhenAlreadyEnabled_ShouldReturnTrueWithoutCallingAi() {
-        KbBase existing = new KbBase();
-        existing.setId(1L);
-        existing.setKnowledgeName("drug_faq");
-        existing.setStatus(0);
+    void addKnowledgeBase_WhenCoverBlank_ShouldThrowParamException() {
+        KnowledgeBaseAddRequest request = new KnowledgeBaseAddRequest();
+        request.setKnowledgeName("drug_faq");
+        request.setDisplayName("常见用药知识库");
+        request.setCover(" ");
+        request.setEmbeddingModel("text-embedding-3-large");
+        request.setEmbeddingDim(1024);
 
-        doReturn(existing).when(kbBaseService).getById(1L);
+        ParamException exception = assertThrows(ParamException.class, () -> kbBaseService.addKnowledgeBase(request));
+        assertEquals("知识库封面不能为空", exception.getMessage());
+        verify(medicineAgentClient, never()).createKnowledgeBase(anyString(), anyInt(), any());
+        verify(kbBaseService, never()).save(any(KbBase.class));
+    }
 
-        boolean result = kbBaseService.enableKnowledgeBase(1L);
+    @Test
+    void updateKnowledgeBase_WhenCoverBlank_ShouldThrowParamException() {
+        KnowledgeBaseUpdateRequest request = new KnowledgeBaseUpdateRequest();
+        request.setId(1L);
+        request.setCover(" ");
 
-        assertTrue(result);
-        verify(medicineAgentClient, never()).loadKnowledgeBase(anyString());
+        ParamException exception = assertThrows(ParamException.class, () -> kbBaseService.updateKnowledgeBase(request));
+        assertEquals("知识库封面不能为空", exception.getMessage());
         verify(kbBaseService, never()).updateById(any(KbBase.class));
     }
 
     @Test
-    void enableKnowledgeBase_WhenDisabled_ShouldCallAiAndUpdateStatus() {
+    void updateKnowledgeBase_WhenStatusSame_ShouldNotCallAi() {
         KbBase existing = new KbBase();
         existing.setId(1L);
         existing.setKnowledgeName("drug_faq");
-        existing.setStatus(1);
+        existing.setStatus(0);
+        existing.setDisplayName("旧名称");
+        existing.setCover("https://example.com/old-cover.png");
+
+        KnowledgeBaseUpdateRequest request = new KnowledgeBaseUpdateRequest();
+        request.setId(1L);
+        request.setDisplayName("新名称");
+        request.setCover("https://example.com/new-cover.png");
+        request.setStatus(0);
 
         doReturn(existing).when(kbBaseService).getById(1L);
         doReturn("admin").when(kbBaseService).getUsername();
         doReturn(true).when(kbBaseService).updateById(any(KbBase.class));
 
-        boolean result = kbBaseService.enableKnowledgeBase(1L);
+        boolean result = kbBaseService.updateKnowledgeBase(request);
+
+        assertTrue(result);
+        verify(medicineAgentClient, never()).loadKnowledgeBase(anyString());
+        verify(medicineAgentClient, never()).releaseKnowledgeBase(anyString());
+        verify(kbBaseService).updateById(any(KbBase.class));
+    }
+
+    @Test
+    void updateKnowledgeBase_WhenStatusMissing_ShouldPreserveStatusAndNotCallAi() {
+        KbBase existing = new KbBase();
+        existing.setId(1L);
+        existing.setKnowledgeName("drug_faq");
+        existing.setStatus(1);
+        existing.setCover("https://example.com/old-cover.png");
+
+        KnowledgeBaseUpdateRequest request = new KnowledgeBaseUpdateRequest();
+        request.setId(1L);
+        request.setDisplayName("新名称");
+        request.setCover("https://example.com/new-cover.png");
+        request.setDescription("新描述");
+
+        doReturn(existing).when(kbBaseService).getById(1L);
+        doReturn("admin").when(kbBaseService).getUsername();
+        doReturn(true).when(kbBaseService).updateById(any(KbBase.class));
+
+        boolean result = kbBaseService.updateKnowledgeBase(request);
+
+        assertTrue(result);
+        ArgumentCaptor<KbBase> captor = ArgumentCaptor.forClass(KbBase.class);
+        verify(kbBaseService).updateById(captor.capture());
+        KbBase updated = captor.getValue();
+        assertEquals(1, updated.getStatus());
+        verify(medicineAgentClient, never()).loadKnowledgeBase(anyString());
+        verify(medicineAgentClient, never()).releaseKnowledgeBase(anyString());
+    }
+
+    @Test
+    void updateKnowledgeBase_WhenStatusChangedToEnabled_ShouldCallAiAndUpdateStatus() {
+        KbBase existing = new KbBase();
+        existing.setId(1L);
+        existing.setKnowledgeName("drug_faq");
+        existing.setStatus(1);
+        existing.setCover("https://example.com/old-cover.png");
+
+        KnowledgeBaseUpdateRequest request = new KnowledgeBaseUpdateRequest();
+        request.setId(1L);
+        request.setDisplayName("新名称");
+        request.setCover("https://example.com/new-cover.png");
+        request.setStatus(0);
+
+        doReturn(existing).when(kbBaseService).getById(1L);
+        doReturn("admin").when(kbBaseService).getUsername();
+        doReturn(true).when(kbBaseService).updateById(any(KbBase.class));
+
+        boolean result = kbBaseService.updateKnowledgeBase(request);
 
         assertTrue(result);
         verify(medicineAgentClient).loadKnowledgeBase("drug_faq");
+        verify(medicineAgentClient, never()).releaseKnowledgeBase(anyString());
         ArgumentCaptor<KbBase> captor = ArgumentCaptor.forClass(KbBase.class);
         verify(kbBaseService).updateById(captor.capture());
         KbBase updated = captor.getValue();
@@ -219,50 +306,49 @@ class KbBaseServiceImplTests {
     }
 
     @Test
-    void enableKnowledgeBase_WhenAiFailed_ShouldThrowExceptionAndNotUpdate() {
+    void updateKnowledgeBase_WhenEnableAiFailed_ShouldThrowExceptionAndNotUpdate() {
         KbBase existing = new KbBase();
         existing.setId(1L);
         existing.setKnowledgeName("drug_faq");
         existing.setStatus(1);
+        existing.setCover("https://example.com/old-cover.png");
+
+        KnowledgeBaseUpdateRequest request = new KnowledgeBaseUpdateRequest();
+        request.setId(1L);
+        request.setDisplayName("新名称");
+        request.setCover("https://example.com/new-cover.png");
+        request.setStatus(0);
 
         doReturn(existing).when(kbBaseService).getById(1L);
         doThrow(new ServiceException("Agent启用失败")).when(medicineAgentClient).loadKnowledgeBase("drug_faq");
 
-        assertThrows(ServiceException.class, () -> kbBaseService.enableKnowledgeBase(1L));
+        assertThrows(ServiceException.class, () -> kbBaseService.updateKnowledgeBase(request));
         verify(kbBaseService, never()).updateById(any(KbBase.class));
     }
 
     @Test
-    void disableKnowledgeBase_WhenAlreadyDisabled_ShouldReturnTrueWithoutCallingAi() {
-        KbBase existing = new KbBase();
-        existing.setId(1L);
-        existing.setKnowledgeName("drug_faq");
-        existing.setStatus(1);
-
-        doReturn(existing).when(kbBaseService).getById(1L);
-
-        boolean result = kbBaseService.disableKnowledgeBase(1L);
-
-        assertTrue(result);
-        verify(medicineAgentClient, never()).releaseKnowledgeBase(anyString());
-        verify(kbBaseService, never()).updateById(any(KbBase.class));
-    }
-
-    @Test
-    void disableKnowledgeBase_WhenEnabled_ShouldCallAiAndUpdateStatus() {
+    void updateKnowledgeBase_WhenStatusChangedToDisabled_ShouldCallAiAndUpdateStatus() {
         KbBase existing = new KbBase();
         existing.setId(1L);
         existing.setKnowledgeName("drug_faq");
         existing.setStatus(0);
+        existing.setCover("https://example.com/old-cover.png");
+
+        KnowledgeBaseUpdateRequest request = new KnowledgeBaseUpdateRequest();
+        request.setId(1L);
+        request.setDisplayName("新名称");
+        request.setCover("https://example.com/new-cover.png");
+        request.setStatus(1);
 
         doReturn(existing).when(kbBaseService).getById(1L);
         doReturn("admin").when(kbBaseService).getUsername();
         doReturn(true).when(kbBaseService).updateById(any(KbBase.class));
 
-        boolean result = kbBaseService.disableKnowledgeBase(1L);
+        boolean result = kbBaseService.updateKnowledgeBase(request);
 
         assertTrue(result);
         verify(medicineAgentClient).releaseKnowledgeBase("drug_faq");
+        verify(medicineAgentClient, never()).loadKnowledgeBase(anyString());
         ArgumentCaptor<KbBase> captor = ArgumentCaptor.forClass(KbBase.class);
         verify(kbBaseService).updateById(captor.capture());
         KbBase updated = captor.getValue();
@@ -272,16 +358,23 @@ class KbBaseServiceImplTests {
     }
 
     @Test
-    void disableKnowledgeBase_WhenAiFailed_ShouldThrowExceptionAndNotUpdate() {
+    void updateKnowledgeBase_WhenDisableAiFailed_ShouldThrowExceptionAndNotUpdate() {
         KbBase existing = new KbBase();
         existing.setId(1L);
         existing.setKnowledgeName("drug_faq");
         existing.setStatus(0);
+        existing.setCover("https://example.com/old-cover.png");
+
+        KnowledgeBaseUpdateRequest request = new KnowledgeBaseUpdateRequest();
+        request.setId(1L);
+        request.setDisplayName("新名称");
+        request.setCover("https://example.com/new-cover.png");
+        request.setStatus(1);
 
         doReturn(existing).when(kbBaseService).getById(1L);
         doThrow(new ServiceException("Agent禁用失败")).when(medicineAgentClient).releaseKnowledgeBase("drug_faq");
 
-        assertThrows(ServiceException.class, () -> kbBaseService.disableKnowledgeBase(1L));
+        assertThrows(ServiceException.class, () -> kbBaseService.updateKnowledgeBase(request));
         verify(kbBaseService, never()).updateById(any(KbBase.class));
     }
 

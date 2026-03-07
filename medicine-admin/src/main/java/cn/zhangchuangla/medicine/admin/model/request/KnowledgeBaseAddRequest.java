@@ -22,6 +22,10 @@ public class KnowledgeBaseAddRequest {
     @NotBlank(message = "知识库展示名称不能为空")
     private String displayName;
 
+    @Schema(description = "知识库封面", example = "https://example.com/kb-cover.png")
+    @NotBlank(message = "知识库封面不能为空")
+    private String cover;
+
     @Schema(description = "知识库描述", example = "覆盖常见用药相关问答内容")
     private String description;
 

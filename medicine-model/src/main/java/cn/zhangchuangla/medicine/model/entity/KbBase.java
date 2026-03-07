@@ -31,6 +31,11 @@ public class KbBase {
     private String displayName;
 
     /**
+     * 封面
+     */
+    private String cover;
+
+    /**
      * 知识库描述
      */
     private String description;

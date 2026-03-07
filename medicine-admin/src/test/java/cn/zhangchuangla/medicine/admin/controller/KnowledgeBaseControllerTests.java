@@ -3,6 +3,7 @@ package cn.zhangchuangla.medicine.admin.controller;
 import cn.zhangchuangla.medicine.admin.model.request.KnowledgeBaseAddRequest;
 import cn.zhangchuangla.medicine.admin.model.request.KnowledgeBaseListRequest;
 import cn.zhangchuangla.medicine.admin.model.request.KnowledgeBaseUpdateRequest;
+import cn.zhangchuangla.medicine.admin.model.vo.KnowledgeBaseListVo;
 import cn.zhangchuangla.medicine.admin.service.KbBaseService;
 import cn.zhangchuangla.medicine.model.entity.KbBase;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
@@ -11,8 +12,6 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-
-import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.Mockito.verify;
@@ -34,12 +33,15 @@ class KnowledgeBaseControllerTests {
         KbBase kbBase = new KbBase();
         kbBase.setId(1L);
         kbBase.setKnowledgeName("kb_abc1234");
-        page.setRecords(List.of(kbBase));
+        kbBase.setCover("https://example.com/kb-cover.png");
+        page.setRecords(java.util.List.of(kbBase));
         when(kbBaseService.listKnowledgeBase(request)).thenReturn(page);
 
         var result = knowledgeBaseController.listKnowledgeBase(request);
 
         assertEquals(200, result.getCode());
+        KnowledgeBaseListVo row = (KnowledgeBaseListVo) result.getData().getRows().get(0);
+        assertEquals("https://example.com/kb-cover.png", row.getCover());
         verify(kbBaseService).listKnowledgeBase(request);
     }
 
@@ -48,12 +50,14 @@ class KnowledgeBaseControllerTests {
         KbBase kbBase = new KbBase();
         kbBase.setId(1L);
         kbBase.setKnowledgeName("kb_abc1234");
+        kbBase.setCover("https://example.com/kb-cover.png");
         when(kbBaseService.getKnowledgeBaseById(1L)).thenReturn(kbBase);
 
         var result = knowledgeBaseController.getKnowledgeBaseById(1L);
 
         assertEquals(200, result.getCode());
         assertEquals("kb_abc1234", result.getData().getKnowledgeName());
+        assertEquals("https://example.com/kb-cover.png", result.getData().getCover());
         verify(kbBaseService).getKnowledgeBaseById(1L);
     }
 
@@ -62,6 +66,7 @@ class KnowledgeBaseControllerTests {
         KnowledgeBaseAddRequest request = new KnowledgeBaseAddRequest();
         request.setKnowledgeName("drug_faq");
         request.setDisplayName("常见用药知识库");
+        request.setCover("https://example.com/kb-cover.png");
         request.setEmbeddingModel("text-embedding-3-large");
         request.setEmbeddingDim(1024);
         when(kbBaseService.addKnowledgeBase(request)).thenReturn(true);
@@ -77,6 +82,8 @@ class KnowledgeBaseControllerTests {
         KnowledgeBaseUpdateRequest request = new KnowledgeBaseUpdateRequest();
         request.setId(1L);
         request.setDisplayName("更新后的知识库");
+        request.setCover("https://example.com/kb-cover.png");
+        request.setStatus(1);
         when(kbBaseService.updateKnowledgeBase(request)).thenReturn(true);
 
         var result = knowledgeBaseController.updateKnowledgeBase(request);
@@ -86,32 +93,12 @@ class KnowledgeBaseControllerTests {
     }
 
     @Test
-    void enableKnowledgeBase_ShouldDelegateToService() {
-        when(kbBaseService.enableKnowledgeBase(1L)).thenReturn(true);
-
-        var result = knowledgeBaseController.enableKnowledgeBase(1L);
-
-        assertEquals(200, result.getCode());
-        verify(kbBaseService).enableKnowledgeBase(1L);
-    }
-
-    @Test
-    void disableKnowledgeBase_ShouldDelegateToService() {
-        when(kbBaseService.disableKnowledgeBase(1L)).thenReturn(true);
-
-        var result = knowledgeBaseController.disableKnowledgeBase(1L);
-
-        assertEquals(200, result.getCode());
-        verify(kbBaseService).disableKnowledgeBase(1L);
-    }
-
-    @Test
     void deleteKnowledgeBase_ShouldDelegateToService() {
-        when(kbBaseService.deleteKnowledgeBase(List.of(1L, 2L))).thenReturn(true);
+        when(kbBaseService.deleteKnowledgeBase(1L)).thenReturn(true);
 
-        var result = knowledgeBaseController.deleteKnowledgeBase(List.of(1L, 2L));
+        var result = knowledgeBaseController.deleteKnowledgeBase(1L);
 
         assertEquals(200, result.getCode());
-        verify(kbBaseService).deleteKnowledgeBase(List.of(1L, 2L));
+        verify(kbBaseService).deleteKnowledgeBase(1L);
     }
 }
