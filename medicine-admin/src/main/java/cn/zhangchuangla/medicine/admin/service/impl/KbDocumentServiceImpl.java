@@ -2,8 +2,10 @@ package cn.zhangchuangla.medicine.admin.service.impl;
 
 import cn.zhangchuangla.medicine.admin.integration.MedicineAgentClient;
 import cn.zhangchuangla.medicine.admin.mapper.KbDocumentMapper;
+import cn.zhangchuangla.medicine.admin.model.dto.KnowledgeBaseDocumentDto;
 import cn.zhangchuangla.medicine.admin.model.request.DocumentDeleteRequest;
 import cn.zhangchuangla.medicine.admin.model.request.DocumentListRequest;
+import cn.zhangchuangla.medicine.admin.model.request.DocumentUpdateFileNameRequest;
 import cn.zhangchuangla.medicine.admin.model.request.KnowledgeBaseImportRequest;
 import cn.zhangchuangla.medicine.admin.publisher.KnowledgePublisher;
 import cn.zhangchuangla.medicine.admin.service.KbBaseService;
@@ -87,12 +89,12 @@ public class KbDocumentServiceImpl extends ServiceImpl<KbDocumentMapper, KbDocum
     private final KbDocumentChunkService kbDocumentChunkService;
 
     @Override
-    public Page<KbDocument> listDocument(Long knowledgeBaseId, DocumentListRequest request) {
+    public Page<KnowledgeBaseDocumentDto> listDocument(Long knowledgeBaseId, DocumentListRequest request) {
         Assert.notNull(request, "查询参数不能为空");
         Assert.isPositive(knowledgeBaseId, "知识库ID必须大于0");
         KbBase kbBase = kbBaseService.getKnowledgeBaseById(knowledgeBaseId);
         Assert.isTrue(kbBase != null, "知识库不存在");
-        Page<KbDocument> page = request.toPage();
+        Page<KnowledgeBaseDocumentDto> page = request.toPage();
         return baseMapper.listDocument(page, knowledgeBaseId, request);
     }
 
@@ -102,6 +104,25 @@ public class KbDocumentServiceImpl extends ServiceImpl<KbDocumentMapper, KbDocum
         KbDocument document = getById(id);
         Assert.isTrue(document != null, "文档不存在");
         return document;
+    }
+
+    @Override
+    public boolean updateDocumentFileName(DocumentUpdateFileNameRequest request) {
+        Assert.notNull(request, "文档文件名更新请求不能为空");
+        Assert.isPositive(request.getId(), "文档ID必须大于0");
+
+        String fileName = strip(request.getFileName());
+        Assert.notEmpty(fileName, "文件名不能为空");
+
+        KbDocument document = getDocumentById(request.getId());
+        if (Objects.equals(fileName, document.getFileName())) {
+            return true;
+        }
+
+        document.setFileName(fileName);
+        document.setUpdateBy(getUsername());
+        document.setUpdatedAt(new Date());
+        return updateById(document);
     }
 
     @Override
@@ -219,6 +240,10 @@ public class KbDocumentServiceImpl extends ServiceImpl<KbDocumentMapper, KbDocum
         String callbackFileType = normalizeFileType(strip(message.getFile_type()));
         if (StringUtils.hasText(callbackFileType)) {
             document.setFileType(callbackFileType);
+        }
+        Long callbackFileSize = message.getFile_size();
+        if (callbackFileSize != null && callbackFileSize >= 0L) {
+            document.setFileSize(callbackFileSize);
         }
         if (KbDocumentStageEnum.FAILED == incomingStage) {
             document.setLastError(message.getMessage());

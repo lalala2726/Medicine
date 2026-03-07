@@ -73,6 +73,11 @@ public class KnowledgeImportResultMessage implements Serializable {
     private String file_type;
 
     /**
+     * 文件大小，单位 Bytes，1 表示 1 个字节
+     */
+    private Long file_size;
+
+    /**
      * 切片数量统计（可选）。
      */
     private Integer chunk_count;

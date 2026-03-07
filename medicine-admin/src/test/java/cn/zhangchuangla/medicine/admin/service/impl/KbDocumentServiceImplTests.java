@@ -2,8 +2,10 @@ package cn.zhangchuangla.medicine.admin.service.impl;
 
 import cn.zhangchuangla.medicine.admin.integration.MedicineAgentClient;
 import cn.zhangchuangla.medicine.admin.mapper.KbDocumentMapper;
+import cn.zhangchuangla.medicine.admin.model.dto.KnowledgeBaseDocumentDto;
 import cn.zhangchuangla.medicine.admin.model.request.DocumentDeleteRequest;
 import cn.zhangchuangla.medicine.admin.model.request.DocumentListRequest;
+import cn.zhangchuangla.medicine.admin.model.request.DocumentUpdateFileNameRequest;
 import cn.zhangchuangla.medicine.admin.model.request.KnowledgeBaseImportRequest;
 import cn.zhangchuangla.medicine.admin.publisher.KnowledgePublisher;
 import cn.zhangchuangla.medicine.admin.service.KbBaseService;
@@ -18,6 +20,7 @@ import cn.zhangchuangla.medicine.model.enums.KbDocumentStageEnum;
 import cn.zhangchuangla.medicine.model.enums.KnowledgeChunkModeEnum;
 import cn.zhangchuangla.medicine.model.mq.KnowledgeImportDocumentMessage;
 import cn.zhangchuangla.medicine.model.mq.KnowledgeImportResultMessage;
+import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -82,6 +85,27 @@ class KbDocumentServiceImplTests {
     }
 
     @Test
+    void listDocument_ShouldReturnDtoPage() {
+        DocumentListRequest request = new DocumentListRequest();
+        KbBase kbBase = new KbBase();
+        kbBase.setId(1L);
+        when(kbBaseService.getKnowledgeBaseById(1L)).thenReturn(kbBase);
+
+        Page<KnowledgeBaseDocumentDto> page = new Page<>(1, 10, 1);
+        KnowledgeBaseDocumentDto dto = new KnowledgeBaseDocumentDto();
+        dto.setId(1001L);
+        dto.setChunkCount(5L);
+        page.setRecords(List.of(dto));
+        when(kbDocumentMapper.listDocument(any(), eq(1L), same(request))).thenReturn(page);
+
+        Page<KnowledgeBaseDocumentDto> result = kbDocumentService.listDocument(1L, request);
+
+        assertSame(page, result);
+        assertEquals(5L, result.getRecords().get(0).getChunkCount());
+        verify(kbDocumentMapper).listDocument(any(), eq(1L), same(request));
+    }
+
+    @Test
     void importDocument_WhenKnowledgeBaseNotFound_ShouldThrowException() {
         KnowledgeBaseImportRequest request = newImportRequest();
         when(kbBaseService.getKnowledgeBaseById(1L)).thenReturn(null);
@@ -91,6 +115,47 @@ class KbDocumentServiceImplTests {
         assertEquals("知识库不存在", ex.getMessage());
         verify(kbDocumentService, never()).save(any(KbDocument.class));
         verify(knowledgePublisher, never()).publishImportDocument(any(KnowledgeImportDocumentMessage.class));
+    }
+
+    @Test
+    void updateDocumentFileName_ShouldUpdateFileNameAndOperator() {
+        DocumentUpdateFileNameRequest request = new DocumentUpdateFileNameRequest();
+        request.setId(1001L);
+        request.setFileName("  新文件名.pdf  ");
+
+        KbDocument existing = new KbDocument();
+        existing.setId(1001L);
+        existing.setFileName("旧文件名.pdf");
+        doReturn(existing).when(kbDocumentService).getById(1001L);
+        doReturn("admin").when(kbDocumentService).getUsername();
+        doReturn(true).when(kbDocumentService).updateById(any(KbDocument.class));
+
+        boolean result = kbDocumentService.updateDocumentFileName(request);
+
+        assertTrue(result);
+        ArgumentCaptor<KbDocument> captor = ArgumentCaptor.forClass(KbDocument.class);
+        verify(kbDocumentService).updateById(captor.capture());
+        KbDocument updated = captor.getValue();
+        assertEquals("新文件名.pdf", updated.getFileName());
+        assertEquals("admin", updated.getUpdateBy());
+        assertNotNull(updated.getUpdatedAt());
+    }
+
+    @Test
+    void updateDocumentFileName_WhenUnchanged_ShouldSkipUpdate() {
+        DocumentUpdateFileNameRequest request = new DocumentUpdateFileNameRequest();
+        request.setId(1001L);
+        request.setFileName("  旧文件名.pdf ");
+
+        KbDocument existing = new KbDocument();
+        existing.setId(1001L);
+        existing.setFileName("旧文件名.pdf");
+        doReturn(existing).when(kbDocumentService).getById(1001L);
+
+        boolean result = kbDocumentService.updateDocumentFileName(request);
+
+        assertTrue(result);
+        verify(kbDocumentService, never()).updateById(any(KbDocument.class));
     }
 
     @Test
@@ -293,6 +358,7 @@ class KbDocumentServiceImplTests {
                 .document_id(1001L)
                 .stage(KbDocumentStageEnum.COMPLETED.getCode())
                 .file_type(".PDF")
+                .file_size(1024L)
                 .knowledge_name("drug_faq")
                 .build();
         when(valueOperations.get("kb:latest:drug_faq:1001")).thenReturn(2L);
@@ -309,6 +375,7 @@ class KbDocumentServiceImplTests {
         KbDocument updated = captor.getValue();
         assertEquals(KbDocumentStageEnum.INSERTING.getCode(), updated.getStage());
         assertEquals("pdf", updated.getFileType());
+        assertEquals(1024L, updated.getFileSize());
         assertNull(updated.getLastError());
         verify(knowledgePublisher).publishImportChunkUpdate(message);
     }

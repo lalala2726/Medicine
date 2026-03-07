@@ -47,6 +47,11 @@ public class KbDocument {
     private String fileType;
 
     /**
+     * 文件大小，单位 Bytes，1 表示 1 个字节
+     */
+    private Long fileSize;
+
+    /**
      * 切片模式
      */
     private String chunkMode;

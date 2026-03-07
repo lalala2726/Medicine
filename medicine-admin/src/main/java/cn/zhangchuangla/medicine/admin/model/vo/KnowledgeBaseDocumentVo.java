@@ -1,5 +1,6 @@
 package cn.zhangchuangla.medicine.admin.model.vo;
 
+import com.fasterxml.jackson.annotation.JsonFormat;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -35,25 +36,21 @@ public class KnowledgeBaseDocumentVo {
     @Schema(description = "文件类型", example = "pdf")
     private String fileType;
 
-    @Schema(description = "切片模式", example = "balancedMode")
-    private String chunkMode;
+    @Schema(description = "文件大小，单位 Bytes，1 表示 1 个字节", example = "1024")
+    private Long fileSize;
 
-    @Schema(description = "切片大小", example = "1000")
-    private Integer chunkSize;
-
-    @Schema(description = "切片重叠大小", example = "200")
-    private Integer chunkOverlap;
+    @Schema(description = "切片数量", example = "12")
+    private Long chunkCount;
 
     @Schema(description = "索引阶段，取值见 KbDocumentStageEnum", example = "PENDING")
     private String stage;
 
-    @Schema(description = "最近一次处理失败错误信息", example = "文件解析失败")
-    private String lastError;
-
     @Schema(description = "创建时间", example = "2025-12-05 00:00:00")
+    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss", timezone = "GMT+8")
     private Date createdAt;
 
     @Schema(description = "更新时间", example = "2025-12-05 00:00:00")
+    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss", timezone = "GMT+8")
     private Date updatedAt;
 
 }

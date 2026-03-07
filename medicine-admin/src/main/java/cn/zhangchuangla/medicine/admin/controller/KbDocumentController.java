@@ -1,7 +1,9 @@
 package cn.zhangchuangla.medicine.admin.controller;
 
+import cn.zhangchuangla.medicine.admin.model.dto.KnowledgeBaseDocumentDto;
 import cn.zhangchuangla.medicine.admin.model.request.DocumentDeleteRequest;
 import cn.zhangchuangla.medicine.admin.model.request.DocumentListRequest;
+import cn.zhangchuangla.medicine.admin.model.request.DocumentUpdateFileNameRequest;
 import cn.zhangchuangla.medicine.admin.model.request.KnowledgeBaseImportRequest;
 import cn.zhangchuangla.medicine.admin.model.vo.KnowledgeBaseDocumentVo;
 import cn.zhangchuangla.medicine.admin.service.KbDocumentService;
@@ -17,6 +19,7 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -48,9 +51,8 @@ public class KbDocumentController extends BaseController {
     @PreAuthorize("hasAuthority('system:kb_document:list') or hasRole('super_admin')")
     public AjaxResult<TableDataResult> listDocument(@PathVariable Long knowledgeBaseId,
                                                     @Validated DocumentListRequest request) {
-        Page<KbDocument> page = kbDocumentService.listDocument(knowledgeBaseId, request);
-        List<KnowledgeBaseDocumentVo> rows = copyListProperties(page, KnowledgeBaseDocumentVo.class);
-        return getTableData(page, rows);
+        Page<KnowledgeBaseDocumentDto> page = kbDocumentService.listDocument(knowledgeBaseId, request);
+        return getTableData(page, toKnowledgeBaseDocumentVo(page.getRecords()));
     }
 
     /**
@@ -66,6 +68,19 @@ public class KbDocumentController extends BaseController {
         KbDocument document = kbDocumentService.getDocumentById(id);
         KnowledgeBaseDocumentVo vo = copyProperties(document, KnowledgeBaseDocumentVo.class);
         return success(vo);
+    }
+
+    /**
+     * 修改文档文件名
+     *
+     * @param request 修改请求
+     * @return 修改结果
+     */
+    @PutMapping("/file_name")
+    @Operation(summary = "修改文档文件名")
+    @PreAuthorize("hasAuthority('system:kb_document:update') or hasRole('super_admin')")
+    public AjaxResult<Void> updateDocumentFileName(@Validated @RequestBody DocumentUpdateFileNameRequest request) {
+        return toAjax(kbDocumentService.updateDocumentFileName(request));
     }
 
     /**
@@ -94,6 +109,26 @@ public class KbDocumentController extends BaseController {
     public AjaxResult<Void> importDocument(@Validated @RequestBody KnowledgeBaseImportRequest request) {
         kbDocumentService.importDocument(request);
         return success();
+    }
+
+    private List<KnowledgeBaseDocumentVo> toKnowledgeBaseDocumentVo(List<KnowledgeBaseDocumentDto> records) {
+        if (records == null || records.isEmpty()) {
+            return List.of();
+        }
+        List<KnowledgeBaseDocumentVo> rows = new ArrayList<>(records.size());
+        for (KnowledgeBaseDocumentDto dto : records) {
+            if (dto == null) {
+                continue;
+            }
+            rows.add(toKnowledgeBaseDocumentVo(dto));
+        }
+        return rows;
+    }
+
+    private KnowledgeBaseDocumentVo toKnowledgeBaseDocumentVo(KnowledgeBaseDocumentDto dto) {
+        KnowledgeBaseDocumentVo vo = copyProperties(dto, KnowledgeBaseDocumentVo.class);
+        vo.setChunkCount(dto.getChunkCount());
+        return vo;
     }
 
 }

@@ -1,7 +1,9 @@
 package cn.zhangchuangla.medicine.admin.service;
 
+import cn.zhangchuangla.medicine.admin.model.dto.KnowledgeBaseDocumentDto;
 import cn.zhangchuangla.medicine.admin.model.request.DocumentDeleteRequest;
 import cn.zhangchuangla.medicine.admin.model.request.DocumentListRequest;
+import cn.zhangchuangla.medicine.admin.model.request.DocumentUpdateFileNameRequest;
 import cn.zhangchuangla.medicine.admin.model.request.KnowledgeBaseImportRequest;
 import cn.zhangchuangla.medicine.model.entity.KbDocument;
 import cn.zhangchuangla.medicine.model.mq.KnowledgeImportResultMessage;
@@ -20,7 +22,7 @@ public interface KbDocumentService extends IService<KbDocument> {
      * @param request         查询参数
      * @return 分页结果
      */
-    Page<KbDocument> listDocument(Long knowledgeBaseId, DocumentListRequest request);
+    Page<KnowledgeBaseDocumentDto> listDocument(Long knowledgeBaseId, DocumentListRequest request);
 
     /**
      * 根据ID查询文档详情。
@@ -29,6 +31,14 @@ public interface KbDocumentService extends IService<KbDocument> {
      * @return 文档详情
      */
     KbDocument getDocumentById(Long id);
+
+    /**
+     * 修改文档文件名。
+     *
+     * @param request 修改请求
+     * @return 修改结果
+     */
+    boolean updateDocumentFileName(DocumentUpdateFileNameRequest request);
 
     /**
      * 删除文档及其关联切片。

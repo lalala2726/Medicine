@@ -1,5 +1,6 @@
 package cn.zhangchuangla.medicine.admin.mapper;
 
+import cn.zhangchuangla.medicine.admin.model.dto.KnowledgeBaseDocumentDto;
 import cn.zhangchuangla.medicine.admin.model.request.DocumentListRequest;
 import cn.zhangchuangla.medicine.model.entity.KbDocument;
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
@@ -19,11 +20,7 @@ public interface KbDocumentMapper extends BaseMapper<KbDocument> {
      * @param request         查询条件
      * @return 文档分页结果
      */
-    Page<KbDocument> listDocument(Page<KbDocument> page,
-                                  @Param("knowledgeBaseId") Long knowledgeBaseId,
-                                  @Param("request") DocumentListRequest request);
+    Page<KnowledgeBaseDocumentDto> listDocument(Page<KnowledgeBaseDocumentDto> page,
+                                                @Param("knowledgeBaseId") Long knowledgeBaseId,
+                                                @Param("request") DocumentListRequest request);
 }
-
-
-
-
