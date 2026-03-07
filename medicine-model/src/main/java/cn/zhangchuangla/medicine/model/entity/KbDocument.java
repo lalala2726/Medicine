@@ -46,14 +46,9 @@ public class KbDocument {
     private String mimeType;
 
     /**
-     * 索引状态
+     * 索引阶段，取值见 @see cn.zhangchuangla.medicine.model.enums.KbDocumentStageEnum
      */
-    private String status;
-
-    /**
-     * 导入阶段明细
-     */
-    private String stageDetail;
+    private String stage;
 
     /**
      * 最近一次处理失败错误信息

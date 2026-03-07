@@ -15,6 +15,9 @@ import cn.zhangchuangla.medicine.model.entity.KbBase;
 import cn.zhangchuangla.medicine.model.entity.KbDocument;
 import cn.zhangchuangla.medicine.model.entity.KbDocumentChunk;
 import cn.zhangchuangla.medicine.model.entity.KbDocumentChunkHistory;
+import cn.zhangchuangla.medicine.model.enums.KbDocumentChunkStageEnum;
+import cn.zhangchuangla.medicine.model.enums.KbDocumentStageEnum;
+import cn.zhangchuangla.medicine.model.enums.KnowledgeChunkTaskStageEnum;
 import cn.zhangchuangla.medicine.model.mq.KnowledgeChunkAddCommandMessage;
 import cn.zhangchuangla.medicine.model.mq.KnowledgeChunkAddResultMessage;
 import cn.zhangchuangla.medicine.model.mq.KnowledgeChunkRebuildCommandMessage;
@@ -143,7 +146,7 @@ class KbDocumentChunkServiceImplTests {
         assertEquals("manual content", chunk.getContent());
         assertEquals(14, chunk.getCharCount());
         assertEquals(10, chunk.getChunkIndex());
-        assertEquals("PENDING", chunk.getEditStatus());
+        assertEquals(KbDocumentChunkStageEnum.PENDING.getCode(), chunk.getStage());
         assertEquals(0, chunk.getStatus());
         assertNull(chunk.getVectorId());
 
@@ -168,7 +171,7 @@ class KbDocumentChunkServiceImplTests {
         request.setContent("manual content");
 
         KbDocument document = newDocument();
-        document.setStatus("STARTED");
+        document.setStage(KbDocumentStageEnum.STARTED.getCode());
         when(kbDocumentMapper.selectById(1001L)).thenReturn(document);
 
         ServiceException ex = assertThrows(ServiceException.class,
@@ -205,7 +208,7 @@ class KbDocumentChunkServiceImplTests {
         ArgumentCaptor<KbDocumentChunk> captor = ArgumentCaptor.forClass(KbDocumentChunk.class);
         verify(kbDocumentChunkMapper).updateById(captor.capture());
         assertEquals(3001L, captor.getValue().getId());
-        assertEquals("FAILED", captor.getValue().getEditStatus());
+        assertEquals(KbDocumentChunkStageEnum.FAILED.getCode(), captor.getValue().getStage());
     }
 
     @Test
@@ -231,7 +234,7 @@ class KbDocumentChunkServiceImplTests {
         assertEquals(2001L, updated.getId());
         assertEquals("新的切片内容", updated.getContent());
         assertEquals(6, updated.getCharCount());
-        assertEquals("PENDING", updated.getEditStatus());
+        assertEquals(KbDocumentChunkStageEnum.PENDING.getCode(), updated.getStage());
 
         ArgumentCaptor<KbDocumentChunkHistory> historyCaptor = ArgumentCaptor.forClass(KbDocumentChunkHistory.class);
         verify(kbDocumentChunkHistoryService).save(historyCaptor.capture());
@@ -262,7 +265,7 @@ class KbDocumentChunkServiceImplTests {
         request.setContent("新的切片内容");
 
         KbDocumentChunk chunk = newChunk("旧的切片内容");
-        chunk.setEditStatus("PENDING");
+        chunk.setStage(KbDocumentChunkStageEnum.PENDING.getCode());
         when(kbDocumentChunkMapper.selectById(2001L)).thenReturn(chunk);
 
         ServiceException ex = assertThrows(ServiceException.class,
@@ -334,18 +337,18 @@ class KbDocumentChunkServiceImplTests {
         assertEquals("内容已保存，但向量重建未成功提交: mq error", ex.getMessage());
         ArgumentCaptor<KbDocumentChunk> chunkCaptor = ArgumentCaptor.forClass(KbDocumentChunk.class);
         verify(kbDocumentChunkMapper, org.mockito.Mockito.times(2)).updateById(chunkCaptor.capture());
-        assertEquals("PENDING", chunkCaptor.getAllValues().get(0).getEditStatus());
-        assertEquals("FAILED", chunkCaptor.getAllValues().get(1).getEditStatus());
+        assertEquals(KbDocumentChunkStageEnum.PENDING.getCode(), chunkCaptor.getAllValues().get(0).getStage());
+        assertEquals(KbDocumentChunkStageEnum.FAILED.getCode(), chunkCaptor.getAllValues().get(1).getStage());
     }
 
     @Test
-    void handleChunkRebuildResult_WhenStarted_ShouldUpdateEditStatus() {
+    void handleChunkRebuildResult_WhenStarted_ShouldUpdateStage() {
         KnowledgeChunkRebuildResultMessage message = KnowledgeChunkRebuildResultMessage.builder()
                 .task_uuid("task-1")
                 .document_id(1001L)
                 .vector_id(900001L)
                 .version(3L)
-                .stage("STARTED")
+                .stage(KnowledgeChunkTaskStageEnum.STARTED.getCode())
                 .build();
         when(valueOperations.get("kb:chunk_edit:latest_version:900001")).thenReturn(3L);
         when(kbDocumentChunkMapper.selectOne(any())).thenReturn(newChunk("旧的切片内容"));
@@ -355,17 +358,17 @@ class KbDocumentChunkServiceImplTests {
 
         ArgumentCaptor<KbDocumentChunk> captor = ArgumentCaptor.forClass(KbDocumentChunk.class);
         verify(kbDocumentChunkMapper).updateById(captor.capture());
-        assertEquals("STARTED", captor.getValue().getEditStatus());
+        assertEquals(KbDocumentChunkStageEnum.STARTED.getCode(), captor.getValue().getStage());
     }
 
     @Test
-    void handleChunkRebuildResult_WhenCompleted_ShouldUpdateEditStatus() {
+    void handleChunkRebuildResult_WhenCompleted_ShouldUpdateStage() {
         KnowledgeChunkRebuildResultMessage message = KnowledgeChunkRebuildResultMessage.builder()
                 .task_uuid("task-2")
                 .document_id(1001L)
                 .vector_id(900001L)
                 .version(3L)
-                .stage("COMPLETED")
+                .stage(KnowledgeChunkTaskStageEnum.COMPLETED.getCode())
                 .build();
         when(valueOperations.get("kb:chunk_edit:latest_version:900001")).thenReturn(3L);
         when(kbDocumentChunkMapper.selectOne(any())).thenReturn(newChunk("旧的切片内容"));
@@ -375,17 +378,17 @@ class KbDocumentChunkServiceImplTests {
 
         ArgumentCaptor<KbDocumentChunk> captor = ArgumentCaptor.forClass(KbDocumentChunk.class);
         verify(kbDocumentChunkMapper).updateById(captor.capture());
-        assertEquals("COMPLETED", captor.getValue().getEditStatus());
+        assertEquals(KbDocumentChunkStageEnum.COMPLETED.getCode(), captor.getValue().getStage());
     }
 
     @Test
-    void handleChunkRebuildResult_WhenFailed_ShouldUpdateEditStatus() {
+    void handleChunkRebuildResult_WhenFailed_ShouldUpdateStage() {
         KnowledgeChunkRebuildResultMessage message = KnowledgeChunkRebuildResultMessage.builder()
                 .task_uuid("task-3")
                 .document_id(1001L)
                 .vector_id(900001L)
                 .version(3L)
-                .stage("FAILED")
+                .stage(KnowledgeChunkTaskStageEnum.FAILED.getCode())
                 .message("已被更新版本替代")
                 .build();
         when(valueOperations.get("kb:chunk_edit:latest_version:900001")).thenReturn(3L);
@@ -396,7 +399,7 @@ class KbDocumentChunkServiceImplTests {
 
         ArgumentCaptor<KbDocumentChunk> captor = ArgumentCaptor.forClass(KbDocumentChunk.class);
         verify(kbDocumentChunkMapper).updateById(captor.capture());
-        assertEquals("FAILED", captor.getValue().getEditStatus());
+        assertEquals(KbDocumentChunkStageEnum.FAILED.getCode(), captor.getValue().getStage());
     }
 
     @Test
@@ -406,7 +409,7 @@ class KbDocumentChunkServiceImplTests {
                 .document_id(1001L)
                 .vector_id(900001L)
                 .version(2L)
-                .stage("COMPLETED")
+                .stage(KnowledgeChunkTaskStageEnum.COMPLETED.getCode())
                 .build();
         when(valueOperations.get("kb:chunk_edit:latest_version:900001")).thenReturn(3L);
 
@@ -417,17 +420,17 @@ class KbDocumentChunkServiceImplTests {
     }
 
     @Test
-    void handleChunkAddResult_WhenStarted_ShouldUpdateEditStatus() {
+    void handleChunkAddResult_WhenStarted_ShouldUpdateStage() {
         KnowledgeChunkAddResultMessage message = KnowledgeChunkAddResultMessage.builder()
                 .task_uuid("task-add-1")
                 .chunk_id(3001L)
                 .document_id(1001L)
-                .stage("STARTED")
+                .stage(KnowledgeChunkTaskStageEnum.STARTED.getCode())
                 .build();
         KbDocumentChunk chunk = newChunk("旧的切片内容");
         chunk.setId(3001L);
         chunk.setVectorId(null);
-        chunk.setEditStatus("PENDING");
+        chunk.setStage(KbDocumentChunkStageEnum.PENDING.getCode());
         when(kbDocumentChunkMapper.selectById(3001L)).thenReturn(chunk);
         when(kbDocumentChunkMapper.updateById(any(KbDocumentChunk.class))).thenReturn(1);
 
@@ -435,7 +438,7 @@ class KbDocumentChunkServiceImplTests {
 
         ArgumentCaptor<KbDocumentChunk> captor = ArgumentCaptor.forClass(KbDocumentChunk.class);
         verify(kbDocumentChunkMapper).updateById(captor.capture());
-        assertEquals("STARTED", captor.getValue().getEditStatus());
+        assertEquals(KbDocumentChunkStageEnum.STARTED.getCode(), captor.getValue().getStage());
     }
 
     @Test
@@ -444,14 +447,14 @@ class KbDocumentChunkServiceImplTests {
                 .task_uuid("task-add-2")
                 .chunk_id(3001L)
                 .document_id(1001L)
-                .stage("COMPLETED")
+                .stage(KnowledgeChunkTaskStageEnum.COMPLETED.getCode())
                 .vector_id(900010L)
                 .chunk_index(11)
                 .build();
         KbDocumentChunk chunk = newChunk("旧的切片内容");
         chunk.setId(3001L);
         chunk.setVectorId(null);
-        chunk.setEditStatus("PENDING");
+        chunk.setStage(KbDocumentChunkStageEnum.PENDING.getCode());
         when(kbDocumentChunkMapper.selectById(3001L)).thenReturn(chunk);
         when(kbDocumentChunkMapper.updateById(any(KbDocumentChunk.class))).thenReturn(1);
 
@@ -460,24 +463,24 @@ class KbDocumentChunkServiceImplTests {
         ArgumentCaptor<KbDocumentChunk> captor = ArgumentCaptor.forClass(KbDocumentChunk.class);
         verify(kbDocumentChunkMapper).updateById(captor.capture());
         KbDocumentChunk updated = captor.getValue();
-        assertEquals("COMPLETED", updated.getEditStatus());
+        assertEquals(KbDocumentChunkStageEnum.COMPLETED.getCode(), updated.getStage());
         assertEquals("900010", updated.getVectorId());
         assertEquals(11, updated.getChunkIndex());
     }
 
     @Test
-    void handleChunkAddResult_WhenFailed_ShouldUpdateEditStatus() {
+    void handleChunkAddResult_WhenFailed_ShouldUpdateStage() {
         KnowledgeChunkAddResultMessage message = KnowledgeChunkAddResultMessage.builder()
                 .task_uuid("task-add-3")
                 .chunk_id(3001L)
                 .document_id(1001L)
-                .stage("FAILED")
+                .stage(KnowledgeChunkTaskStageEnum.FAILED.getCode())
                 .message("embedding failed")
                 .build();
         KbDocumentChunk chunk = newChunk("旧的切片内容");
         chunk.setId(3001L);
         chunk.setVectorId(null);
-        chunk.setEditStatus("STARTED");
+        chunk.setStage(KbDocumentChunkStageEnum.STARTED.getCode());
         when(kbDocumentChunkMapper.selectById(3001L)).thenReturn(chunk);
         when(kbDocumentChunkMapper.updateById(any(KbDocumentChunk.class))).thenReturn(1);
 
@@ -485,7 +488,7 @@ class KbDocumentChunkServiceImplTests {
 
         ArgumentCaptor<KbDocumentChunk> captor = ArgumentCaptor.forClass(KbDocumentChunk.class);
         verify(kbDocumentChunkMapper).updateById(captor.capture());
-        assertEquals("FAILED", captor.getValue().getEditStatus());
+        assertEquals(KbDocumentChunkStageEnum.FAILED.getCode(), captor.getValue().getStage());
     }
 
     @Test
@@ -494,13 +497,13 @@ class KbDocumentChunkServiceImplTests {
                 .task_uuid("task-add-4")
                 .chunk_id(3001L)
                 .document_id(1001L)
-                .stage("COMPLETED")
+                .stage(KnowledgeChunkTaskStageEnum.COMPLETED.getCode())
                 .chunk_index(11)
                 .build();
         KbDocumentChunk chunk = newChunk("旧的切片内容");
         chunk.setId(3001L);
         chunk.setVectorId(null);
-        chunk.setEditStatus("PENDING");
+        chunk.setStage(KbDocumentChunkStageEnum.PENDING.getCode());
         when(kbDocumentChunkMapper.selectById(3001L)).thenReturn(chunk);
         when(kbDocumentChunkMapper.updateById(any(KbDocumentChunk.class))).thenReturn(1);
 
@@ -508,7 +511,7 @@ class KbDocumentChunkServiceImplTests {
 
         ArgumentCaptor<KbDocumentChunk> captor = ArgumentCaptor.forClass(KbDocumentChunk.class);
         verify(kbDocumentChunkMapper).updateById(captor.capture());
-        assertEquals("FAILED", captor.getValue().getEditStatus());
+        assertEquals(KbDocumentChunkStageEnum.FAILED.getCode(), captor.getValue().getStage());
         assertNull(captor.getValue().getVectorId());
     }
 
@@ -518,7 +521,7 @@ class KbDocumentChunkServiceImplTests {
                 .task_uuid("task-add-5")
                 .chunk_id(3001L)
                 .document_id(1002L)
-                .stage("STARTED")
+                .stage(KnowledgeChunkTaskStageEnum.STARTED.getCode())
                 .build();
         KbDocumentChunk chunk = newChunk("旧的切片内容");
         chunk.setId(3001L);
@@ -526,6 +529,21 @@ class KbDocumentChunkServiceImplTests {
 
         kbDocumentChunkService.handleChunkAddResult(message);
 
+        verify(kbDocumentChunkMapper, never()).updateById(any(KbDocumentChunk.class));
+    }
+
+    @Test
+    void handleChunkAddResult_WhenStageUnsupported_ShouldIgnore() {
+        KnowledgeChunkAddResultMessage message = KnowledgeChunkAddResultMessage.builder()
+                .task_uuid("task-add-6")
+                .chunk_id(3001L)
+                .document_id(1001L)
+                .stage("PROCESSING")
+                .build();
+
+        kbDocumentChunkService.handleChunkAddResult(message);
+
+        verify(kbDocumentChunkMapper, never()).selectById(any());
         verify(kbDocumentChunkMapper, never()).updateById(any(KbDocumentChunk.class));
     }
 
@@ -542,7 +560,7 @@ class KbDocumentChunkServiceImplTests {
         KbDocument document = new KbDocument();
         document.setId(1001L);
         document.setKnowledgeBaseId(1L);
-        document.setStatus("COMPLETED");
+        document.setStage(KbDocumentStageEnum.COMPLETED.getCode());
         return document;
     }
 

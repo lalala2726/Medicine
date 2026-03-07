@@ -1,6 +1,7 @@
 package cn.zhangchuangla.medicine.admin.listener;
 
 import cn.zhangchuangla.medicine.admin.service.KbDocumentService;
+import cn.zhangchuangla.medicine.model.enums.KbDocumentStageEnum;
 import cn.zhangchuangla.medicine.model.mq.KnowledgeImportResultMessage;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -32,7 +33,7 @@ class KnowledgeChunkUpdateListenerTests {
                 .task_uuid("task-1")
                 .biz_key("drug_faq:1001")
                 .version(1L)
-                .stage("COMPLETED")
+                .stage(KbDocumentStageEnum.COMPLETED.getCode())
                 .build();
 
         listener.handle(message);

@@ -17,6 +17,7 @@ import cn.zhangchuangla.medicine.common.security.base.BaseService;
 import cn.zhangchuangla.medicine.model.entity.KbBase;
 import cn.zhangchuangla.medicine.model.entity.KbDocument;
 import cn.zhangchuangla.medicine.model.entity.KbDocumentChunk;
+import cn.zhangchuangla.medicine.model.enums.KbDocumentStageEnum;
 import cn.zhangchuangla.medicine.model.mq.KnowledgeImportCommandMessage;
 import cn.zhangchuangla.medicine.model.mq.KnowledgeImportResultMessage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
@@ -43,51 +44,6 @@ import java.util.concurrent.TimeUnit;
 @RequiredArgsConstructor
 public class KbDocumentServiceImpl extends ServiceImpl<KbDocumentMapper, KbDocument>
         implements KbDocumentService, BaseService {
-
-    /**
-     * 文档待处理状态。
-     */
-    private static final String STATUS_PENDING = "PENDING";
-
-    /**
-     * 文档导入已启动状态。
-     */
-    private static final String STATUS_STARTED = "STARTED";
-
-    /**
-     * 文档处理中状态。
-     */
-    private static final String STATUS_PROCESSING = "PROCESSING";
-
-    /**
-     * 文档切片入库中状态。
-     */
-    private static final String STATUS_INSERTING = "INSERTING";
-
-    /**
-     * 文档处理完成状态。
-     */
-    private static final String STATUS_COMPLETED = "COMPLETED";
-
-    /**
-     * 文档处理失败状态。
-     */
-    private static final String STATUS_FAILED = "FAILED";
-
-    /**
-     * 导入启动阶段明细。
-     */
-    private static final String STAGE_DETAIL_STARTED = "STARTED";
-
-    /**
-     * 切片同步阶段明细。
-     */
-    private static final String STAGE_DETAIL_INSERTING = "INSERTING";
-
-    /**
-     * 导入流程结束阶段明细。
-     */
-    private static final String STAGE_DETAIL_END = "END";
 
     /**
      * 切片启用状态。
@@ -120,7 +76,7 @@ public class KbDocumentServiceImpl extends ServiceImpl<KbDocumentMapper, KbDocum
     private static final String COMMAND_MESSAGE_TYPE = "knowledge_import_command";
 
     /**
-     * 系统回写文档状态时使用的更新人标识。
+     * 系统回写文档阶段时使用的更新人标识。
      */
     private static final String SYSTEM_UPDATER = "system";
 
@@ -244,16 +200,17 @@ public class KbDocumentServiceImpl extends ServiceImpl<KbDocumentMapper, KbDocum
             return;
         }
 
-        String stage = normalizeStage(message.getStage());
-        String stageDetail = normalizeStageDetail(message.getStage_detail());
-        boolean completedStage = STATUS_COMPLETED.equalsIgnoreCase(stage);
-        if (StringUtils.hasText(stage)) {
-            document.setStatus(completedStage ? STATUS_INSERTING : stage);
+        KbDocumentStageEnum incomingStage = KbDocumentStageEnum.fromCode(message.getStage());
+        if (incomingStage == null || !incomingStage.isAiCallbackStage()) {
+            log.warn("忽略未知或不支持的知识库导入阶段: task_uuid={}, document_id={}, stage={}",
+                    message.getTask_uuid(), documentId, message.getStage());
+            return;
         }
-        document.setStageDetail(completedStage
-                ? STAGE_DETAIL_INSERTING
-                : resolveStageDetail(stage, stageDetail));
-        if (STATUS_FAILED.equalsIgnoreCase(stage)) {
+        boolean completedStage = KbDocumentStageEnum.COMPLETED == incomingStage;
+        document.setStage(completedStage
+                ? KbDocumentStageEnum.INSERTING.getCode()
+                : incomingStage.getCode());
+        if (KbDocumentStageEnum.FAILED == incomingStage) {
             document.setLastError(message.getMessage());
         } else {
             document.setLastError(null);
@@ -274,14 +231,14 @@ public class KbDocumentServiceImpl extends ServiceImpl<KbDocumentMapper, KbDocum
             knowledgeImportPublisher.publishChunkUpdate(message);
         } catch (Exception ex) {
             log.error("投递切片同步消息失败: task_uuid={}, document_id={}", message.getTask_uuid(), documentId, ex);
-            markDocumentFailed(documentId, ex.getMessage(), SYSTEM_UPDATER, STAGE_DETAIL_INSERTING);
+            markDocumentFailed(documentId, ex.getMessage(), SYSTEM_UPDATER);
         }
     }
 
     /**
      * 处理切片同步消息。
      * <p>
-     * 拉取切片并写库成功后再将文档状态改为 COMPLETED。
+     * 拉取切片并写库成功后再将文档阶段改为 COMPLETED。
      * </p>
      *
      * @param message 切片同步消息
@@ -294,7 +251,7 @@ public class KbDocumentServiceImpl extends ServiceImpl<KbDocumentMapper, KbDocum
         if (isStaleVersionMessage(message)) {
             return;
         }
-        if (!STATUS_COMPLETED.equalsIgnoreCase(normalizeStage(message.getStage()))) {
+        if (!KbDocumentStageEnum.COMPLETED.matches(message.getStage())) {
             log.info("跳过非 COMPLETED 切片同步消息: task_uuid={}, stage={}", message.getTask_uuid(), message.getStage());
             return;
         }
@@ -312,7 +269,7 @@ public class KbDocumentServiceImpl extends ServiceImpl<KbDocumentMapper, KbDocum
 
         String knowledgeName = resolveKnowledgeName(message);
         if (!StringUtils.hasText(knowledgeName)) {
-            markDocumentFailed(documentId, "知识库名称不能为空", SYSTEM_UPDATER, STAGE_DETAIL_INSERTING);
+            markDocumentFailed(documentId, "知识库名称不能为空", SYSTEM_UPDATER);
             return;
         }
 
@@ -332,7 +289,7 @@ public class KbDocumentServiceImpl extends ServiceImpl<KbDocumentMapper, KbDocum
                 if (attempt < CHUNK_SYNC_MAX_RETRY) {
                     sleepBeforeRetry(attempt);
                 } else {
-                    markDocumentFailed(documentId, extractErrorMessage(ex), SYSTEM_UPDATER, STAGE_DETAIL_INSERTING);
+                    markDocumentFailed(documentId, extractErrorMessage(ex), SYSTEM_UPDATER);
                 }
             }
         }
@@ -352,8 +309,7 @@ public class KbDocumentServiceImpl extends ServiceImpl<KbDocumentMapper, KbDocum
         document.setKnowledgeBaseId(knowledgeBaseId);
         document.setFileUrl(fileUrl);
         document.setFileName(extractFileName(fileUrl));
-        document.setStatus(STATUS_PENDING);
-        document.setStageDetail(STAGE_DETAIL_STARTED);
+        document.setStage(KbDocumentStageEnum.PENDING.getCode());
         document.setCreateBy(username);
         document.setUpdateBy(username);
         document.setCreatedAt(now);
@@ -616,7 +572,7 @@ public class KbDocumentServiceImpl extends ServiceImpl<KbDocumentMapper, KbDocum
     }
 
     /**
-     * 将指定文档标记为导入完成状态。
+     * 将指定文档标记为导入完成阶段。
      *
      * @param documentId 文档ID
      */
@@ -625,8 +581,7 @@ public class KbDocumentServiceImpl extends ServiceImpl<KbDocumentMapper, KbDocum
         if (completedDocument == null) {
             return;
         }
-        completedDocument.setStatus(STATUS_COMPLETED);
-        completedDocument.setStageDetail(STAGE_DETAIL_END);
+        completedDocument.setStage(KbDocumentStageEnum.COMPLETED.getCode());
         completedDocument.setLastError(null);
         completedDocument.setUpdateBy(SYSTEM_UPDATER);
         completedDocument.setUpdatedAt(new Date());
@@ -637,31 +592,18 @@ public class KbDocumentServiceImpl extends ServiceImpl<KbDocumentMapper, KbDocum
     }
 
     /**
-     * 将指定文档标记为失败状态。
+     * 将指定文档标记为失败阶段。
      *
      * @param documentId   文档ID
      * @param errorMessage 错误信息
      * @param username     操作人账号
      */
     private void markDocumentFailed(Long documentId, String errorMessage, String username) {
-        markDocumentFailed(documentId, errorMessage, username, STAGE_DETAIL_END);
-    }
-
-    /**
-     * 将指定文档标记为失败状态，并记录阶段明细和错误信息。
-     *
-     * @param documentId   文档ID
-     * @param errorMessage 错误信息
-     * @param username     操作人账号
-     * @param stageDetail  失败时写入的阶段明细
-     */
-    private void markDocumentFailed(Long documentId, String errorMessage, String username, String stageDetail) {
         KbDocument failedDocument = getById(documentId);
         if (failedDocument == null) {
             return;
         }
-        failedDocument.setStatus(STATUS_FAILED);
-        failedDocument.setStageDetail(normalizeStageDetailDefault(stageDetail, STAGE_DETAIL_END));
+        failedDocument.setStage(KbDocumentStageEnum.FAILED.getCode());
         failedDocument.setLastError(StringUtils.hasText(errorMessage) ? errorMessage : "unknown error");
         failedDocument.setUpdateBy(username);
         failedDocument.setUpdatedAt(new Date());
@@ -702,70 +644,6 @@ public class KbDocumentServiceImpl extends ServiceImpl<KbDocumentMapper, KbDocum
         } catch (Exception ignored) {
             return fileUrl;
         }
-    }
-
-    /**
-     * 标准化 stage 字段，统一转大写。
-     *
-     * @param stage 原始状态值
-     * @return 标准化后的状态；为空时返回 null
-     */
-    private String normalizeStage(String stage) {
-        if (!StringUtils.hasText(stage)) {
-            return null;
-        }
-        return stage.trim().toUpperCase(Locale.ROOT);
-    }
-
-    /**
-     * 标准化阶段明细字符串，统一去空格并转为大写。
-     *
-     * @param stageDetail 原始阶段明细
-     * @return 标准化后的阶段明细；为空时返回 null
-     */
-    private String normalizeStageDetail(String stageDetail) {
-        if (!StringUtils.hasText(stageDetail)) {
-            return null;
-        }
-        return stageDetail.trim().toUpperCase(Locale.ROOT);
-    }
-
-    /**
-     * 标准化阶段明细，并在为空时返回默认值。
-     *
-     * @param stageDetail 原始阶段明细
-     * @param fallback    兜底阶段明细
-     * @return 标准化后的阶段明细或 fallback
-     */
-    private String normalizeStageDetailDefault(String stageDetail, String fallback) {
-        String normalized = normalizeStageDetail(stageDetail);
-        if (StringUtils.hasText(normalized)) {
-            return normalized;
-        }
-        return fallback;
-    }
-
-    /**
-     * 根据导入主状态推导应写入的阶段明细。
-     *
-     * @param stage       文档主状态
-     * @param stageDetail 原始阶段明细
-     * @return 最终写入数据库的阶段明细
-     */
-    private String resolveStageDetail(String stage, String stageDetail) {
-        if (STATUS_PROCESSING.equalsIgnoreCase(stage)) {
-            return normalizeStageDetailDefault(stageDetail, STAGE_DETAIL_STARTED);
-        }
-        if (STATUS_STARTED.equalsIgnoreCase(stage)) {
-            return STAGE_DETAIL_STARTED;
-        }
-        if (STATUS_FAILED.equalsIgnoreCase(stage)) {
-            return normalizeStageDetailDefault(stageDetail, STAGE_DETAIL_END);
-        }
-        if (STATUS_COMPLETED.equalsIgnoreCase(stage)) {
-            return STAGE_DETAIL_END;
-        }
-        return normalizeStageDetailDefault(stageDetail, STAGE_DETAIL_STARTED);
     }
 
 }

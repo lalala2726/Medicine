@@ -42,10 +42,10 @@ public class KnowledgeImportCallbackRequest {
     private String file_url;
 
     /**
-     * 导入状态：SUCCESS/FAILED
+     * 导入阶段，对接约定为 STARTED/PROCESSING/COMPLETED/FAILED
      */
-    @NotBlank(message = "status 不能为空")
-    private String status;
+    @NotBlank(message = "stage 不能为空")
+    private String stage;
 
     /**
      * 状态消息

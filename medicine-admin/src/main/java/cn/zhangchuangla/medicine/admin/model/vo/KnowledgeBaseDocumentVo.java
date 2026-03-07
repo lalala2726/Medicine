@@ -38,11 +38,8 @@ public class KnowledgeBaseDocumentVo {
     @Schema(description = "文件 MIME 类型", example = "application/pdf")
     private String mimeType;
 
-    @Schema(description = "索引状态", example = "PENDING")
-    private String status;
-
-    @Schema(description = "处理阶段", example = "CHUNKING")
-    private String stageDetail;
+    @Schema(description = "索引阶段，取值见 KbDocumentStageEnum", example = "PENDING")
+    private String stage;
 
     @Schema(description = "最近一次处理失败错误信息", example = "文件解析失败")
     private String lastError;

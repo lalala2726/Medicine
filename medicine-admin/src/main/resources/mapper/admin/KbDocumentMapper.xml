@@ -11,8 +11,7 @@
         <result property="fileUrl" column="file_url"/>
         <result property="fileSize" column="file_size"/>
         <result property="mimeType" column="mime_type"/>
-        <result property="status" column="status"/>
-        <result property="stageDetail" column="stage_detail"/>
+        <result property="stage" column="stage"/>
         <result property="lastError" column="last_error"/>
         <result property="createBy" column="create_by"/>
         <result property="updateBy" column="update_by"/>
@@ -22,7 +21,7 @@
 
     <sql id="Base_Column_List">
         id,knowledge_base_id,file_name,file_url,file_size,
-        mime_type,status,stage_detail,last_error,create_by,
+        mime_type,stage,last_error,create_by,
         update_by,created_at,updated_at
     </sql>
 

@@ -12,14 +12,14 @@
         <result property="vectorId" column="vector_id"/>
         <result property="charCount" column="char_count"/>
         <result property="status" column="status"/>
-        <result property="editStatus" column="edit_status"/>
+        <result property="stage" column="stage"/>
         <result property="createdAt" column="created_at"/>
         <result property="updatedAt" column="updated_at"/>
     </resultMap>
 
     <sql id="Base_Column_List">
         id,document_id,chunk_index,content,vector_id,char_count,
-        status,edit_status,created_at,updated_at
+        status,stage,created_at,updated_at
     </sql>
 
     <select id="listDocumentChunk" resultMap="BaseResultMap">

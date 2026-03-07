@@ -36,7 +36,7 @@ public class KnowledgeChunkRebuildResultMessage implements Serializable {
     private Long version;
 
     /**
-     * 当前处理阶段，如 STARTED/COMPLETED/FAILED。
+     * 当前处理阶段，取值见 cn.zhangchuangla.medicine.model.enums.KnowledgeChunkTaskStageEnum。
      */
     private String stage;
 

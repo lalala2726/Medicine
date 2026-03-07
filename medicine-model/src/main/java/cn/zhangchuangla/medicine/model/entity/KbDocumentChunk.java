@@ -57,9 +57,9 @@ public class KbDocumentChunk {
     private Integer status;
 
     /**
-     * 编辑状态
+     * 切片阶段，取值见 cn.zhangchuangla.medicine.model.enums.KbDocumentChunkStageEnum
      */
-    private String editStatus;
+    private String stage;
 
     /**
      * 创建时间

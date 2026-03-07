@@ -40,7 +40,7 @@ public class KnowledgeChunkAddResultMessage implements Serializable {
     private Long chunk_id;
 
     /**
-     * 当前处理阶段，如 STARTED/COMPLETED/FAILED。
+     * 当前处理阶段，取值见 cn.zhangchuangla.medicine.model.enums.KnowledgeChunkTaskStageEnum。
      */
     private String stage;
 

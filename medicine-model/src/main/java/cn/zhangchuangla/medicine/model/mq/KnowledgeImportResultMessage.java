@@ -1,5 +1,6 @@
 package cn.zhangchuangla.medicine.model.mq;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -11,6 +12,7 @@ import java.io.Serializable;
 /**
  * 知识库导入 result 消息体。
  */
+@JsonIgnoreProperties(ignoreUnknown = true)
 @Data
 @Builder
 @NoArgsConstructor
@@ -41,14 +43,9 @@ public class KnowledgeImportResultMessage implements Serializable {
     private Long version;
 
     /**
-     * 当前阶段（如 STARTED/COMPLETED/FAILED）。
+     * 当前阶段，AI 回传通常为 STARTED/PROCESSING/COMPLETED/FAILED。
      */
     private String stage;
-
-    /**
-     * 阶段明细描述（可选）。
-     */
-    private String stage_detail;
 
     /**
      * 阶段消息或错误信息。

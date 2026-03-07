@@ -33,8 +33,8 @@ public class DocumentChunkVo {
     @Schema(description = "切片状态：0启用，1禁用", example = "0")
     private Integer status;
 
-    @Schema(description = "编辑状态", example = "COMPLETED")
-    private String editStatus;
+    @Schema(description = "切片阶段，取值见 KbDocumentChunkStageEnum", example = "COMPLETED")
+    private String stage;
 
     @Schema(description = "创建时间", example = "2026-03-06 12:00:00")
     private Date createdAt;

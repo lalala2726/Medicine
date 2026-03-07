@@ -13,6 +13,7 @@ import cn.zhangchuangla.medicine.common.redis.core.RedisCache;
 import cn.zhangchuangla.medicine.model.entity.KbBase;
 import cn.zhangchuangla.medicine.model.entity.KbDocument;
 import cn.zhangchuangla.medicine.model.entity.KbDocumentChunk;
+import cn.zhangchuangla.medicine.model.enums.KbDocumentStageEnum;
 import cn.zhangchuangla.medicine.model.mq.KnowledgeImportCommandMessage;
 import cn.zhangchuangla.medicine.model.mq.KnowledgeImportResultMessage;
 import org.junit.jupiter.api.BeforeEach;
@@ -146,8 +147,7 @@ class KbDocumentServiceImplTests {
         ArgumentCaptor<KbDocument> captor = ArgumentCaptor.forClass(KbDocument.class);
         verify(kbDocumentService).updateById(captor.capture());
         KbDocument updated = captor.getValue();
-        assertEquals("FAILED", updated.getStatus());
-        assertEquals("END", updated.getStageDetail());
+        assertEquals(KbDocumentStageEnum.FAILED.getCode(), updated.getStage());
         assertEquals("mq error", updated.getLastError());
     }
 
@@ -158,7 +158,7 @@ class KbDocumentServiceImplTests {
                 .biz_key("drug_faq:1001")
                 .version(1L)
                 .document_id(1001L)
-                .stage("COMPLETED")
+                .stage(KbDocumentStageEnum.COMPLETED.getCode())
                 .build();
         when(valueOperations.get("kb:latest:drug_faq:1001")).thenReturn(2L);
 
@@ -176,13 +176,13 @@ class KbDocumentServiceImplTests {
                 .biz_key("drug_faq:1001")
                 .version(2L)
                 .document_id(1001L)
-                .stage("failed")
+                .stage(KbDocumentStageEnum.FAILED.getCode())
                 .message("parse failed")
                 .build();
         when(valueOperations.get("kb:latest:drug_faq:1001")).thenReturn(2L);
         KbDocument existing = new KbDocument();
         existing.setId(1001L);
-        existing.setStatus("PENDING");
+        existing.setStage(KbDocumentStageEnum.PENDING.getCode());
         doReturn(existing).when(kbDocumentService).getById(1001L);
         doReturn(true).when(kbDocumentService).updateById(any(KbDocument.class));
 
@@ -191,27 +191,46 @@ class KbDocumentServiceImplTests {
         ArgumentCaptor<KbDocument> captor = ArgumentCaptor.forClass(KbDocument.class);
         verify(kbDocumentService).updateById(captor.capture());
         KbDocument updated = captor.getValue();
-        assertEquals("FAILED", updated.getStatus());
-        assertEquals("END", updated.getStageDetail());
+        assertEquals(KbDocumentStageEnum.FAILED.getCode(), updated.getStage());
         assertEquals("parse failed", updated.getLastError());
         assertEquals("system", updated.getUpdateBy());
         verify(knowledgeImportPublisher, never()).publishChunkUpdate(any(KnowledgeImportResultMessage.class));
     }
 
     @Test
-    void handleImportResult_WhenProcessing_ShouldStoreNormalizedStageDetail() {
+    void handleImportResult_WhenStageUnsupported_ShouldIgnore() {
+        KnowledgeImportResultMessage message = KnowledgeImportResultMessage.builder()
+                .task_uuid("task-2-0")
+                .biz_key("drug_faq:1001")
+                .version(2L)
+                .document_id(1001L)
+                .stage(KbDocumentStageEnum.INSERTING.getCode())
+                .build();
+        when(valueOperations.get("kb:latest:drug_faq:1001")).thenReturn(2L);
+        KbDocument existing = new KbDocument();
+        existing.setId(1001L);
+        existing.setStage(KbDocumentStageEnum.PENDING.getCode());
+        doReturn(existing).when(kbDocumentService).getById(1001L);
+
+        kbDocumentService.handleImportResult(message);
+
+        verify(kbDocumentService, never()).updateById(any(KbDocument.class));
+        verify(knowledgeImportPublisher, never()).publishChunkUpdate(any(KnowledgeImportResultMessage.class));
+    }
+
+    @Test
+    void handleImportResult_WhenProcessing_ShouldUpdateStatusOnly() {
         KnowledgeImportResultMessage message = KnowledgeImportResultMessage.builder()
                 .task_uuid("task-2-1")
                 .biz_key("drug_faq:1001")
                 .version(2L)
                 .document_id(1001L)
-                .stage("processing")
-                .stage_detail("chunking")
+                .stage(KbDocumentStageEnum.PROCESSING.getCode())
                 .build();
         when(valueOperations.get("kb:latest:drug_faq:1001")).thenReturn(2L);
         KbDocument existing = new KbDocument();
         existing.setId(1001L);
-        existing.setStatus("PENDING");
+        existing.setStage(KbDocumentStageEnum.PENDING.getCode());
         doReturn(existing).when(kbDocumentService).getById(1001L);
         doReturn(true).when(kbDocumentService).updateById(any(KbDocument.class));
 
@@ -220,8 +239,7 @@ class KbDocumentServiceImplTests {
         ArgumentCaptor<KbDocument> captor = ArgumentCaptor.forClass(KbDocument.class);
         verify(kbDocumentService).updateById(captor.capture());
         KbDocument updated = captor.getValue();
-        assertEquals("PROCESSING", updated.getStatus());
-        assertEquals("CHUNKING", updated.getStageDetail());
+        assertEquals(KbDocumentStageEnum.PROCESSING.getCode(), updated.getStage());
         assertNull(updated.getLastError());
     }
 
@@ -232,13 +250,13 @@ class KbDocumentServiceImplTests {
                 .biz_key("drug_faq:1001")
                 .version(2L)
                 .document_id(1001L)
-                .stage("COMPLETED")
+                .stage(KbDocumentStageEnum.COMPLETED.getCode())
                 .knowledge_name("drug_faq")
                 .build();
         when(valueOperations.get("kb:latest:drug_faq:1001")).thenReturn(2L);
         KbDocument existing = new KbDocument();
         existing.setId(1001L);
-        existing.setStatus("PENDING");
+        existing.setStage(KbDocumentStageEnum.PENDING.getCode());
         doReturn(existing).when(kbDocumentService).getById(1001L);
         doReturn(true).when(kbDocumentService).updateById(any(KbDocument.class));
 
@@ -247,8 +265,7 @@ class KbDocumentServiceImplTests {
         ArgumentCaptor<KbDocument> captor = ArgumentCaptor.forClass(KbDocument.class);
         verify(kbDocumentService).updateById(captor.capture());
         KbDocument updated = captor.getValue();
-        assertEquals("INSERTING", updated.getStatus());
-        assertEquals("INSERTING", updated.getStageDetail());
+        assertEquals(KbDocumentStageEnum.INSERTING.getCode(), updated.getStage());
         assertNull(updated.getLastError());
         verify(knowledgeImportPublisher).publishChunkUpdate(message);
     }
@@ -282,12 +299,12 @@ class KbDocumentServiceImplTests {
                 .version(3L)
                 .document_id(1001L)
                 .knowledge_name("drug_faq")
-                .stage("COMPLETED")
+                .stage(KbDocumentStageEnum.COMPLETED.getCode())
                 .build();
         when(valueOperations.get("kb:latest:drug_faq:1001")).thenReturn(3L);
         KbDocument existing = new KbDocument();
         existing.setId(1001L);
-        existing.setStatus("INSERTING");
+        existing.setStage(KbDocumentStageEnum.INSERTING.getCode());
         doReturn(existing).when(kbDocumentService).getById(1001L);
         doReturn(true).when(kbDocumentService).updateById(any(KbDocument.class));
 
@@ -311,8 +328,7 @@ class KbDocumentServiceImplTests {
         ArgumentCaptor<KbDocument> captor = ArgumentCaptor.forClass(KbDocument.class);
         verify(kbDocumentService).updateById(captor.capture());
         KbDocument updated = captor.getValue();
-        assertEquals("COMPLETED", updated.getStatus());
-        assertEquals("END", updated.getStageDetail());
+        assertEquals(KbDocumentStageEnum.COMPLETED.getCode(), updated.getStage());
         assertNull(updated.getLastError());
     }
 
@@ -324,12 +340,12 @@ class KbDocumentServiceImplTests {
                 .version(3L)
                 .document_id(1001L)
                 .knowledge_name("drug_faq")
-                .stage("COMPLETED")
+                .stage(KbDocumentStageEnum.COMPLETED.getCode())
                 .build();
         when(valueOperations.get("kb:latest:drug_faq:1001")).thenReturn(3L);
         KbDocument existing = new KbDocument();
         existing.setId(1001L);
-        existing.setStatus("INSERTING");
+        existing.setStage(KbDocumentStageEnum.INSERTING.getCode());
         doReturn(existing).when(kbDocumentService).getById(1001L);
         doReturn(true).when(kbDocumentService).updateById(any(KbDocument.class));
         doThrow(new ServiceException("sync error")).when(medicineAgentClient).listDocumentChunks("drug_faq", 1001L);
@@ -340,8 +356,7 @@ class KbDocumentServiceImplTests {
         ArgumentCaptor<KbDocument> captor = ArgumentCaptor.forClass(KbDocument.class);
         verify(kbDocumentService).updateById(captor.capture());
         KbDocument updated = captor.getValue();
-        assertEquals("FAILED", updated.getStatus());
-        assertEquals("INSERTING", updated.getStageDetail());
+        assertEquals(KbDocumentStageEnum.FAILED.getCode(), updated.getStage());
         assertEquals("sync error", updated.getLastError());
     }
 

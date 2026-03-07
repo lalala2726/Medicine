@@ -1,6 +1,7 @@
 package cn.zhangchuangla.medicine.admin.listener;
 
 import cn.zhangchuangla.medicine.admin.service.KbDocumentChunkService;
+import cn.zhangchuangla.medicine.model.enums.KnowledgeChunkTaskStageEnum;
 import cn.zhangchuangla.medicine.model.mq.KnowledgeChunkRebuildResultMessage;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -33,7 +34,7 @@ class KnowledgeChunkRebuildResultListenerTests {
                 .document_id(1001L)
                 .vector_id(900001L)
                 .version(3L)
-                .stage("COMPLETED")
+                .stage(KnowledgeChunkTaskStageEnum.COMPLETED.getCode())
                 .build();
 
         listener.handle(message);
