@@ -3,9 +3,9 @@ package cn.zhangchuangla.medicine.admin.service;
 import cn.zhangchuangla.medicine.admin.model.request.AfterSaleAuditRequest;
 import cn.zhangchuangla.medicine.admin.model.request.AfterSaleListRequest;
 import cn.zhangchuangla.medicine.admin.model.request.AfterSaleProcessRequest;
+import cn.zhangchuangla.medicine.model.dto.MallAfterSaleListDto;
 import cn.zhangchuangla.medicine.model.entity.MallAfterSale;
 import cn.zhangchuangla.medicine.model.vo.AfterSaleDetailVo;
-import cn.zhangchuangla.medicine.model.vo.AfterSaleListVo;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.IService;
 
@@ -19,11 +19,14 @@ public interface MallAfterSaleService extends IService<MallAfterSale> {
 
     /**
      * 查询售后列表(管理端)
+     * <p>
+     * 功能描述：根据查询条件分页查询售后申请列表。
      *
-     * @param request 查询条件
-     * @return 售后列表
+     * @param request 查询条件对象，包含分页参数与售后筛选条件
+     * @return 返回售后分页结果，记录元素类型为 {@link MallAfterSaleListDto}
+     * @throws RuntimeException 异常说明：当查询参数异常或底层数据访问失败时抛出运行时异常
      */
-    Page<AfterSaleListVo> getAfterSaleList(AfterSaleListRequest request);
+    Page<MallAfterSaleListDto> getAfterSaleList(AfterSaleListRequest request);
 
     /**
      * 查询售后详情(管理端)
@@ -57,4 +60,3 @@ public interface MallAfterSaleService extends IService<MallAfterSale> {
      */
     boolean processExchange(AfterSaleProcessRequest request);
 }
-

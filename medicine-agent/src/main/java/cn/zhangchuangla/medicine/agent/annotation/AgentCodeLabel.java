@@ -30,11 +30,6 @@ public @interface AgentCodeLabel {
     String dictKey() default "";
 
     /**
-     * 注解内联小映射，优先于 dictKey。
-     */
-    AgentCodePair[] pairs() default {};
-
-    /**
      * 未命中映射时是否回退为原编码值。
      */
     boolean fallbackToSource() default true;

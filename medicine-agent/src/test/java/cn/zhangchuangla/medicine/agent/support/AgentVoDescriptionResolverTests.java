@@ -43,7 +43,7 @@ class AgentVoDescriptionResolverTests {
         assertEquals("商品信息", orderDescriptions.get("productInfo"));
         assertEquals("商品ID", orderDescriptions.get("productInfo[].productId"));
         assertEquals("时间线列表", afterSaleDescriptions.get("timeline"));
-        assertEquals("事件类型", afterSaleDescriptions.get("timeline[].eventType"));
+        assertEquals("事件类型编码", afterSaleDescriptions.get("timeline[].eventType"));
     }
 
     @Test

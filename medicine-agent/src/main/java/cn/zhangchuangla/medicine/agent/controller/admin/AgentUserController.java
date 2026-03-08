@@ -7,13 +7,9 @@ import cn.zhangchuangla.medicine.common.core.base.AjaxResult;
 import cn.zhangchuangla.medicine.common.core.base.PageRequest;
 import cn.zhangchuangla.medicine.common.core.base.TableDataResult;
 import cn.zhangchuangla.medicine.common.security.base.BaseController;
-import cn.zhangchuangla.medicine.common.security.entity.AuthUser;
 import cn.zhangchuangla.medicine.model.dto.*;
 import cn.zhangchuangla.medicine.model.request.UserListQueryRequest;
-import cn.zhangchuangla.medicine.model.vo.UserListVo;
-import cn.zhangchuangla.medicine.model.vo.UserVo;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
@@ -40,31 +36,8 @@ import java.util.List;
 @RequiredArgsConstructor
 public class AgentUserController extends BaseController {
 
-    private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
 
     private final UserService userService;
-
-    /**
-     * 获取当前管理员的详细信息。
-     * <p>
-     * 返回当前登录管理员的完整信息，包括基本信息、角色等，
-     * 供管理端智能体在执行管理操作时获取操作者上下文。
-     *
-     * @return 管理员详细信息
-     */
-    @GetMapping("/info")
-    @Operation(summary = "获取当前用户信息", description = "获取当前登录用户的详细信息")
-    @PreAuthorize("hasAuthority('system:user:query') or hasRole('super_admin')")
-    @Deprecated(forRemoval = true)
-    public AjaxResult<UserVo> getCurrentUser() {
-        AuthUser user = getLoginUser().getUser();
-        UserVo userVo = copyProperties(user, UserVo.class);
-        // 手动映射字段名不一致的属性
-        userVo.setNickName(user.getNickname());
-        userVo.setGender(user.getGender() == null ? null : (user.getGender() == 1 ? "男" : (user.getGender() == 2 ? "女" : "未知")));
-        userVo.setStatus(user.getStatus() == null ? null : (user.getStatus() == 0 ? "正常" : "异常"));
-        return success(userVo);
-    }
 
     /**
      * 分页查询用户列表。
@@ -92,7 +65,8 @@ public class AgentUserController extends BaseController {
     @PreAuthorize("hasAuthority('system:user:query') or hasRole('super_admin')")
     public AjaxResult<UserDetailVo> getUserDetail(@PathVariable Long userId) {
         UserDetailDto userDetailDto = userService.getUserDetailById(userId);
-        return success(toUserDetailVo(userDetailDto));
+        UserDetailVo userDetailVo = copyProperties(userDetailDto, UserDetailVo.class);
+        return success(userDetailVo);
     }
 
     /**
@@ -106,7 +80,8 @@ public class AgentUserController extends BaseController {
     @PreAuthorize("hasAuthority('system:user:query') or hasRole('super_admin')")
     public AjaxResult<UserWalletVo> getUserWallet(@PathVariable Long userId) {
         UserWalletDto userWalletDto = userService.getUserWalletByUserId(userId);
-        return success(toUserWalletVo(userWalletDto));
+        UserWalletVo userWalletVo = copyProperties(userWalletDto, UserWalletVo.class);
+        return success(userWalletVo);
     }
 
     /**
@@ -139,36 +114,5 @@ public class AgentUserController extends BaseController {
         Page<UserConsumeInfoDto> consumeInfoDtoPage = userService.getConsumeInfo(userId, request);
         List<UserConsumeInfoVo> rows = copyListProperties(consumeInfoDtoPage.getRecords(), UserConsumeInfoVo.class);
         return getTableData(consumeInfoDtoPage, rows);
-    }
-
-    private UserDetailVo toUserDetailVo(UserDetailDto source) {
-        if (source == null) {
-            return null;
-        }
-        UserDetailVo target = copyProperties(source, UserDetailVo.class);
-        target.setBasicInfo(copyProperties(source.getBasicInfo(), UserDetailVo.BasicInfo.class));
-        target.setSecurityInfo(copyProperties(source.getSecurityInfo(), UserDetailVo.SecurityInfo.class));
-        return target;
-    }
-
-    private UserWalletVo toUserWalletVo(UserWalletDto source) {
-        return copyProperties(source, UserWalletVo.class);
-    }
-
-    @SuppressWarnings({"rawtypes", "unchecked"})
-    private List<?> toUserListRows(List<UserListDto> sourceRows) {
-        if (sourceRows == null || sourceRows.isEmpty()) {
-            return List.of();
-        }
-        Class<?> targetClass = resolveUserListVoClass();
-        return copyListProperties(sourceRows, (Class) targetClass);
-    }
-
-    private Class<?> resolveUserListVoClass() {
-        try {
-            return Class.forName("cn.zhangchuangla.medicine.agent.model.vo.admin.AgentUserListVo");
-        } catch (ClassNotFoundException | LinkageError ex) {
-            return UserListVo.class;
-        }
     }
 }

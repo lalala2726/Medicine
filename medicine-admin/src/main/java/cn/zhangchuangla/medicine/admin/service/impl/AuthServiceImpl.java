@@ -8,7 +8,7 @@ import cn.zhangchuangla.medicine.common.core.constants.RolesConstant;
 import cn.zhangchuangla.medicine.common.core.enums.ResponseCode;
 import cn.zhangchuangla.medicine.common.core.exception.LoginException;
 import cn.zhangchuangla.medicine.common.core.utils.Assert;
-import cn.zhangchuangla.medicine.common.core.utils.IPUtils;
+import cn.zhangchuangla.medicine.common.ip.utils.IPUtils;
 import cn.zhangchuangla.medicine.common.security.base.BaseService;
 import cn.zhangchuangla.medicine.common.security.entity.AuthTokenVo;
 import cn.zhangchuangla.medicine.common.security.entity.OnlineLoginUser;

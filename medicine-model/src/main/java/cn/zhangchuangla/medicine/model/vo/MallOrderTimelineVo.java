@@ -3,6 +3,8 @@ package cn.zhangchuangla.medicine.model.vo;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 
+import java.io.Serial;
+import java.io.Serializable;
 import java.util.Date;
 
 /**
@@ -12,7 +14,10 @@ import java.util.Date;
  */
 @Data
 @Schema(description = "订单时间线视图对象")
-public class MallOrderTimelineVo {
+public class MallOrderTimelineVo implements Serializable {
+
+    @Serial
+    private static final long serialVersionUID = 1L;
 
     @Schema(description = "主键", example = "1")
     private Long id;

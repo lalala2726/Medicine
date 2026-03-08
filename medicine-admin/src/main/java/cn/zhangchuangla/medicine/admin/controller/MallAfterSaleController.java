@@ -3,12 +3,13 @@ package cn.zhangchuangla.medicine.admin.controller;
 import cn.zhangchuangla.medicine.admin.model.request.AfterSaleAuditRequest;
 import cn.zhangchuangla.medicine.admin.model.request.AfterSaleListRequest;
 import cn.zhangchuangla.medicine.admin.model.request.AfterSaleProcessRequest;
+import cn.zhangchuangla.medicine.admin.model.vo.MallAfterSaleListVo;
 import cn.zhangchuangla.medicine.admin.service.MallAfterSaleService;
 import cn.zhangchuangla.medicine.common.core.base.AjaxResult;
 import cn.zhangchuangla.medicine.common.core.base.TableDataResult;
 import cn.zhangchuangla.medicine.common.security.base.BaseController;
+import cn.zhangchuangla.medicine.model.dto.MallAfterSaleListDto;
 import cn.zhangchuangla.medicine.model.vo.AfterSaleDetailVo;
-import cn.zhangchuangla.medicine.model.vo.AfterSaleListVo;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -18,6 +19,8 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
 
 /**
  * 售后管理Controller(管理端)
@@ -36,16 +39,22 @@ public class MallAfterSaleController extends BaseController {
 
     /**
      * 查询售后列表
+     * <p>
+     * 功能描述：按查询条件分页获取售后申请列表，并在控制层完成 DTO 到 VO 的结构转换。
      *
-     * @param request 查询参数
-     * @return 售后列表
+     * @param request 查询参数对象，包含分页参数与售后筛选条件
+     * @return 返回分页结构，rows 为 {@link MallAfterSaleListVo} 集合
+     * @throws RuntimeException 异常说明：当下游服务或数据转换出现异常时抛出运行时异常
      */
     @GetMapping("/list")
     @Operation(summary = "查询售后列表", description = "管理员查询所有售后申请列表")
     @PreAuthorize("hasAuthority('mall:after_sale:list') or hasRole('super_admin')")
     public AjaxResult<TableDataResult> getAfterSaleList(AfterSaleListRequest request) {
-        Page<AfterSaleListVo> page = mallAfterSaleService.getAfterSaleList(request);
-        return getTableData(page);
+        Page<MallAfterSaleListDto> page = mallAfterSaleService.getAfterSaleList(request);
+        List<MallAfterSaleListVo> rows = page.getRecords().stream()
+                .map(this::toMallAfterSaleListVo)
+                .toList();
+        return getTableData(page, rows);
     }
 
     /**
@@ -105,5 +114,22 @@ public class MallAfterSaleController extends BaseController {
         boolean result = mallAfterSaleService.processExchange(request);
         return toAjax(result);
     }
-}
 
+    /**
+     * 功能描述：将售后列表查询 DTO 转换为管理端列表 VO。
+     *
+     * @param source 售后列表查询 DTO，包含主表字段与联表字段
+     * @return 返回管理端列表 VO；当 source 为空时返回 null
+     * @throws RuntimeException 异常说明：当字段读取或对象构造过程出现异常时抛出运行时异常
+     */
+    private MallAfterSaleListVo toMallAfterSaleListVo(MallAfterSaleListDto source) {
+        if (source == null) {
+            return null;
+        }
+        MallAfterSaleListVo target = copyProperties(source, MallAfterSaleListVo.class);
+        target.setAfterSaleType(source.getAfterSaleType());
+        target.setAfterSaleStatus(source.getAfterSaleStatus());
+        target.setApplyReason(source.getApplyReason());
+        return target;
+    }
+}

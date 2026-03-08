@@ -1,11 +1,26 @@
 package cn.zhangchuangla.medicine.admin.controller;
 
+import cn.zhangchuangla.medicine.admin.model.dto.KnowledgeBaseListDto;
+import cn.zhangchuangla.medicine.admin.model.request.KnowledgeBaseAddRequest;
+import cn.zhangchuangla.medicine.admin.model.request.KnowledgeBaseListRequest;
+import cn.zhangchuangla.medicine.admin.model.request.KnowledgeBaseUpdateRequest;
+import cn.zhangchuangla.medicine.admin.model.vo.KnowledgeBaseListVo;
+import cn.zhangchuangla.medicine.admin.model.vo.KnowledgeBaseVo;
+import cn.zhangchuangla.medicine.admin.service.KbBaseService;
+import cn.zhangchuangla.medicine.common.core.base.AjaxResult;
+import cn.zhangchuangla.medicine.common.core.base.TableDataResult;
 import cn.zhangchuangla.medicine.common.security.base.BaseController;
+import cn.zhangchuangla.medicine.model.entity.KbBase;
+import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
+import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.access.prepost.PreAuthorize;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.validation.annotation.Validated;
+import org.springframework.web.bind.annotation.*;
+
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * 知识库管理控制器
@@ -19,8 +34,117 @@ import org.springframework.web.bind.annotation.RestController;
 @RestController
 @RequestMapping("/knowledge_base")
 @RequiredArgsConstructor
-@PreAuthorize("hasRole('admin') or hasRole('super_admin')")
-@Tag(name = "知识库管理", description = "知识库 CRUD 接口")
+@Tag(name = "知识库管理", description = "知识库管理接口")
 public class KnowledgeBaseController extends BaseController {
+
+    private final KbBaseService kbBaseService;
+
+    /**
+     * 查询知识库列表
+     *
+     * @param request 查询参数
+     * @return 列表分页
+     */
+    @GetMapping("/list")
+    @Operation(summary = "知识库列表")
+    @PreAuthorize("hasAuthority('system:knowledge_base:list') or hasRole('super_admin')")
+    public AjaxResult<TableDataResult> listKnowledgeBase(KnowledgeBaseListRequest request) {
+        Page<KnowledgeBaseListDto> page = kbBaseService.listKnowledgeBase(request);
+        return getTableData(page, toKnowledgeBaseListVo(page.getRecords()));
+    }
+
+    /**
+     * 查询知识库详情
+     *
+     * @param id 主键ID
+     * @return 知识库详情
+     */
+    @GetMapping("/{id:\\d+}")
+    @Operation(summary = "知识库详情")
+    @PreAuthorize("hasAuthority('system:knowledge_base:query') or hasRole('super_admin')")
+    public AjaxResult<KnowledgeBaseVo> getKnowledgeBaseById(@PathVariable Long id) {
+        KbBase kbBase = kbBaseService.getKnowledgeBaseById(id);
+        KnowledgeBaseVo vo = copyProperties(kbBase, KnowledgeBaseVo.class);
+        return success(vo);
+    }
+
+    /**
+     * 添加知识库
+     *
+     * @param request 添加参数
+     * @return 添加结果
+     */
+    @PostMapping
+    @Operation(summary = "添加知识库")
+    @PreAuthorize("hasAuthority('system:knowledge_base:add') or hasRole('super_admin')")
+    public AjaxResult<Void> addKnowledgeBase(@Validated @RequestBody KnowledgeBaseAddRequest request) {
+        boolean result = kbBaseService.addKnowledgeBase(request);
+        return toAjax(result);
+    }
+
+    /**
+     * 修改知识库
+     *
+     * @param request 修改参数
+     * @return 修改结果
+     */
+    @PutMapping
+    @Operation(summary = "修改知识库")
+    @PreAuthorize("hasAuthority('system:knowledge_base:update') or hasRole('super_admin')")
+    public AjaxResult<Void> updateKnowledgeBase(@Validated @RequestBody KnowledgeBaseUpdateRequest request) {
+        boolean result = kbBaseService.updateKnowledgeBase(request);
+        return toAjax(result);
+    }
+
+    /**
+     * 删除知识库
+     *
+     * @param id 主键ID
+     * @return 删除结果
+     */
+    @DeleteMapping("/{id:\\d+}")
+    @Operation(summary = "删除知识库")
+    @PreAuthorize("hasAuthority('system:knowledge_base:delete') or hasRole('super_admin')")
+    public AjaxResult<Void> deleteKnowledgeBase(@PathVariable Long id) {
+        boolean result = kbBaseService.deleteKnowledgeBase(id);
+        return toAjax(result);
+    }
+
+    private List<KnowledgeBaseListVo> toKnowledgeBaseListVo(List<KnowledgeBaseListDto> records) {
+        if (records == null || records.isEmpty()) {
+            return List.of();
+        }
+        List<KnowledgeBaseListVo> rows = new ArrayList<>(records.size());
+        for (KnowledgeBaseListDto dto : records) {
+            if (dto == null) {
+                continue;
+            }
+            rows.add(toKnowledgeBaseListVo(dto));
+        }
+        return rows;
+    }
+
+    private KnowledgeBaseListVo toKnowledgeBaseListVo(KnowledgeBaseListDto dto) {
+        KnowledgeBaseListVo vo = new KnowledgeBaseListVo();
+        vo.setId(dto.getId());
+        vo.setKnowledgeName(dto.getKnowledgeName());
+        vo.setDisplayName(dto.getDisplayName());
+        vo.setCover(dto.getCover());
+        vo.setDescription(dto.getDescription());
+        vo.setStatus(dto.getStatus());
+        vo.setDetail(toKnowledgeBaseListDetailVo(dto.getDetail()));
+        return vo;
+    }
+
+    private KnowledgeBaseListVo.Detail toKnowledgeBaseListDetailVo(KnowledgeBaseListDto.Detail detailDto) {
+        if (detailDto == null) {
+            return null;
+        }
+        KnowledgeBaseListVo.Detail detailVo = new KnowledgeBaseListVo.Detail();
+        detailVo.setUpdateTime(detailDto.getUpdateTime());
+        detailVo.setChunkCount(detailDto.getChunkCount());
+        detailVo.setFileCount(detailDto.getFileCount());
+        return detailVo;
+    }
 
 }

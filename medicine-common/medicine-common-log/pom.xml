@@ -17,6 +17,10 @@
         </dependency>
         <dependency>
             <groupId>cn.zhangchuangla.medicine</groupId>
+            <artifactId>medicine-common-ip</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>cn.zhangchuangla.medicine</groupId>
             <artifactId>medicine-common-security</artifactId>
         </dependency>
         <dependency>

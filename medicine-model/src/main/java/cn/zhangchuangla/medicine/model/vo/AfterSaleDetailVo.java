@@ -6,6 +6,8 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.io.Serial;
+import java.io.Serializable;
 import java.math.BigDecimal;
 import java.util.Date;
 import java.util.List;
@@ -21,7 +23,10 @@ import java.util.List;
 @NoArgsConstructor
 @AllArgsConstructor
 @Schema(description = "售后详情")
-public class AfterSaleDetailVo {
+public class AfterSaleDetailVo implements Serializable {
+
+    @Serial
+    private static final long serialVersionUID = 1L;
 
     @Schema(description = "售后申请ID", example = "1")
     private Long id;
@@ -105,7 +110,10 @@ public class AfterSaleDetailVo {
     @NoArgsConstructor
     @AllArgsConstructor
     @Schema(description = "商品信息")
-    public static class ProductInfo {
+    public static class ProductInfo implements Serializable {
+
+        @Serial
+        private static final long serialVersionUID = 1L;
 
         @Schema(description = "商品ID", example = "4001")
         private Long productId;
@@ -126,4 +134,3 @@ public class AfterSaleDetailVo {
         private BigDecimal totalPrice;
     }
 }
-

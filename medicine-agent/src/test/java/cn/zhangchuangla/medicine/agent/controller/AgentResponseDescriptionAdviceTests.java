@@ -2,9 +2,8 @@ package cn.zhangchuangla.medicine.agent.controller;
 
 import cn.zhangchuangla.medicine.agent.advice.AgentResponseDescriptionAdvice;
 import cn.zhangchuangla.medicine.agent.annotation.AgentCodeLabel;
-import cn.zhangchuangla.medicine.agent.annotation.AgentCodePair;
-import cn.zhangchuangla.medicine.agent.annotation.AgentFieldDesc;
-import cn.zhangchuangla.medicine.agent.annotation.AgentVoDesc;
+import cn.zhangchuangla.medicine.agent.annotation.FieldDescription;
+import cn.zhangchuangla.medicine.agent.mapping.AgentCodeLabelRegistry;
 import cn.zhangchuangla.medicine.agent.support.AgentVoDescriptionResolver;
 import cn.zhangchuangla.medicine.common.core.base.AjaxResult;
 import cn.zhangchuangla.medicine.common.core.base.TableDataResult;
@@ -50,7 +49,7 @@ class AgentResponseDescriptionAdviceTests {
                 .andExpect(jsonPath("$.code").value(200))
                 .andExpect(jsonPath("$.data.name").value("测试对象"))
                 .andExpect(jsonPath("$.data.status.value").value(1))
-                .andExpect(jsonPath("$.data.status.description").value("启用"))
+                .andExpect(jsonPath("$.data.status.description").value("上架"))
                 .andExpect(jsonPath("$.data.meta.entityDescription").value("演示对象"))
                 .andExpect(jsonPath("$.data.meta.fieldDescriptions.name").value("名称"))
                 .andExpect(jsonPath("$.data.meta.fieldDescriptions.status").value("状态"))
@@ -76,7 +75,7 @@ class AgentResponseDescriptionAdviceTests {
                 .andExpect(jsonPath("$.data.total").value(1))
                 .andExpect(jsonPath("$.data.pageNum").value(1))
                 .andExpect(jsonPath("$.data.pageSize").value(10))
-                .andExpect(jsonPath("$.data.rows[0].status.description").value("启用"))
+                .andExpect(jsonPath("$.data.rows[0].status.description").value("上架"))
                 .andExpect(jsonPath("$.data.meta.entityDescription").value("演示对象"));
     }
 
@@ -142,28 +141,25 @@ class AgentResponseDescriptionAdviceTests {
     }
 
     @Data
-    @AgentVoDesc("演示对象")
+    @FieldDescription(description = "演示对象")
     static class DemoVo {
 
-        @AgentFieldDesc("名称")
+        @FieldDescription(description = "名称")
         private String name;
 
-        @AgentFieldDesc("状态")
-        @AgentCodeLabel(pairs = {
-                @AgentCodePair(code = "1", label = "启用"),
-                @AgentCodePair(code = "0", label = "禁用")
-        })
+        @FieldDescription(description = "状态")
+        @AgentCodeLabel(dictKey = AgentCodeLabelRegistry.AGENT_PRODUCT_STATUS)
         private Integer status;
 
-        @AgentFieldDesc("明细")
+        @FieldDescription(description = "明细")
         private DemoDetailVo detail;
     }
 
     @Data
-    @AgentVoDesc("演示明细")
+    @FieldDescription(description = "演示明细")
     static class DemoDetailVo {
 
-        @AgentFieldDesc("明细ID")
+        @FieldDescription(description = "明细ID")
         private Long id;
     }
 }

@@ -9,6 +9,7 @@ import cn.zhangchuangla.medicine.common.core.enums.ResponseCode;
 import cn.zhangchuangla.medicine.common.core.exception.ServiceException;
 import cn.zhangchuangla.medicine.common.core.utils.JSONUtils;
 import cn.zhangchuangla.medicine.common.security.utils.SecurityUtils;
+import cn.zhangchuangla.medicine.model.dto.MallAfterSaleListDto;
 import cn.zhangchuangla.medicine.model.dto.OrderTimelineDto;
 import cn.zhangchuangla.medicine.model.entity.MallAfterSale;
 import cn.zhangchuangla.medicine.model.entity.MallOrder;
@@ -16,7 +17,6 @@ import cn.zhangchuangla.medicine.model.entity.MallOrderItem;
 import cn.zhangchuangla.medicine.model.entity.User;
 import cn.zhangchuangla.medicine.model.enums.*;
 import cn.zhangchuangla.medicine.model.vo.AfterSaleDetailVo;
-import cn.zhangchuangla.medicine.model.vo.AfterSaleListVo;
 import cn.zhangchuangla.medicine.model.vo.AfterSaleTimelineVo;
 import cn.zhangchuangla.medicine.payment.model.AlipayRefundRequest;
 import cn.zhangchuangla.medicine.payment.service.AlipayPaymentService;
@@ -54,9 +54,16 @@ public class MallAfterSaleServiceImpl extends ServiceImpl<MallAfterSaleMapper, M
     private final UserWalletService userWalletService;
     private final AlipayPaymentService alipayPaymentService;
 
+    /**
+     * 功能描述：分页查询售后列表并返回包含联表字段的 DTO 结果。
+     *
+     * @param request 查询条件对象，包含分页参数与售后筛选条件
+     * @return 返回售后分页结果，记录类型为 {@link MallAfterSaleListDto}
+     * @throws RuntimeException 异常说明：当底层 Mapper 查询失败时抛出运行时异常
+     */
     @Override
-    public Page<AfterSaleListVo> getAfterSaleList(AfterSaleListRequest request) {
-        Page<AfterSaleListVo> page = request.toPage();
+    public Page<MallAfterSaleListDto> getAfterSaleList(AfterSaleListRequest request) {
+        Page<MallAfterSaleListDto> page = request.toPage();
         return mallAfterSaleMapper.selectAfterSaleList(page, request);
     }
 
@@ -75,10 +82,10 @@ public class MallAfterSaleServiceImpl extends ServiceImpl<MallAfterSaleMapper, M
         MallOrderItem orderItem = mallOrderItemService.getById(afterSale.getOrderItemId());
 
         // 4. 构建售后详情
-        AfterSaleTypeEnum afterSaleTypeEnum = afterSale.getAfterSaleType();
-        AfterSaleStatusEnum afterSaleStatusEnum = afterSale.getAfterSaleStatus();
-        AfterSaleReasonEnum afterSaleReasonEnum = afterSale.getApplyReason();
-        ReceiveStatusEnum receiveStatusEnum = afterSale.getReceiveStatus();
+        AfterSaleTypeEnum afterSaleTypeEnum = AfterSaleTypeEnum.fromCode(afterSale.getAfterSaleType());
+        AfterSaleStatusEnum afterSaleStatusEnum = AfterSaleStatusEnum.fromCode(afterSale.getAfterSaleStatus());
+        AfterSaleReasonEnum afterSaleReasonEnum = AfterSaleReasonEnum.fromCode(afterSale.getApplyReason());
+        ReceiveStatusEnum receiveStatusEnum = ReceiveStatusEnum.fromCode(afterSale.getReceiveStatus());
 
         List<String> evidenceImages = null;
         if (afterSale.getEvidenceImages() != null && !afterSale.getEvidenceImages().isEmpty()) {
@@ -143,7 +150,7 @@ public class MallAfterSaleServiceImpl extends ServiceImpl<MallAfterSaleMapper, M
         }
 
         // 2. 校验售后状态
-        AfterSaleStatusEnum afterSaleStatus = afterSale.getAfterSaleStatus();
+        AfterSaleStatusEnum afterSaleStatus = AfterSaleStatusEnum.fromCode(afterSale.getAfterSaleStatus());
         if (afterSaleStatus != AfterSaleStatusEnum.PENDING) {
             throw new ServiceException(ResponseCode.OPERATION_ERROR,
                     String.format("当前售后状态[%s]不允许审核", afterSaleStatus != null ? afterSaleStatus.getName() : "未知"));
@@ -153,7 +160,7 @@ public class MallAfterSaleServiceImpl extends ServiceImpl<MallAfterSaleMapper, M
 
         if (request.getApproved()) {
             // 审核通过
-            afterSale.setAfterSaleStatus(AfterSaleStatusEnum.APPROVED);
+            afterSale.setAfterSaleStatus(AfterSaleStatusEnum.APPROVED.getStatus());
             afterSale.setAdminRemark(request.getAdminRemark());
             afterSale.setAuditTime(now);
             afterSale.setUpdateTime(now);
@@ -193,7 +200,7 @@ public class MallAfterSaleServiceImpl extends ServiceImpl<MallAfterSaleMapper, M
                 throw new ServiceException(ResponseCode.PARAM_ERROR, "拒绝原因不能为空");
             }
 
-            afterSale.setAfterSaleStatus(AfterSaleStatusEnum.REJECTED);
+            afterSale.setAfterSaleStatus(AfterSaleStatusEnum.REJECTED.getStatus());
             afterSale.setRejectReason(request.getRejectReason());
             afterSale.setAdminRemark(request.getAdminRemark());
             afterSale.setAuditTime(now);
@@ -256,14 +263,14 @@ public class MallAfterSaleServiceImpl extends ServiceImpl<MallAfterSaleMapper, M
         }
 
         // 2. 校验售后状态
-        AfterSaleStatusEnum afterSaleStatus = afterSale.getAfterSaleStatus();
+        AfterSaleStatusEnum afterSaleStatus = AfterSaleStatusEnum.fromCode(afterSale.getAfterSaleStatus());
         if (afterSaleStatus != AfterSaleStatusEnum.APPROVED) {
             throw new ServiceException(ResponseCode.OPERATION_ERROR,
                     String.format("当前售后状态[%s]不允许处理退款", afterSaleStatus != null ? afterSaleStatus.getName() : "未知"));
         }
 
         // 3. 校验售后类型
-        AfterSaleTypeEnum afterSaleType = afterSale.getAfterSaleType();
+        AfterSaleTypeEnum afterSaleType = AfterSaleTypeEnum.fromCode(afterSale.getAfterSaleType());
         if (afterSaleType != AfterSaleTypeEnum.REFUND_ONLY && afterSaleType != AfterSaleTypeEnum.RETURN_REFUND) {
             throw new ServiceException(ResponseCode.OPERATION_ERROR, "该售后类型不支持退款处理");
         }
@@ -281,7 +288,7 @@ public class MallAfterSaleServiceImpl extends ServiceImpl<MallAfterSaleMapper, M
 
         // 5. 更新售后状态为处理中
         Date now = new Date();
-        afterSale.setAfterSaleStatus(AfterSaleStatusEnum.PROCESSING);
+        afterSale.setAfterSaleStatus(AfterSaleStatusEnum.PROCESSING.getStatus());
         afterSale.setUpdateTime(now);
         afterSale.setUpdateBy(adminUsername);
         updateById(afterSale);
@@ -303,7 +310,7 @@ public class MallAfterSaleServiceImpl extends ServiceImpl<MallAfterSaleMapper, M
             }
         } catch (Exception e) {
             // 退款失败，恢复售后状态
-            afterSale.setAfterSaleStatus(AfterSaleStatusEnum.APPROVED);
+            afterSale.setAfterSaleStatus(AfterSaleStatusEnum.APPROVED.getStatus());
             updateById(afterSale);
             throw new ServiceException(ResponseCode.OPERATION_ERROR, "退款失败：" + e.getMessage());
         }
@@ -337,7 +344,7 @@ public class MallAfterSaleServiceImpl extends ServiceImpl<MallAfterSaleMapper, M
         }
 
         // 9. 更新售后状态为已完成
-        afterSale.setAfterSaleStatus(AfterSaleStatusEnum.COMPLETED);
+        afterSale.setAfterSaleStatus(AfterSaleStatusEnum.COMPLETED.getStatus());
         afterSale.setCompleteTime(now);
         afterSale.setUpdateTime(now);
         afterSale.setUpdateBy(adminUsername);
@@ -383,21 +390,21 @@ public class MallAfterSaleServiceImpl extends ServiceImpl<MallAfterSaleMapper, M
         }
 
         // 2. 校验售后状态
-        AfterSaleStatusEnum afterSaleStatus = afterSale.getAfterSaleStatus();
+        AfterSaleStatusEnum afterSaleStatus = AfterSaleStatusEnum.fromCode(afterSale.getAfterSaleStatus());
         if (afterSaleStatus != AfterSaleStatusEnum.APPROVED) {
             throw new ServiceException(ResponseCode.OPERATION_ERROR,
                     String.format("当前售后状态[%s]不允许处理换货", afterSaleStatus != null ? afterSaleStatus.getName() : "未知"));
         }
 
         // 3. 校验售后类型
-        AfterSaleTypeEnum afterSaleType = afterSale.getAfterSaleType();
+        AfterSaleTypeEnum afterSaleType = AfterSaleTypeEnum.fromCode(afterSale.getAfterSaleType());
         if (afterSaleType != AfterSaleTypeEnum.EXCHANGE) {
             throw new ServiceException(ResponseCode.OPERATION_ERROR, "该售后类型不支持换货处理");
         }
 
         // 4. 更新售后状态为处理中
         Date now = new Date();
-        afterSale.setAfterSaleStatus(AfterSaleStatusEnum.PROCESSING);
+        afterSale.setAfterSaleStatus(AfterSaleStatusEnum.PROCESSING.getStatus());
         afterSale.setUpdateTime(now);
         afterSale.setUpdateBy(adminUsername);
         updateById(afterSale);
@@ -417,7 +424,7 @@ public class MallAfterSaleServiceImpl extends ServiceImpl<MallAfterSaleMapper, M
         }
 
         // 7. 更新售后状态为已完成
-        afterSale.setAfterSaleStatus(AfterSaleStatusEnum.COMPLETED);
+        afterSale.setAfterSaleStatus(AfterSaleStatusEnum.COMPLETED.getStatus());
         afterSale.setCompleteTime(now);
         afterSale.setUpdateTime(now);
         afterSale.setUpdateBy(adminUsername);

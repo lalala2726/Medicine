@@ -10,7 +10,7 @@ import cn.zhangchuangla.medicine.common.core.exception.LoginException;
 import cn.zhangchuangla.medicine.common.core.exception.ParamException;
 import cn.zhangchuangla.medicine.common.core.exception.ServiceException;
 import cn.zhangchuangla.medicine.common.core.utils.Assert;
-import cn.zhangchuangla.medicine.common.core.utils.IPUtils;
+import cn.zhangchuangla.medicine.common.ip.utils.IPUtils;
 import cn.zhangchuangla.medicine.common.security.entity.AuthTokenVo;
 import cn.zhangchuangla.medicine.common.security.entity.OnlineLoginUser;
 import cn.zhangchuangla.medicine.common.security.entity.SysUserDetails;

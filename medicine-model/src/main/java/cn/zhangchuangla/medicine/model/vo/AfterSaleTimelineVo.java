@@ -6,6 +6,8 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.io.Serial;
+import java.io.Serializable;
 import java.util.Date;
 
 /**
@@ -19,7 +21,10 @@ import java.util.Date;
 @NoArgsConstructor
 @AllArgsConstructor
 @Schema(description = "售后时间线")
-public class AfterSaleTimelineVo {
+public class AfterSaleTimelineVo implements Serializable {
+
+    @Serial
+    private static final long serialVersionUID = 1L;
 
     @Schema(description = "时间线ID", example = "1")
     private Long id;
@@ -45,4 +50,3 @@ public class AfterSaleTimelineVo {
     @Schema(description = "创建时间", example = "2025-11-08 10:00:00")
     private Date createTime;
 }
-

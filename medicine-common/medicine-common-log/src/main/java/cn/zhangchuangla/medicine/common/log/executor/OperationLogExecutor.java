@@ -1,6 +1,6 @@
 package cn.zhangchuangla.medicine.common.log.executor;
 
-import cn.zhangchuangla.medicine.common.core.utils.IPUtils;
+import cn.zhangchuangla.medicine.common.ip.utils.IPUtils;
 import cn.zhangchuangla.medicine.common.log.model.OperationLogInfo;
 import cn.zhangchuangla.medicine.common.log.spi.OperationLogStorage;
 import cn.zhangchuangla.medicine.common.log.spi.OperationLogStorageLoader;

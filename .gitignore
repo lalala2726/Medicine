@@ -20,6 +20,8 @@ tmp
 .claude
 GEMINI.md
 sql
+!docs/sql/
+!docs/sql/*.sql
 ### IntelliJ IDEA ###
 .idea
 *.iws

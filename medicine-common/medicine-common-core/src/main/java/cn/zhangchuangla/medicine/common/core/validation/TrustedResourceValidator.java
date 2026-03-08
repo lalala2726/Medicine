@@ -57,45 +57,49 @@ public class TrustedResourceValidator implements ConstraintValidator<TrustedReso
 
     @Override
     public boolean isValid(Object value, ConstraintValidatorContext context) {
-        if (value == null) {
-            return allowBlank;
-        }
-        if (value instanceof CharSequence sequence) {
-            return validateValue(sequence.toString());
-        }
-        if (value instanceof Collection<?> collection) {
-            for (Object item : collection) {
-                if (item == null) {
-                    if (!allowBlank) {
+        switch (value) {
+            case null -> {
+                return allowBlank;
+            }
+            case CharSequence sequence -> {
+                return validateValue(sequence.toString());
+            }
+            case Collection<?> collection -> {
+                for (Object item : collection) {
+                    if (item == null) {
+                        if (!allowBlank) {
+                            return false;
+                        }
+                        continue;
+                    }
+                    if (!(item instanceof CharSequence)) {
                         return false;
                     }
-                    continue;
-                }
-                if (!(item instanceof CharSequence)) {
-                    return false;
-                }
-                if (!validateValue(item.toString())) {
-                    return false;
-                }
-            }
-            return true;
-        }
-        if (value.getClass().isArray() && value instanceof Object[] array) {
-            for (Object item : array) {
-                if (item == null) {
-                    if (!allowBlank) {
+                    if (!validateValue(item.toString())) {
                         return false;
                     }
-                    continue;
                 }
-                if (!(item instanceof CharSequence)) {
-                    return false;
-                }
-                if (!validateValue(item.toString())) {
-                    return false;
-                }
+                return true;
             }
-            return true;
+            case Object[] array when value.getClass().isArray() -> {
+                for (Object item : array) {
+                    if (item == null) {
+                        if (!allowBlank) {
+                            return false;
+                        }
+                        continue;
+                    }
+                    if (!(item instanceof CharSequence)) {
+                        return false;
+                    }
+                    if (!validateValue(item.toString())) {
+                        return false;
+                    }
+                }
+                return true;
+            }
+            default -> {
+            }
         }
         return false;
     }

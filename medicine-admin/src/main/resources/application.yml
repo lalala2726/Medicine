@@ -16,12 +16,13 @@ spring:
     version: 0.1
   servlet:
     multipart:
+      enabled: true
       # 单个上传文件最大大小。
       # 示例: 50MB
       max-file-size: 50MB
       # 单次请求上传总大小上限。
       # 示例: 50MB
-      max-request-size: 50MB
+      max-request-size: 100MB
   data:
     mongodb:
       # MongoDB 连接串。
@@ -106,6 +107,7 @@ mybatis-plus:
   configuration:
     # SQL 日志实现类。
     # 示例: org.apache.ibatis.logging.stdout.StdOutImpl
+    #log-impl: org.apache.ibatis.logging.slf4j.Slf4jImpl
     log-impl: org.apache.ibatis.logging.stdout.StdOutImpl
   # 实体别名包路径。
   # 示例: cn.zhangchuangla.medicine.**.entity
@@ -140,6 +142,32 @@ security:
   # 示例: 25920000
   refresh-token-expire-time: 25920000
 
+system-auth:
+  # 系统鉴权总开关。
+  # 示例: true
+  enabled: ${SYSTEM_AUTH_ENABLED:true}
+  # 时间戳容差（秒）。
+  # 示例: 300
+  max-skew-seconds: ${SYSTEM_AUTH_MAX_SKEW_SECONDS:300}
+  # nonce 存活时间（秒）。
+  # 示例: 600
+  nonce-ttl-seconds: ${SYSTEM_AUTH_NONCE_TTL_SECONDS:600}
+  # nonce Redis key 前缀。
+  # 示例: system_auth:nonce
+  nonce-key-prefix: ${SYSTEM_AUTH_NONCE_KEY_PREFIX:system_auth:nonce}
+  # 客户端注册信息 JSON（app_id/secret/enabled）。
+  # 示例: [{"app_id":"medicine-agent","secret":"xxx","enabled":true}]
+  clients-json: ${SYSTEM_AUTH_CLIENTS_JSON:[]}
+  # 默认签名版本。
+  # 示例: v1
+  default-sign-version: ${SYSTEM_AUTH_DEFAULT_SIGN_VERSION:v1}
+  # 本方 app_id（出站签名使用）。
+  # 示例: medicine-admin
+  x-agent-key: ${MEDICINE_ADMIN_X_AGENT_KEY:medicine-admin}
+  # 本方签名 secret（出站签名使用）。
+  # 示例: your-local-secret
+  local-secret: ${MEDICINE_ADMIN_SYSTEM_AUTH_LOCAL_SECRET:}
+
 minio:
   # MinIO 服务地址。
   # 示例: http://127.0.0.1:9000
@@ -154,11 +182,32 @@ minio:
   # 示例: medicine
   bucket-name: ${MINIO_BUCKET_NAME:medicine}
 
+knowledge-base:
+  ai:
+    # 知识库 AI 服务地址。
+    # 示例: http://localhost:8000
+    base-url: ${KNOWLEDGE_BASE_AI_BASE_URL:http://localhost:8000}
+
 file:
   upload:
-    # 允许上传的 MIME 类型。
-    # 示例: image/jpeg,image/png,application/pdf
-    allowed-types: image/jpeg,image/png,image/gif,image/webp,application/pdf
+    # 允许上传的 MIME 类型或文件扩展名。
+    # 示例: [image/jpeg, image/png, application/pdf, .docx]
+    allowed-types:
+      - image/jpeg
+      - image/png
+      - image/gif
+      - image/webp
+      - application/pdf
+      - text/plain
+      - .txt
+      - .md
+      - .pdf
+      - .docx
+      - .doc
+      - .pptx
+      - .ppt
+      - .xlsx
+      - .xls
 
 ip2region:
   # 是否启用 IP 地理位置解析。

@@ -1,9 +1,5 @@
 package cn.zhangchuangla.medicine.model.entity;
 
-import cn.zhangchuangla.medicine.model.enums.AfterSaleReasonEnum;
-import cn.zhangchuangla.medicine.model.enums.AfterSaleStatusEnum;
-import cn.zhangchuangla.medicine.model.enums.AfterSaleTypeEnum;
-import cn.zhangchuangla.medicine.model.enums.ReceiveStatusEnum;
 import com.baomidou.mybatisplus.annotation.IdType;
 import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableLogic;
@@ -13,6 +9,8 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.io.Serial;
+import java.io.Serializable;
 import java.math.BigDecimal;
 import java.util.Date;
 
@@ -27,7 +25,10 @@ import java.util.Date;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class MallAfterSale {
+public class MallAfterSale implements Serializable {
+
+    @Serial
+    private static final long serialVersionUID = 1L;
 
     /**
      * 售后申请ID
@@ -63,12 +64,12 @@ public class MallAfterSale {
     /**
      * 售后类型(REFUND_ONLY-仅退款, RETURN_REFUND-退货退款, EXCHANGE-换货)
      */
-    private AfterSaleTypeEnum afterSaleType;
+    private String afterSaleType;
 
     /**
      * 售后状态(PENDING-待审核, APPROVED-已通过, REJECTED-已拒绝, PROCESSING-处理中, COMPLETED-已完成, CANCELLED-已取消)
      */
-    private AfterSaleStatusEnum afterSaleStatus;
+    private String afterSaleStatus;
 
     /**
      * 退款金额
@@ -78,7 +79,7 @@ public class MallAfterSale {
     /**
      * 申请原因
      */
-    private AfterSaleReasonEnum applyReason;
+    private String applyReason;
 
     /**
      * 详细说明
@@ -93,7 +94,7 @@ public class MallAfterSale {
     /**
      * 收货状态(RECEIVED-已收到货, NOT_RECEIVED-未收到货)
      */
-    private ReceiveStatusEnum receiveStatus;
+    private String receiveStatus;
 
     /**
      * 拒绝原因(审核拒绝时填写)
@@ -146,4 +147,3 @@ public class MallAfterSale {
     @TableLogic
     private Integer isDeleted;
 }
-

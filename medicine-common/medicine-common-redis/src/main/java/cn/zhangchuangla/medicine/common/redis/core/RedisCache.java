@@ -96,6 +96,27 @@ public final class RedisCache {
         return operation.get(key);
     }
 
+    /**
+     * 对指定 key 执行自增 1。
+     *
+     * @param key Redis key
+     * @return 自增后的值
+     */
+    public Long increment(final String key) {
+        return redisTemplate.opsForValue().increment(key);
+    }
+
+    /**
+     * 对指定 key 执行自增 delta。
+     *
+     * @param key   Redis key
+     * @param delta 增量
+     * @return 自增后的值
+     */
+    public Long increment(final String key, final long delta) {
+        return redisTemplate.opsForValue().increment(key, delta);
+    }
+
 
     /**
      * 删除单个对象

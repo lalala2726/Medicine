@@ -8,6 +8,8 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.io.Serial;
+import java.io.Serializable;
 import java.util.Date;
 
 /**
@@ -21,7 +23,10 @@ import java.util.Date;
 @NoArgsConstructor
 @AllArgsConstructor
 @Schema(description = "订单物流信息VO")
-public class OrderShippingVo {
+public class OrderShippingVo implements Serializable {
+
+    @Serial
+    private static final long serialVersionUID = 1L;
 
     @Schema(description = "订单ID", example = "1")
     private Long orderId;
@@ -67,7 +72,10 @@ public class OrderShippingVo {
     @NoArgsConstructor
     @AllArgsConstructor
     @Schema(description = "收货人信息")
-    public static class ReceiverInfo {
+    public static class ReceiverInfo implements Serializable {
+
+        @Serial
+        private static final long serialVersionUID = 1L;
 
         @Schema(description = "收货人姓名", example = "张三")
         private String receiverName;
@@ -86,4 +94,3 @@ public class OrderShippingVo {
         private String deliveryTypeName;
     }
 }
-

@@ -8,9 +8,9 @@ import cn.zhangchuangla.medicine.agent.service.MallAfterSaleService;
 import cn.zhangchuangla.medicine.common.core.base.AjaxResult;
 import cn.zhangchuangla.medicine.common.core.base.TableDataResult;
 import cn.zhangchuangla.medicine.common.security.base.BaseController;
+import cn.zhangchuangla.medicine.model.dto.AfterSaleDetailDto;
+import cn.zhangchuangla.medicine.model.dto.MallAfterSaleListDto;
 import cn.zhangchuangla.medicine.model.request.MallAfterSaleListRequest;
-import cn.zhangchuangla.medicine.model.vo.AfterSaleDetailVo;
-import cn.zhangchuangla.medicine.model.vo.AfterSaleListVo;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -37,29 +37,36 @@ import java.util.List;
 @RequiredArgsConstructor
 public class AgentAfterSaleController extends BaseController {
 
+
     private final MallAfterSaleService mallAfterSaleService;
 
     /**
      * 分页查询售后列表。
+     * <p>
+     * 功能描述：分页查询售后申请列表，并在控制层将 DTO 转换为智能体专用 VO。
      *
-     * @param request 查询参数
-     * @return 售后分页数据
+     * @param request 查询参数，包含分页信息与筛选条件；允许为空
+     * @return 返回售后分页数据，rows 为 {@link AgentAfterSaleListVo} 集合
+     * @throws RuntimeException 异常说明：当下游服务调用或数据转换失败时抛出运行时异常
      */
     @GetMapping("/list")
     @Operation(summary = "售后列表", description = "分页查询售后申请列表")
     @PreAuthorize("hasAuthority('mall:after_sale:list') or hasRole('super_admin')")
     public AjaxResult<TableDataResult> listAfterSales(MallAfterSaleListRequest request) {
         MallAfterSaleListRequest safeRequest = request == null ? new MallAfterSaleListRequest() : request;
-        Page<AfterSaleListVo> page = mallAfterSaleService.listAfterSales(safeRequest);
-        List<AgentAfterSaleListVo> rows = copyListProperties(page.getRecords(), AgentAfterSaleListVo.class);
-        return getTableData(page, rows);
+        Page<MallAfterSaleListDto> page = mallAfterSaleService.listAfterSales(safeRequest);
+        List<AgentAfterSaleListVo> vos = copyListProperties(page, AgentAfterSaleListVo.class);
+        return getTableData(page, vos);
     }
 
     /**
      * 查询售后详情。
+     * <p>
+     * 功能描述：根据售后申请 ID 查询售后详情并转换为智能体详情 VO。
      *
      * @param afterSaleId 售后申请 ID
-     * @return 售后详情
+     * @return 返回智能体售后详情对象
+     * @throws RuntimeException 异常说明：当售后详情查询失败或数据转换失败时抛出运行时异常
      */
     @GetMapping("/detail/{afterSaleId}")
     @Operation(summary = "售后详情", description = "根据售后申请ID查询售后详情")
@@ -67,17 +74,14 @@ public class AgentAfterSaleController extends BaseController {
     public AjaxResult<AgentAfterSaleDetailVo> getAfterSaleDetail(
             @Parameter(description = "售后申请ID", required = true)
             @PathVariable Long afterSaleId) {
-        AfterSaleDetailVo detail = mallAfterSaleService.getAfterSaleDetail(afterSaleId);
-        return success(toAgentAfterSaleDetailVo(detail));
+        AfterSaleDetailDto detailDto = mallAfterSaleService.getAfterSaleDetail(afterSaleId);
+        AgentAfterSaleDetailVo detailVo = null;
+        if (detailDto != null) {
+            detailVo = copyProperties(detailDto, AgentAfterSaleDetailVo.class);
+            detailVo.setProductInfo(copyProperties(detailDto.getProductInfo(), AgentAfterSaleDetailVo.ProductInfo.class));
+            detailVo.setTimeline(copyListProperties(detailDto.getTimeline(), AgentAfterSaleTimelineVo.class));
+        }
+        return success(detailVo);
     }
 
-    private AgentAfterSaleDetailVo toAgentAfterSaleDetailVo(AfterSaleDetailVo source) {
-        if (source == null) {
-            return null;
-        }
-        AgentAfterSaleDetailVo target = copyProperties(source, AgentAfterSaleDetailVo.class);
-        target.setProductInfo(copyProperties(source.getProductInfo(), AgentAfterSaleDetailVo.ProductInfo.class));
-        target.setTimeline(copyListProperties(source.getTimeline(), AgentAfterSaleTimelineVo.class));
-        return target;
-    }
 }

@@ -1,7 +1,6 @@
 package cn.zhangchuangla.medicine.agent.json;
 
 import cn.zhangchuangla.medicine.agent.annotation.AgentCodeLabel;
-import cn.zhangchuangla.medicine.agent.annotation.AgentCodePair;
 import cn.zhangchuangla.medicine.agent.mapping.AgentCodeLabelRegistry;
 import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.databind.BeanProperty;
@@ -64,14 +63,6 @@ public class AgentCodeLabelSerializer extends JsonSerializer<Object> implements 
     }
 
     private String findLabel(String code, AgentCodeLabel codeLabel) {
-        AgentCodePair[] pairs = codeLabel.pairs();
-        if (pairs != null) {
-            for (AgentCodePair pair : pairs) {
-                if (pair.code().equals(code)) {
-                    return pair.label();
-                }
-            }
-        }
         return AgentCodeLabelRegistry.getLabel(codeLabel.dictKey(), code);
     }
 
