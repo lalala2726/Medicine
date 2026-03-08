@@ -16,6 +16,7 @@ import cn.zhangchuangla.medicine.common.redis.core.RedisCache;
 import cn.zhangchuangla.medicine.model.entity.KbBase;
 import cn.zhangchuangla.medicine.model.entity.KbDocument;
 import cn.zhangchuangla.medicine.model.entity.KbDocumentChunk;
+import cn.zhangchuangla.medicine.model.enums.KbDocumentChunkStageEnum;
 import cn.zhangchuangla.medicine.model.enums.KbDocumentStageEnum;
 import cn.zhangchuangla.medicine.model.enums.KnowledgeChunkModeEnum;
 import cn.zhangchuangla.medicine.model.mq.KnowledgeImportDocumentMessage;
@@ -451,6 +452,7 @@ class KbDocumentServiceImplTests {
         assertEquals(1, chunks.get(0).getStatus());
         assertEquals(1001L, chunks.get(0).getDocumentId());
         assertEquals(1L, chunks.get(0).getKnowledgeBaseId());
+        assertEquals(KbDocumentChunkStageEnum.COMPLETED.getCode(), chunks.get(0).getStage());
         ArgumentCaptor<KbDocument> captor = ArgumentCaptor.forClass(KbDocument.class);
         verify(kbDocumentService).updateById(captor.capture());
         KbDocument updated = captor.getValue();

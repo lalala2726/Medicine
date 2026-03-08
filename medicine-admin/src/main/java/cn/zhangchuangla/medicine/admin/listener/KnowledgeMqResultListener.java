@@ -37,6 +37,10 @@ public class KnowledgeMqResultListener {
 
     /**
      * 消费知识库切片同步消息，并委托服务层处理。
+     * <p>
+     * 这条链路不是单条切片回调，而是文档导入完成后主动到 AI 侧拉取分页切片；
+     * 拉取成功后，本地新写入的切片会直接标记为 COMPLETED。
+     * </p>
      *
      * @param message 切片同步消息
      */

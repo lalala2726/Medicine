@@ -19,6 +19,7 @@ import cn.zhangchuangla.medicine.common.security.base.BaseService;
 import cn.zhangchuangla.medicine.model.entity.KbBase;
 import cn.zhangchuangla.medicine.model.entity.KbDocument;
 import cn.zhangchuangla.medicine.model.entity.KbDocumentChunk;
+import cn.zhangchuangla.medicine.model.enums.KbDocumentChunkStageEnum;
 import cn.zhangchuangla.medicine.model.enums.KbDocumentStageEnum;
 import cn.zhangchuangla.medicine.model.enums.KnowledgeChunkModeEnum;
 import cn.zhangchuangla.medicine.model.mq.KnowledgeImportDocumentMessage;
@@ -567,6 +568,7 @@ public class KbDocumentServiceImpl extends ServiceImpl<KbDocumentMapper, KbDocum
                     .vectorId(row.getId() == null ? null : String.valueOf(row.getId()))
                     .charCount(row.getChar_count())
                     .status(resolveChunkStatus(row.getStatus()))
+                    .stage(KbDocumentChunkStageEnum.COMPLETED.getCode())
                     .createdAt(toDate(row.getCreated_at_ts(), now))
                     .updatedAt(now)
                     .build();

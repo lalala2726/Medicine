@@ -259,7 +259,7 @@ public class KbDocumentChunkServiceImpl extends ServiceImpl<KbDocumentChunkMappe
             return;
         }
 
-        KnowledgeChunkTaskStageEnum incomingStage = resolveChunkTaskStage(message.getStage());
+        KbDocumentChunkStageEnum incomingStage = resolveChunkStage(message.getStage());
         if (incomingStage == null) {
             log.warn("忽略未知切片重建阶段: task_uuid={}, stage={}", message.getTask_uuid(), message.getStage());
             return;
@@ -285,7 +285,7 @@ public class KbDocumentChunkServiceImpl extends ServiceImpl<KbDocumentChunkMappe
             return;
         }
 
-        if (KnowledgeChunkTaskStageEnum.FAILED == incomingStage) {
+        if (KbDocumentChunkStageEnum.FAILED == incomingStage) {
             if (containsStaleReplacementMessage(message.getMessage())) {
                 log.info("切片重建任务被新版本替代: chunk_id={}, task_uuid={}, vector_id={}, version={}, message={}",
                         chunk.getId(), message.getTask_uuid(), vectorId, message.getVersion(), message.getMessage());
@@ -318,7 +318,7 @@ public class KbDocumentChunkServiceImpl extends ServiceImpl<KbDocumentChunkMappe
             return;
         }
 
-        KnowledgeChunkTaskStageEnum incomingStage = resolveChunkTaskStage(message.getStage());
+        KbDocumentChunkStageEnum incomingStage = resolveChunkStage(message.getStage());
         if (incomingStage == null) {
             log.warn("忽略未知切片新增阶段: task_uuid={}, chunk_id={}, stage={}",
                     message.getTask_uuid(), chunkId, message.getStage());
@@ -339,7 +339,7 @@ public class KbDocumentChunkServiceImpl extends ServiceImpl<KbDocumentChunkMappe
             return;
         }
 
-        if (KnowledgeChunkTaskStageEnum.COMPLETED == incomingStage
+        if (KbDocumentChunkStageEnum.COMPLETED == incomingStage
                 && !hasValidChunkAddPayload(message.getVector_id(), message.getChunk_index())) {
             log.warn("切片新增完成结果缺少必要字段: task_uuid={}, chunk_id={}, vector_id={}, chunk_index={}",
                     message.getTask_uuid(), chunkId, message.getVector_id(), message.getChunk_index());
@@ -351,7 +351,7 @@ public class KbDocumentChunkServiceImpl extends ServiceImpl<KbDocumentChunkMappe
         updateEntity.setId(chunkId);
         updateEntity.setStage(incomingStage.getCode());
         updateEntity.setUpdatedAt(new Date());
-        if (KnowledgeChunkTaskStageEnum.COMPLETED == incomingStage) {
+        if (KbDocumentChunkStageEnum.COMPLETED == incomingStage) {
             updateEntity.setVectorId(String.valueOf(message.getVector_id()));
             updateEntity.setChunkIndex(message.getChunk_index());
         }
@@ -361,13 +361,13 @@ public class KbDocumentChunkServiceImpl extends ServiceImpl<KbDocumentChunkMappe
             return;
         }
 
-        if (KnowledgeChunkTaskStageEnum.FAILED == incomingStage) {
+        if (KbDocumentChunkStageEnum.FAILED == incomingStage) {
             log.warn("切片新增失败: chunk_id={}, task_uuid={}, message={}",
                     chunkId, message.getTask_uuid(), message.getMessage());
             return;
         }
 
-        if (KnowledgeChunkTaskStageEnum.STARTED == incomingStage) {
+        if (KbDocumentChunkStageEnum.STARTED == incomingStage) {
             log.info("切片新增已开始处理: chunk_id={}, task_uuid={}", chunkId, message.getTask_uuid());
             return;
         }
@@ -497,8 +497,8 @@ public class KbDocumentChunkServiceImpl extends ServiceImpl<KbDocumentChunkMappe
         if (chunk == null) {
             return;
         }
-        String stage = chunk.getStage();
-        if (KbDocumentChunkStageEnum.PENDING.matches(stage) || KbDocumentChunkStageEnum.STARTED.matches(stage)) {
+        KbDocumentChunkStageEnum currentStage = KbDocumentChunkStageEnum.fromCode(chunk.getStage());
+        if (currentStage != null && currentStage.isProcessing()) {
             throw new ServiceException(ResponseCode.OPERATION_ERROR, EDIT_IN_PROGRESS_MESSAGE);
         }
     }
@@ -582,12 +582,12 @@ public class KbDocumentChunkServiceImpl extends ServiceImpl<KbDocumentChunkMappe
      * @return true 表示应忽略
      */
     private boolean shouldIgnoreChunkAddResult(KbDocumentChunk chunk, KnowledgeChunkAddResultMessage message,
-                                               KnowledgeChunkTaskStageEnum incomingStage) {
-        String currentStage = chunk.getStage();
-        if (!isTerminalStage(currentStage)) {
+                                               KbDocumentChunkStageEnum incomingStage) {
+        KbDocumentChunkStageEnum currentStage = KbDocumentChunkStageEnum.fromCode(chunk.getStage());
+        if (currentStage == null || !currentStage.isTerminal()) {
             return false;
         }
-        if (KbDocumentChunkStageEnum.COMPLETED.matches(currentStage) && KnowledgeChunkTaskStageEnum.COMPLETED == incomingStage) {
+        if (KbDocumentChunkStageEnum.COMPLETED == currentStage && KbDocumentChunkStageEnum.COMPLETED == incomingStage) {
             if (matchesCompletedChunkAddResult(chunk, message)) {
                 log.info("忽略重复切片新增完成消息: chunk_id={}, task_uuid={}", chunk.getId(), message.getTask_uuid());
                 return true;
@@ -598,18 +598,8 @@ public class KbDocumentChunkServiceImpl extends ServiceImpl<KbDocumentChunkMappe
             return true;
         }
         log.info("忽略终态后的切片新增结果: chunk_id={}, task_uuid={}, current_stage={}, incoming_stage={}",
-                chunk.getId(), message.getTask_uuid(), currentStage, incomingStage.getCode());
+                chunk.getId(), message.getTask_uuid(), currentStage.getCode(), incomingStage.getCode());
         return true;
-    }
-
-    /**
-     * 判断本地切片是否已处于终态。
-     *
-     * @param stage 当前切片阶段
-     * @return true 表示已完成或失败
-     */
-    private boolean isTerminalStage(String stage) {
-        return KbDocumentChunkStageEnum.COMPLETED.matches(stage) || KbDocumentChunkStageEnum.FAILED.matches(stage);
     }
 
     /**
@@ -755,6 +745,16 @@ public class KbDocumentChunkServiceImpl extends ServiceImpl<KbDocumentChunkMappe
      */
     private KnowledgeChunkTaskStageEnum resolveChunkTaskStage(String stage) {
         return KnowledgeChunkTaskStageEnum.fromCode(stage);
+    }
+
+    /**
+     * 将 AI 回调阶段转换为本地切片阶段。
+     *
+     * @param stage AI 回调阶段
+     * @return 本地切片阶段；无法识别时返回 null
+     */
+    private KbDocumentChunkStageEnum resolveChunkStage(String stage) {
+        return KbDocumentChunkStageEnum.fromTaskStage(resolveChunkTaskStage(stage));
     }
 
     /**
