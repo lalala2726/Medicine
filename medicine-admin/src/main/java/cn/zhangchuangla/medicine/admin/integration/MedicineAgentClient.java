@@ -36,6 +36,7 @@ public class MedicineAgentClient {
     private static final String RELEASE_PATH = "/knowledge_base/release";
     private static final String DOCUMENT_DELETE_PATH = "/knowledge_base/document";
     private static final String DOCUMENT_CHUNK_LIST_PATH = "/knowledge_base/document/chunks/list";
+    private static final String DOCUMENT_CHUNK_STATUS_PATH = "/knowledge_base/document/chunk/status";
     private static final int MIN_EMBEDDING_DIM = 128;
     private static final int MAX_EMBEDDING_DIM = 1 << 13;
     private static final int CHUNK_STATUS_ENABLED = 0;
@@ -122,6 +123,21 @@ public class MedicineAgentClient {
                 throw new ServiceException(ResponseCode.OPERATION_ERROR, "文档切片分页超过上限");
             }
         }
+    }
+
+    /**
+     * 调用 Agent 服务按向量主键修改切片状态。
+     *
+     * @param vectorId 向量ID
+     * @param status   切片状态，0启用，1禁用
+     */
+    public void updateDocumentChunkStatus(Long vectorId, Integer status) {
+        Assert.isPositive(vectorId, "向量ID必须大于0");
+        Assert.notNull(status, "切片状态不能为空");
+
+        String url = buildUrl(DOCUMENT_CHUNK_STATUS_PATH);
+        String requestBody = JSONUtils.toJson(new DocumentChunkStatusPayload(vectorId, status));
+        doRequestWithValidation(HttpMethod.PUT, url, requestBody, "调用Agent服务修改切片状态失败: ");
     }
 
     /**
@@ -298,6 +314,9 @@ public class MedicineAgentClient {
     }
 
     private record DocumentDeletePayload(String knowledge_name, List<Long> document_ids) {
+    }
+
+    private record DocumentChunkStatusPayload(Long vector_id, Integer status) {
     }
 
     /**

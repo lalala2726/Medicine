@@ -74,17 +74,15 @@ class KbDocumentChunkControllerTests {
     }
 
     @Test
-    void updateDocumentChunkStatus_WhenServiceThrows_ShouldPropagate() {
+    void updateDocumentChunkStatus_ShouldDelegateToService() {
         DocumentChunkUpdateStatusRequest request = new DocumentChunkUpdateStatusRequest();
         request.setId(2001L);
         request.setStatus(1);
-        when(kbDocumentChunkService.updateDocumentChunkStatus(request))
-                .thenThrow(new ServiceException("切片状态变更暂未开放"));
+        when(kbDocumentChunkService.updateDocumentChunkStatus(request)).thenReturn(true);
 
-        ServiceException ex = assertThrows(ServiceException.class,
-                () -> kbDocumentChunkController.updateDocumentChunkStatus(request));
+        var result = kbDocumentChunkController.updateDocumentChunkStatus(request);
 
-        assertEquals("切片状态变更暂未开放", ex.getMessage());
+        assertEquals(200, result.getCode());
         verify(kbDocumentChunkService).updateDocumentChunkStatus(request);
     }
 

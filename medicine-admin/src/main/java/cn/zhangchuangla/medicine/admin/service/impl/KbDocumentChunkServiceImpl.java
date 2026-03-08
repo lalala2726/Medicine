@@ -1,5 +1,6 @@
 package cn.zhangchuangla.medicine.admin.service.impl;
 
+import cn.zhangchuangla.medicine.admin.integration.MedicineAgentClient;
 import cn.zhangchuangla.medicine.admin.mapper.KbDocumentChunkMapper;
 import cn.zhangchuangla.medicine.admin.mapper.KbDocumentMapper;
 import cn.zhangchuangla.medicine.admin.model.request.DocumentChunkAddRequest;
@@ -103,6 +104,7 @@ public class KbDocumentChunkServiceImpl extends ServiceImpl<KbDocumentChunkMappe
     private final KbDocumentMapper kbDocumentMapper;
     private final KbBaseService kbBaseService;
     private final KbDocumentChunkHistoryService kbDocumentChunkHistoryService;
+    private final MedicineAgentClient medicineAgentClient;
     private final RedisCache redisCache;
     private final KnowledgePublisher knowledgePublisher;
     private final PlatformTransactionManager transactionManager;
@@ -213,17 +215,28 @@ public class KbDocumentChunkServiceImpl extends ServiceImpl<KbDocumentChunkMappe
     }
 
     /**
-     * 修改切片状态。
+     * 修改切片状态，先调用 AI 端完成向量状态更新，再回写本地数据库。
      *
      * @param request 更新请求
-     * @return 永远不会返回；当前固定抛出未开放异常
+     * @return true 表示处理成功
      */
     @Override
     public boolean updateDocumentChunkStatus(DocumentChunkUpdateStatusRequest request) {
         Assert.notNull(request, "切片状态更新请求不能为空");
         Assert.isPositive(request.getId(), "切片ID必须大于0");
         validateChunkStatus(request.getStatus());
-        throw new ServiceException(ResponseCode.OPERATION_ERROR, "切片状态变更暂未开放");
+
+        KbDocumentChunk chunk = getDocumentChunkById(request.getId());
+        long vectorId = parseStoredPositiveLong(chunk.getVectorId());
+        medicineAgentClient.updateDocumentChunkStatus(vectorId, request.getStatus());
+
+        KbDocumentChunk updateEntity = KbDocumentChunk.builder()
+                .id(chunk.getId())
+                .status(request.getStatus())
+                .updatedAt(new Date())
+                .build();
+        Assert.isTrue(baseMapper.updateById(updateEntity) > 0, "更新文档切片状态失败");
+        return true;
     }
 
     /**

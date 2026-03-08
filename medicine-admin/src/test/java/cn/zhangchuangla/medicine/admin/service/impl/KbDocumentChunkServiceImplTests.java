@@ -1,10 +1,12 @@
 package cn.zhangchuangla.medicine.admin.service.impl;
 
+import cn.zhangchuangla.medicine.admin.integration.MedicineAgentClient;
 import cn.zhangchuangla.medicine.admin.mapper.KbDocumentChunkMapper;
 import cn.zhangchuangla.medicine.admin.mapper.KbDocumentMapper;
 import cn.zhangchuangla.medicine.admin.model.request.DocumentChunkAddRequest;
 import cn.zhangchuangla.medicine.admin.model.request.DocumentChunkListRequest;
 import cn.zhangchuangla.medicine.admin.model.request.DocumentChunkUpdateContentRequest;
+import cn.zhangchuangla.medicine.admin.model.request.DocumentChunkUpdateStatusRequest;
 import cn.zhangchuangla.medicine.admin.publisher.KnowledgePublisher;
 import cn.zhangchuangla.medicine.admin.service.KbBaseService;
 import cn.zhangchuangla.medicine.admin.service.KbDocumentChunkHistoryService;
@@ -57,6 +59,9 @@ class KbDocumentChunkServiceImplTests {
     private KbDocumentChunkHistoryService kbDocumentChunkHistoryService;
 
     @Mock
+    private MedicineAgentClient medicineAgentClient;
+
+    @Mock
     private KnowledgePublisher knowledgePublisher;
 
     @Mock
@@ -77,6 +82,7 @@ class KbDocumentChunkServiceImplTests {
                 kbDocumentMapper,
                 kbBaseService,
                 kbDocumentChunkHistoryService,
+                medicineAgentClient,
                 redisCache,
                 knowledgePublisher,
                 transactionManager
@@ -335,6 +341,67 @@ class KbDocumentChunkServiceImplTests {
         verify(kbDocumentChunkMapper, org.mockito.Mockito.times(2)).updateById(chunkCaptor.capture());
         assertEquals(KbDocumentChunkStageEnum.PENDING.getCode(), chunkCaptor.getAllValues().get(0).getStage());
         assertEquals(KbDocumentChunkStageEnum.FAILED.getCode(), chunkCaptor.getAllValues().get(1).getStage());
+    }
+
+    @Test
+    void updateDocumentChunkStatus_ShouldCallAgentFirstAndThenPersistStatus() {
+        DocumentChunkUpdateStatusRequest request = new DocumentChunkUpdateStatusRequest();
+        request.setId(2001L);
+        request.setStatus(1);
+
+        KbDocumentChunk chunk = newChunk("旧的切片内容");
+        chunk.setStatus(0);
+        when(kbDocumentChunkMapper.selectById(2001L)).thenReturn(chunk);
+        when(kbDocumentChunkMapper.updateById(any(KbDocumentChunk.class))).thenReturn(1);
+
+        boolean result = kbDocumentChunkService.updateDocumentChunkStatus(request);
+
+        assertTrue(result);
+        verify(medicineAgentClient).updateDocumentChunkStatus(900001L, 1);
+        ArgumentCaptor<KbDocumentChunk> captor = ArgumentCaptor.forClass(KbDocumentChunk.class);
+        verify(kbDocumentChunkMapper).updateById(captor.capture());
+        assertEquals(2001L, captor.getValue().getId());
+        assertEquals(1, captor.getValue().getStatus());
+        assertNotNull(captor.getValue().getUpdatedAt());
+    }
+
+    @Test
+    void updateDocumentChunkStatus_WhenStatusUnchanged_ShouldStillCallAgentAndPersistStatus() {
+        DocumentChunkUpdateStatusRequest request = new DocumentChunkUpdateStatusRequest();
+        request.setId(2001L);
+        request.setStatus(0);
+
+        KbDocumentChunk chunk = newChunk("旧的切片内容");
+        chunk.setStatus(0);
+        when(kbDocumentChunkMapper.selectById(2001L)).thenReturn(chunk);
+        when(kbDocumentChunkMapper.updateById(any(KbDocumentChunk.class))).thenReturn(1);
+
+        boolean result = kbDocumentChunkService.updateDocumentChunkStatus(request);
+
+        assertTrue(result);
+        verify(medicineAgentClient).updateDocumentChunkStatus(900001L, 0);
+        verify(kbDocumentChunkMapper).updateById(any(KbDocumentChunk.class));
+    }
+
+    @Test
+    void updateDocumentChunkStatus_WhenAgentFails_ShouldNotPersistLocalStatus() {
+        DocumentChunkUpdateStatusRequest request = new DocumentChunkUpdateStatusRequest();
+        request.setId(2001L);
+        request.setStatus(1);
+
+        KbDocumentChunk chunk = newChunk("旧的切片内容");
+        chunk.setStatus(0);
+        when(kbDocumentChunkMapper.selectById(2001L)).thenReturn(chunk);
+        doThrow(new ServiceException("向量记录不存在"))
+                .when(medicineAgentClient)
+                .updateDocumentChunkStatus(900001L, 1);
+
+        ServiceException ex = assertThrows(ServiceException.class,
+                () -> kbDocumentChunkService.updateDocumentChunkStatus(request));
+
+        assertEquals("向量记录不存在", ex.getMessage());
+        verify(medicineAgentClient).updateDocumentChunkStatus(900001L, 1);
+        verify(kbDocumentChunkMapper, never()).updateById(any(KbDocumentChunk.class));
     }
 
     @Test

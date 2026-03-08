@@ -173,6 +173,37 @@ class MedicineAgentClientTests {
     }
 
     @Test
+    void updateDocumentChunkStatus_ShouldSendCorrectPutRequest() {
+        SystemAuthRequestClient requestClient = mock(SystemAuthRequestClient.class);
+        MedicineAgentClient client = newClient("http://localhost:8000", requestClient);
+        ArgumentCaptor<ClientRequest> requestCaptor = ArgumentCaptor.forClass(ClientRequest.class);
+        when(requestClient.execute(requestCaptor.capture(), eq(String.class)))
+                .thenReturn(httpOk("{\"code\":200,\"message\":\"更新成功\",\"data\":{\"knowledge_name\":\"demo_kb\",\"vector_id\":101,\"status\":1}}"));
+
+        client.updateDocumentChunkStatus(101L, 1);
+
+        ClientRequest request = requestCaptor.getValue();
+        assertEquals(HttpMethod.PUT, request.getMethod());
+        assertEquals("http://localhost:8000/knowledge_base/document/chunk/status", request.getUrl().toString());
+        JsonObject bodyJson = JSONUtils.parseObject(request.getBody());
+        assertEquals(101L, bodyJson.get("vector_id").getAsLong());
+        assertEquals(1, bodyJson.get("status").getAsInt());
+        assertNull(request.getHeaders() == null ? null : request.getHeaders().get("Authorization"));
+    }
+
+    @Test
+    void updateDocumentChunkStatus_WhenBodyCodeFailed_ShouldThrowException() {
+        SystemAuthRequestClient requestClient = mock(SystemAuthRequestClient.class);
+        MedicineAgentClient client = newClient("http://localhost:8000", requestClient);
+        when(requestClient.execute(any(ClientRequest.class), eq(String.class)))
+                .thenReturn(httpOk("{\"code\":404,\"message\":\"向量记录不存在\",\"data\":null}"));
+
+        ServiceException exception = assertThrows(ServiceException.class,
+                () -> client.updateDocumentChunkStatus(101L, 1));
+        assertEquals("调用Agent服务修改切片状态失败: 向量记录不存在", exception.getMessage());
+    }
+
+    @Test
     void listDocumentChunks_ShouldPaginateAndAggregateRows() {
         SystemAuthRequestClient requestClient = mock(SystemAuthRequestClient.class);
         MedicineAgentClient client = newClient("http://localhost:8000", requestClient);
