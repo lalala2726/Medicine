@@ -106,6 +106,20 @@ class KbDocumentServiceImplTests {
     }
 
     @Test
+    void getDocumentDetailById_ShouldReturnDto() {
+        KnowledgeBaseDocumentDto dto = new KnowledgeBaseDocumentDto();
+        dto.setId(1001L);
+        dto.setChunkCount(8L);
+        when(kbDocumentMapper.getDocumentDetailById(1001L)).thenReturn(dto);
+
+        KnowledgeBaseDocumentDto result = kbDocumentService.getDocumentDetailById(1001L);
+
+        assertSame(dto, result);
+        assertEquals(8L, result.getChunkCount());
+        verify(kbDocumentMapper).getDocumentDetailById(1001L);
+    }
+
+    @Test
     void importDocument_WhenKnowledgeBaseNotFound_ShouldThrowException() {
         KnowledgeBaseImportRequest request = newImportRequest();
         when(kbBaseService.getKnowledgeBaseById(1L)).thenReturn(null);

@@ -10,7 +10,6 @@ import cn.zhangchuangla.medicine.admin.service.KbDocumentService;
 import cn.zhangchuangla.medicine.common.core.base.AjaxResult;
 import cn.zhangchuangla.medicine.common.core.base.TableDataResult;
 import cn.zhangchuangla.medicine.common.security.base.BaseController;
-import cn.zhangchuangla.medicine.model.entity.KbDocument;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -65,9 +64,8 @@ public class KbDocumentController extends BaseController {
     @Operation(summary = "文档详情")
     @PreAuthorize("hasAuthority('system:kb_document:query') or hasRole('super_admin')")
     public AjaxResult<KnowledgeBaseDocumentVo> getDocumentById(@PathVariable Long id) {
-        KbDocument document = kbDocumentService.getDocumentById(id);
-        KnowledgeBaseDocumentVo vo = copyProperties(document, KnowledgeBaseDocumentVo.class);
-        return success(vo);
+        KnowledgeBaseDocumentDto document = kbDocumentService.getDocumentDetailById(id);
+        return success(toKnowledgeBaseDocumentVo(document));
     }
 
     /**

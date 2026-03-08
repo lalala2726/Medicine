@@ -39,11 +39,29 @@ public class KnowledgeBaseDocumentVo {
     @Schema(description = "文件大小，单位 Bytes，1 表示 1 个字节", example = "1024")
     private Long fileSize;
 
+    @Schema(description = "切片模式", example = "custom")
+    private String chunkMode;
+
+    @Schema(description = "切片长度", example = "500")
+    private Integer chunkSize;
+
+    @Schema(description = "切片重叠长度", example = "100")
+    private Integer chunkOverlap;
+
     @Schema(description = "切片数量", example = "12")
     private Long chunkCount;
 
     @Schema(description = "索引阶段，取值见 KbDocumentStageEnum", example = "PENDING")
     private String stage;
+
+    @Schema(description = "最近一次处理失败错误信息", example = "向量化失败")
+    private String lastError;
+
+    @Schema(description = "创建人账号", example = "admin")
+    private String createBy;
+
+    @Schema(description = "最后更新人账号", example = "admin")
+    private String updateBy;
 
     @Schema(description = "创建时间", example = "2025-12-05 00:00:00")
     @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss", timezone = "GMT+8")

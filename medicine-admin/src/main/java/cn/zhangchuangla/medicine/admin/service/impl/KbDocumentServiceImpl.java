@@ -99,6 +99,14 @@ public class KbDocumentServiceImpl extends ServiceImpl<KbDocumentMapper, KbDocum
     }
 
     @Override
+    public KnowledgeBaseDocumentDto getDocumentDetailById(Long id) {
+        Assert.isPositive(id, "文档ID必须大于0");
+        KnowledgeBaseDocumentDto document = baseMapper.getDocumentDetailById(id);
+        Assert.isTrue(document != null, "文档不存在");
+        return document;
+    }
+
+    @Override
     public KbDocument getDocumentById(Long id) {
         Assert.isPositive(id, "文档ID必须大于0");
         KbDocument document = getById(id);

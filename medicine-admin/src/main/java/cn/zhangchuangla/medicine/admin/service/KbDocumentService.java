@@ -25,6 +25,14 @@ public interface KbDocumentService extends IService<KbDocument> {
     Page<KnowledgeBaseDocumentDto> listDocument(Long knowledgeBaseId, DocumentListRequest request);
 
     /**
+     * 根据ID查询文档详情（含切片数量）。
+     *
+     * @param id 文档ID
+     * @return 文档详情
+     */
+    KnowledgeBaseDocumentDto getDocumentDetailById(Long id);
+
+    /**
      * 根据ID查询文档详情。
      *
      * @param id 文档ID

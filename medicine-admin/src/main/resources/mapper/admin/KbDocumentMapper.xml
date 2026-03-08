@@ -59,4 +59,20 @@
         </where>
         ORDER BY d.created_at DESC, d.id DESC
     </select>
+
+    <select id="getDocumentDetailById" resultMap="KnowledgeBaseDocumentResultMap">
+        SELECT
+        <include refid="Base_Column_List"/>,
+        COALESCE(chunk_detail.chunk_count, 0) AS chunk_count
+        FROM kb_document d
+        LEFT JOIN (
+            SELECT
+                document_id,
+                COUNT(*) AS chunk_count
+            FROM kb_document_chunk
+            WHERE document_id = #{id}
+            GROUP BY document_id
+        ) chunk_detail ON chunk_detail.document_id = d.id
+        WHERE d.id = #{id}
+    </select>
 </mapper>

@@ -7,7 +7,6 @@ import cn.zhangchuangla.medicine.admin.model.request.DocumentUpdateFileNameReque
 import cn.zhangchuangla.medicine.admin.model.request.KnowledgeBaseImportRequest;
 import cn.zhangchuangla.medicine.admin.model.vo.KnowledgeBaseDocumentVo;
 import cn.zhangchuangla.medicine.admin.service.KbDocumentService;
-import cn.zhangchuangla.medicine.model.entity.KbDocument;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -57,13 +56,20 @@ class KbDocumentControllerTests {
 
     @Test
     void getDocumentById_ShouldReturnDetail() {
-        KbDocument document = new KbDocument();
+        KnowledgeBaseDocumentDto document = new KnowledgeBaseDocumentDto();
         document.setId(1001L);
         document.setKnowledgeBaseId(1L);
         document.setFileName("guide.pdf");
         document.setFileType("pdf");
         document.setFileSize(2048L);
-        when(kbDocumentService.getDocumentById(1001L)).thenReturn(document);
+        document.setChunkMode("custom");
+        document.setChunkSize(500);
+        document.setChunkOverlap(100);
+        document.setChunkCount(12L);
+        document.setLastError("处理失败");
+        document.setCreateBy("admin");
+        document.setUpdateBy("operator");
+        when(kbDocumentService.getDocumentDetailById(1001L)).thenReturn(document);
 
         var result = kbDocumentController.getDocumentById(1001L);
 
@@ -71,7 +77,14 @@ class KbDocumentControllerTests {
         assertEquals("guide.pdf", result.getData().getFileName());
         assertEquals("pdf", result.getData().getFileType());
         assertEquals(2048L, result.getData().getFileSize());
-        verify(kbDocumentService).getDocumentById(1001L);
+        assertEquals("custom", result.getData().getChunkMode());
+        assertEquals(500, result.getData().getChunkSize());
+        assertEquals(100, result.getData().getChunkOverlap());
+        assertEquals(12L, result.getData().getChunkCount());
+        assertEquals("处理失败", result.getData().getLastError());
+        assertEquals("admin", result.getData().getCreateBy());
+        assertEquals("operator", result.getData().getUpdateBy());
+        verify(kbDocumentService).getDocumentDetailById(1001L);
     }
 
     @Test
