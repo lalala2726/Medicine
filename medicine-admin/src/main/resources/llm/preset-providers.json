@@ -1,0 +1,161 @@
+[
+  {
+    "providerKey": "openai",
+    "providerName": "OpenAI",
+    "baseUrl": "https://api.openai.com/v1",
+    "description": "OpenAI 官方标准接口预设模板",
+    "models": [
+      {
+        "modelName": "gpt-4.1",
+        "modelType": "CHAT",
+        "supportReasoning": 0,
+        "supportVision": 0,
+        "description": "OpenAI 通用对话模型",
+        "enabled": 0,
+        "sort": 10
+      },
+      {
+        "modelName": "gpt-4.1-mini",
+        "modelType": "CHAT",
+        "supportReasoning": 0,
+        "supportVision": 0,
+        "description": "OpenAI 轻量级对话模型",
+        "enabled": 0,
+        "sort": 20
+      },
+      {
+        "modelName": "gpt-4o-mini",
+        "modelType": "CHAT",
+        "supportReasoning": 0,
+        "supportVision": 0,
+        "description": "OpenAI 多用途轻量级对话模型",
+        "enabled": 0,
+        "sort": 30
+      },
+      {
+        "modelName": "text-embedding-3-small",
+        "modelType": "EMBEDDING",
+        "supportReasoning": 0,
+        "supportVision": 0,
+        "description": "OpenAI 小型文本向量模型",
+        "enabled": 0,
+        "sort": 40
+      },
+      {
+        "modelName": "text-embedding-3-large",
+        "modelType": "EMBEDDING",
+        "supportReasoning": 0,
+        "supportVision": 0,
+        "description": "OpenAI 大型文本向量模型",
+        "enabled": 0,
+        "sort": 50
+      }
+    ]
+  },
+  {
+    "providerKey": "aliyun-bailian",
+    "providerName": "阿里云百联",
+    "baseUrl": "https://dashscope.aliyuncs.com/compatible-mode/v1",
+    "description": "阿里云百联 OpenAI 兼容接口预设模板",
+    "models": [
+      {
+        "modelName": "qwen3.5-plus",
+        "modelType": "CHAT",
+        "supportReasoning": 1,
+        "supportVision": 0,
+        "description": "阿里云百联对话模型",
+        "enabled": 0,
+        "sort": 10
+      },
+      {
+        "modelName": "qwen3.5-flash",
+        "modelType": "CHAT",
+        "supportReasoning": 0,
+        "supportVision": 0,
+        "description": "阿里云百联对话模型",
+        "enabled": 0,
+        "sort": 20
+      },
+      {
+        "modelName": "qwen3-max",
+        "modelType": "CHAT",
+        "supportReasoning": 1,
+        "supportVision": 0,
+        "description": "阿里云百联对话模型",
+        "enabled": 0,
+        "sort": 30
+      },
+      {
+        "modelName": "qwen-plus",
+        "modelType": "CHAT",
+        "supportReasoning": 0,
+        "supportVision": 0,
+        "description": "阿里云百联对话模型",
+        "enabled": 0,
+        "sort": 40
+      },
+      {
+        "modelName": "qwen-flash",
+        "modelType": "CHAT",
+        "supportReasoning": 0,
+        "supportVision": 0,
+        "description": "阿里云百联对话模型",
+        "enabled": 0,
+        "sort": 50
+      },
+      {
+        "modelName": "qwen-max",
+        "modelType": "CHAT",
+        "supportReasoning": 0,
+        "supportVision": 0,
+        "description": "阿里云百联对话模型",
+        "enabled": 0,
+        "sort": 60
+      }
+    ]
+  },
+  {
+    "providerKey": "volcengine-ark",
+    "providerName": "火山引擎",
+    "baseUrl": "https://ark.cn-beijing.volces.com/api/v3",
+    "description": "火山引擎方舟 OpenAI 兼容接口预设模板",
+    "models": [
+      {
+        "modelName": "doubao-1-5-pro-32k-250115",
+        "modelType": "CHAT",
+        "supportReasoning": 0,
+        "supportVision": 0,
+        "description": "火山引擎对话模型",
+        "enabled": 0,
+        "sort": 10
+      },
+      {
+        "modelName": "doubao-seed-2-0-pro-260215",
+        "modelType": "CHAT",
+        "supportReasoning": 0,
+        "supportVision": 0,
+        "description": "火山引擎对话模型",
+        "enabled": 0,
+        "sort": 20
+      },
+      {
+        "modelName": "doubao-seed-2-0-lite-260215",
+        "modelType": "CHAT",
+        "supportReasoning": 0,
+        "supportVision": 0,
+        "description": "火山引擎对话模型",
+        "enabled": 0,
+        "sort": 30
+      },
+      {
+        "modelName": "doubao-seed-2-0-mini-260215",
+        "modelType": "CHAT",
+        "supportReasoning": 0,
+        "supportVision": 0,
+        "description": "火山引擎对话模型",
+        "enabled": 0,
+        "sort": 40
+      }
+    ]
+  }
+]

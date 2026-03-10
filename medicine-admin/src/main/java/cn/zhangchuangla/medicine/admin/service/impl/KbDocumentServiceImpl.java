@@ -730,16 +730,6 @@ public class KbDocumentServiceImpl extends ServiceImpl<KbDocumentMapper, KbDocum
     }
 
     /**
-     * 归一化后的切片设置。
-     *
-     * @param chunkMode    切片模式
-     * @param chunkSize    切片长度
-     * @param chunkOverlap 切片重叠长度
-     */
-    private record NormalizedChunkSettings(String chunkMode, Integer chunkSize, Integer chunkOverlap) {
-    }
-
-    /**
      * 提取异常中的可读错误信息。
      *
      * @param ex 异常对象
@@ -750,6 +740,16 @@ public class KbDocumentServiceImpl extends ServiceImpl<KbDocumentMapper, KbDocum
             return "unknown error";
         }
         return ex.getMessage();
+    }
+
+    /**
+     * 归一化后的切片设置。
+     *
+     * @param chunkMode    切片模式
+     * @param chunkSize    切片长度
+     * @param chunkOverlap 切片重叠长度
+     */
+    private record NormalizedChunkSettings(String chunkMode, Integer chunkSize, Integer chunkOverlap) {
     }
 
 }
