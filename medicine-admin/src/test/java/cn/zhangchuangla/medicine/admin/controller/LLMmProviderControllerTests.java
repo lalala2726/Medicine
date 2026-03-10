@@ -75,7 +75,7 @@ class LLMmProviderControllerTests {
         page.setRecords(List.of(LlmProviderListDto.builder()
                 .id(1L)
                 .providerName("OpenAI")
-                .modelCount(5L)
+                .modelCount(5)
                 .build()));
         when(llmProviderService.listProviders(request)).thenReturn(page);
 

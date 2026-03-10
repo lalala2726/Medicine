@@ -20,8 +20,8 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 
 /**
  * 大模型提供商与模型一体化接口。
@@ -209,13 +209,10 @@ public class LLMmProviderController extends BaseController {
         if (templates == null || templates.isEmpty()) {
             return List.of();
         }
-        List<LlmPresetProviderVo> rows = new ArrayList<>(templates.size());
-        for (LlmPresetProviderTemplateDto template : templates) {
-            if (template != null) {
-                rows.add(copyProperties(template, LlmPresetProviderVo.class));
-            }
-        }
-        return rows;
+        return templates.stream()
+                .filter(Objects::nonNull)
+                .map(template -> copyProperties(template, LlmPresetProviderVo.class))
+                .toList();
     }
 
     /**
@@ -252,12 +249,9 @@ public class LLMmProviderController extends BaseController {
         if (models == null || models.isEmpty()) {
             return List.of();
         }
-        List<LlmPresetProviderModelVo> rows = new ArrayList<>(models.size());
-        for (LlmPresetProviderTemplateDto.Model model : models) {
-            if (model != null) {
-                rows.add(copyProperties(model, LlmPresetProviderModelVo.class));
-            }
-        }
-        return rows;
+        return models.stream()
+                .filter(Objects::nonNull)
+                .map(model -> copyProperties(model, LlmPresetProviderModelVo.class))
+                .toList();
     }
 }

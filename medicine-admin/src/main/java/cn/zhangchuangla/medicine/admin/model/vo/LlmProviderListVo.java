@@ -31,16 +31,16 @@ public class LlmProviderListVo {
     private Integer sort;
 
     @Schema(description = "模型总数", example = "5")
-    private Long modelCount;
+    private Integer modelCount;
 
     @Schema(description = "对话模型数量", example = "3")
-    private Long chatModelCount;
+    private Integer chatModelCount;
 
     @Schema(description = "重排模型数量", example = "0")
-    private Long rerankModelCount;
+    private Integer rerankModelCount;
 
     @Schema(description = "向量模型数量", example = "2")
-    private Long embeddingModelCount;
+    private Integer embeddingModelCount;
 
     @Schema(description = "创建时间")
     private Date createdAt;

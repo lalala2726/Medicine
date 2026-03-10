@@ -22,9 +22,6 @@ public class LlmProviderDetailVo {
     @Schema(description = "基础请求地址", example = "https://api.openai.com/v1")
     private String baseUrl;
 
-    @Schema(description = "API Key", example = "sk-xxxx")
-    private String apiKey;
-
     @Schema(description = "描述", example = "OpenAI 官方接口")
     private String description;
 
