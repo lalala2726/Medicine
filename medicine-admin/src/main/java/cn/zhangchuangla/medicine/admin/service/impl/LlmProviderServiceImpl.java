@@ -25,7 +25,6 @@ import com.google.gson.JsonObject;
 import com.google.gson.JsonParseException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.core.io.ClassPathResource;
-import org.springframework.dao.DuplicateKeyException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
@@ -47,8 +46,12 @@ public class LlmProviderServiceImpl extends ServiceImpl<LlmProviderMapper, LlmPr
             new TypeReference<>() {
             };
     private static final String DEFAULT_OPERATOR = "system";
-    private static final int STATUS_ENABLED = 0;
-    private static final int STATUS_DISABLED = 1;
+    private static final int STATUS_ENABLED = 1;
+    private static final int STATUS_DISABLED = 0;
+    private static final String PROVIDER_NAME_DUPLICATE_MESSAGE = "提供商名称已存在";
+    private static final String ENABLED_PROVIDER_CONFLICT_MESSAGE = "启用提供商只允许存在一个";
+    private static final String SINGLE_ENABLED_INDEX_NAME = "uk_llm_provider_single_enabled";
+    private static final String SINGLE_ENABLED_GUARD_COLUMN = "enabled_unique_guard";
     private static final String MODELS_PATH_SUFFIX = "/models";
     private static final String CONNECTIVITY_SUCCESS_MESSAGE = "连通成功";
     private static final String OPENAI_FORMAT_INVALID_MESSAGE = "接口返回不符合 OpenAI 兼容格式";
@@ -162,7 +165,9 @@ public class LlmProviderServiceImpl extends ServiceImpl<LlmProviderMapper, LlmPr
         validateProviderNameUnique(resolved.providerName(), null);
 
         LlmProvider provider = buildCreateProviderEntity(request, resolved, currentOperator());
-        insertProvider(provider);
+        if (llmProviderMapper.insert(provider) <= 0) {
+            throw new ServiceException(ResponseCode.OPERATION_ERROR, "保存提供商失败");
+        }
         return provider;
     }
 
@@ -274,7 +279,7 @@ public class LlmProviderServiceImpl extends ServiceImpl<LlmProviderMapper, LlmPr
                 .baseUrl(resolved.baseUrl())
                 .apiKey(normalizeNullableText(request.getApiKey()))
                 .description(resolved.description())
-                .status(defaultProviderStatus(request.getStatus()))
+                .status(resolveCreateProviderStatus())
                 .sort(defaultSort(request.getSort()))
                 .createBy(operator)
                 .updateBy(operator)
@@ -300,26 +305,37 @@ public class LlmProviderServiceImpl extends ServiceImpl<LlmProviderMapper, LlmPr
                 .baseUrl(resolved.baseUrl())
                 .apiKey(existing.getApiKey())
                 .description(resolved.description())
-                .status(request.getStatus() == null ? defaultProviderStatus(existing.getStatus())
-                        : defaultProviderStatus(request.getStatus()))
+                .status(existing.getStatus())
                 .sort(request.getSort() == null ? defaultSort(existing.getSort()) : defaultSort(request.getSort()))
                 .updateBy(operator)
                 .build();
     }
 
     /**
-     * 保存提供商实体。
+     * 更新提供商状态。
      *
-     * @param provider 提供商实体
+     * @param request 状态修改请求
+     * @return 是否更新成功
      */
-    private void insertProvider(LlmProvider provider) {
-        try {
-            if (llmProviderMapper.insert(provider) <= 0) {
-                throw new ServiceException(ResponseCode.OPERATION_ERROR, "保存提供商失败");
-            }
-        } catch (DuplicateKeyException ex) {
-            throw new ServiceException(ResponseCode.OPERATION_ERROR, "提供商名称已存在");
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public boolean updateProviderStatus(LlmProviderUpdateStatusRequest request) {
+        Assert.notNull(request, "状态修改参数不能为空");
+
+        LlmProvider existing = getRequiredProvider(request.getId());
+        String operator = currentOperator();
+        Integer targetStatus = request.getStatus();
+        if (targetStatus == STATUS_ENABLED) {
+            disableOtherEnabledProviders(existing.getId(), operator);
         }
+
+        LlmProvider provider = LlmProvider.builder()
+                .id(existing.getId())
+                .status(targetStatus)
+                .updateBy(operator)
+                .build();
+        updateProviderById(provider);
+        return true;
     }
 
     /**
@@ -328,12 +344,8 @@ public class LlmProviderServiceImpl extends ServiceImpl<LlmProviderMapper, LlmPr
      * @param provider 提供商实体
      */
     private void updateProviderById(LlmProvider provider) {
-        try {
-            if (llmProviderMapper.updateById(provider) <= 0) {
-                throw new ServiceException(ResponseCode.OPERATION_ERROR, "更新提供商失败");
-            }
-        } catch (DuplicateKeyException ex) {
-            throw new ServiceException(ResponseCode.OPERATION_ERROR, "提供商名称已存在");
+        if (llmProviderMapper.updateById(provider) <= 0) {
+            throw new ServiceException(ResponseCode.OPERATION_ERROR, "更新提供商失败");
         }
     }
 
@@ -348,7 +360,7 @@ public class LlmProviderServiceImpl extends ServiceImpl<LlmProviderMapper, LlmPr
                 .eq(LlmProvider::getProviderName, providerName)
                 .ne(excludeId != null, LlmProvider::getId, excludeId));
         if (count != null && count > 0) {
-            throw new ServiceException(ResponseCode.OPERATION_ERROR, "提供商名称已存在");
+            throw new ServiceException(ResponseCode.OPERATION_ERROR, PROVIDER_NAME_DUPLICATE_MESSAGE);
         }
     }
 
@@ -376,8 +388,8 @@ public class LlmProviderServiceImpl extends ServiceImpl<LlmProviderMapper, LlmPr
      * @return 测试结果
      */
     private LlmProviderConnectivityTestVo buildConnectivityResult(String endpoint,
-                                                                 long latencyMs,
-                                                                 HttpResult<String> result) {
+                                                                  long latencyMs,
+                                                                  HttpResult<String> result) {
         int httpStatus = result.getStatusCode();
         if (httpStatus == 200 && isOpenAiModelsResponse(result.getBody())) {
             return LlmProviderConnectivityTestVo.builder()
@@ -603,17 +615,39 @@ public class LlmProviderServiceImpl extends ServiceImpl<LlmProviderMapper, LlmPr
     }
 
     /**
-     * 获取默认提供商状态。
+     * 解析新增提供商时的默认状态。
      *
-     * @param status 请求状态
-     * @return 最终状态值
+     * @return 当不存在启用中的提供商时返回启用状态，否则返回停用状态
      */
-    private Integer defaultProviderStatus(Integer status) {
-        if (status == null) {
-            return STATUS_ENABLED;
-        }
-        Assert.isParamTrue(status == STATUS_ENABLED || status == STATUS_DISABLED, "状态值不合法");
-        return status;
+    private Integer resolveCreateProviderStatus() {
+        return countEnabledProviders() > 0 ? STATUS_DISABLED : STATUS_ENABLED;
+    }
+
+    /**
+     * 统计当前启用中的提供商数量。
+     *
+     * @return 启用中的提供商数量
+     */
+    private Long countEnabledProviders() {
+        Long count = llmProviderMapper.selectCount(Wrappers.<LlmProvider>lambdaQuery()
+                .eq(LlmProvider::getStatus, STATUS_ENABLED));
+        return count == null ? 0L : count;
+    }
+
+    /**
+     * 将除目标提供商外的其他启用项全部停用。
+     *
+     * @param providerId 目标提供商ID
+     * @param operator   操作人
+     */
+    private void disableOtherEnabledProviders(Long providerId, String operator) {
+        llmProviderMapper.update(LlmProvider.builder()
+                        .status(STATUS_DISABLED)
+                        .updateBy(operator)
+                        .build(),
+                Wrappers.<LlmProvider>lambdaUpdate()
+                        .ne(LlmProvider::getId, providerId)
+                        .eq(LlmProvider::getStatus, STATUS_ENABLED));
     }
 
     /**
@@ -664,29 +698,6 @@ public class LlmProviderServiceImpl extends ServiceImpl<LlmProviderMapper, LlmPr
     private String normalizeNullableText(String value, String defaultValue) {
         String normalized = normalizeNullableText(value);
         return normalized != null ? normalized : normalizeNullableText(defaultValue);
-    }
-
-    /**
-     * 归一化可空大写文本。
-     *
-     * @param value 原始文本
-     * @return 归一化后的大写文本
-     */
-    private String normalizeUpperCaseNullableText(String value) {
-        String normalized = normalizeNullableText(value);
-        return normalized == null ? null : normalized.toUpperCase(Locale.ROOT);
-    }
-
-    /**
-     * 归一化可空大写文本并提供默认值。
-     *
-     * @param value        原始文本
-     * @param defaultValue 默认值
-     * @return 归一化后的大写文本
-     */
-    private String normalizeUpperCaseNullableText(String value, String defaultValue) {
-        String normalized = normalizeNullableText(value, defaultValue);
-        return normalized == null ? null : normalized.toUpperCase(Locale.ROOT);
     }
 
     /**

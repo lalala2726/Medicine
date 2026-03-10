@@ -153,6 +153,19 @@ class LLMmProviderControllerTests {
     }
 
     @Test
+    void updateProviderStatus_ShouldDelegateToService() {
+        LlmProviderUpdateStatusRequest request = new LlmProviderUpdateStatusRequest();
+        request.setId(1L);
+        request.setStatus(1);
+        when(llmProviderService.updateProviderStatus(request)).thenReturn(true);
+
+        var result = LLMmProviderController.updateProviderStatus(request);
+
+        assertEquals(200, result.getCode());
+        verify(llmProviderService).updateProviderStatus(request);
+    }
+
+    @Test
     void updateProviderApiKey_ShouldDelegateToService() {
         LlmProviderApiKeyUpdateRequest request = new LlmProviderApiKeyUpdateRequest();
         request.setId(1L);

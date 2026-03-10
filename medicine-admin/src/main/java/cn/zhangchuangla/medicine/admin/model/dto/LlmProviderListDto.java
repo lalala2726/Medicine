@@ -37,7 +37,7 @@ public class LlmProviderListDto {
     private String description;
 
     /**
-     * 状态。
+     * 状态（1启用 0停用）。
      */
     private Integer status;
 

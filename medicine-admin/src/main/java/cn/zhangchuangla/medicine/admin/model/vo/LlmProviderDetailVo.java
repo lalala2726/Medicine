@@ -25,7 +25,7 @@ public class LlmProviderDetailVo {
     @Schema(description = "描述", example = "OpenAI 官方接口")
     private String description;
 
-    @Schema(description = "状态（0启用 1停用）", example = "0")
+    @Schema(description = "状态（1启用 0停用）", example = "1")
     private Integer status;
 
     @Schema(description = "排序值", example = "10")

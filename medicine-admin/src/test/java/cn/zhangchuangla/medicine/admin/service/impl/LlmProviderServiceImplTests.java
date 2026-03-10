@@ -2,10 +2,7 @@ package cn.zhangchuangla.medicine.admin.service.impl;
 
 import cn.zhangchuangla.medicine.admin.integration.LlmProviderConnectivityClient;
 import cn.zhangchuangla.medicine.admin.mapper.LlmProviderMapper;
-import cn.zhangchuangla.medicine.admin.model.request.LlmProviderApiKeyUpdateRequest;
-import cn.zhangchuangla.medicine.admin.model.request.LlmProviderConnectivityTestRequest;
-import cn.zhangchuangla.medicine.admin.model.request.LlmProviderCreateRequest;
-import cn.zhangchuangla.medicine.admin.model.request.LlmProviderUpdateRequest;
+import cn.zhangchuangla.medicine.admin.model.request.*;
 import cn.zhangchuangla.medicine.common.core.config.JacksonConfig;
 import cn.zhangchuangla.medicine.common.core.exception.ParamException;
 import cn.zhangchuangla.medicine.common.core.exception.ServiceException;
@@ -20,11 +17,11 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Spy;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.dao.DuplicateKeyException;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
 class LlmProviderServiceImplTests {
@@ -42,13 +39,13 @@ class LlmProviderServiceImplTests {
     private LlmProviderServiceImpl llmProviderService;
 
     @Test
-    void createProvider_ShouldReturnPersistedProvider() {
+    void createProvider_ShouldDefaultStatusToEnabled_WhenNoEnabledProviderExists() {
         LlmProviderCreateRequest request = new LlmProviderCreateRequest();
         request.setProviderName("OpenAI Custom");
         request.setBaseUrl("https://api.openai.com/v1");
         request.setApiKey("sk-test");
 
-        when(llmProviderMapper.selectCount(any())).thenReturn(0L);
+        when(llmProviderMapper.selectCount(any())).thenReturn(0L, 0L);
         when(llmProviderMapper.insert(any(LlmProvider.class))).thenAnswer(invocation -> {
             LlmProvider provider = invocation.getArgument(0);
             provider.setId(1L);
@@ -64,10 +61,51 @@ class LlmProviderServiceImplTests {
         ArgumentCaptor<LlmProvider> providerCaptor = ArgumentCaptor.forClass(LlmProvider.class);
         verify(llmProviderMapper).insert(providerCaptor.capture());
         assertEquals("OpenAI Custom", providerCaptor.getValue().getProviderName());
+        assertEquals(1, providerCaptor.getValue().getStatus());
     }
 
     @Test
-    void updateProvider_ShouldReturnUpdatedProvider() {
+    void createProvider_ShouldDefaultStatusToDisabled_WhenEnabledProviderExists() {
+        LlmProviderCreateRequest request = new LlmProviderCreateRequest();
+        request.setProviderName("OpenAI Backup");
+        request.setBaseUrl("https://backup.example.com/v1");
+        request.setApiKey("sk-test");
+
+        when(llmProviderMapper.selectCount(any())).thenReturn(0L, 1L);
+        when(llmProviderMapper.insert(any(LlmProvider.class))).thenAnswer(invocation -> {
+            LlmProvider provider = invocation.getArgument(0);
+            provider.setId(2L);
+            return 1;
+        });
+
+        LlmProvider provider = llmProviderService.createProvider(request);
+
+        assertEquals(2L, provider.getId());
+        ArgumentCaptor<LlmProvider> providerCaptor = ArgumentCaptor.forClass(LlmProvider.class);
+        verify(llmProviderMapper).insert(providerCaptor.capture());
+        assertEquals(0, providerCaptor.getValue().getStatus());
+    }
+
+    @Test
+    void createProvider_WhenSingleEnabledConstraintViolated_ShouldThrowStatusConflictMessage() {
+        LlmProviderCreateRequest request = new LlmProviderCreateRequest();
+        request.setProviderName("OpenAI Custom");
+        request.setBaseUrl("https://api.openai.com/v1");
+        request.setApiKey("sk-test");
+
+        when(llmProviderMapper.selectCount(any())).thenReturn(0L, 0L);
+        when(llmProviderMapper.insert(any(LlmProvider.class)))
+                .thenThrow(new DuplicateKeyException(
+                        "Duplicate entry '1' for key 'uk_llm_provider_single_enabled'"));
+
+        ServiceException exception = assertThrows(ServiceException.class,
+                () -> llmProviderService.createProvider(request));
+
+        assertEquals("启用提供商只允许存在一个", exception.getMessage());
+    }
+
+    @Test
+    void updateProvider_ShouldPreserveExistingStatus() {
         LlmProvider existing = LlmProvider.builder()
                 .id(1L)
                 .providerName("Old Provider")
@@ -95,6 +133,82 @@ class LlmProviderServiceImplTests {
         ArgumentCaptor<LlmProvider> providerCaptor = ArgumentCaptor.forClass(LlmProvider.class);
         verify(llmProviderMapper).updateById(providerCaptor.capture());
         assertEquals("sk-old", providerCaptor.getValue().getApiKey());
+        assertEquals(0, providerCaptor.getValue().getStatus());
+    }
+
+    @Test
+    void updateProviderStatus_ShouldEnableTargetAndDisableOtherProviders() {
+        LlmProvider existing = LlmProvider.builder()
+                .id(2L)
+                .providerName("Backup Provider")
+                .status(0)
+                .build();
+        LlmProviderUpdateStatusRequest request = new LlmProviderUpdateStatusRequest();
+        request.setId(2L);
+        request.setStatus(1);
+
+        when(llmProviderMapper.selectById(2L)).thenReturn(existing);
+        when(llmProviderMapper.update(any(LlmProvider.class), any())).thenReturn(1);
+        when(llmProviderMapper.updateById(any(LlmProvider.class))).thenReturn(1);
+
+        boolean result = llmProviderService.updateProviderStatus(request);
+
+        assertTrue(result);
+        var inOrder = inOrder(llmProviderMapper);
+        inOrder.verify(llmProviderMapper).selectById(2L);
+        ArgumentCaptor<LlmProvider> disableCaptor = ArgumentCaptor.forClass(LlmProvider.class);
+        inOrder.verify(llmProviderMapper).update(disableCaptor.capture(), any());
+        assertEquals(0, disableCaptor.getValue().getStatus());
+        ArgumentCaptor<LlmProvider> enableCaptor = ArgumentCaptor.forClass(LlmProvider.class);
+        inOrder.verify(llmProviderMapper).updateById(enableCaptor.capture());
+        assertEquals(2L, enableCaptor.getValue().getId());
+        assertEquals(1, enableCaptor.getValue().getStatus());
+    }
+
+    @Test
+    void updateProviderStatus_ShouldDisableOnlyTarget() {
+        LlmProvider existing = LlmProvider.builder()
+                .id(1L)
+                .providerName("OpenAI")
+                .status(1)
+                .build();
+        LlmProviderUpdateStatusRequest request = new LlmProviderUpdateStatusRequest();
+        request.setId(1L);
+        request.setStatus(0);
+
+        when(llmProviderMapper.selectById(1L)).thenReturn(existing);
+        when(llmProviderMapper.updateById(any(LlmProvider.class))).thenReturn(1);
+
+        boolean result = llmProviderService.updateProviderStatus(request);
+
+        assertTrue(result);
+        verify(llmProviderMapper, never()).update(any(LlmProvider.class), any());
+        ArgumentCaptor<LlmProvider> captor = ArgumentCaptor.forClass(LlmProvider.class);
+        verify(llmProviderMapper).updateById(captor.capture());
+        assertEquals(0, captor.getValue().getStatus());
+    }
+
+    @Test
+    void updateProviderStatus_WhenSingleEnabledConstraintViolated_ShouldThrowStatusConflictMessage() {
+        LlmProvider existing = LlmProvider.builder()
+                .id(1L)
+                .providerName("OpenAI")
+                .status(0)
+                .build();
+        LlmProviderUpdateStatusRequest request = new LlmProviderUpdateStatusRequest();
+        request.setId(1L);
+        request.setStatus(1);
+
+        when(llmProviderMapper.selectById(1L)).thenReturn(existing);
+        when(llmProviderMapper.update(any(LlmProvider.class), any())).thenReturn(1);
+        when(llmProviderMapper.updateById(any(LlmProvider.class)))
+                .thenThrow(new DuplicateKeyException(
+                        "Duplicate entry '1' for key 'uk_llm_provider_single_enabled'"));
+
+        ServiceException exception = assertThrows(ServiceException.class,
+                () -> llmProviderService.updateProviderStatus(request));
+
+        assertEquals("启用提供商只允许存在一个", exception.getMessage());
     }
 
     @Test
@@ -159,6 +273,7 @@ class LlmProviderServiceImplTests {
                   "providerName": "OpenAI",
                   "baseUrl": "https://api.openai.com/v1",
                   "apiKey": "sk-ignored",
+                  "status": 1,
                   "models": []
                 }
                 """;
@@ -169,6 +284,26 @@ class LlmProviderServiceImplTests {
         assertEquals(1L, request.getId());
         assertEquals("OpenAI", request.getProviderName());
         assertEquals("https://api.openai.com/v1", request.getBaseUrl());
+    }
+
+    @Test
+    void createProviderRequest_WhenJsonContainsStatus_ShouldIgnoreUnknownProperty() throws Exception {
+        String json = """
+                {
+                  "providerName": "OpenAI",
+                  "baseUrl": "https://api.openai.com/v1",
+                  "apiKey": "sk-test",
+                  "status": 1,
+                  "models": []
+                }
+                """;
+
+        LlmProviderCreateRequest request = new JacksonConfig().jsonMapper()
+                .readValue(json, LlmProviderCreateRequest.class);
+
+        assertEquals("OpenAI", request.getProviderName());
+        assertEquals("https://api.openai.com/v1", request.getBaseUrl());
+        assertEquals("sk-test", request.getApiKey());
     }
 
     @Test

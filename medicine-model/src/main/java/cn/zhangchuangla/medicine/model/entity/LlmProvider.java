@@ -47,7 +47,7 @@ public class LlmProvider {
     private String description;
 
     /**
-     * 状态：0启用 1停用
+     * 状态：1启用 0停用
      */
     private Integer status;
 

@@ -73,6 +73,14 @@ public interface LlmProviderService extends IService<LlmProvider> {
     LlmProvider updateProvider(LlmProviderUpdateRequest request);
 
     /**
+     * 更新提供商状态。
+     *
+     * @param request 状态修改请求
+     * @return 是否更新成功
+     */
+    boolean updateProviderStatus(LlmProviderUpdateStatusRequest request);
+
+    /**
      * 更新提供商 API Key。
      *
      * @param request API Key 修改请求

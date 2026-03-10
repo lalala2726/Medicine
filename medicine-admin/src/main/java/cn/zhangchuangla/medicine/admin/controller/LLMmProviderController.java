@@ -127,6 +127,18 @@ public class LLMmProviderController extends BaseController {
     }
 
     /**
+     * 更新提供商状态。
+     *
+     * @param request 状态修改请求
+     * @return 操作结果
+     */
+    @PutMapping("/status")
+    @Operation(summary = "更新提供商状态")
+    public AjaxResult<Void> updateProviderStatus(@Valid @RequestBody LlmProviderUpdateStatusRequest request) {
+        return toAjax(llmProviderService.updateProviderStatus(request));
+    }
+
+    /**
      * 更新提供商 API Key。
      *
      * @param request API Key 修改请求

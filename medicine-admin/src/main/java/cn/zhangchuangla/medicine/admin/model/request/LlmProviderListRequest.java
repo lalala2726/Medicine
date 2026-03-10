@@ -16,6 +16,6 @@ public class LlmProviderListRequest extends PageRequest {
     @Schema(description = "提供商名称（模糊）", example = "OpenAI")
     private String providerName;
 
-    @Schema(description = "状态（精确，0启用 1停用）", example = "0")
+    @Schema(description = "状态（精确，1启用 0停用）", example = "1")
     private Integer status;
 }

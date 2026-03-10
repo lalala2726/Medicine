@@ -2,7 +2,9 @@ package cn.zhangchuangla.medicine.admin.model.request;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.Valid;
-import jakarta.validation.constraints.*;
+import jakarta.validation.constraints.NotEmpty;
+import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Positive;
 import lombok.Data;
 
 import java.util.List;
@@ -30,11 +32,6 @@ public class LlmProviderUpdateRequest {
 
     @Schema(description = "提供商描述", example = "OpenAI 官方接口")
     private String description;
-
-    @Schema(description = "状态（0启用 1停用）", example = "0")
-    @Min(value = 0L, message = "状态值不合法")
-    @Max(value = 1L, message = "状态值不合法")
-    private Integer status;
 
     @Schema(description = "排序值，值越小越靠前", example = "10")
     private Integer sort;
