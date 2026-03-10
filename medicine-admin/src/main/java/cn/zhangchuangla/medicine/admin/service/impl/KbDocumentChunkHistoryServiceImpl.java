@@ -7,7 +7,7 @@ import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import org.springframework.stereotype.Service;
 
 /**
- * @author zhangchuang
+ * @author Chuang
  */
 @Service
 public class KbDocumentChunkHistoryServiceImpl extends ServiceImpl<KbDocumentChunkHistoryMapper, KbDocumentChunkHistory>

@@ -1,0 +1,126 @@
+package cn.zhangchuangla.medicine.admin.facade.impl;
+
+import cn.zhangchuangla.medicine.admin.facade.LlmProviderFacade;
+import cn.zhangchuangla.medicine.admin.model.dto.LlmProviderDetailDto;
+import cn.zhangchuangla.medicine.admin.model.request.LlmProviderCreateRequest;
+import cn.zhangchuangla.medicine.admin.model.request.LlmProviderModelCreateRequest;
+import cn.zhangchuangla.medicine.admin.model.request.LlmProviderModelUpdateRequest;
+import cn.zhangchuangla.medicine.admin.model.request.LlmProviderUpdateRequest;
+import cn.zhangchuangla.medicine.admin.service.LlmProviderModelService;
+import cn.zhangchuangla.medicine.admin.service.LlmProviderService;
+import cn.zhangchuangla.medicine.common.core.utils.BeanCotyUtils;
+import cn.zhangchuangla.medicine.model.entity.LlmProvider;
+import cn.zhangchuangla.medicine.model.entity.LlmProviderModel;
+import com.baomidou.mybatisplus.core.toolkit.Wrappers;
+import lombok.RequiredArgsConstructor;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import java.util.List;
+
+/**
+ * 大模型提供商聚合门面实现。
+ */
+@Service
+@RequiredArgsConstructor
+public class LlmProviderFacadeImpl implements LlmProviderFacade {
+
+    private final LlmProviderService llmProviderService;
+    private final LlmProviderModelService llmProviderModelService;
+
+    /**
+     * 查询提供商详情以及关联模型列表。
+     *
+     * @param id 提供商ID
+     * @return 提供商详情
+     */
+    @Override
+    public LlmProviderDetailDto getProviderDetail(Long id) {
+        LlmProvider provider = llmProviderService.getRequiredProvider(id);
+        List<LlmProviderModel> models = llmProviderModelService.listProviderModels(id);
+        LlmProviderDetailDto detailDto = BeanCotyUtils.copyProperties(provider, LlmProviderDetailDto.class);
+        detailDto.setModels(models);
+        return detailDto;
+    }
+
+    /**
+     * 新增提供商以及其关联模型。
+     *
+     * @param request 新增请求
+     * @return 是否新增成功
+     */
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public boolean createProvider(LlmProviderCreateRequest request) {
+        LlmProvider provider = llmProviderService.createProvider(request);
+        return llmProviderModelService.saveProviderModels(provider, request.getModels(), provider.getCreateBy());
+    }
+
+    /**
+     * 编辑提供商以及其关联模型。
+     *
+     * @param request 编辑请求
+     * @return 是否编辑成功
+     */
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public boolean updateProvider(LlmProviderUpdateRequest request) {
+        LlmProvider provider = llmProviderService.updateProvider(request);
+        llmProviderModelService.remove(Wrappers.<LlmProviderModel>lambdaQuery()
+                .eq(LlmProviderModel::getProviderId, provider.getId()));
+        return llmProviderModelService.saveProviderModels(provider, request.getModels(), provider.getUpdateBy());
+    }
+
+    /**
+     * 删除提供商以及其关联模型。
+     *
+     * @param id 提供商ID
+     * @return 是否删除成功
+     */
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public boolean deleteProvider(Long id) {
+        llmProviderService.getRequiredProvider(id);
+        llmProviderModelService.remove(Wrappers.<LlmProviderModel>lambdaQuery()
+                .eq(LlmProviderModel::getProviderId, id));
+        return llmProviderService.deleteProvider(id);
+    }
+
+    /**
+     * 查询指定提供商下的全部模型。
+     *
+     * @param providerId 提供商ID
+     * @return 模型列表
+     */
+    @Override
+    public List<LlmProviderModel> listProviderModels(Long providerId) {
+        llmProviderService.getRequiredProvider(providerId);
+        return llmProviderModelService.listProviderModels(providerId);
+    }
+
+    /**
+     * 新增单个模型。
+     *
+     * @param request 新增模型请求
+     * @return 是否新增成功
+     */
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public boolean createProviderModel(LlmProviderModelCreateRequest request) {
+        LlmProvider provider = llmProviderService.getRequiredProvider(request.getProviderId());
+        return llmProviderModelService.createProviderModel(provider, request);
+    }
+
+    /**
+     * 编辑单个模型。
+     *
+     * @param request 编辑模型请求
+     * @return 是否编辑成功
+     */
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public boolean updateProviderModel(LlmProviderModelUpdateRequest request) {
+        LlmProvider provider = llmProviderService.getRequiredProvider(request.getProviderId());
+        return llmProviderModelService.updateProviderModel(provider, request);
+    }
+}
