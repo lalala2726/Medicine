@@ -158,4 +158,14 @@ public interface RedisConstants {
         String SALES_SYNC_COUNTER_KEY = "mall:product:index:sales:delta:%s";
     }
 
+    /**
+     * Agent 配置缓存相关常量
+     */
+    interface AgentConfig {
+        /**
+         * Agent 全量配置缓存 key
+         */
+        String ALL_CONFIG_KEY = "agent:config:all";
+    }
+
 }

@@ -1,0 +1,51 @@
+package cn.zhangchuangla.medicine.admin.model.request;
+
+import jakarta.validation.Validation;
+import jakarta.validation.Validator;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
+
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
+class AgentConfigRequestValidationTests {
+
+    private static Validator validator;
+
+    @BeforeAll
+    static void setUpValidator() {
+        validator = Validation.buildDefaultValidatorFactory().getValidator();
+    }
+
+    private static AgentModelSelectionRequest buildSelection() {
+        AgentModelSelectionRequest request = new AgentModelSelectionRequest();
+        request.setModelName("gpt-4.1");
+        request.setReasoningEnabled(false);
+        request.setMaxTokens(1024);
+        request.setTemperature(0.7);
+        return request;
+    }
+
+    @Test
+    void knowledgeBaseRequest_ShouldFail_WhenEmbeddingDimIsNotPowerOfTwo() {
+        KnowledgeBaseAgentConfigRequest request = new KnowledgeBaseAgentConfigRequest();
+        request.setEmbeddingDim(130);
+        request.setEmbeddingModel(buildSelection());
+
+        var violations = validator.validate(request);
+
+        assertFalse(violations.isEmpty());
+        assertTrue(violations.stream().anyMatch(item -> "向量维度必须是2的次方".equals(item.getMessage())));
+    }
+
+    @Test
+    void modelSelectionRequest_ShouldFail_WhenTemperatureIsGreaterThanTwo() {
+        AgentModelSelectionRequest request = buildSelection();
+        request.setTemperature(2.1);
+
+        var violations = validator.validate(request);
+
+        assertFalse(violations.isEmpty());
+        assertTrue(violations.stream().anyMatch(item -> "模型温度不能大于2".equals(item.getMessage())));
+    }
+}
