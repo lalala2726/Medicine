@@ -159,11 +159,11 @@ public class LlmProviderModelServiceImpl extends ServiceImpl<LlmProviderModelMap
     /**
      * 构建新增模型实体。
      *
-     * @param provider   提供商实体
-     * @param request    模型请求
-     * @param modelName  模型实际名称
-     * @param modelType  模型类型
-     * @param operator   操作人
+     * @param provider  提供商实体
+     * @param request   模型请求
+     * @param modelName 模型实际名称
+     * @param modelType 模型类型
+     * @param operator  操作人
      * @return 模型实体
      */
     private LlmProviderModel buildCreateModelEntity(LlmProvider provider,
@@ -268,8 +268,8 @@ public class LlmProviderModelServiceImpl extends ServiceImpl<LlmProviderModelMap
     /**
      * 解析模型名称。
      *
-     * @param modelName          请求中的模型名称
-     * @param fallbackModelName  回退模型名称
+     * @param modelName         请求中的模型名称
+     * @param fallbackModelName 回退模型名称
      * @return 最终模型名称
      */
     private String resolveModelName(String modelName, String fallbackModelName) {

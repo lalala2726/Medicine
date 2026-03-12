@@ -750,10 +750,10 @@ public class AgentConfigServiceImpl implements AgentConfigService, BaseService {
     /**
      * 校验单个槽位的最大 token 与温度范围。
      *
-     * @param request       模型槽位请求
-     * @param minTokens     最大 token 最小值
-     * @param maxTokens     最大 token 最大值
-     * @param slotName      槽位名称
+     * @param request   模型槽位请求
+     * @param minTokens 最大 token 最小值
+     * @param maxTokens 最大 token 最大值
+     * @param slotName  槽位名称
      */
     private void validateSlotAdvancedParams(AgentModelSelectionRequest request,
                                             int minTokens,

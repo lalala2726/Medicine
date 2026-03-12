@@ -652,7 +652,7 @@ public class LlmProviderServiceImpl extends ServiceImpl<LlmProviderMapper, LlmPr
     /**
      * 归一化并校验提供商类型，若为空则回退到默认值。
      *
-     * @param providerType  提供商类型
+     * @param providerType 提供商类型
      * @param defaultValue 默认值
      * @return 归一化后的提供商类型
      */
