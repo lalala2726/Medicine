@@ -32,6 +32,11 @@ public class LlmProvider {
     private String providerName;
 
     /**
+     * 提供商类型：openai、aliyun、volcengine
+     */
+    private String providerType;
+
+    /**
      * 基础请求地址
      */
     private String baseUrl;
@@ -47,7 +52,7 @@ public class LlmProvider {
     private String description;
 
     /**
-     * 状态：0启用 1停用
+     * 状态：1启用 0停用
      */
     private Integer status;
 

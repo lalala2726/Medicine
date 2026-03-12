@@ -18,29 +18,32 @@ public class LlmProviderListVo {
     @Schema(description = "提供商名称", example = "OpenAI")
     private String providerName;
 
+    @Schema(description = "提供商类型，仅支持 openai、aliyun、volcengine", example = "openai")
+    private String providerType;
+
     @Schema(description = "基础请求地址", example = "https://api.openai.com/v1")
     private String baseUrl;
 
     @Schema(description = "描述", example = "OpenAI 官方接口")
     private String description;
 
-    @Schema(description = "状态（0启用 1停用）", example = "0")
+    @Schema(description = "状态（1启用 0停用）", example = "1")
     private Integer status;
 
     @Schema(description = "排序值", example = "10")
     private Integer sort;
 
     @Schema(description = "模型总数", example = "5")
-    private Long modelCount;
+    private Integer modelCount;
 
     @Schema(description = "对话模型数量", example = "3")
-    private Long chatModelCount;
+    private Integer chatModelCount;
 
     @Schema(description = "重排模型数量", example = "0")
-    private Long rerankModelCount;
+    private Integer rerankModelCount;
 
     @Schema(description = "向量模型数量", example = "2")
-    private Long embeddingModelCount;
+    private Integer embeddingModelCount;
 
     @Schema(description = "创建时间")
     private Date createdAt;

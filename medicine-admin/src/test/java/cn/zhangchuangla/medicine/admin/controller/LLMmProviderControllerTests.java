@@ -75,7 +75,8 @@ class LLMmProviderControllerTests {
         page.setRecords(List.of(LlmProviderListDto.builder()
                 .id(1L)
                 .providerName("OpenAI")
-                .modelCount(5L)
+                .providerType("openai")
+                .modelCount(5)
                 .build()));
         when(llmProviderService.listProviders(request)).thenReturn(page);
 
@@ -91,6 +92,7 @@ class LLMmProviderControllerTests {
         LlmProviderDetailDto detailDto = LlmProviderDetailDto.builder()
                 .id(1L)
                 .providerName("OpenAI")
+                .providerType("openai")
                 .baseUrl("https://api.openai.com/v1")
                 .apiKey("sk-detail")
                 .models(List.of(buildProviderModel(1L, "gpt-4.1", "CHAT")))
@@ -101,6 +103,7 @@ class LLMmProviderControllerTests {
 
         assertEquals(200, result.getCode());
         assertEquals("OpenAI", result.getData().getProviderName());
+        assertEquals("openai", result.getData().getProviderType());
         assertEquals("sk-detail", result.getData().getApiKey());
         assertEquals(1, result.getData().getModels().size());
         verify(llmProviderFacade).getProviderDetail(1L);
@@ -110,6 +113,7 @@ class LLMmProviderControllerTests {
     void createProvider_ShouldDelegateToFacade() {
         LlmProviderCreateRequest request = new LlmProviderCreateRequest();
         request.setProviderKey("openai");
+        request.setProviderType("openai");
         request.setApiKey("sk-test");
         when(llmProviderFacade.createProvider(request)).thenReturn(true);
 
@@ -150,6 +154,19 @@ class LLMmProviderControllerTests {
 
         assertEquals(200, result.getCode());
         verify(llmProviderFacade).updateProvider(request);
+    }
+
+    @Test
+    void updateProviderStatus_ShouldDelegateToService() {
+        LlmProviderUpdateStatusRequest request = new LlmProviderUpdateStatusRequest();
+        request.setId(1L);
+        request.setStatus(1);
+        when(llmProviderService.updateProviderStatus(request)).thenReturn(true);
+
+        var result = LLMmProviderController.updateProviderStatus(request);
+
+        assertEquals(200, result.getCode());
+        verify(llmProviderService).updateProviderStatus(request);
     }
 
     @Test
@@ -230,6 +247,7 @@ class LLMmProviderControllerTests {
         return LlmPresetProviderTemplateDto.builder()
                 .providerKey("openai")
                 .providerName("OpenAI")
+                .providerType("openai")
                 .baseUrl("https://api.openai.com/v1")
                 .description("OpenAI 官方接口")
                 .models(List.of(

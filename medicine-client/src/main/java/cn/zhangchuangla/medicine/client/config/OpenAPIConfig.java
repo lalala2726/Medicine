@@ -34,7 +34,7 @@ public class OpenAPIConfig {
         return new OpenAPI()
                 .info(new Info()
                         .title("客户端API接口文档")
-                        .description("提供完整的客户端API接口定义，包括商城、订单、用户、AI咨询、消息通知等功能模块")
+                        .description("提供完整的客户端API接口定义，包括商城、订单、用户、AI咨询等功能模块")
                         .contact(new Contact()
                                 .name("Chuang")
                                 .email("chuang@zhangchuangla.cn")

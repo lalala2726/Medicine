@@ -27,6 +27,11 @@ public class LlmPresetProviderTemplateDto {
     private String providerName;
 
     /**
+     * 提供商类型。
+     */
+    private String providerType;
+
+    /**
      * 默认基础地址。
      */
     private String baseUrl;

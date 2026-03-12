@@ -41,6 +41,7 @@ class LlmProviderFacadeImplTests {
         var detail = llmProviderFacade.getProviderDetail(1L);
 
         assertEquals("OpenAI", detail.getProviderName());
+        assertEquals("openai", detail.getProviderType());
         assertEquals("sk-detail", detail.getApiKey());
         assertEquals(1, detail.getModels().size());
     }
@@ -146,6 +147,7 @@ class LlmProviderFacadeImplTests {
         return LlmProvider.builder()
                 .id(1L)
                 .providerName("OpenAI")
+                .providerType("openai")
                 .apiKey("sk-detail")
                 .createBy("tester")
                 .updateBy("tester")

@@ -2,6 +2,7 @@
   {
     "providerKey": "openai",
     "providerName": "OpenAI",
+    "providerType": "openai",
     "baseUrl": "https://api.openai.com/v1",
     "description": "OpenAI 官方标准接口预设模板",
     "models": [
@@ -55,6 +56,7 @@
   {
     "providerKey": "aliyun-bailian",
     "providerName": "阿里云百联",
+    "providerType": "aliyun",
     "baseUrl": "https://dashscope.aliyuncs.com/compatible-mode/v1",
     "description": "阿里云百联 OpenAI 兼容接口预设模板",
     "models": [
@@ -117,6 +119,7 @@
   {
     "providerKey": "volcengine-ark",
     "providerName": "火山引擎",
+    "providerType": "volcengine",
     "baseUrl": "https://ark.cn-beijing.volces.com/api/v3",
     "description": "火山引擎方舟 OpenAI 兼容接口预设模板",
     "models": [
