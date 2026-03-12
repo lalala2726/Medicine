@@ -19,6 +19,9 @@ public class LlmProviderDetailVo {
     @Schema(description = "提供商名称", example = "OpenAI")
     private String providerName;
 
+    @Schema(description = "提供商类型，仅支持 openai、aliyun、volcengine", example = "openai")
+    private String providerType;
+
     @Schema(description = "基础请求地址", example = "https://api.openai.com/v1")
     private String baseUrl;
 

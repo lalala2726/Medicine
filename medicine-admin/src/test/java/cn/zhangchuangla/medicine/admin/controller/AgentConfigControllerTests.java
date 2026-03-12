@@ -102,6 +102,37 @@ class AgentConfigControllerTests {
     }
 
     @Test
+    void getSpeechConfig_ShouldDelegateToService() {
+        SpeechAgentConfigVo vo = new SpeechAgentConfigVo();
+        vo.setProvider("volcengine");
+        when(agentConfigService.getSpeechConfig()).thenReturn(vo);
+
+        var result = agentConfigController.getSpeechConfig();
+
+        assertEquals(200, result.getCode());
+        assertNotNull(result.getData());
+        assertEquals("volcengine", result.getData().getProvider());
+        verify(agentConfigService).getSpeechConfig();
+    }
+
+    @Test
+    void saveSpeechConfig_ShouldDelegateToService() {
+        SpeechAgentConfigRequest request = new SpeechAgentConfigRequest();
+        request.setAppId("app-id");
+        request.setAccessToken("token");
+        TextToSpeechConfigRequest textToSpeech = new TextToSpeechConfigRequest();
+        textToSpeech.setVoiceType("zh_female_xiaohe_uranus_bigtts");
+        textToSpeech.setMaxTextChars(300);
+        request.setTextToSpeech(textToSpeech);
+        when(agentConfigService.saveSpeechConfig(request)).thenReturn(true);
+
+        var result = agentConfigController.saveSpeechConfig(request);
+
+        assertEquals(200, result.getCode());
+        verify(agentConfigService).saveSpeechConfig(request);
+    }
+
+    @Test
     void getChatHistorySummaryConfig_ShouldDelegateToService() {
         ChatHistorySummaryAgentConfigVo vo = new ChatHistorySummaryAgentConfigVo();
         when(agentConfigService.getChatHistorySummaryConfig()).thenReturn(vo);

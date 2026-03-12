@@ -7,6 +7,7 @@
     <resultMap id="BaseResultMap" type="cn.zhangchuangla.medicine.model.entity.LlmProvider">
         <id property="id" column="id"/>
         <result property="providerName" column="provider_name"/>
+        <result property="providerType" column="provider_type"/>
         <result property="baseUrl" column="base_url"/>
         <result property="apiKey" column="api_key"/>
         <result property="description" column="description"/>
@@ -21,6 +22,7 @@
     <resultMap id="LlmProviderListResultMap" type="cn.zhangchuangla.medicine.admin.model.dto.LlmProviderListDto">
         <id property="id" column="id"/>
         <result property="providerName" column="provider_name"/>
+        <result property="providerType" column="provider_type"/>
         <result property="baseUrl" column="base_url"/>
         <result property="description" column="description"/>
         <result property="status" column="status"/>
@@ -36,7 +38,7 @@
     </resultMap>
 
     <sql id="Base_Column_List">
-        id,provider_name,
+        id,provider_name,provider_type,
         base_url,api_key,description,status,sort,create_by,update_by,
         created_at,updated_at
     </sql>
@@ -45,6 +47,7 @@
         SELECT
         p.id,
         p.provider_name,
+        p.provider_type,
         p.base_url,
         p.description,
         p.status,

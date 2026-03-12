@@ -134,6 +134,33 @@ class AgentConfigServiceImplTests {
     }
 
     @Test
+    void getSpeechConfig_ShouldHideAccessTokenAndMapEditableFields() {
+        AgentAllConfigCache cache = new AgentAllConfigCache();
+        SpeechAgentConfig speech = new SpeechAgentConfig();
+        speech.setProvider("volcengine");
+        speech.setAppId("speech-app-id");
+        speech.setAccessToken("secret-token");
+        SpeechRecognitionAgentConfig speechRecognition = new SpeechRecognitionAgentConfig();
+        speechRecognition.setResourceId("volc.seedasr.sauc.duration");
+        speech.setSpeechRecognition(speechRecognition);
+        TextToSpeechAgentConfig textToSpeech = new TextToSpeechAgentConfig();
+        textToSpeech.setResourceId("seed-tts-2.0");
+        textToSpeech.setVoiceType("zh_female_xiaohe_uranus_bigtts");
+        textToSpeech.setMaxTextChars(300);
+        speech.setTextToSpeech(textToSpeech);
+        cache.setSpeech(speech);
+        when(valueOperations.get(RedisConstants.AgentConfig.ALL_CONFIG_KEY)).thenReturn(cache);
+
+        var result = agentConfigService.getSpeechConfig();
+
+        assertEquals("speech-app-id", result.getAppId());
+        assertNull(result.getAccessToken());
+        assertNotNull(result.getTextToSpeech());
+        assertEquals("zh_female_xiaohe_uranus_bigtts", result.getTextToSpeech().getVoiceType());
+        assertEquals(300, result.getTextToSpeech().getMaxTextChars());
+    }
+
+    @Test
     void getChatHistorySummaryConfig_ShouldMapRuntimeToSelectionVo() {
         AgentAllConfigCache cache = new AgentAllConfigCache();
         ChatHistorySummaryAgentConfig chatHistorySummary = new ChatHistorySummaryAgentConfig();
@@ -256,11 +283,30 @@ class AgentConfigServiceImplTests {
         KnowledgeBaseAgentConfig knowledgeBase = saved.getKnowledgeBase();
         assertEquals(1024, knowledgeBase.getEmbeddingDim());
         assertNull(knowledgeBase.getRerankModel());
-        assertEquals("OpenAI", knowledgeBase.getEmbeddingModel().getModel().getProvider());
+        assertEquals("openai", knowledgeBase.getEmbeddingModel().getModel().getProvider());
         assertEquals("text-embedding-3-large", knowledgeBase.getEmbeddingModel().getModel().getModel());
         assertEquals(LlmModelTypeConstants.EMBEDDING, knowledgeBase.getEmbeddingModel().getModel().getModelType());
         assertEquals("https://api.openai.com/v1", knowledgeBase.getEmbeddingModel().getModel().getBaseUrl());
         assertEquals("sk-openai", knowledgeBase.getEmbeddingModel().getModel().getApiKey());
+    }
+
+    @Test
+    void saveKnowledgeBaseConfig_WhenEnabledProviderTypeMissing_ShouldThrowServiceException() {
+        LlmProvider provider = buildEnabledProvider();
+        provider.setProviderType(null);
+        when(llmProviderService.lambdaQuery()).thenReturn(mockProviderWrapper(List.of(provider)));
+        when(llmProviderModelService.lambdaQuery()).thenReturn(mockModelWrapper(List.of(
+                buildModel("text-embedding-3-large", LlmModelTypeConstants.EMBEDDING, 0, 0, 0)
+        )));
+
+        KnowledgeBaseAgentConfigRequest request = new KnowledgeBaseAgentConfigRequest();
+        request.setEmbeddingDim(1024);
+        request.setEmbeddingModel(buildSelection("text-embedding-3-large", false, 2048, 0.0));
+
+        ServiceException exception = assertThrows(ServiceException.class,
+                () -> agentConfigService.saveKnowledgeBaseConfig(request));
+
+        assertEquals("当前启用的模型提供商未配置类型，请先在模型提供商中补充类型", exception.getMessage());
     }
 
     @Test
@@ -518,6 +564,77 @@ class AgentConfigServiceImplTests {
     }
 
     @Test
+    void saveSpeechConfig_ShouldPersistSpeechSectionAndPublishRefresh() {
+        when(valueOperations.get(RedisConstants.AgentConfig.ALL_CONFIG_KEY)).thenReturn(null);
+
+        SpeechAgentConfigRequest request = buildSpeechRequest("speech-app-id", "speech-token",
+                "zh_female_xiaohe_uranus_bigtts", 300);
+
+        boolean result = agentConfigService.saveSpeechConfig(request);
+
+        assertTrue(result);
+        ArgumentCaptor<AgentAllConfigCache> captor = ArgumentCaptor.forClass(AgentAllConfigCache.class);
+        verify(valueOperations).set(eq(RedisConstants.AgentConfig.ALL_CONFIG_KEY), captor.capture());
+        verify(agentConfigPublisher).publishRefresh(any(AgentConfigRefreshMessage.class));
+        SpeechAgentConfig savedSpeech = captor.getValue().getSpeech();
+        assertNotNull(savedSpeech);
+        assertEquals("volcengine", savedSpeech.getProvider());
+        assertEquals("speech-app-id", savedSpeech.getAppId());
+        assertEquals("speech-token", savedSpeech.getAccessToken());
+        assertEquals("volc.seedasr.sauc.duration", savedSpeech.getSpeechRecognition().getResourceId());
+        assertEquals("seed-tts-2.0", savedSpeech.getTextToSpeech().getResourceId());
+        assertEquals("zh_female_xiaohe_uranus_bigtts", savedSpeech.getTextToSpeech().getVoiceType());
+        assertEquals(300, savedSpeech.getTextToSpeech().getMaxTextChars());
+    }
+
+    @Test
+    void saveSpeechConfig_WhenExistingTokenAndRequestTokenBlank_ShouldPreserveOldToken() {
+        AgentAllConfigCache cache = new AgentAllConfigCache();
+        SpeechAgentConfig existingSpeech = new SpeechAgentConfig();
+        existingSpeech.setProvider("volcengine");
+        existingSpeech.setAppId("old-app-id");
+        existingSpeech.setAccessToken("old-token");
+        cache.setSpeech(existingSpeech);
+        when(valueOperations.get(RedisConstants.AgentConfig.ALL_CONFIG_KEY)).thenReturn(cache);
+
+        SpeechAgentConfigRequest request = buildSpeechRequest("speech-app-id", "   ",
+                "zh_female_xiaohe_uranus_bigtts", 300);
+
+        boolean result = agentConfigService.saveSpeechConfig(request);
+
+        assertTrue(result);
+        ArgumentCaptor<AgentAllConfigCache> captor = ArgumentCaptor.forClass(AgentAllConfigCache.class);
+        verify(valueOperations).set(eq(RedisConstants.AgentConfig.ALL_CONFIG_KEY), captor.capture());
+        assertEquals("old-token", captor.getValue().getSpeech().getAccessToken());
+    }
+
+    @Test
+    void saveSpeechConfig_WhenNoExistingTokenAndRequestTokenBlank_ShouldThrowServiceException() {
+        when(valueOperations.get(RedisConstants.AgentConfig.ALL_CONFIG_KEY)).thenReturn(null);
+
+        SpeechAgentConfigRequest request = buildSpeechRequest("speech-app-id", null,
+                "zh_female_xiaohe_uranus_bigtts", 300);
+
+        ServiceException exception = assertThrows(ServiceException.class, () -> agentConfigService.saveSpeechConfig(request));
+
+        assertEquals("豆包语音AccessToken不能为空", exception.getMessage());
+        verify(valueOperations, never()).set(any(), any());
+        verify(agentConfigPublisher, never()).publishRefresh(any());
+    }
+
+    @Test
+    void saveSpeechConfig_WhenMaxTextCharsTooLarge_ShouldThrowServiceException() {
+        when(valueOperations.get(RedisConstants.AgentConfig.ALL_CONFIG_KEY)).thenReturn(null);
+
+        SpeechAgentConfigRequest request = buildSpeechRequest("speech-app-id", "speech-token",
+                "zh_female_xiaohe_uranus_bigtts", 3001);
+
+        ServiceException exception = assertThrows(ServiceException.class, () -> agentConfigService.saveSpeechConfig(request));
+
+        assertEquals("语音合成最大文本长度不能大于3000", exception.getMessage());
+    }
+
+    @Test
     void saveChatHistorySummaryConfig_ShouldPersistSummaryModel() {
         when(valueOperations.get(RedisConstants.AgentConfig.ALL_CONFIG_KEY)).thenReturn(null);
         when(llmProviderService.lambdaQuery()).thenReturn(mockProviderWrapper(List.of(buildEnabledProvider())));
@@ -601,6 +718,7 @@ class AgentConfigServiceImplTests {
         return LlmProvider.builder()
                 .id(1L)
                 .providerName("OpenAI")
+                .providerType("openai")
                 .baseUrl("https://api.openai.com/v1")
                 .apiKey("sk-openai")
                 .status(1)
@@ -631,6 +749,20 @@ class AgentConfigServiceImplTests {
         request.setReasoningEnabled(reasoningEnabled);
         request.setMaxTokens(maxTokens);
         request.setTemperature(temperature);
+        return request;
+    }
+
+    private SpeechAgentConfigRequest buildSpeechRequest(String appId,
+                                                        String accessToken,
+                                                        String voiceType,
+                                                        Integer maxTextChars) {
+        SpeechAgentConfigRequest request = new SpeechAgentConfigRequest();
+        request.setAppId(appId);
+        request.setAccessToken(accessToken);
+        TextToSpeechConfigRequest textToSpeech = new TextToSpeechConfigRequest();
+        textToSpeech.setVoiceType(voiceType);
+        textToSpeech.setMaxTextChars(maxTextChars);
+        request.setTextToSpeech(textToSpeech);
         return request;
     }
 

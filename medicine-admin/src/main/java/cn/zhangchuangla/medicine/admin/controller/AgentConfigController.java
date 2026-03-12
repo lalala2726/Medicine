@@ -84,6 +84,17 @@ public class AgentConfigController extends BaseController {
     }
 
     /**
+     * 查询豆包语音 Agent 配置。
+     *
+     * @return 豆包语音 Agent 配置
+     */
+    @GetMapping("/speech")
+    @Operation(summary = "豆包语音Agent配置详情")
+    public AjaxResult<SpeechAgentConfigVo> getSpeechConfig() {
+        return success(agentConfigService.getSpeechConfig());
+    }
+
+    /**
      * 保存图片识别 Agent 配置。
      *
      * @param request 图片识别 Agent 配置请求
@@ -94,6 +105,18 @@ public class AgentConfigController extends BaseController {
     public AjaxResult<Void> saveImageRecognitionConfig(
             @Valid @RequestBody ImageRecognitionAgentConfigRequest request) {
         return toAjax(agentConfigService.saveImageRecognitionConfig(request));
+    }
+
+    /**
+     * 保存豆包语音 Agent 配置。
+     *
+     * @param request 豆包语音 Agent 配置请求
+     * @return 操作结果
+     */
+    @PutMapping("/speech")
+    @Operation(summary = "保存豆包语音Agent配置")
+    public AjaxResult<Void> saveSpeechConfig(@Valid @RequestBody SpeechAgentConfigRequest request) {
+        return toAjax(agentConfigService.saveSpeechConfig(request));
     }
 
     /**

@@ -48,12 +48,27 @@ public interface AgentConfigService {
     ImageRecognitionAgentConfigVo getImageRecognitionConfig();
 
     /**
+     * 查询豆包语音 Agent 配置详情。
+     *
+     * @return 豆包语音 Agent 配置
+     */
+    SpeechAgentConfigVo getSpeechConfig();
+
+    /**
      * 保存图片识别 Agent 配置。
      *
      * @param request 图片识别 Agent 配置请求
      * @return 是否保存成功
      */
     boolean saveImageRecognitionConfig(ImageRecognitionAgentConfigRequest request);
+
+    /**
+     * 保存豆包语音 Agent 配置。
+     *
+     * @param request 豆包语音 Agent 配置请求
+     * @return 是否保存成功
+     */
+    boolean saveSpeechConfig(SpeechAgentConfigRequest request);
 
     /**
      * 查询聊天历史总结 Agent 配置详情。

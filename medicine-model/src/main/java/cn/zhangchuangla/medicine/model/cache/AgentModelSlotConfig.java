@@ -13,7 +13,7 @@ import java.io.Serializable;
 public class AgentModelSlotConfig implements Serializable {
 
     /**
-     * 是否开启深度思考
+     * 当前业务槽位是否开启深度思考
      */
     private Boolean reasoningEnabled;
 

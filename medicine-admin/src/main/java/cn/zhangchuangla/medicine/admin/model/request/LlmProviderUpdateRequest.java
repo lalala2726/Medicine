@@ -2,9 +2,7 @@ package cn.zhangchuangla.medicine.admin.model.request;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.Valid;
-import jakarta.validation.constraints.NotEmpty;
-import jakarta.validation.constraints.NotNull;
-import jakarta.validation.constraints.Positive;
+import jakarta.validation.constraints.*;
 import lombok.Data;
 
 import java.util.List;
@@ -25,9 +23,16 @@ public class LlmProviderUpdateRequest {
     private String providerKey;
 
     @Schema(description = "提供商名称", example = "OpenAI")
+    @NotBlank(message = "提供商名称不能为空")
     private String providerName;
 
+    @Schema(description = "提供商类型，仅支持 openai、aliyun、volcengine", example = "openai")
+    @NotBlank(message = "提供商类型不能为空")
+    @Pattern(regexp = "^(openai|aliyun|volcengine)$", message = "提供商类型不合法")
+    private String providerType;
+
     @Schema(description = "基础请求地址", example = "https://api.openai.com/v1")
+    @NotBlank(message = "基础地址不能为空")
     private String baseUrl;
 
     @Schema(description = "提供商描述", example = "OpenAI 官方接口")

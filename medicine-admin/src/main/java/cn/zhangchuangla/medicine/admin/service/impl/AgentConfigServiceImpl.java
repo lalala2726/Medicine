@@ -14,6 +14,7 @@ import cn.zhangchuangla.medicine.common.redis.core.RedisCache;
 import cn.zhangchuangla.medicine.common.security.base.BaseService;
 import cn.zhangchuangla.medicine.model.cache.*;
 import cn.zhangchuangla.medicine.model.constants.LlmModelTypeConstants;
+import cn.zhangchuangla.medicine.model.constants.LlmProviderTypeConstants;
 import cn.zhangchuangla.medicine.model.entity.LlmProvider;
 import cn.zhangchuangla.medicine.model.entity.LlmProviderModel;
 import cn.zhangchuangla.medicine.model.mq.AgentConfigRefreshMessage;
@@ -49,10 +50,15 @@ public class AgentConfigServiceImpl implements AgentConfigService, BaseService {
     private static final int CHAT_HISTORY_SUMMARY_MAX_TOKENS_MAX = 10000;
     private static final int CHAT_TITLE_MAX_TOKENS_MIN = 1;
     private static final int CHAT_TITLE_MAX_TOKENS_MAX = 50;
+    private static final int SPEECH_MAX_TEXT_CHARS_MIN = 1;
+    private static final int SPEECH_MAX_TEXT_CHARS_MAX = 3000;
     private static final double TEMPERATURE_MIN = 0D;
     private static final double TEMPERATURE_MAX = 2D;
     private static final String DEFAULT_OPERATOR = "system";
     private static final String AGENT_CONFIG_REFRESH_MESSAGE_TYPE = "agent_config_refresh";
+    private static final String SPEECH_PROVIDER = "volcengine";
+    private static final String VOLCENGINE_STT_RESOURCE_ID = "volc.seedasr.sauc.duration";
+    private static final String VOLCENGINE_TTS_RESOURCE_ID = "seed-tts-2.0";
     private static final String ENABLED_PROVIDER_MISSING_MESSAGE = "当前没有启用的模型提供商";
     private static final String MODEL_DISABLED_MESSAGE = "模型未启用：%s";
     private static final String REASONING_UNSUPPORTED_MESSAGE = "模型不支持深度思考：%s";
@@ -61,6 +67,14 @@ public class AgentConfigServiceImpl implements AgentConfigService, BaseService {
     private static final String RERANK_MODEL_MISSING_MESSAGE = "当前启用提供商下不存在重排模型：%s";
     private static final String CHAT_MODEL_MISSING_MESSAGE = "当前启用提供商下不存在聊天模型：%s";
     private static final String VISION_MODEL_MISSING_MESSAGE = "当前启用提供商下不存在图片理解模型：%s";
+    private static final String PROVIDER_TYPE_MISSING_MESSAGE = "当前启用的模型提供商未配置类型，请先在模型提供商中补充类型";
+    private static final String SPEECH_APP_ID_REQUIRED_MESSAGE = "豆包语音AppId不能为空";
+    private static final String SPEECH_ACCESS_TOKEN_REQUIRED_MESSAGE = "豆包语音AccessToken不能为空";
+    private static final String SPEECH_TTS_REQUIRED_MESSAGE = "语音合成配置不能为空";
+    private static final String SPEECH_TTS_VOICE_TYPE_REQUIRED_MESSAGE = "语音合成VoiceType不能为空";
+    private static final String SPEECH_TTS_MAX_TEXT_CHARS_REQUIRED_MESSAGE = "语音合成最大文本长度不能为空";
+    private static final String SPEECH_TTS_MAX_TEXT_CHARS_MIN_MESSAGE = "语音合成最大文本长度不能小于1";
+    private static final String SPEECH_TTS_MAX_TEXT_CHARS_MAX_MESSAGE = "语音合成最大文本长度不能大于3000";
 
     private final LlmProviderService llmProviderService;
     private final LlmProviderModelService llmProviderModelService;
@@ -177,6 +191,16 @@ public class AgentConfigServiceImpl implements AgentConfigService, BaseService {
     }
 
     /**
+     * 查询豆包语音 Agent 配置详情。
+     *
+     * @return 豆包语音 Agent 配置
+     */
+    @Override
+    public SpeechAgentConfigVo getSpeechConfig() {
+        return toSpeechConfigVo(readAgentConfigCache().getSpeech());
+    }
+
+    /**
      * 保存图片识别 Agent 配置。
      *
      * @param request 图片识别 Agent 配置请求
@@ -194,6 +218,27 @@ public class AgentConfigServiceImpl implements AgentConfigService, BaseService {
 
         AgentAllConfigCache cache = readAgentConfigCache();
         cache.setImageRecognition(config);
+        updateCacheMetadata(cache);
+        persistAgentConfigCache(cache);
+        publishRefreshEvent(cache);
+        return true;
+    }
+
+    /**
+     * 保存豆包语音 Agent 配置。
+     *
+     * @param request 豆包语音 Agent 配置请求
+     * @return 是否保存成功
+     */
+    @Override
+    public boolean saveSpeechConfig(SpeechAgentConfigRequest request) {
+        Assert.notNull(request, "豆包语音Agent配置不能为空");
+
+        AgentAllConfigCache cache = readAgentConfigCache();
+        SpeechAgentConfig existingConfig = cache.getSpeech();
+        validateSpeechRequest(request, existingConfig);
+
+        cache.setSpeech(buildSpeechConfig(request, existingConfig));
         updateCacheMetadata(cache);
         persistAgentConfigCache(cache);
         publishRefreshEvent(cache);
@@ -338,6 +383,39 @@ public class AgentConfigServiceImpl implements AgentConfigService, BaseService {
         vo.setSupportVision(runtimeConfig == null ? null : runtimeConfig.getSupportVision());
         vo.setMaxTokens(slotConfig.getMaxTokens());
         vo.setTemperature(slotConfig.getTemperature());
+        return vo;
+    }
+
+    /**
+     * 将豆包语音运行时配置转换为详情视图对象。
+     *
+     * @param config 豆包语音运行时配置
+     * @return 豆包语音详情视图对象
+     */
+    private SpeechAgentConfigVo toSpeechConfigVo(SpeechAgentConfig config) {
+        SpeechAgentConfigVo vo = new SpeechAgentConfigVo();
+        if (config == null) {
+            return vo;
+        }
+        vo.setAppId(config.getAppId());
+        vo.setAccessToken(null);
+        vo.setTextToSpeech(toTextToSpeechConfigVo(config.getTextToSpeech()));
+        return vo;
+    }
+
+    /**
+     * 将语音合成运行时配置转换为详情视图对象。
+     *
+     * @param config 语音合成运行时配置
+     * @return 语音合成详情视图对象
+     */
+    private TextToSpeechConfigVo toTextToSpeechConfigVo(TextToSpeechAgentConfig config) {
+        if (config == null) {
+            return null;
+        }
+        TextToSpeechConfigVo vo = new TextToSpeechConfigVo();
+        vo.setVoiceType(config.getVoiceType());
+        vo.setMaxTextChars(config.getMaxTextChars());
         return vo;
     }
 
@@ -522,7 +600,7 @@ public class AgentConfigServiceImpl implements AgentConfigService, BaseService {
      */
     private AgentModelRuntimeConfig buildRuntimeConfig(LlmProvider provider, LlmProviderModel providerModel) {
         AgentModelRuntimeConfig runtimeConfig = new AgentModelRuntimeConfig();
-        runtimeConfig.setProvider(provider.getProviderName());
+        runtimeConfig.setProvider(resolveRuntimeProviderType(provider));
         runtimeConfig.setModel(providerModel.getModelName());
         runtimeConfig.setModelType(providerModel.getModelType());
         runtimeConfig.setBaseUrl(provider.getBaseUrl());
@@ -530,6 +608,20 @@ public class AgentConfigServiceImpl implements AgentConfigService, BaseService {
         runtimeConfig.setSupportReasoning(isCapabilityEnabled(providerModel.getSupportReasoning()));
         runtimeConfig.setSupportVision(isCapabilityEnabled(providerModel.getSupportVision()));
         return runtimeConfig;
+    }
+
+    /**
+     * 解析写入运行时配置的提供商类型。
+     *
+     * @param provider 启用提供商
+     * @return 提供商类型
+     */
+    private String resolveRuntimeProviderType(LlmProvider provider) {
+        String providerType = normalizeNullableText(provider.getProviderType());
+        if (!StringUtils.hasText(providerType) || !LlmProviderTypeConstants.ALL.contains(providerType)) {
+            throw new ServiceException(ResponseCode.OPERATION_ERROR, PROVIDER_TYPE_MISSING_MESSAGE);
+        }
+        return providerType;
     }
 
     /**
@@ -635,6 +727,27 @@ public class AgentConfigServiceImpl implements AgentConfigService, BaseService {
     }
 
     /**
+     * 校验豆包语音请求字段与文本长度范围。
+     *
+     * @param request        豆包语音配置请求
+     * @param existingConfig 现有豆包语音配置
+     */
+    private void validateSpeechRequest(SpeechAgentConfigRequest request, SpeechAgentConfig existingConfig) {
+        Assert.notEmpty(normalizeNullableText(request.getAppId()), SPEECH_APP_ID_REQUIRED_MESSAGE);
+
+        TextToSpeechConfigRequest textToSpeech = request.getTextToSpeech();
+        Assert.notNull(textToSpeech, SPEECH_TTS_REQUIRED_MESSAGE);
+        Assert.notEmpty(normalizeNullableText(textToSpeech.getVoiceType()), SPEECH_TTS_VOICE_TYPE_REQUIRED_MESSAGE);
+
+        Integer maxTextChars = textToSpeech.getMaxTextChars();
+        Assert.notNull(maxTextChars, SPEECH_TTS_MAX_TEXT_CHARS_REQUIRED_MESSAGE);
+        Assert.isParamTrue(maxTextChars >= SPEECH_MAX_TEXT_CHARS_MIN, SPEECH_TTS_MAX_TEXT_CHARS_MIN_MESSAGE);
+        Assert.isParamTrue(maxTextChars <= SPEECH_MAX_TEXT_CHARS_MAX, SPEECH_TTS_MAX_TEXT_CHARS_MAX_MESSAGE);
+
+        resolveSpeechAccessToken(existingConfig, request.getAccessToken());
+    }
+
+    /**
      * 校验单个槽位的最大 token 与温度范围。
      *
      * @param request       模型槽位请求
@@ -674,6 +787,69 @@ public class AgentConfigServiceImpl implements AgentConfigService, BaseService {
      */
     private boolean isPowerOfTwo(int number) {
         return number > 0 && (number & (number - 1)) == 0;
+    }
+
+    /**
+     * 构建豆包语音运行时配置。
+     *
+     * @param request        豆包语音编辑态请求
+     * @param existingConfig 现有豆包语音运行时配置
+     * @return 豆包语音运行时配置
+     */
+    private SpeechAgentConfig buildSpeechConfig(SpeechAgentConfigRequest request, SpeechAgentConfig existingConfig) {
+        SpeechAgentConfig config = new SpeechAgentConfig();
+        config.setProvider(SPEECH_PROVIDER);
+        config.setAppId(normalizeNullableText(request.getAppId()));
+        config.setAccessToken(resolveSpeechAccessToken(existingConfig, request.getAccessToken()));
+        config.setSpeechRecognition(buildSpeechRecognitionConfig());
+        config.setTextToSpeech(buildTextToSpeechConfig(request.getTextToSpeech()));
+        return config;
+    }
+
+    /**
+     * 构建语音识别运行时配置。
+     * <p>
+     * STT ResourceId 固定写入 `volc.seedasr.sauc.duration`。
+     *
+     * @return 语音识别运行时配置
+     */
+    private SpeechRecognitionAgentConfig buildSpeechRecognitionConfig() {
+        SpeechRecognitionAgentConfig config = new SpeechRecognitionAgentConfig();
+        config.setResourceId(VOLCENGINE_STT_RESOURCE_ID);
+        return config;
+    }
+
+    /**
+     * 构建语音合成运行时配置。
+     * <p>
+     * TTS ResourceId 固定写入 `seed-tts-2.0`。
+     *
+     * @param request 语音合成编辑态请求
+     * @return 语音合成运行时配置
+     */
+    private TextToSpeechAgentConfig buildTextToSpeechConfig(TextToSpeechConfigRequest request) {
+        TextToSpeechAgentConfig config = new TextToSpeechAgentConfig();
+        config.setResourceId(VOLCENGINE_TTS_RESOURCE_ID);
+        config.setVoiceType(normalizeNullableText(request.getVoiceType()));
+        config.setMaxTextChars(request.getMaxTextChars());
+        return config;
+    }
+
+    /**
+     * 解析本次应写入 Redis 的语音访问令牌。
+     *
+     * @param existingConfig 现有豆包语音配置
+     * @param accessToken    本次请求中的访问令牌
+     * @return 最终写入的访问令牌
+     */
+    private String resolveSpeechAccessToken(SpeechAgentConfig existingConfig, String accessToken) {
+        String normalizedToken = normalizeNullableText(accessToken);
+        if (normalizedToken != null) {
+            return normalizedToken;
+        }
+        String existingToken = existingConfig == null ? null : normalizeNullableText(existingConfig.getAccessToken());
+        Assert.notEmpty(existingToken, SPEECH_ACCESS_TOKEN_REQUIRED_MESSAGE);
+        return existingToken;
     }
 
     /**

@@ -18,6 +18,7 @@ class AgentAllConfigCacheJsonTests {
         cache.setUpdatedBy("admin");
         cache.setKnowledgeBase(buildKnowledgeBaseConfig());
         cache.setAdminAssistant(buildAdminAssistantConfig());
+        cache.setSpeech(buildSpeechConfig());
         cache.setImageRecognition(buildImageRecognitionConfig());
         cache.setChatHistorySummary(buildChatHistorySummaryConfig());
         cache.setChatTitle(buildChatTitleConfig());
@@ -27,9 +28,15 @@ class AgentAllConfigCacheJsonTests {
 
         assertTrue(root.has("knowledgeBase"));
         assertTrue(root.has("adminAssistant"));
+        assertTrue(root.has("speech"));
         assertTrue(root.has("imageRecognition"));
         assertTrue(root.has("chatHistorySummary"));
         assertTrue(root.has("chatTitle"));
+        assertEquals("volcengine", root.path("speech").path("provider").asText());
+        assertEquals("seed-tts-2.0",
+                root.path("speech").path("textToSpeech").path("resourceId").asText());
+        assertEquals("zh_female_xiaohe_uranus_bigtts",
+                root.path("speech").path("textToSpeech").path("voiceType").asText());
         assertEquals("EMBEDDING", root.path("knowledgeBase").path("embeddingModel").path("model").path("modelType").asText());
         assertEquals("CHAT", root.path("adminAssistant").path("chatModel").path("model").path("modelType").asText());
         assertEquals("qwen2.5-vl-72b-instruct",
@@ -48,8 +55,24 @@ class AgentAllConfigCacheJsonTests {
         config.setEmbeddingDim(1024);
         config.setEmbeddingModel(buildSlot("openai", "text-embedding-3-large", "EMBEDDING",
                 "https://api.openai.com/v1", "sk-embedding", false, false, false, 2048, 0.0));
-        config.setRerankModel(buildSlot("qwen", "gte-rerank-v2", "RERANK",
+        config.setRerankModel(buildSlot("aliyun", "gte-rerank-v2", "RERANK",
                 "https://dashscope.aliyuncs.com/compatible-mode/v1", "sk-rerank", false, false, false, 512, 0.0));
+        return config;
+    }
+
+    private SpeechAgentConfig buildSpeechConfig() {
+        SpeechAgentConfig config = new SpeechAgentConfig();
+        config.setProvider("volcengine");
+        config.setAppId("app-id");
+        config.setAccessToken("access-token");
+        SpeechRecognitionAgentConfig speechRecognition = new SpeechRecognitionAgentConfig();
+        speechRecognition.setResourceId("volc.seedasr.sauc.duration");
+        config.setSpeechRecognition(speechRecognition);
+        TextToSpeechAgentConfig textToSpeech = new TextToSpeechAgentConfig();
+        textToSpeech.setResourceId("seed-tts-2.0");
+        textToSpeech.setVoiceType("zh_female_xiaohe_uranus_bigtts");
+        textToSpeech.setMaxTextChars(300);
+        config.setTextToSpeech(textToSpeech);
         return config;
     }
 
@@ -61,14 +84,14 @@ class AgentAllConfigCacheJsonTests {
                 "https://api.openai.com/v1", "sk-simple", true, false, false, 2048, 0.3));
         config.setBusinessNodeComplexModel(buildSlot("openai", "gpt-4.1", "CHAT",
                 "https://api.openai.com/v1", "sk-complex", true, false, true, 8192, 0.2));
-        config.setChatModel(buildSlot("qwen", "qwen-max", "CHAT",
+        config.setChatModel(buildSlot("aliyun", "qwen-max", "CHAT",
                 "https://dashscope.aliyuncs.com/compatible-mode/v1", "sk-chat", true, true, true, 8192, 0.7));
         return config;
     }
 
     private ImageRecognitionAgentConfig buildImageRecognitionConfig() {
         ImageRecognitionAgentConfig config = new ImageRecognitionAgentConfig();
-        config.setImageRecognitionModel(buildSlot("qwen", "qwen2.5-vl-72b-instruct", "CHAT",
+        config.setImageRecognitionModel(buildSlot("aliyun", "qwen2.5-vl-72b-instruct", "CHAT",
                 "https://dashscope.aliyuncs.com/compatible-mode/v1", "sk-recognition", true, true, true, 4096, 0.2));
         return config;
     }

@@ -13,7 +13,7 @@ import java.io.Serializable;
 public class AgentModelRuntimeConfig implements Serializable {
 
     /**
-     * 提供商标识
+     * 提供商类型，固定为 openai、aliyun、volcengine 之一
      */
     private String provider;
 
@@ -38,7 +38,7 @@ public class AgentModelRuntimeConfig implements Serializable {
     private String apiKey;
 
     /**
-     * 是否支持深度思考
+     * 模型自身是否支持深度思考
      */
     private Boolean supportReasoning;
 

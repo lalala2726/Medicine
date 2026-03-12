@@ -42,6 +42,7 @@ class LlmProviderServiceImplTests {
     void createProvider_ShouldDefaultStatusToEnabled_WhenNoEnabledProviderExists() {
         LlmProviderCreateRequest request = new LlmProviderCreateRequest();
         request.setProviderName("OpenAI Custom");
+        request.setProviderType("openai");
         request.setBaseUrl("https://api.openai.com/v1");
         request.setApiKey("sk-test");
 
@@ -61,6 +62,7 @@ class LlmProviderServiceImplTests {
         ArgumentCaptor<LlmProvider> providerCaptor = ArgumentCaptor.forClass(LlmProvider.class);
         verify(llmProviderMapper).insert(providerCaptor.capture());
         assertEquals("OpenAI Custom", providerCaptor.getValue().getProviderName());
+        assertEquals("openai", providerCaptor.getValue().getProviderType());
         assertEquals(1, providerCaptor.getValue().getStatus());
     }
 
@@ -68,6 +70,7 @@ class LlmProviderServiceImplTests {
     void createProvider_ShouldDefaultStatusToDisabled_WhenEnabledProviderExists() {
         LlmProviderCreateRequest request = new LlmProviderCreateRequest();
         request.setProviderName("OpenAI Backup");
+        request.setProviderType("openai");
         request.setBaseUrl("https://backup.example.com/v1");
         request.setApiKey("sk-test");
 
@@ -90,6 +93,7 @@ class LlmProviderServiceImplTests {
     void createProvider_WhenSingleEnabledConstraintViolated_ShouldThrowStatusConflictMessage() {
         LlmProviderCreateRequest request = new LlmProviderCreateRequest();
         request.setProviderName("OpenAI Custom");
+        request.setProviderType("openai");
         request.setBaseUrl("https://api.openai.com/v1");
         request.setApiKey("sk-test");
 
@@ -109,6 +113,7 @@ class LlmProviderServiceImplTests {
         LlmProvider existing = LlmProvider.builder()
                 .id(1L)
                 .providerName("Old Provider")
+                .providerType("openai")
                 .baseUrl("https://old.example.com/v1")
                 .status(0)
                 .sort(10)
@@ -117,6 +122,7 @@ class LlmProviderServiceImplTests {
         LlmProviderUpdateRequest request = new LlmProviderUpdateRequest();
         request.setId(1L);
         request.setProviderName("New Provider");
+        request.setProviderType("aliyun");
         request.setBaseUrl("https://new.example.com/v1");
 
         when(llmProviderMapper.selectById(1L)).thenReturn(existing);
@@ -129,10 +135,12 @@ class LlmProviderServiceImplTests {
         assertEquals("New Provider", provider.getProviderName());
         assertEquals("https://new.example.com/v1", provider.getBaseUrl());
         assertEquals("sk-old", provider.getApiKey());
+        assertEquals("aliyun", provider.getProviderType());
 
         ArgumentCaptor<LlmProvider> providerCaptor = ArgumentCaptor.forClass(LlmProvider.class);
         verify(llmProviderMapper).updateById(providerCaptor.capture());
         assertEquals("sk-old", providerCaptor.getValue().getApiKey());
+        assertEquals("aliyun", providerCaptor.getValue().getProviderType());
         assertEquals(0, providerCaptor.getValue().getStatus());
     }
 
@@ -216,6 +224,7 @@ class LlmProviderServiceImplTests {
         LlmProvider existing = LlmProvider.builder()
                 .id(1L)
                 .providerName("OpenAI")
+                .providerType("openai")
                 .apiKey("sk-old")
                 .build();
         LlmProviderApiKeyUpdateRequest request = new LlmProviderApiKeyUpdateRequest();
@@ -252,6 +261,7 @@ class LlmProviderServiceImplTests {
         LlmProvider existing = LlmProvider.builder()
                 .id(1L)
                 .providerName("OpenAI")
+                .providerType("openai")
                 .apiKey("sk-old")
                 .build();
         LlmProviderApiKeyUpdateRequest request = new LlmProviderApiKeyUpdateRequest();
@@ -271,6 +281,7 @@ class LlmProviderServiceImplTests {
                 {
                   "id": 1,
                   "providerName": "OpenAI",
+                  "providerType": "openai",
                   "baseUrl": "https://api.openai.com/v1",
                   "apiKey": "sk-ignored",
                   "status": 1,
@@ -283,6 +294,7 @@ class LlmProviderServiceImplTests {
 
         assertEquals(1L, request.getId());
         assertEquals("OpenAI", request.getProviderName());
+        assertEquals("openai", request.getProviderType());
         assertEquals("https://api.openai.com/v1", request.getBaseUrl());
     }
 
@@ -291,6 +303,7 @@ class LlmProviderServiceImplTests {
         String json = """
                 {
                   "providerName": "OpenAI",
+                  "providerType": "openai",
                   "baseUrl": "https://api.openai.com/v1",
                   "apiKey": "sk-test",
                   "status": 1,
@@ -302,6 +315,7 @@ class LlmProviderServiceImplTests {
                 .readValue(json, LlmProviderCreateRequest.class);
 
         assertEquals("OpenAI", request.getProviderName());
+        assertEquals("openai", request.getProviderType());
         assertEquals("https://api.openai.com/v1", request.getBaseUrl());
         assertEquals("sk-test", request.getApiKey());
     }

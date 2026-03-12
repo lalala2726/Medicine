@@ -133,4 +133,26 @@ class AgentConfigRequestJsonTests {
         assertEquals("gpt-4.1-mini", request.getChatTitleModel().getModelName());
         assertEquals(32, request.getChatTitleModel().getMaxTokens());
     }
+
+    @Test
+    void speechRequest_ShouldDeserialize() throws Exception {
+        String json = """
+                {
+                  "appId": "speech-app-id",
+                  "accessToken": "speech-token",
+                  "textToSpeech": {
+                    "voiceType": "zh_female_xiaohe_uranus_bigtts",
+                    "maxTextChars": 300
+                  }
+                }
+                """;
+
+        SpeechAgentConfigRequest request = objectMapper.readValue(json, SpeechAgentConfigRequest.class);
+
+        assertEquals("speech-app-id", request.getAppId());
+        assertEquals("speech-token", request.getAccessToken());
+        assertNotNull(request.getTextToSpeech());
+        assertEquals("zh_female_xiaohe_uranus_bigtts", request.getTextToSpeech().getVoiceType());
+        assertEquals(300, request.getTextToSpeech().getMaxTextChars());
+    }
 }

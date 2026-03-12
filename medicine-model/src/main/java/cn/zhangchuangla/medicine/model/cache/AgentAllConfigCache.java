@@ -33,6 +33,11 @@ public class AgentAllConfigCache implements Serializable {
     private AdminAssistantAgentConfig adminAssistant;
 
     /**
+     * 豆包语音相关 Agent 配置
+     */
+    private SpeechAgentConfig speech;
+
+    /**
      * 图片识别相关 Agent 配置
      */
     private ImageRecognitionAgentConfig imageRecognition;

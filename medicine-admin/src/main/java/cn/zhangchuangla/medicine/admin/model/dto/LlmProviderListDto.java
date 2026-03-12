@@ -27,6 +27,11 @@ public class LlmProviderListDto {
     private String providerName;
 
     /**
+     * 提供商类型。
+     */
+    private String providerType;
+
+    /**
      * 基础请求地址。
      */
     private String baseUrl;

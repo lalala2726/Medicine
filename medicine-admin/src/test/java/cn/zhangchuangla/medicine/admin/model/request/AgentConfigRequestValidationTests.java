@@ -48,4 +48,20 @@ class AgentConfigRequestValidationTests {
         assertFalse(violations.isEmpty());
         assertTrue(violations.stream().anyMatch(item -> "模型温度不能大于2".equals(item.getMessage())));
     }
+
+    @Test
+    void speechRequest_ShouldFail_WhenMaxTextCharsIsGreaterThanThreeThousand() {
+        SpeechAgentConfigRequest request = new SpeechAgentConfigRequest();
+        request.setAppId("speech-app-id");
+        request.setAccessToken("speech-token");
+        TextToSpeechConfigRequest textToSpeech = new TextToSpeechConfigRequest();
+        textToSpeech.setVoiceType("zh_female_xiaohe_uranus_bigtts");
+        textToSpeech.setMaxTextChars(3001);
+        request.setTextToSpeech(textToSpeech);
+
+        var violations = validator.validate(request);
+
+        assertFalse(violations.isEmpty());
+        assertTrue(violations.stream().anyMatch(item -> "语音合成最大文本长度不能大于3000".equals(item.getMessage())));
+    }
 }
