@@ -173,8 +173,13 @@ public class LlmProviderServiceImpl extends ServiceImpl<LlmProviderMapper, LlmPr
             if (llmProviderMapper.insert(provider) <= 0) {
                 throw new ServiceException(ResponseCode.OPERATION_ERROR, "保存提供商失败");
             }
-        } catch (DuplicateKeyException ex) {
-            throw translateDuplicateKeyException(ex);
+        } catch (DuplicateKeyException e) {
+            if (e.getMessage() != null && e.getMessage().contains(SINGLE_ENABLED_INDEX_NAME)) {
+                log.warn(e.getMessage());
+                throw new ServiceException(ResponseCode.OPERATION_ERROR, ENABLED_PROVIDER_CONFLICT_MESSAGE);
+            }
+            log.warn(e.getMessage());
+            throw new ServiceException(ResponseCode.OPERATION_ERROR, PROVIDER_NAME_DUPLICATE_MESSAGE);
         }
         return provider;
     }
@@ -362,8 +367,11 @@ public class LlmProviderServiceImpl extends ServiceImpl<LlmProviderMapper, LlmPr
             if (llmProviderMapper.updateById(provider) <= 0) {
                 throw new ServiceException(ResponseCode.OPERATION_ERROR, "更新提供商失败");
             }
-        } catch (DuplicateKeyException ex) {
-            throw translateDuplicateKeyException(ex);
+        } catch (DuplicateKeyException e) {
+            if (e.getMessage() != null && e.getMessage().contains(SINGLE_ENABLED_INDEX_NAME)) {
+                throw new ServiceException(ResponseCode.OPERATION_ERROR, ENABLED_PROVIDER_CONFLICT_MESSAGE);
+            }
+            throw new ServiceException(ResponseCode.OPERATION_ERROR, PROVIDER_NAME_DUPLICATE_MESSAGE);
         }
     }
 
