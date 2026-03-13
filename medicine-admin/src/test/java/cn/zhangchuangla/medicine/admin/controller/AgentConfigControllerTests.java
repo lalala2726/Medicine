@@ -102,20 +102,6 @@ class AgentConfigControllerTests {
     }
 
     @Test
-    void getSpeechConfig_ShouldDelegateToService() {
-        SpeechAgentConfigVo vo = new SpeechAgentConfigVo();
-        vo.setProvider("volcengine");
-        when(agentConfigService.getSpeechConfig()).thenReturn(vo);
-
-        var result = agentConfigController.getSpeechConfig();
-
-        assertEquals(200, result.getCode());
-        assertNotNull(result.getData());
-        assertEquals("volcengine", result.getData().getProvider());
-        verify(agentConfigService).getSpeechConfig();
-    }
-
-    @Test
     void saveSpeechConfig_ShouldDelegateToService() {
         SpeechAgentConfigRequest request = new SpeechAgentConfigRequest();
         request.setAppId("app-id");

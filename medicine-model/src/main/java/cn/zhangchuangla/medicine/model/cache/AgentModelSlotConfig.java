@@ -13,6 +13,11 @@ import java.io.Serializable;
 public class AgentModelSlotConfig implements Serializable {
 
     /**
+     * 当前业务槽位绑定的模型名称。
+     */
+    private String modelName;
+
+    /**
      * 当前业务槽位是否开启深度思考
      */
     private Boolean reasoningEnabled;
@@ -26,9 +31,4 @@ public class AgentModelSlotConfig implements Serializable {
      * 模型温度
      */
     private Double temperature;
-
-    /**
-     * 绑定的运行时模型配置
-     */
-    private AgentModelRuntimeConfig model;
 }

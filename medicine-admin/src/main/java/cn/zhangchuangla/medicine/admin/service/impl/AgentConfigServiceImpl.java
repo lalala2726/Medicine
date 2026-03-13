@@ -2,29 +2,23 @@ package cn.zhangchuangla.medicine.admin.service.impl;
 
 import cn.zhangchuangla.medicine.admin.model.request.*;
 import cn.zhangchuangla.medicine.admin.model.vo.*;
-import cn.zhangchuangla.medicine.admin.publisher.AgentConfigPublisher;
+import cn.zhangchuangla.medicine.admin.service.AgentConfigRuntimeSyncService;
 import cn.zhangchuangla.medicine.admin.service.AgentConfigService;
 import cn.zhangchuangla.medicine.admin.service.LlmProviderModelService;
 import cn.zhangchuangla.medicine.admin.service.LlmProviderService;
-import cn.zhangchuangla.medicine.common.core.constants.RedisConstants;
 import cn.zhangchuangla.medicine.common.core.enums.ResponseCode;
 import cn.zhangchuangla.medicine.common.core.exception.ServiceException;
 import cn.zhangchuangla.medicine.common.core.utils.Assert;
-import cn.zhangchuangla.medicine.common.redis.core.RedisCache;
 import cn.zhangchuangla.medicine.common.security.base.BaseService;
 import cn.zhangchuangla.medicine.model.cache.*;
 import cn.zhangchuangla.medicine.model.constants.LlmModelTypeConstants;
-import cn.zhangchuangla.medicine.model.constants.LlmProviderTypeConstants;
 import cn.zhangchuangla.medicine.model.entity.LlmProvider;
 import cn.zhangchuangla.medicine.model.entity.LlmProviderModel;
-import cn.zhangchuangla.medicine.model.mq.AgentConfigRefreshMessage;
 import com.baomidou.mybatisplus.extension.conditions.query.LambdaQueryChainWrapper;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
 
-import java.time.OffsetDateTime;
-import java.time.format.DateTimeFormatter;
 import java.util.List;
 
 /**
@@ -36,7 +30,6 @@ import java.util.List;
 @RequiredArgsConstructor
 public class AgentConfigServiceImpl implements AgentConfigService, BaseService {
 
-    private static final String REDIS_KEY = RedisConstants.AgentConfig.ALL_CONFIG_KEY;
     private static final int PROVIDER_STATUS_ENABLED = 1;
     private static final int MODEL_STATUS_ENABLED = 0;
     private static final int CAPABILITY_ENABLED = 1;
@@ -55,7 +48,6 @@ public class AgentConfigServiceImpl implements AgentConfigService, BaseService {
     private static final double TEMPERATURE_MIN = 0D;
     private static final double TEMPERATURE_MAX = 2D;
     private static final String DEFAULT_OPERATOR = "system";
-    private static final String AGENT_CONFIG_REFRESH_MESSAGE_TYPE = "agent_config_refresh";
     private static final String SPEECH_PROVIDER = "volcengine";
     private static final String VOLCENGINE_STT_RESOURCE_ID = "volc.seedasr.sauc.duration";
     private static final String VOLCENGINE_TTS_RESOURCE_ID = "seed-tts-2.0";
@@ -67,7 +59,6 @@ public class AgentConfigServiceImpl implements AgentConfigService, BaseService {
     private static final String RERANK_MODEL_MISSING_MESSAGE = "当前启用提供商下不存在重排模型：%s";
     private static final String CHAT_MODEL_MISSING_MESSAGE = "当前启用提供商下不存在聊天模型：%s";
     private static final String VISION_MODEL_MISSING_MESSAGE = "当前启用提供商下不存在图片理解模型：%s";
-    private static final String PROVIDER_TYPE_MISSING_MESSAGE = "当前启用的模型提供商未配置类型，请先在模型提供商中补充类型";
     private static final String SPEECH_APP_ID_REQUIRED_MESSAGE = "豆包语音AppId不能为空";
     private static final String SPEECH_ACCESS_TOKEN_REQUIRED_MESSAGE = "豆包语音AccessToken不能为空";
     private static final String SPEECH_TTS_REQUIRED_MESSAGE = "语音合成配置不能为空";
@@ -78,8 +69,7 @@ public class AgentConfigServiceImpl implements AgentConfigService, BaseService {
 
     private final LlmProviderService llmProviderService;
     private final LlmProviderModelService llmProviderModelService;
-    private final RedisCache redisCache;
-    private final AgentConfigPublisher agentConfigPublisher;
+    private final AgentConfigRuntimeSyncService agentConfigRuntimeSyncService;
 
     /**
      * 查询知识库 Agent 配置详情。
@@ -89,13 +79,17 @@ public class AgentConfigServiceImpl implements AgentConfigService, BaseService {
     @Override
     public KnowledgeBaseAgentConfigVo getKnowledgeBaseConfig() {
         KnowledgeBaseAgentConfigVo vo = new KnowledgeBaseAgentConfigVo();
-        KnowledgeBaseAgentConfig config = readAgentConfigCache().getKnowledgeBase();
+        AgentAllConfigCache cache = agentConfigRuntimeSyncService.readCache();
+        KnowledgeBaseAgentConfig config = cache.getKnowledgeBase();
         if (config == null) {
             return vo;
         }
+        LlmProvider provider = getEnabledProviderOrNull();
         vo.setEmbeddingDim(config.getEmbeddingDim());
-        vo.setEmbeddingModel(toAgentModelSelectionVo(config.getEmbeddingModel()));
-        vo.setRerankModel(toAgentModelSelectionVo(config.getRerankModel()));
+        vo.setEmbeddingModel(toAgentModelSelectionVo(provider, config.getEmbeddingModel(),
+                LlmModelTypeConstants.EMBEDDING));
+        vo.setRerankModel(toAgentModelSelectionVo(provider, config.getRerankModel(),
+                LlmModelTypeConstants.RERANK));
         return vo;
     }
 
@@ -117,11 +111,9 @@ public class AgentConfigServiceImpl implements AgentConfigService, BaseService {
                 LlmModelTypeConstants.EMBEDDING, false, EMBEDDING_MODEL_MISSING_MESSAGE));
         config.setRerankModel(resolveOptionalSlotConfig(provider, request.getRerankModel()));
 
-        AgentAllConfigCache cache = readAgentConfigCache();
+        AgentAllConfigCache cache = agentConfigRuntimeSyncService.readCache();
         cache.setKnowledgeBase(config);
-        updateCacheMetadata(cache);
-        persistAgentConfigCache(cache);
-        publishRefreshEvent(cache);
+        agentConfigRuntimeSyncService.saveCache(cache, provider, currentOperator());
         return true;
     }
 
@@ -133,14 +125,18 @@ public class AgentConfigServiceImpl implements AgentConfigService, BaseService {
     @Override
     public AdminAssistantAgentConfigVo getAdminAssistantConfig() {
         AdminAssistantAgentConfigVo vo = new AdminAssistantAgentConfigVo();
-        AdminAssistantAgentConfig config = readAgentConfigCache().getAdminAssistant();
+        AgentAllConfigCache cache = agentConfigRuntimeSyncService.readCache();
+        AdminAssistantAgentConfig config = cache.getAdminAssistant();
         if (config == null) {
             return vo;
         }
-        vo.setRouteModel(toAgentModelSelectionVo(config.getRouteModel()));
-        vo.setBusinessNodeSimpleModel(toAgentModelSelectionVo(config.getBusinessNodeSimpleModel()));
-        vo.setBusinessNodeComplexModel(toAgentModelSelectionVo(config.getBusinessNodeComplexModel()));
-        vo.setChatModel(toAgentModelSelectionVo(config.getChatModel()));
+        LlmProvider provider = getEnabledProviderOrNull();
+        vo.setRouteModel(toAgentModelSelectionVo(provider, config.getRouteModel(), LlmModelTypeConstants.CHAT));
+        vo.setBusinessNodeSimpleModel(toAgentModelSelectionVo(provider, config.getBusinessNodeSimpleModel(),
+                LlmModelTypeConstants.CHAT));
+        vo.setBusinessNodeComplexModel(toAgentModelSelectionVo(provider, config.getBusinessNodeComplexModel(),
+                LlmModelTypeConstants.CHAT));
+        vo.setChatModel(toAgentModelSelectionVo(provider, config.getChatModel(), LlmModelTypeConstants.CHAT));
         return vo;
     }
 
@@ -166,11 +162,9 @@ public class AgentConfigServiceImpl implements AgentConfigService, BaseService {
         config.setChatModel(resolveRequiredSlotConfig(provider, request.getChatModel(),
                 LlmModelTypeConstants.CHAT, false, CHAT_MODEL_MISSING_MESSAGE));
 
-        AgentAllConfigCache cache = readAgentConfigCache();
+        AgentAllConfigCache cache = agentConfigRuntimeSyncService.readCache();
         cache.setAdminAssistant(config);
-        updateCacheMetadata(cache);
-        persistAgentConfigCache(cache);
-        publishRefreshEvent(cache);
+        agentConfigRuntimeSyncService.saveCache(cache, provider, currentOperator());
         return true;
     }
 
@@ -182,11 +176,13 @@ public class AgentConfigServiceImpl implements AgentConfigService, BaseService {
     @Override
     public ImageRecognitionAgentConfigVo getImageRecognitionConfig() {
         ImageRecognitionAgentConfigVo vo = new ImageRecognitionAgentConfigVo();
-        ImageRecognitionAgentConfig config = readAgentConfigCache().getImageRecognition();
+        AgentAllConfigCache cache = agentConfigRuntimeSyncService.readCache();
+        ImageRecognitionAgentConfig config = cache.getImageRecognition();
         if (config == null) {
             return vo;
         }
-        vo.setImageRecognitionModel(toAgentModelSelectionVo(config.getImageRecognitionModel()));
+        vo.setImageRecognitionModel(toAgentModelSelectionVo(getEnabledProviderOrNull(),
+                config.getImageRecognitionModel(), LlmModelTypeConstants.CHAT));
         return vo;
     }
 
@@ -197,7 +193,7 @@ public class AgentConfigServiceImpl implements AgentConfigService, BaseService {
      */
     @Override
     public SpeechAgentConfigVo getSpeechConfig() {
-        return toSpeechConfigVo(readAgentConfigCache().getSpeech());
+        return toSpeechConfigVo(agentConfigRuntimeSyncService.readCache().getSpeech());
     }
 
     /**
@@ -216,11 +212,9 @@ public class AgentConfigServiceImpl implements AgentConfigService, BaseService {
         config.setImageRecognitionModel(resolveRequiredSlotConfig(provider, request.getImageRecognitionModel(),
                 LlmModelTypeConstants.CHAT, true, VISION_MODEL_MISSING_MESSAGE));
 
-        AgentAllConfigCache cache = readAgentConfigCache();
+        AgentAllConfigCache cache = agentConfigRuntimeSyncService.readCache();
         cache.setImageRecognition(config);
-        updateCacheMetadata(cache);
-        persistAgentConfigCache(cache);
-        publishRefreshEvent(cache);
+        agentConfigRuntimeSyncService.saveCache(cache, provider, currentOperator());
         return true;
     }
 
@@ -234,14 +228,12 @@ public class AgentConfigServiceImpl implements AgentConfigService, BaseService {
     public boolean saveSpeechConfig(SpeechAgentConfigRequest request) {
         Assert.notNull(request, "豆包语音Agent配置不能为空");
 
-        AgentAllConfigCache cache = readAgentConfigCache();
+        AgentAllConfigCache cache = agentConfigRuntimeSyncService.readCache();
         SpeechAgentConfig existingConfig = cache.getSpeech();
         validateSpeechRequest(request, existingConfig);
 
         cache.setSpeech(buildSpeechConfig(request, existingConfig));
-        updateCacheMetadata(cache);
-        persistAgentConfigCache(cache);
-        publishRefreshEvent(cache);
+        agentConfigRuntimeSyncService.saveCache(cache, getEnabledProviderOrNull(), currentOperator());
         return true;
     }
 
@@ -253,11 +245,13 @@ public class AgentConfigServiceImpl implements AgentConfigService, BaseService {
     @Override
     public ChatHistorySummaryAgentConfigVo getChatHistorySummaryConfig() {
         ChatHistorySummaryAgentConfigVo vo = new ChatHistorySummaryAgentConfigVo();
-        ChatHistorySummaryAgentConfig config = readAgentConfigCache().getChatHistorySummary();
+        AgentAllConfigCache cache = agentConfigRuntimeSyncService.readCache();
+        ChatHistorySummaryAgentConfig config = cache.getChatHistorySummary();
         if (config == null) {
             return vo;
         }
-        vo.setChatHistorySummaryModel(toAgentModelSelectionVo(config.getChatHistorySummaryModel()));
+        vo.setChatHistorySummaryModel(toAgentModelSelectionVo(getEnabledProviderOrNull(),
+                config.getChatHistorySummaryModel(), LlmModelTypeConstants.CHAT));
         return vo;
     }
 
@@ -277,11 +271,9 @@ public class AgentConfigServiceImpl implements AgentConfigService, BaseService {
         config.setChatHistorySummaryModel(resolveRequiredSlotConfig(provider, request.getChatHistorySummaryModel(),
                 LlmModelTypeConstants.CHAT, false, CHAT_MODEL_MISSING_MESSAGE));
 
-        AgentAllConfigCache cache = readAgentConfigCache();
+        AgentAllConfigCache cache = agentConfigRuntimeSyncService.readCache();
         cache.setChatHistorySummary(config);
-        updateCacheMetadata(cache);
-        persistAgentConfigCache(cache);
-        publishRefreshEvent(cache);
+        agentConfigRuntimeSyncService.saveCache(cache, provider, currentOperator());
         return true;
     }
 
@@ -293,11 +285,13 @@ public class AgentConfigServiceImpl implements AgentConfigService, BaseService {
     @Override
     public ChatTitleAgentConfigVo getChatTitleConfig() {
         ChatTitleAgentConfigVo vo = new ChatTitleAgentConfigVo();
-        ChatTitleAgentConfig config = readAgentConfigCache().getChatTitle();
+        AgentAllConfigCache cache = agentConfigRuntimeSyncService.readCache();
+        ChatTitleAgentConfig config = cache.getChatTitle();
         if (config == null) {
             return vo;
         }
-        vo.setChatTitleModel(toAgentModelSelectionVo(config.getChatTitleModel()));
+        vo.setChatTitleModel(toAgentModelSelectionVo(getEnabledProviderOrNull(),
+                config.getChatTitleModel(), LlmModelTypeConstants.CHAT));
         return vo;
     }
 
@@ -317,11 +311,9 @@ public class AgentConfigServiceImpl implements AgentConfigService, BaseService {
         config.setChatTitleModel(resolveRequiredSlotConfig(provider, request.getChatTitleModel(),
                 LlmModelTypeConstants.CHAT, false, CHAT_MODEL_MISSING_MESSAGE));
 
-        AgentAllConfigCache cache = readAgentConfigCache();
+        AgentAllConfigCache cache = agentConfigRuntimeSyncService.readCache();
         cache.setChatTitle(config);
-        updateCacheMetadata(cache);
-        persistAgentConfigCache(cache);
-        publishRefreshEvent(cache);
+        agentConfigRuntimeSyncService.saveCache(cache, provider, currentOperator());
         return true;
     }
 
@@ -371,19 +363,37 @@ public class AgentConfigServiceImpl implements AgentConfigService, BaseService {
      * @param slotConfig 运行时槽位配置
      * @return 编辑态视图对象
      */
-    private AgentModelSelectionVo toAgentModelSelectionVo(AgentModelSlotConfig slotConfig) {
+    private AgentModelSelectionVo toAgentModelSelectionVo(LlmProvider provider,
+                                                          AgentModelSlotConfig slotConfig,
+                                                          String modelType) {
         if (slotConfig == null) {
             return null;
         }
         AgentModelSelectionVo vo = new AgentModelSelectionVo();
-        AgentModelRuntimeConfig runtimeConfig = slotConfig.getModel();
-        vo.setModelName(runtimeConfig == null ? null : runtimeConfig.getModel());
+        vo.setModelName(slotConfig.getModelName());
         vo.setReasoningEnabled(slotConfig.getReasoningEnabled());
-        vo.setSupportReasoning(runtimeConfig == null ? null : runtimeConfig.getSupportReasoning());
-        vo.setSupportVision(runtimeConfig == null ? null : runtimeConfig.getSupportVision());
+        fillModelCapabilities(vo, provider, slotConfig.getModelName(), modelType);
         vo.setMaxTokens(slotConfig.getMaxTokens());
         vo.setTemperature(slotConfig.getTemperature());
         return vo;
+    }
+
+    private void fillModelCapabilities(AgentModelSelectionVo vo, LlmProvider provider, String modelName, String modelType) {
+        if (provider == null || !StringUtils.hasText(modelName)) {
+            return;
+        }
+        List<LlmProviderModel> models = llmProviderModelService.lambdaQuery()
+                .eq(LlmProviderModel::getProviderId, provider.getId())
+                .eq(LlmProviderModel::getModelType, modelType)
+                .eq(LlmProviderModel::getModelName, modelName)
+                .orderByAsc(LlmProviderModel::getSort, LlmProviderModel::getId)
+                .list();
+        if (models.isEmpty()) {
+            return;
+        }
+        LlmProviderModel model = models.getFirst();
+        vo.setSupportReasoning(isCapabilityEnabled(model.getSupportReasoning()));
+        vo.setSupportVision(isCapabilityEnabled(model.getSupportVision()));
     }
 
     /**
@@ -505,7 +515,7 @@ public class AgentConfigServiceImpl implements AgentConfigService, BaseService {
         validateProviderModelEnabled(providerModel);
         validateReasoningCapability(request, providerModel);
         validateVisionCapability(modelName, providerModel, visionRequired);
-        return buildSlotConfig(provider, providerModel, request);
+        return buildSlotConfig(providerModel, request);
     }
 
     /**
@@ -580,92 +590,14 @@ public class AgentConfigServiceImpl implements AgentConfigService, BaseService {
      * @param request       编辑态请求
      * @return 运行时槽位配置
      */
-    private AgentModelSlotConfig buildSlotConfig(LlmProvider provider,
-                                                 LlmProviderModel providerModel,
+    private AgentModelSlotConfig buildSlotConfig(LlmProviderModel providerModel,
                                                  AgentModelSelectionRequest request) {
         AgentModelSlotConfig slotConfig = new AgentModelSlotConfig();
+        slotConfig.setModelName(providerModel.getModelName());
         slotConfig.setReasoningEnabled(request.getReasoningEnabled());
         slotConfig.setMaxTokens(request.getMaxTokens());
         slotConfig.setTemperature(request.getTemperature());
-        slotConfig.setModel(buildRuntimeConfig(provider, providerModel));
         return slotConfig;
-    }
-
-    /**
-     * 构建模型运行时配置。
-     *
-     * @param provider      启用提供商
-     * @param providerModel 提供商模型实体
-     * @return 模型运行时配置
-     */
-    private AgentModelRuntimeConfig buildRuntimeConfig(LlmProvider provider, LlmProviderModel providerModel) {
-        AgentModelRuntimeConfig runtimeConfig = new AgentModelRuntimeConfig();
-        runtimeConfig.setProvider(resolveRuntimeProviderType(provider));
-        runtimeConfig.setModel(providerModel.getModelName());
-        runtimeConfig.setModelType(providerModel.getModelType());
-        runtimeConfig.setBaseUrl(provider.getBaseUrl());
-        runtimeConfig.setApiKey(provider.getApiKey());
-        runtimeConfig.setSupportReasoning(isCapabilityEnabled(providerModel.getSupportReasoning()));
-        runtimeConfig.setSupportVision(isCapabilityEnabled(providerModel.getSupportVision()));
-        return runtimeConfig;
-    }
-
-    /**
-     * 解析写入运行时配置的提供商类型。
-     *
-     * @param provider 启用提供商
-     * @return 提供商类型
-     */
-    private String resolveRuntimeProviderType(LlmProvider provider) {
-        String providerType = normalizeNullableText(provider.getProviderType());
-        if (!StringUtils.hasText(providerType) || !LlmProviderTypeConstants.ALL.contains(providerType)) {
-            throw new ServiceException(ResponseCode.OPERATION_ERROR, PROVIDER_TYPE_MISSING_MESSAGE);
-        }
-        return providerType;
-    }
-
-    /**
-     * 读取 Agent 根配置缓存。
-     *
-     * @return Agent 根配置缓存
-     */
-    private AgentAllConfigCache readAgentConfigCache() {
-        AgentAllConfigCache cache = redisCache.getCacheObject(REDIS_KEY);
-        return cache == null ? new AgentAllConfigCache() : cache;
-    }
-
-    /**
-     * 持久化 Agent 根配置缓存。
-     *
-     * @param cache Agent 根配置缓存
-     */
-    private void persistAgentConfigCache(AgentAllConfigCache cache) {
-        redisCache.setCacheObject(REDIS_KEY, cache);
-    }
-
-    /**
-     * 发布 Agent 配置刷新事件。
-     *
-     * @param cache 已写入 Redis 的 Agent 根配置缓存
-     */
-    private void publishRefreshEvent(AgentAllConfigCache cache) {
-        agentConfigPublisher.publishRefresh(buildRefreshMessage(cache));
-    }
-
-    /**
-     * 构建 Agent 配置刷新消息体。
-     *
-     * @param cache 最新 Agent 根配置缓存
-     * @return 配置刷新消息
-     */
-    private AgentConfigRefreshMessage buildRefreshMessage(AgentAllConfigCache cache) {
-        return AgentConfigRefreshMessage.builder()
-                .message_type(AGENT_CONFIG_REFRESH_MESSAGE_TYPE)
-                .redis_key(REDIS_KEY)
-                .updated_at(cache.getUpdatedAt())
-                .updated_by(cache.getUpdatedBy())
-                .created_at(OffsetDateTime.now().format(DateTimeFormatter.ISO_OFFSET_DATE_TIME))
-                .build();
     }
 
     /**
@@ -850,16 +782,6 @@ public class AgentConfigServiceImpl implements AgentConfigService, BaseService {
         String existingToken = existingConfig == null ? null : normalizeNullableText(existingConfig.getAccessToken());
         Assert.notEmpty(existingToken, SPEECH_ACCESS_TOKEN_REQUIRED_MESSAGE);
         return existingToken;
-    }
-
-    /**
-     * 更新缓存元数据字段。
-     *
-     * @param cache Agent 根配置缓存
-     */
-    private void updateCacheMetadata(AgentAllConfigCache cache) {
-        cache.setUpdatedAt(OffsetDateTime.now().format(DateTimeFormatter.ISO_OFFSET_DATE_TIME));
-        cache.setUpdatedBy(currentOperator());
     }
 
     /**
