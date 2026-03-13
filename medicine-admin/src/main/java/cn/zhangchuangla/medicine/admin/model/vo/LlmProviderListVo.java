@@ -39,9 +39,6 @@ public class LlmProviderListVo {
     @Schema(description = "对话模型数量", example = "3")
     private Integer chatModelCount;
 
-    @Schema(description = "重排模型数量", example = "0")
-    private Integer rerankModelCount;
-
     @Schema(description = "向量模型数量", example = "2")
     private Integer embeddingModelCount;
 

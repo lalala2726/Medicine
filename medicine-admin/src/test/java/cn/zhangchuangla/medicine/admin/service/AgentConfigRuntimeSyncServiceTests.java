@@ -71,7 +71,7 @@ class AgentConfigRuntimeSyncServiceTests {
         ArgumentCaptor<AgentAllConfigCache> cacheCaptor = ArgumentCaptor.forClass(AgentAllConfigCache.class);
         verify(valueOperations).set(eq(RedisConstants.AgentConfig.ALL_CONFIG_KEY), cacheCaptor.capture());
         AgentAllConfigCache saved = cacheCaptor.getValue();
-        assertEquals(2, saved.getSchemaVersion());
+        assertEquals(3, saved.getSchemaVersion());
         assertEquals("openai", saved.getLlm().getProviderType());
         assertEquals("https://api.openai.com/v1", saved.getLlm().getBaseUrl());
         assertEquals("sk-openai", saved.getLlm().getApiKey());
@@ -83,7 +83,7 @@ class AgentConfigRuntimeSyncServiceTests {
     void validateProviderSwitchCompatibility_WhenTargetModelMissing_ShouldThrowServiceException() {
         AgentAllConfigCache cache = new AgentAllConfigCache();
         KnowledgeBaseAgentConfig knowledgeBase = new KnowledgeBaseAgentConfig();
-        knowledgeBase.setEmbeddingModel(buildSlot("text-embedding-3-large", false, 2048, 0.0));
+        knowledgeBase.setEmbeddingModel("text-embedding-3-large");
         cache.setKnowledgeBase(knowledgeBase);
         when(valueOperations.get(RedisConstants.AgentConfig.ALL_CONFIG_KEY)).thenReturn(cache);
         when(llmProviderModelMapper.selectList(any())).thenReturn(List.of());
@@ -92,6 +92,28 @@ class AgentConfigRuntimeSyncServiceTests {
                 () -> syncService.validateProviderSwitchCompatibility(buildTargetProvider()));
 
         assertEquals("切换失败，目标提供商下不存在模型：text-embedding-3-large", exception.getMessage());
+    }
+
+    @Test
+    void syncAfterModelUpdate_ShouldRenameKnowledgeBaseReferencedModelAndPublish() {
+        AgentAllConfigCache cache = new AgentAllConfigCache();
+        KnowledgeBaseAgentConfig knowledgeBase = new KnowledgeBaseAgentConfig();
+        knowledgeBase.setEmbeddingModel("text-embedding-3-large");
+        cache.setKnowledgeBase(knowledgeBase);
+        when(valueOperations.get(RedisConstants.AgentConfig.ALL_CONFIG_KEY)).thenReturn(cache);
+        when(llmProviderMapper.selectList(any())).thenReturn(List.of(buildEnabledProvider()));
+
+        LlmProviderModel existing = buildModel(1L, "text-embedding-3-large", LlmModelTypeConstants.EMBEDDING,
+                0, 0, 0);
+        LlmProviderModel updated = buildModel(1L, "text-embedding-3-large-v2", LlmModelTypeConstants.EMBEDDING,
+                0, 0, 0);
+
+        syncService.syncAfterModelUpdate(existing, updated, "tester");
+
+        ArgumentCaptor<AgentAllConfigCache> cacheCaptor = ArgumentCaptor.forClass(AgentAllConfigCache.class);
+        verify(valueOperations).set(eq(RedisConstants.AgentConfig.ALL_CONFIG_KEY), cacheCaptor.capture());
+        assertEquals("text-embedding-3-large-v2", cacheCaptor.getValue().getKnowledgeBase().getEmbeddingModel());
+        verify(agentConfigPublisher).publishRefresh(any(AgentConfigRefreshMessage.class));
     }
 
     @Test
@@ -112,6 +134,28 @@ class AgentConfigRuntimeSyncServiceTests {
         verify(valueOperations).set(eq(RedisConstants.AgentConfig.ALL_CONFIG_KEY), cacheCaptor.capture());
         assertEquals("gpt-4.1-mini-renamed",
                 cacheCaptor.getValue().getChatHistorySummary().getChatHistorySummaryModel().getModelName());
+        verify(agentConfigPublisher).publishRefresh(any(AgentConfigRefreshMessage.class));
+    }
+
+    @Test
+    void syncAfterModelDelete_ShouldClearKnowledgeBaseRankingModelAndDisableRanking() {
+        AgentAllConfigCache cache = new AgentAllConfigCache();
+        KnowledgeBaseAgentConfig knowledgeBase = new KnowledgeBaseAgentConfig();
+        knowledgeBase.setRankingEnabled(true);
+        knowledgeBase.setRankingModel("gpt-4.1-mini");
+        cache.setKnowledgeBase(knowledgeBase);
+        when(valueOperations.get(RedisConstants.AgentConfig.ALL_CONFIG_KEY)).thenReturn(cache);
+        when(llmProviderMapper.selectList(any())).thenReturn(List.of(buildEnabledProvider()));
+
+        syncService.syncAfterModelDelete(
+                buildModel(1L, "gpt-4.1-mini", LlmModelTypeConstants.CHAT, 0, 0, 0),
+                "tester"
+        );
+
+        ArgumentCaptor<AgentAllConfigCache> cacheCaptor = ArgumentCaptor.forClass(AgentAllConfigCache.class);
+        verify(valueOperations).set(eq(RedisConstants.AgentConfig.ALL_CONFIG_KEY), cacheCaptor.capture());
+        assertNull(cacheCaptor.getValue().getKnowledgeBase().getRankingModel());
+        assertEquals(Boolean.FALSE, cacheCaptor.getValue().getKnowledgeBase().getRankingEnabled());
         verify(agentConfigPublisher).publishRefresh(any(AgentConfigRefreshMessage.class));
     }
 

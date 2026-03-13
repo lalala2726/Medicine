@@ -3,6 +3,7 @@ package cn.zhangchuangla.medicine.admin.service.impl;
 import cn.zhangchuangla.medicine.admin.integration.MedicineAgentClient;
 import cn.zhangchuangla.medicine.admin.model.request.KnowledgeBaseAddRequest;
 import cn.zhangchuangla.medicine.admin.model.request.KnowledgeBaseUpdateRequest;
+import cn.zhangchuangla.medicine.admin.service.AgentConfigRuntimeSyncService;
 import cn.zhangchuangla.medicine.common.core.exception.ParamException;
 import cn.zhangchuangla.medicine.common.core.exception.ServiceException;
 import cn.zhangchuangla.medicine.model.entity.KbBase;
@@ -23,6 +24,9 @@ class KbBaseServiceImplTests {
 
     @Mock
     private MedicineAgentClient medicineAgentClient;
+
+    @Mock
+    private AgentConfigRuntimeSyncService agentConfigRuntimeSyncService;
 
     @Spy
     @InjectMocks
@@ -369,6 +373,7 @@ class KbBaseServiceImplTests {
         boolean result = kbBaseService.updateKnowledgeBase(request);
 
         assertTrue(result);
+        verify(agentConfigRuntimeSyncService).assertKnowledgeBaseCanDisable("drug_faq");
         verify(medicineAgentClient).releaseKnowledgeBase("drug_faq");
         verify(medicineAgentClient, never()).loadKnowledgeBase(anyString());
         ArgumentCaptor<KbBase> captor = ArgumentCaptor.forClass(KbBase.class);
@@ -397,7 +402,24 @@ class KbBaseServiceImplTests {
         doThrow(new ServiceException("Agent禁用失败")).when(medicineAgentClient).releaseKnowledgeBase("drug_faq");
 
         assertThrows(ServiceException.class, () -> kbBaseService.updateKnowledgeBase(request));
+        verify(agentConfigRuntimeSyncService).assertKnowledgeBaseCanDisable("drug_faq");
         verify(kbBaseService, never()).updateById(any(KbBase.class));
+    }
+
+    @Test
+    void deleteKnowledgeBase_ShouldCheckReferenceBeforeDelete() {
+        KbBase existing = new KbBase();
+        existing.setId(1L);
+        existing.setKnowledgeName("drug_faq");
+
+        doReturn(existing).when(kbBaseService).getById(1L);
+        doReturn(true).when(kbBaseService).removeById(1L);
+
+        boolean result = kbBaseService.deleteKnowledgeBase(1L);
+
+        assertTrue(result);
+        verify(agentConfigRuntimeSyncService).assertKnowledgeBaseCanDelete("drug_faq");
+        verify(kbBaseService).removeById(1L);
     }
 
 }

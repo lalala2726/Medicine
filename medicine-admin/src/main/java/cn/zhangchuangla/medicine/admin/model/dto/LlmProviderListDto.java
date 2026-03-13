@@ -82,11 +82,6 @@ public class LlmProviderListDto {
     private Integer chatModelCount;
 
     /**
-     * 重排模型数量。
-     */
-    private Integer rerankModelCount;
-
-    /**
      * 向量模型数量。
      */
     private Integer embeddingModelCount;

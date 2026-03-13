@@ -5,10 +5,13 @@ import cn.zhangchuangla.medicine.admin.model.request.KnowledgeBaseAgentConfigReq
 import cn.zhangchuangla.medicine.admin.model.request.SpeechAgentConfigRequest;
 import cn.zhangchuangla.medicine.admin.model.request.TextToSpeechConfigRequest;
 import cn.zhangchuangla.medicine.admin.service.AgentConfigRuntimeSyncService;
+import cn.zhangchuangla.medicine.admin.service.KbBaseService;
 import cn.zhangchuangla.medicine.admin.service.LlmProviderModelService;
 import cn.zhangchuangla.medicine.admin.service.LlmProviderService;
+import cn.zhangchuangla.medicine.common.core.exception.ServiceException;
 import cn.zhangchuangla.medicine.model.cache.*;
 import cn.zhangchuangla.medicine.model.constants.LlmModelTypeConstants;
+import cn.zhangchuangla.medicine.model.entity.KbBase;
 import cn.zhangchuangla.medicine.model.entity.LlmProvider;
 import cn.zhangchuangla.medicine.model.entity.LlmProviderModel;
 import com.baomidou.mybatisplus.extension.conditions.query.LambdaQueryChainWrapper;
@@ -28,6 +31,9 @@ import static org.mockito.Mockito.*;
 class AgentConfigServiceImplTests {
 
     @Mock
+    private KbBaseService kbBaseService;
+
+    @Mock
     private LlmProviderService llmProviderService;
 
     @Mock
@@ -37,28 +43,192 @@ class AgentConfigServiceImplTests {
     private AgentConfigRuntimeSyncService agentConfigRuntimeSyncService;
 
     @Test
-    void getKnowledgeBaseConfig_ShouldMapSlotAndLookupCapabilitiesFromDatabase() {
+    void getKnowledgeBaseConfig_ShouldMapKnowledgeNamesAndLookupCapabilitiesFromDatabase() {
         AgentConfigServiceImpl service = newService();
         AgentAllConfigCache cache = new AgentAllConfigCache();
         KnowledgeBaseAgentConfig knowledgeBase = new KnowledgeBaseAgentConfig();
+        knowledgeBase.setKnowledgeNames(List.of("common_medicine_kb", "otc_guide_kb"));
         knowledgeBase.setEmbeddingDim(1024);
-        knowledgeBase.setEmbeddingModel(buildSlot("text-embedding-3-large", false, 2048, 0.0));
-        knowledgeBase.setRerankModel(buildSlot("gte-rerank-v2", false, 512, 0.0));
+        knowledgeBase.setTopK(10);
+        knowledgeBase.setEmbeddingModel("text-embedding-3-large");
+        knowledgeBase.setRankingEnabled(false);
+        knowledgeBase.setRankingModel(null);
         cache.setKnowledgeBase(knowledgeBase);
         when(agentConfigRuntimeSyncService.readCache()).thenReturn(cache);
         when(llmProviderService.lambdaQuery()).thenReturn(mockProviderWrapper(List.of(buildEnabledProvider())));
         when(llmProviderModelService.lambdaQuery()).thenReturn(
-                mockModelWrapper(List.of(buildModel("text-embedding-3-large", LlmModelTypeConstants.EMBEDDING, 0, 0, 0))),
-                mockModelWrapper(List.of(buildModel("gte-rerank-v2", LlmModelTypeConstants.RERANK, 0, 0, 0)))
+                mockModelWrapper(List.of(buildModel("text-embedding-3-large", LlmModelTypeConstants.EMBEDDING, 0, 0, 0)))
         );
 
         var result = service.getKnowledgeBaseConfig();
 
+        assertEquals(List.of("common_medicine_kb", "otc_guide_kb"), result.getKnowledgeNames());
         assertEquals(1024, result.getEmbeddingDim());
+        assertEquals(10, result.getTopK());
         assertEquals("text-embedding-3-large", result.getEmbeddingModel().getModelName());
         assertEquals(Boolean.FALSE, result.getEmbeddingModel().getSupportReasoning());
         assertEquals(Boolean.FALSE, result.getEmbeddingModel().getSupportVision());
-        assertEquals("gte-rerank-v2", result.getRerankModel().getModelName());
+        assertEquals(Boolean.FALSE, result.getRankingEnabled());
+        assertNull(result.getRankingModel());
+    }
+
+    @Test
+    void listKnowledgeBaseOptions_ShouldReturnEnabledKnowledgeBases() {
+        AgentConfigServiceImpl service = newService();
+        KbBase first = new KbBase();
+        first.setKnowledgeName("common_medicine_kb");
+        first.setDisplayName("常见用药知识库");
+        first.setEmbeddingModel("text-embedding-3-large");
+        first.setEmbeddingDim(1024);
+        KbBase second = new KbBase();
+        second.setKnowledgeName("otc_guide_kb");
+        second.setDisplayName("OTC 指南知识库");
+        second.setEmbeddingModel("text-embedding-3-large");
+        second.setEmbeddingDim(1024);
+        when(kbBaseService.listEnabledKnowledgeBases()).thenReturn(List.of(first, second));
+
+        var result = service.listKnowledgeBaseOptions();
+
+        assertEquals(2, result.size());
+        assertEquals("common_medicine_kb", result.getFirst().getKnowledgeName());
+        assertEquals("常见用药知识库", result.getFirst().getDisplayName());
+        assertEquals("text-embedding-3-large", result.getFirst().getEmbeddingModel());
+        assertEquals(1024, result.getFirst().getEmbeddingDim());
+    }
+
+    @Test
+    void saveKnowledgeBaseConfig_ShouldWriteKnowledgeNamesAndRankingEnabled() {
+        AgentConfigServiceImpl service = newService();
+        when(agentConfigRuntimeSyncService.readCache()).thenReturn(new AgentAllConfigCache());
+        when(llmProviderService.lambdaQuery()).thenReturn(mockProviderWrapper(List.of(buildEnabledProvider())));
+        when(kbBaseService.listEnabledKnowledgeBasesByNames(List.of("common_medicine_kb", "otc_guide_kb")))
+                .thenReturn(List.of(
+                        buildKnowledgeBase("common_medicine_kb", "text-embedding-3-large", 1024),
+                        buildKnowledgeBase("otc_guide_kb", "text-embedding-3-large", 1024)
+                ));
+        when(llmProviderModelService.lambdaQuery()).thenReturn(
+                mockModelWrapper(List.of(buildModel("text-embedding-3-large", LlmModelTypeConstants.EMBEDDING, 0, 0, 0))),
+                mockModelWrapper(List.of(buildModel("gpt-4.1-mini", LlmModelTypeConstants.CHAT, 0, 0, 0)))
+        );
+
+        KnowledgeBaseAgentConfigRequest request = new KnowledgeBaseAgentConfigRequest();
+        request.setKnowledgeNames(List.of("common_medicine_kb", "otc_guide_kb"));
+        request.setEmbeddingDim(1024);
+        request.setEmbeddingModel(buildSelection("text-embedding-3-large", false, 2048, 0.0));
+        request.setTopK(10);
+        request.setRankingEnabled(true);
+        request.setRankingModel(buildSelection("gpt-4.1-mini", false, 512, 0.0));
+
+        boolean result = service.saveKnowledgeBaseConfig(request);
+
+        assertTrue(result);
+        ArgumentCaptor<AgentAllConfigCache> cacheCaptor = ArgumentCaptor.forClass(AgentAllConfigCache.class);
+        verify(agentConfigRuntimeSyncService).saveCache(cacheCaptor.capture(), any(), any());
+        KnowledgeBaseAgentConfig saved = cacheCaptor.getValue().getKnowledgeBase();
+        assertEquals(List.of("common_medicine_kb", "otc_guide_kb"), saved.getKnowledgeNames());
+        assertEquals(10, saved.getTopK());
+        assertEquals(Boolean.TRUE, saved.getRankingEnabled());
+        assertEquals("text-embedding-3-large", saved.getEmbeddingModel());
+        assertEquals("gpt-4.1-mini", saved.getRankingModel());
+    }
+
+    @Test
+    void saveKnowledgeBaseConfig_WhenRankingDisabledAndModelProvided_ShouldThrow() {
+        AgentConfigServiceImpl service = newService();
+        when(agentConfigRuntimeSyncService.readCache()).thenReturn(new AgentAllConfigCache());
+        when(llmProviderService.lambdaQuery()).thenReturn(mockProviderWrapper(List.of(buildEnabledProvider())));
+        when(kbBaseService.listEnabledKnowledgeBasesByNames(List.of("common_medicine_kb")))
+                .thenReturn(List.of(buildKnowledgeBase("common_medicine_kb", "text-embedding-3-large", 1024)));
+        when(llmProviderModelService.lambdaQuery()).thenReturn(
+                mockModelWrapper(List.of(buildModel("text-embedding-3-large", LlmModelTypeConstants.EMBEDDING, 0, 0, 0)))
+        );
+
+        KnowledgeBaseAgentConfigRequest request = new KnowledgeBaseAgentConfigRequest();
+        request.setKnowledgeNames(List.of("common_medicine_kb"));
+        request.setEmbeddingDim(1024);
+        request.setEmbeddingModel(buildSelection("text-embedding-3-large", false, 2048, 0.0));
+        request.setTopK(10);
+        request.setRankingEnabled(false);
+        request.setRankingModel(buildSelection("gpt-4.1-mini", false, 512, 0.0));
+
+        ServiceException exception = assertThrows(ServiceException.class, () -> service.saveKnowledgeBaseConfig(request));
+
+        assertEquals("关闭排序时不允许选择排序模型", exception.getMessage());
+        verify(agentConfigRuntimeSyncService, never()).saveCache(any(), any(), any());
+    }
+
+    @Test
+    void saveKnowledgeBaseConfig_WhenKnowledgeBaseEmbeddingMismatch_ShouldThrow() {
+        AgentConfigServiceImpl service = newService();
+        when(agentConfigRuntimeSyncService.readCache()).thenReturn(new AgentAllConfigCache());
+        when(llmProviderService.lambdaQuery()).thenReturn(mockProviderWrapper(List.of(buildEnabledProvider())));
+        when(kbBaseService.listEnabledKnowledgeBasesByNames(List.of("common_medicine_kb", "otc_guide_kb")))
+                .thenReturn(List.of(
+                        buildKnowledgeBase("common_medicine_kb", "text-embedding-3-large", 1024),
+                        buildKnowledgeBase("otc_guide_kb", "text-embedding-3-small", 1024)
+                ));
+        when(llmProviderModelService.lambdaQuery()).thenReturn(
+                mockModelWrapper(List.of(buildModel("text-embedding-3-large", LlmModelTypeConstants.EMBEDDING, 0, 0, 0)))
+        );
+
+        KnowledgeBaseAgentConfigRequest request = new KnowledgeBaseAgentConfigRequest();
+        request.setKnowledgeNames(List.of("common_medicine_kb", "otc_guide_kb"));
+        request.setEmbeddingDim(1024);
+        request.setEmbeddingModel(buildSelection("text-embedding-3-large", false, 2048, 0.0));
+        request.setTopK(10);
+        request.setRankingEnabled(false);
+
+        ServiceException exception = assertThrows(ServiceException.class, () -> service.saveKnowledgeBaseConfig(request));
+
+        assertEquals("知识库向量模型必须与第一个知识库保持一致：otc_guide_kb", exception.getMessage());
+        verify(agentConfigRuntimeSyncService, never()).saveCache(any(), any(), any());
+    }
+
+    @Test
+    void saveKnowledgeBaseConfig_WhenKnowledgeBaseCountExceedsMaxLimit_ShouldThrow() {
+        AgentConfigServiceImpl service = newService();
+
+        java.util.List<String> knowledgeNames = java.util.stream.IntStream.rangeClosed(1, 6)
+                .mapToObj(index -> "knowledge_" + index)
+                .toList();
+
+        KnowledgeBaseAgentConfigRequest request = new KnowledgeBaseAgentConfigRequest();
+        request.setKnowledgeNames(knowledgeNames);
+        request.setEmbeddingDim(1024);
+        request.setEmbeddingModel(buildSelection("text-embedding-3-large", false, 2048, 0.0));
+        request.setTopK(10);
+        request.setRankingEnabled(false);
+
+        ServiceException exception = assertThrows(ServiceException.class, () -> service.saveKnowledgeBaseConfig(request));
+
+        assertEquals("知识库最多支持5个", exception.getMessage());
+        verify(agentConfigRuntimeSyncService, never()).saveCache(any(), any(), any());
+    }
+
+    @Test
+    void saveKnowledgeBaseConfig_WhenTopKIsZero_ShouldPersistAsNull() {
+        AgentConfigServiceImpl service = newService();
+        when(agentConfigRuntimeSyncService.readCache()).thenReturn(new AgentAllConfigCache());
+        when(llmProviderService.lambdaQuery()).thenReturn(mockProviderWrapper(List.of(buildEnabledProvider())));
+        when(kbBaseService.listEnabledKnowledgeBasesByNames(List.of("common_medicine_kb")))
+                .thenReturn(List.of(buildKnowledgeBase("common_medicine_kb", "text-embedding-3-large", 1024)));
+        when(llmProviderModelService.lambdaQuery()).thenReturn(
+                mockModelWrapper(List.of(buildModel("text-embedding-3-large", LlmModelTypeConstants.EMBEDDING, 0, 0, 0)))
+        );
+
+        KnowledgeBaseAgentConfigRequest request = new KnowledgeBaseAgentConfigRequest();
+        request.setKnowledgeNames(List.of("common_medicine_kb"));
+        request.setEmbeddingDim(1024);
+        request.setEmbeddingModel(buildSelection("text-embedding-3-large", false, 2048, 0.0));
+        request.setTopK(0);
+        request.setRankingEnabled(false);
+
+        boolean result = service.saveKnowledgeBaseConfig(request);
+
+        assertTrue(result);
+        ArgumentCaptor<AgentAllConfigCache> cacheCaptor = ArgumentCaptor.forClass(AgentAllConfigCache.class);
+        verify(agentConfigRuntimeSyncService).saveCache(cacheCaptor.capture(), any(), any());
+        assertNull(cacheCaptor.getValue().getKnowledgeBase().getTopK());
     }
 
     @Test
@@ -79,35 +249,6 @@ class AgentConfigServiceImplTests {
         assertEquals("qwen-vl-max", result.getImageRecognitionModel().getModelName());
         assertEquals(Boolean.TRUE, result.getImageRecognitionModel().getSupportReasoning());
         assertEquals(Boolean.TRUE, result.getImageRecognitionModel().getSupportVision());
-    }
-
-    @Test
-    void saveKnowledgeBaseConfig_ShouldWriteFlattenedSlotConfig() {
-        AgentConfigServiceImpl service = newService();
-        when(agentConfigRuntimeSyncService.readCache()).thenReturn(new AgentAllConfigCache());
-        when(llmProviderService.lambdaQuery()).thenReturn(mockProviderWrapper(List.of(buildEnabledProvider())));
-        when(llmProviderModelService.lambdaQuery()).thenReturn(
-                mockModelWrapper(List.of(buildModel("text-embedding-3-large", LlmModelTypeConstants.EMBEDDING, 0, 0, 0))),
-                mockModelWrapper(List.of(buildModel("gte-rerank-v2", LlmModelTypeConstants.RERANK, 0, 0, 0)))
-        );
-
-        KnowledgeBaseAgentConfigRequest request = new KnowledgeBaseAgentConfigRequest();
-        request.setEmbeddingDim(1024);
-        request.setEmbeddingModel(buildSelection("text-embedding-3-large", false, 2048, 0.0));
-        request.setRerankModel(buildSelection("gte-rerank-v2", false, 512, 0.0));
-
-        boolean result = service.saveKnowledgeBaseConfig(request);
-
-        assertTrue(result);
-        ArgumentCaptor<AgentAllConfigCache> cacheCaptor = ArgumentCaptor.forClass(AgentAllConfigCache.class);
-        ArgumentCaptor<LlmProvider> providerCaptor = ArgumentCaptor.forClass(LlmProvider.class);
-        verify(agentConfigRuntimeSyncService).saveCache(cacheCaptor.capture(), providerCaptor.capture(), any());
-        KnowledgeBaseAgentConfig saved = cacheCaptor.getValue().getKnowledgeBase();
-        assertEquals("text-embedding-3-large", saved.getEmbeddingModel().getModelName());
-        assertEquals(Boolean.FALSE, saved.getEmbeddingModel().getReasoningEnabled());
-        assertEquals(2048, saved.getEmbeddingModel().getMaxTokens());
-        assertEquals("gte-rerank-v2", saved.getRerankModel().getModelName());
-        assertEquals("openai", providerCaptor.getValue().getProviderType());
     }
 
     @Test
@@ -162,6 +303,7 @@ class AgentConfigServiceImplTests {
 
     private AgentConfigServiceImpl newService() {
         return new AgentConfigServiceImpl(
+                kbBaseService,
                 llmProviderService,
                 llmProviderModelService,
                 agentConfigRuntimeSyncService
@@ -205,6 +347,15 @@ class AgentConfigServiceImplTests {
                 .supportReasoning(supportReasoning)
                 .supportVision(supportVision)
                 .build();
+    }
+
+    private KbBase buildKnowledgeBase(String knowledgeName, String embeddingModel, Integer embeddingDim) {
+        KbBase kbBase = new KbBase();
+        kbBase.setKnowledgeName(knowledgeName);
+        kbBase.setEmbeddingModel(embeddingModel);
+        kbBase.setEmbeddingDim(embeddingDim);
+        kbBase.setStatus(0);
+        return kbBase;
     }
 
     private AgentModelSlotConfig buildSlot(String modelName,

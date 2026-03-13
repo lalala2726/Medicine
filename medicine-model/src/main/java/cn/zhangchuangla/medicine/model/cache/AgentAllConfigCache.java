@@ -16,7 +16,7 @@ public class AgentAllConfigCache implements Serializable {
     /**
      * 当前缓存结构版本。
      */
-    public static final int CURRENT_SCHEMA_VERSION = 2;
+    public static final int CURRENT_SCHEMA_VERSION = 3;
 
     /**
      * Redis JSON 结构版本。

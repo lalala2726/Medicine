@@ -12,7 +12,7 @@ class AgentAllConfigCacheJsonTests {
     private final ObjectMapper objectMapper = new ObjectMapper();
 
     @Test
-    void agentAllConfigCache_ShouldSerializeToSchemaVersion2Structure() throws Exception {
+    void agentAllConfigCache_ShouldSerializeToSchemaVersion3Structure() throws Exception {
         AgentAllConfigCache cache = new AgentAllConfigCache();
         cache.setUpdatedAt("2026-03-13T10:30:00+08:00");
         cache.setUpdatedBy("admin");
@@ -27,7 +27,7 @@ class AgentAllConfigCacheJsonTests {
         String json = objectMapper.writeValueAsString(cache);
         JsonNode root = objectMapper.readTree(json);
 
-        assertEquals(2, root.path("schemaVersion").asInt());
+        assertEquals(3, root.path("schemaVersion").asInt());
         assertTrue(root.has("llm"));
         assertTrue(root.has("agentConfigs"));
         assertTrue(root.has("speech"));
@@ -41,7 +41,13 @@ class AgentAllConfigCacheJsonTests {
         assertEquals("https://api.openai.com/v1", root.path("llm").path("baseUrl").asText());
         assertEquals("sk-llm", root.path("llm").path("apiKey").asText());
         assertEquals("text-embedding-3-large",
-                root.path("agentConfigs").path("knowledgeBase").path("embeddingModel").path("modelName").asText());
+                root.path("agentConfigs").path("knowledgeBase").path("embeddingModel").asText());
+        assertEquals("common_medicine_kb",
+                root.path("agentConfigs").path("knowledgeBase").path("knowledgeNames").get(0).asText());
+        assertEquals(10, root.path("agentConfigs").path("knowledgeBase").path("topK").asInt());
+        assertTrue(root.path("agentConfigs").path("knowledgeBase").path("rankingEnabled").asBoolean());
+        assertEquals("gpt-4.1-mini",
+                root.path("agentConfigs").path("knowledgeBase").path("rankingModel").asText());
         assertEquals("gpt-4.1-mini",
                 root.path("agentConfigs").path("adminAssistant").path("chatModel").path("modelName").asText());
         assertEquals("qwen2.5-vl-72b-instruct",
@@ -59,7 +65,33 @@ class AgentAllConfigCacheJsonTests {
         assertFalse(json.contains("\"supportReasoning\""));
         assertFalse(json.contains("\"supportVision\""));
         assertFalse(json.contains("\"modelType\""));
-        assertFalse(root.path("agentConfigs").path("knowledgeBase").path("embeddingModel").has("model"));
+        assertFalse(root.path("agentConfigs").path("knowledgeBase").path("embeddingModel").isObject());
+        assertFalse(root.path("agentConfigs").path("knowledgeBase").path("rankingModel").isObject());
+    }
+
+    @Test
+    void agentAllConfigCache_ShouldReadLegacyKnowledgeBaseRerankFieldsIntoRankingFields() throws Exception {
+        String json = """
+                {
+                  "schemaVersion": 2,
+                  "agentConfigs": {
+                    "knowledgeBase": {
+                      "knowledgeNames": ["common_medicine_kb"],
+                      "embeddingDim": 1024,
+                      "embeddingModel": "text-embedding-3-large",
+                      "topK": 10,
+                      "rerankEnabled": true,
+                      "rerankModel": "gpt-4.1-mini"
+                    }
+                  }
+                }
+                """;
+
+        AgentAllConfigCache cache = objectMapper.readValue(json, AgentAllConfigCache.class);
+
+        assertNotNull(cache.getKnowledgeBase());
+        assertEquals(Boolean.TRUE, cache.getKnowledgeBase().getRankingEnabled());
+        assertEquals("gpt-4.1-mini", cache.getKnowledgeBase().getRankingModel());
     }
 
     private AgentLlmConfig buildLlmConfig() {
@@ -72,9 +104,12 @@ class AgentAllConfigCacheJsonTests {
 
     private KnowledgeBaseAgentConfig buildKnowledgeBaseConfig() {
         KnowledgeBaseAgentConfig config = new KnowledgeBaseAgentConfig();
+        config.setKnowledgeNames(java.util.List.of("common_medicine_kb", "otc_guide_kb"));
         config.setEmbeddingDim(1024);
-        config.setEmbeddingModel(buildSlot("text-embedding-3-large", false, 2048, 0.0));
-        config.setRerankModel(buildSlot("gte-rerank-v2", false, 512, 0.0));
+        config.setTopK(10);
+        config.setEmbeddingModel("text-embedding-3-large");
+        config.setRankingEnabled(true);
+        config.setRankingModel("gpt-4.1-mini");
         return config;
     }
 

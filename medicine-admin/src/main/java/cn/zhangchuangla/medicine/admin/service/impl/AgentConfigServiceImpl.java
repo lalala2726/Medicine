@@ -2,16 +2,14 @@ package cn.zhangchuangla.medicine.admin.service.impl;
 
 import cn.zhangchuangla.medicine.admin.model.request.*;
 import cn.zhangchuangla.medicine.admin.model.vo.*;
-import cn.zhangchuangla.medicine.admin.service.AgentConfigRuntimeSyncService;
-import cn.zhangchuangla.medicine.admin.service.AgentConfigService;
-import cn.zhangchuangla.medicine.admin.service.LlmProviderModelService;
-import cn.zhangchuangla.medicine.admin.service.LlmProviderService;
+import cn.zhangchuangla.medicine.admin.service.*;
 import cn.zhangchuangla.medicine.common.core.enums.ResponseCode;
 import cn.zhangchuangla.medicine.common.core.exception.ServiceException;
 import cn.zhangchuangla.medicine.common.core.utils.Assert;
 import cn.zhangchuangla.medicine.common.security.base.BaseService;
 import cn.zhangchuangla.medicine.model.cache.*;
 import cn.zhangchuangla.medicine.model.constants.LlmModelTypeConstants;
+import cn.zhangchuangla.medicine.model.entity.KbBase;
 import cn.zhangchuangla.medicine.model.entity.LlmProvider;
 import cn.zhangchuangla.medicine.model.entity.LlmProviderModel;
 import com.baomidou.mybatisplus.extension.conditions.query.LambdaQueryChainWrapper;
@@ -19,7 +17,11 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
 
+import java.util.ArrayList;
+import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Map;
+import java.util.function.Function;
 
 /**
  * Agent 配置服务实现。
@@ -31,6 +33,9 @@ import java.util.List;
 public class AgentConfigServiceImpl implements AgentConfigService, BaseService {
 
     private static final int PROVIDER_STATUS_ENABLED = 1;
+    private static final int KNOWLEDGE_BASE_MAX_COUNT = 5;
+    private static final int KNOWLEDGE_BASE_TOP_K_MIN = 1;
+    private static final int KNOWLEDGE_BASE_TOP_K_MAX = 100;
     private static final int MODEL_STATUS_ENABLED = 0;
     private static final int CAPABILITY_ENABLED = 1;
     private static final int EMBEDDING_DIM_MIN = 128;
@@ -56,9 +61,20 @@ public class AgentConfigServiceImpl implements AgentConfigService, BaseService {
     private static final String REASONING_UNSUPPORTED_MESSAGE = "模型不支持深度思考：%s";
     private static final String VISION_UNSUPPORTED_MESSAGE = "模型不支持图片理解：%s";
     private static final String EMBEDDING_MODEL_MISSING_MESSAGE = "当前启用提供商下不存在向量模型：%s";
-    private static final String RERANK_MODEL_MISSING_MESSAGE = "当前启用提供商下不存在重排模型：%s";
+    private static final String RANKING_MODEL_MISSING_MESSAGE = "当前启用提供商下不存在排序聊天模型：%s";
     private static final String CHAT_MODEL_MISSING_MESSAGE = "当前启用提供商下不存在聊天模型：%s";
     private static final String VISION_MODEL_MISSING_MESSAGE = "当前启用提供商下不存在图片理解模型：%s";
+    private static final String KNOWLEDGE_BASE_NAME_REQUIRED_MESSAGE = "知识库名称不能为空";
+    private static final String KNOWLEDGE_BASE_DUPLICATE_MESSAGE = "知识库名称不能重复：%s";
+    private static final String KNOWLEDGE_BASE_NOT_FOUND_MESSAGE = "启用中的知识库不存在：%s";
+    private static final String KNOWLEDGE_BASE_MODEL_MISMATCH_MESSAGE = "知识库向量模型必须与第一个知识库保持一致：%s";
+    private static final String KNOWLEDGE_BASE_DIM_MISMATCH_MESSAGE = "知识库向量维度必须与第一个知识库保持一致：%s";
+    private static final String KNOWLEDGE_BASE_CONFIG_MODEL_MISMATCH_MESSAGE = "向量模型必须与第一个知识库保持一致";
+    private static final String KNOWLEDGE_BASE_CONFIG_DIM_MISMATCH_MESSAGE = "向量维度必须与第一个知识库保持一致";
+    private static final String KNOWLEDGE_BASE_RANKING_REQUIRED_MESSAGE = "启用排序时必须选择排序模型";
+    private static final String KNOWLEDGE_BASE_RANKING_DISABLED_MESSAGE = "关闭排序时不允许选择排序模型";
+    private static final String KNOWLEDGE_BASE_TOP_K_MIN_MESSAGE = "知识库返回条数不能小于1";
+    private static final String KNOWLEDGE_BASE_TOP_K_MAX_MESSAGE = "知识库返回条数不能大于100";
     private static final String SPEECH_APP_ID_REQUIRED_MESSAGE = "豆包语音AppId不能为空";
     private static final String SPEECH_ACCESS_TOKEN_REQUIRED_MESSAGE = "豆包语音AccessToken不能为空";
     private static final String SPEECH_TTS_REQUIRED_MESSAGE = "语音合成配置不能为空";
@@ -67,6 +83,7 @@ public class AgentConfigServiceImpl implements AgentConfigService, BaseService {
     private static final String SPEECH_TTS_MAX_TEXT_CHARS_MIN_MESSAGE = "语音合成最大文本长度不能小于1";
     private static final String SPEECH_TTS_MAX_TEXT_CHARS_MAX_MESSAGE = "语音合成最大文本长度不能大于3000";
 
+    private final KbBaseService kbBaseService;
     private final LlmProviderService llmProviderService;
     private final LlmProviderModelService llmProviderModelService;
     private final AgentConfigRuntimeSyncService agentConfigRuntimeSyncService;
@@ -85,11 +102,16 @@ public class AgentConfigServiceImpl implements AgentConfigService, BaseService {
             return vo;
         }
         LlmProvider provider = getEnabledProviderOrNull();
+        vo.setKnowledgeNames(copyKnowledgeNames(config.getKnowledgeNames()));
         vo.setEmbeddingDim(config.getEmbeddingDim());
-        vo.setEmbeddingModel(toAgentModelSelectionVo(provider, config.getEmbeddingModel(),
+        vo.setTopK(config.getTopK());
+        vo.setEmbeddingModel(toKnowledgeBaseModelSelectionVo(provider, config.getEmbeddingModel(),
                 LlmModelTypeConstants.EMBEDDING));
-        vo.setRerankModel(toAgentModelSelectionVo(provider, config.getRerankModel(),
-                LlmModelTypeConstants.RERANK));
+        boolean rankingEnabled = resolveKnowledgeBaseRankingEnabled(config);
+        vo.setRankingEnabled(rankingEnabled);
+        vo.setRankingModel(rankingEnabled
+                ? toKnowledgeBaseModelSelectionVo(provider, config.getRankingModel(), LlmModelTypeConstants.CHAT)
+                : null);
         return vo;
     }
 
@@ -104,17 +126,41 @@ public class AgentConfigServiceImpl implements AgentConfigService, BaseService {
         Assert.notNull(request, "知识库Agent配置不能为空");
         validateEmbeddingDim(request.getEmbeddingDim());
 
+        List<String> knowledgeNames = normalizeKnowledgeNames(request.getKnowledgeNames());
+        Integer topK = normalizeKnowledgeBaseTopK(request.getTopK());
         LlmProvider provider = getRequiredEnabledProvider();
+        List<KbBase> knowledgeBases = loadEnabledKnowledgeBases(knowledgeNames);
+        KbBase baseline = knowledgeBases.getFirst();
         KnowledgeBaseAgentConfig config = new KnowledgeBaseAgentConfig();
+        AgentModelSlotConfig embeddingModel = resolveRequiredSlotConfig(provider, request.getEmbeddingModel(),
+                LlmModelTypeConstants.EMBEDDING, false, EMBEDDING_MODEL_MISSING_MESSAGE);
+        validateKnowledgeBasesAgainstBaseline(knowledgeBases, baseline);
+        validateKnowledgeBaseCommonConfig(embeddingModel, request.getEmbeddingDim(), baseline);
+        String rankingModel = resolveKnowledgeBaseRankingModel(provider, request);
+
+        config.setKnowledgeNames(knowledgeNames);
         config.setEmbeddingDim(request.getEmbeddingDim());
-        config.setEmbeddingModel(resolveRequiredSlotConfig(provider, request.getEmbeddingModel(),
-                LlmModelTypeConstants.EMBEDDING, false, EMBEDDING_MODEL_MISSING_MESSAGE));
-        config.setRerankModel(resolveOptionalSlotConfig(provider, request.getRerankModel()));
+        config.setTopK(topK);
+        config.setEmbeddingModel(embeddingModel.getModelName());
+        config.setRankingEnabled(Boolean.TRUE.equals(request.getRankingEnabled()));
+        config.setRankingModel(rankingModel);
 
         AgentAllConfigCache cache = agentConfigRuntimeSyncService.readCache();
         cache.setKnowledgeBase(config);
         agentConfigRuntimeSyncService.saveCache(cache, provider, currentOperator());
         return true;
+    }
+
+    /**
+     * 查询知识库下拉选项列表。
+     *
+     * @return 知识库下拉选项
+     */
+    @Override
+    public List<KnowledgeBaseOptionVo> listKnowledgeBaseOptions() {
+        return kbBaseService.listEnabledKnowledgeBases().stream()
+                .map(this::toKnowledgeBaseOptionVo)
+                .toList();
     }
 
     /**
@@ -328,16 +374,6 @@ public class AgentConfigServiceImpl implements AgentConfigService, BaseService {
     }
 
     /**
-     * 查询重排模型选项列表。
-     *
-     * @return 重排模型选项
-     */
-    @Override
-    public List<AgentModelOptionVo> listRerankModelOptions() {
-        return listModelOptions(LlmModelTypeConstants.RERANK, false);
-    }
-
-    /**
      * 查询聊天模型选项列表。
      *
      * @return 聊天模型选项
@@ -375,6 +411,19 @@ public class AgentConfigServiceImpl implements AgentConfigService, BaseService {
         fillModelCapabilities(vo, provider, slotConfig.getModelName(), modelType);
         vo.setMaxTokens(slotConfig.getMaxTokens());
         vo.setTemperature(slotConfig.getTemperature());
+        return vo;
+    }
+
+    private AgentModelSelectionVo toKnowledgeBaseModelSelectionVo(LlmProvider provider,
+                                                                  String modelName,
+                                                                  String modelType) {
+        if (!StringUtils.hasText(modelName)) {
+            return null;
+        }
+        AgentModelSelectionVo vo = new AgentModelSelectionVo();
+        vo.setModelName(modelName);
+        vo.setReasoningEnabled(false);
+        fillModelCapabilities(vo, provider, modelName, modelType);
         return vo;
     }
 
@@ -462,6 +511,15 @@ public class AgentConfigServiceImpl implements AgentConfigService, BaseService {
         return vo;
     }
 
+    private KnowledgeBaseOptionVo toKnowledgeBaseOptionVo(KbBase kbBase) {
+        KnowledgeBaseOptionVo vo = new KnowledgeBaseOptionVo();
+        vo.setKnowledgeName(kbBase.getKnowledgeName());
+        vo.setDisplayName(kbBase.getDisplayName());
+        vo.setEmbeddingModel(kbBase.getEmbeddingModel());
+        vo.setEmbeddingDim(kbBase.getEmbeddingDim());
+        return vo;
+    }
+
     /**
      * 解析必填模型槽位配置。
      *
@@ -481,18 +539,17 @@ public class AgentConfigServiceImpl implements AgentConfigService, BaseService {
         return resolveSlotConfig(provider, request, modelType, visionRequired, modelMissingMessageForm);
     }
 
-    /**
-     * 解析可选模型槽位配置。
-     *
-     * @param provider 启用提供商
-     * @param request  槽位请求
-     * @return 运行时槽位配置；未配置时返回 null
-     */
-    private AgentModelSlotConfig resolveOptionalSlotConfig(LlmProvider provider, AgentModelSelectionRequest request) {
-        if (request == null) {
+    private String resolveKnowledgeBaseRankingModel(LlmProvider provider,
+                                                    KnowledgeBaseAgentConfigRequest request) {
+        boolean rankingEnabled = Boolean.TRUE.equals(request.getRankingEnabled());
+        AgentModelSelectionRequest rankingRequest = request.getRankingModel();
+        if (!rankingEnabled) {
+            Assert.isParamTrue(!hasSelectedModel(rankingRequest), KNOWLEDGE_BASE_RANKING_DISABLED_MESSAGE);
             return null;
         }
-        return resolveSlotConfig(provider, request, LlmModelTypeConstants.RERANK, false, AgentConfigServiceImpl.RERANK_MODEL_MISSING_MESSAGE);
+        Assert.isParamTrue(hasSelectedModel(rankingRequest), KNOWLEDGE_BASE_RANKING_REQUIRED_MESSAGE);
+        return resolveSlotConfig(provider, rankingRequest, LlmModelTypeConstants.CHAT, false,
+                RANKING_MODEL_MISSING_MESSAGE).getModelName();
     }
 
     /**
@@ -600,6 +657,62 @@ public class AgentConfigServiceImpl implements AgentConfigService, BaseService {
         return slotConfig;
     }
 
+    private List<String> normalizeKnowledgeNames(List<String> knowledgeNames) {
+        Assert.notEmpty(knowledgeNames, "知识库名称列表不能为空");
+        Assert.isParamTrue(knowledgeNames.size() <= KNOWLEDGE_BASE_MAX_COUNT, "知识库最多支持5个");
+
+        List<String> normalizedNames = new ArrayList<>(knowledgeNames.size());
+        LinkedHashSet<String> uniqueNames = new LinkedHashSet<>();
+        for (String knowledgeName : knowledgeNames) {
+            String normalizedName = normalizeNullableText(knowledgeName);
+            Assert.notEmpty(normalizedName, KNOWLEDGE_BASE_NAME_REQUIRED_MESSAGE);
+            Assert.isParamTrue(uniqueNames.add(normalizedName),
+                    KNOWLEDGE_BASE_DUPLICATE_MESSAGE.formatted(normalizedName));
+            normalizedNames.add(normalizedName);
+        }
+        return normalizedNames;
+    }
+
+    private List<KbBase> loadEnabledKnowledgeBases(List<String> knowledgeNames) {
+        List<KbBase> knowledgeBases = kbBaseService.listEnabledKnowledgeBasesByNames(knowledgeNames);
+        Map<String, KbBase> knowledgeBaseMap = knowledgeBases.stream()
+                .collect(java.util.stream.Collectors.toMap(KbBase::getKnowledgeName, Function.identity()));
+        List<KbBase> orderedKnowledgeBases = new ArrayList<>(knowledgeNames.size());
+        for (String knowledgeName : knowledgeNames) {
+            KbBase kbBase = knowledgeBaseMap.get(knowledgeName);
+            if (kbBase == null) {
+                throw new ServiceException(ResponseCode.OPERATION_ERROR,
+                        KNOWLEDGE_BASE_NOT_FOUND_MESSAGE.formatted(knowledgeName));
+            }
+            orderedKnowledgeBases.add(kbBase);
+        }
+        return orderedKnowledgeBases;
+    }
+
+    private void validateKnowledgeBasesAgainstBaseline(List<KbBase> knowledgeBases, KbBase baseline) {
+        for (int index = 1; index < knowledgeBases.size(); index++) {
+            KbBase kbBase = knowledgeBases.get(index);
+            if (!java.util.Objects.equals(normalizeNullableText(kbBase.getEmbeddingModel()),
+                    normalizeNullableText(baseline.getEmbeddingModel()))) {
+                throw new ServiceException(ResponseCode.OPERATION_ERROR,
+                        KNOWLEDGE_BASE_MODEL_MISMATCH_MESSAGE.formatted(kbBase.getKnowledgeName()));
+            }
+            if (!java.util.Objects.equals(kbBase.getEmbeddingDim(), baseline.getEmbeddingDim())) {
+                throw new ServiceException(ResponseCode.OPERATION_ERROR,
+                        KNOWLEDGE_BASE_DIM_MISMATCH_MESSAGE.formatted(kbBase.getKnowledgeName()));
+            }
+        }
+    }
+
+    private void validateKnowledgeBaseCommonConfig(AgentModelSlotConfig embeddingModel, Integer embeddingDim, KbBase baseline) {
+        if (!java.util.Objects.equals(normalizeNullableText(baseline.getEmbeddingModel()), embeddingModel.getModelName())) {
+            throw new ServiceException(ResponseCode.OPERATION_ERROR, KNOWLEDGE_BASE_CONFIG_MODEL_MISMATCH_MESSAGE);
+        }
+        if (!java.util.Objects.equals(baseline.getEmbeddingDim(), embeddingDim)) {
+            throw new ServiceException(ResponseCode.OPERATION_ERROR, KNOWLEDGE_BASE_CONFIG_DIM_MISMATCH_MESSAGE);
+        }
+    }
+
     /**
      * 校验知识库向量维度范围与 2 的次方要求。
      *
@@ -610,6 +723,15 @@ public class AgentConfigServiceImpl implements AgentConfigService, BaseService {
         Assert.isParamTrue(embeddingDim >= EMBEDDING_DIM_MIN, "向量维度不能小于128");
         Assert.isParamTrue(embeddingDim <= EMBEDDING_DIM_MAX, "向量维度不能大于8192");
         Assert.isParamTrue(isPowerOfTwo(embeddingDim), "向量维度必须是2的次方");
+    }
+
+    private Integer normalizeKnowledgeBaseTopK(Integer topK) {
+        if (topK == null || topK == 0) {
+            return null;
+        }
+        Assert.isParamTrue(topK >= KNOWLEDGE_BASE_TOP_K_MIN, KNOWLEDGE_BASE_TOP_K_MIN_MESSAGE);
+        Assert.isParamTrue(topK <= KNOWLEDGE_BASE_TOP_K_MAX, KNOWLEDGE_BASE_TOP_K_MAX_MESSAGE);
+        return topK;
     }
 
     /**
@@ -721,6 +843,20 @@ public class AgentConfigServiceImpl implements AgentConfigService, BaseService {
         return number > 0 && (number & (number - 1)) == 0;
     }
 
+    private boolean resolveKnowledgeBaseRankingEnabled(KnowledgeBaseAgentConfig config) {
+        if (config.getRankingEnabled() != null) {
+            return config.getRankingEnabled();
+        }
+        return StringUtils.hasText(config.getRankingModel());
+    }
+
+    private List<String> copyKnowledgeNames(List<String> knowledgeNames) {
+        if (knowledgeNames == null || knowledgeNames.isEmpty()) {
+            return List.of();
+        }
+        return List.copyOf(knowledgeNames);
+    }
+
     /**
      * 构建豆包语音运行时配置。
      *
@@ -808,6 +944,10 @@ public class AgentConfigServiceImpl implements AgentConfigService, BaseService {
             throw new ServiceException(ResponseCode.OPERATION_ERROR, ENABLED_PROVIDER_MISSING_MESSAGE);
         }
         return provider;
+    }
+
+    private boolean hasSelectedModel(AgentModelSelectionRequest request) {
+        return request != null && StringUtils.hasText(normalizeNullableText(request.getModelName()));
     }
 
     /**

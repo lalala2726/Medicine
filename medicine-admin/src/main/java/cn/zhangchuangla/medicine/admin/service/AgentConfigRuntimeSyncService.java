@@ -42,23 +42,26 @@ public class AgentConfigRuntimeSyncService {
     private static final String PROVIDER_DISABLE_MESSAGE = "当前启用的提供商不允许停用，请先切换到其他提供商";
     private static final String PROVIDER_DELETE_MESSAGE = "当前启用的提供商不允许删除，请先切换到其他提供商";
     private static final String PROVIDER_SWITCH_MODEL_MISSING_MESSAGE = "切换失败，目标提供商下不存在模型：%s";
+    private static final String KNOWLEDGE_BASE_DISABLE_MESSAGE = "当前知识库已被知识库Agent配置引用，请先移除后再停用";
+    private static final String KNOWLEDGE_BASE_DELETE_MESSAGE = "当前知识库已被知识库Agent配置引用，请先移除后再删除";
     private static final String MODEL_DISABLED_MESSAGE = "模型未启用：%s";
     private static final String REASONING_UNSUPPORTED_MESSAGE = "模型不支持深度思考：%s";
     private static final String VISION_UNSUPPORTED_MESSAGE = "模型不支持图片理解：%s";
 
-    private static final List<SlotBinding> SLOT_BINDINGS = List.of(
-            new SlotBinding(
+    private static final List<KnowledgeBaseModelBinding> KNOWLEDGE_BASE_MODEL_BINDINGS = List.of(
+            new KnowledgeBaseModelBinding(
                     LlmModelTypeConstants.EMBEDDING,
-                    false,
-                    cache -> cache.getKnowledgeBase() == null ? null : cache.getKnowledgeBase().getEmbeddingModel(),
-                    (cache, slot) -> ensureKnowledgeBase(cache).setEmbeddingModel(slot)
+                    KnowledgeBaseAgentConfig::getEmbeddingModel,
+                    KnowledgeBaseAgentConfig::setEmbeddingModel
             ),
-            new SlotBinding(
-                    LlmModelTypeConstants.RERANK,
-                    false,
-                    cache -> cache.getKnowledgeBase() == null ? null : cache.getKnowledgeBase().getRerankModel(),
-                    (cache, slot) -> ensureKnowledgeBase(cache).setRerankModel(slot)
-            ),
+            new KnowledgeBaseModelBinding(
+                    LlmModelTypeConstants.CHAT,
+                    KnowledgeBaseAgentConfig::getRankingModel,
+                    AgentConfigRuntimeSyncService::setKnowledgeBaseRankingModel
+            )
+    );
+
+    private static final List<SlotBinding> SLOT_BINDINGS = List.of(
             new SlotBinding(
                     LlmModelTypeConstants.CHAT,
                     false,
@@ -115,6 +118,13 @@ public class AgentConfigRuntimeSyncService {
             cache.setKnowledgeBase(config);
         }
         return config;
+    }
+
+    private static void setKnowledgeBaseRankingModel(KnowledgeBaseAgentConfig config, String modelName) {
+        config.setRankingModel(modelName);
+        if (!StringUtils.hasText(modelName)) {
+            config.setRankingEnabled(false);
+        }
     }
 
     private static AdminAssistantAgentConfig ensureAdminAssistant(AgentAllConfigCache cache) {
@@ -227,6 +237,7 @@ public class AgentConfigRuntimeSyncService {
         }
         AgentAllConfigCache cache = readCache();
         List<LlmProviderModel> models = listProviderModels(provider.getId());
+        validateKnowledgeBaseModelCompatibility(cache.getKnowledgeBase(), models);
         for (SlotBinding binding : SLOT_BINDINGS) {
             AgentModelSlotConfig slot = binding.getter().apply(cache);
             if (!hasSelectedModel(slot)) {
@@ -264,6 +275,28 @@ public class AgentConfigRuntimeSyncService {
     }
 
     /**
+     * 校验知识库是否允许停用。
+     *
+     * @param knowledgeName 知识库业务名称
+     */
+    public void assertKnowledgeBaseCanDisable(String knowledgeName) {
+        if (isKnowledgeBaseReferenced(knowledgeName)) {
+            throw new ServiceException(ResponseCode.OPERATION_ERROR, KNOWLEDGE_BASE_DISABLE_MESSAGE);
+        }
+    }
+
+    /**
+     * 校验知识库是否允许删除。
+     *
+     * @param knowledgeName 知识库业务名称
+     */
+    public void assertKnowledgeBaseCanDelete(String knowledgeName) {
+        if (isKnowledgeBaseReferenced(knowledgeName)) {
+            throw new ServiceException(ResponseCode.OPERATION_ERROR, KNOWLEDGE_BASE_DELETE_MESSAGE);
+        }
+    }
+
+    /**
      * 单个模型更新后同步 Redis 中引用该模型的槽位。
      *
      * @param existing 更新前模型
@@ -277,7 +310,7 @@ public class AgentConfigRuntimeSyncService {
         }
 
         AgentAllConfigCache cache = readCache();
-        boolean changed = false;
+        boolean changed = syncKnowledgeBaseModelUpdate(cache.getKnowledgeBase(), existing, updated);
         for (SlotBinding binding : SLOT_BINDINGS) {
             AgentModelSlotConfig slot = binding.getter().apply(cache);
             if (!matchesSlot(slot, binding, existing.getModelName(), existing.getModelType())) {
@@ -311,7 +344,9 @@ public class AgentConfigRuntimeSyncService {
             return;
         }
         AgentAllConfigCache cache = readCache();
-        boolean changed = clearSlotsReferencing(cache, existing.getModelName(), existing.getModelType());
+        boolean changed = clearKnowledgeBaseModelReferences(cache.getKnowledgeBase(),
+                existing.getModelName(), existing.getModelType());
+        changed |= clearSlotsReferencing(cache, existing.getModelName(), existing.getModelType());
         if (changed) {
             saveCache(cache, enabledProvider, operator);
         }
@@ -351,6 +386,7 @@ public class AgentConfigRuntimeSyncService {
     }
 
     private void reconcileSlotsWithModels(AgentAllConfigCache cache, List<LlmProviderModel> models) {
+        reconcileKnowledgeBaseModelReferences(cache.getKnowledgeBase(), models);
         for (SlotBinding binding : SLOT_BINDINGS) {
             AgentModelSlotConfig slot = binding.getter().apply(cache);
             if (!hasSelectedModel(slot)) {
@@ -376,6 +412,88 @@ public class AgentConfigRuntimeSyncService {
         return changed;
     }
 
+    private void validateKnowledgeBaseModelCompatibility(KnowledgeBaseAgentConfig knowledgeBase,
+                                                         List<LlmProviderModel> models) {
+        if (knowledgeBase == null) {
+            return;
+        }
+        for (KnowledgeBaseModelBinding binding : KNOWLEDGE_BASE_MODEL_BINDINGS) {
+            String modelName = binding.getter().apply(knowledgeBase);
+            if (!StringUtils.hasText(modelName)) {
+                continue;
+            }
+            LlmProviderModel model = findMatchingModel(models, binding.modelType(), modelName);
+            if (model == null) {
+                throw new ServiceException(ResponseCode.OPERATION_ERROR,
+                        PROVIDER_SWITCH_MODEL_MISSING_MESSAGE.formatted(modelName));
+            }
+            if (!isModelEnabled(model)) {
+                throw new ServiceException(ResponseCode.OPERATION_ERROR,
+                        MODEL_DISABLED_MESSAGE.formatted(model.getModelName()));
+            }
+        }
+    }
+
+    private void reconcileKnowledgeBaseModelReferences(KnowledgeBaseAgentConfig knowledgeBase,
+                                                       List<LlmProviderModel> models) {
+        if (knowledgeBase == null) {
+            return;
+        }
+        for (KnowledgeBaseModelBinding binding : KNOWLEDGE_BASE_MODEL_BINDINGS) {
+            String modelName = binding.getter().apply(knowledgeBase);
+            if (!StringUtils.hasText(modelName)) {
+                continue;
+            }
+            LlmProviderModel model = findMatchingModel(models, binding.modelType(), modelName);
+            if (model == null || !isModelEnabled(model)) {
+                binding.setter().accept(knowledgeBase, null);
+            }
+        }
+    }
+
+    private boolean syncKnowledgeBaseModelUpdate(KnowledgeBaseAgentConfig knowledgeBase,
+                                                 LlmProviderModel existing,
+                                                 LlmProviderModel updated) {
+        if (knowledgeBase == null) {
+            return false;
+        }
+        boolean changed = false;
+        for (KnowledgeBaseModelBinding binding : KNOWLEDGE_BASE_MODEL_BINDINGS) {
+            String modelName = binding.getter().apply(knowledgeBase);
+            if (!matchesKnowledgeBaseModel(binding, modelName, existing.getModelName(), existing.getModelType())) {
+                continue;
+            }
+            if (shouldClearKnowledgeBaseModel(existing, updated)) {
+                binding.setter().accept(knowledgeBase, null);
+                changed = true;
+                continue;
+            }
+            if (!Objects.equals(modelName, updated.getModelName())) {
+                binding.setter().accept(knowledgeBase, updated.getModelName());
+                changed = true;
+            }
+        }
+        return changed;
+    }
+
+    private boolean clearKnowledgeBaseModelReferences(KnowledgeBaseAgentConfig knowledgeBase,
+                                                      String modelName,
+                                                      String modelType) {
+        if (knowledgeBase == null) {
+            return false;
+        }
+        boolean changed = false;
+        for (KnowledgeBaseModelBinding binding : KNOWLEDGE_BASE_MODEL_BINDINGS) {
+            String selectedModelName = binding.getter().apply(knowledgeBase);
+            if (!matchesKnowledgeBaseModel(binding, selectedModelName, modelName, modelType)) {
+                continue;
+            }
+            binding.setter().accept(knowledgeBase, null);
+            changed = true;
+        }
+        return changed;
+    }
+
     private boolean shouldClearSlot(AgentModelSlotConfig slot,
                                     SlotBinding binding,
                                     LlmProviderModel existing,
@@ -390,6 +508,19 @@ public class AgentConfigRuntimeSyncService {
             return true;
         }
         return !isModelUsableForSlot(slot, binding, updated);
+    }
+
+    private boolean shouldClearKnowledgeBaseModel(LlmProviderModel existing, LlmProviderModel updated) {
+        if (updated == null) {
+            return true;
+        }
+        if (!Objects.equals(updated.getProviderId(), existing.getProviderId())) {
+            return true;
+        }
+        if (!Objects.equals(updated.getModelType(), existing.getModelType())) {
+            return true;
+        }
+        return !isModelEnabled(updated);
     }
 
     private boolean isModelUsableForSlot(AgentModelSlotConfig slot, SlotBinding binding, LlmProviderModel model) {
@@ -441,14 +572,47 @@ public class AgentConfigRuntimeSyncService {
                 .orElse(null);
     }
 
+    private LlmProviderModel findMatchingModel(List<LlmProviderModel> models, String modelType, String modelName) {
+        if (!StringUtils.hasText(modelName)) {
+            return null;
+        }
+        return models.stream()
+                .filter(model -> Objects.equals(modelType, model.getModelType()))
+                .filter(model -> Objects.equals(modelName, model.getModelName()))
+                .findFirst()
+                .orElse(null);
+    }
+
     private boolean matchesSlot(AgentModelSlotConfig slot, SlotBinding binding, String modelName, String modelType) {
         return hasSelectedModel(slot)
                 && Objects.equals(binding.modelType(), modelType)
                 && Objects.equals(slot.getModelName(), modelName);
     }
 
+    private boolean matchesKnowledgeBaseModel(KnowledgeBaseModelBinding binding,
+                                              String selectedModelName,
+                                              String modelName,
+                                              String modelType) {
+        return StringUtils.hasText(selectedModelName)
+                && Objects.equals(binding.modelType(), modelType)
+                && Objects.equals(selectedModelName, modelName);
+    }
+
     private boolean hasSelectedModel(AgentModelSlotConfig slot) {
         return slot != null && StringUtils.hasText(slot.getModelName());
+    }
+
+    private boolean isKnowledgeBaseReferenced(String knowledgeName) {
+        if (!StringUtils.hasText(knowledgeName)) {
+            return false;
+        }
+        AgentAllConfigCache cache = readCache();
+        KnowledgeBaseAgentConfig knowledgeBase = cache.getKnowledgeBase();
+        return knowledgeBase != null
+                && knowledgeBase.getKnowledgeNames() != null
+                && knowledgeBase.getKnowledgeNames().stream()
+                .filter(StringUtils::hasText)
+                .anyMatch(knowledgeName::equals);
     }
 
     private boolean isProviderEnabled(LlmProvider provider) {
@@ -483,5 +647,10 @@ public class AgentConfigRuntimeSyncService {
                                boolean visionRequired,
                                Function<AgentAllConfigCache, AgentModelSlotConfig> getter,
                                BiConsumer<AgentAllConfigCache, AgentModelSlotConfig> setter) {
+    }
+
+    private record KnowledgeBaseModelBinding(String modelType,
+                                             Function<KnowledgeBaseAgentConfig, String> getter,
+                                             BiConsumer<KnowledgeBaseAgentConfig, String> setter) {
     }
 }

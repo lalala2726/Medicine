@@ -37,7 +37,7 @@ public class LlmProviderModel {
     private String modelName;
 
     /**
-     * 模型类型：CHAT/RERANK/EMBEDDING
+     * 模型类型：CHAT/EMBEDDING
      */
     private String modelType;
 
