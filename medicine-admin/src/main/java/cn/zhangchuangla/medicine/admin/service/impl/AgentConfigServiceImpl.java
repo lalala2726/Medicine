@@ -17,11 +17,9 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
 
-import java.util.ArrayList;
-import java.util.LinkedHashSet;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.function.Function;
+import java.util.stream.Collectors;
 
 /**
  * Agent 配置服务实现。
@@ -795,7 +793,7 @@ public class AgentConfigServiceImpl implements AgentConfigService, BaseService {
     private List<KbBase> loadEnabledKnowledgeBases(List<String> knowledgeNames) {
         List<KbBase> knowledgeBases = kbBaseService.listEnabledKnowledgeBasesByNames(knowledgeNames);
         Map<String, KbBase> knowledgeBaseMap = knowledgeBases.stream()
-                .collect(java.util.stream.Collectors.toMap(KbBase::getKnowledgeName, Function.identity()));
+                .collect(Collectors.toMap(KbBase::getKnowledgeName, Function.identity()));
         List<KbBase> orderedKnowledgeBases = new ArrayList<>(knowledgeNames.size());
         for (String knowledgeName : knowledgeNames) {
             KbBase kbBase = knowledgeBaseMap.get(knowledgeName);
@@ -817,12 +815,12 @@ public class AgentConfigServiceImpl implements AgentConfigService, BaseService {
     private void validateKnowledgeBasesAgainstBaseline(List<KbBase> knowledgeBases, KbBase baseline) {
         for (int index = 1; index < knowledgeBases.size(); index++) {
             KbBase kbBase = knowledgeBases.get(index);
-            if (!java.util.Objects.equals(normalizeNullableText(kbBase.getEmbeddingModel()),
+            if (!Objects.equals(normalizeNullableText(kbBase.getEmbeddingModel()),
                     normalizeNullableText(baseline.getEmbeddingModel()))) {
                 throw new ServiceException(ResponseCode.OPERATION_ERROR,
                         KNOWLEDGE_BASE_MODEL_MISMATCH_MESSAGE.formatted(kbBase.getKnowledgeName()));
             }
-            if (!java.util.Objects.equals(kbBase.getEmbeddingDim(), baseline.getEmbeddingDim())) {
+            if (!Objects.equals(kbBase.getEmbeddingDim(), baseline.getEmbeddingDim())) {
                 throw new ServiceException(ResponseCode.OPERATION_ERROR,
                         KNOWLEDGE_BASE_DIM_MISMATCH_MESSAGE.formatted(kbBase.getKnowledgeName()));
             }
@@ -837,10 +835,10 @@ public class AgentConfigServiceImpl implements AgentConfigService, BaseService {
      * @param baseline       作为基准的知识库
      */
     private void validateKnowledgeBaseCommonConfig(AgentModelSlotConfig embeddingModel, Integer embeddingDim, KbBase baseline) {
-        if (!java.util.Objects.equals(normalizeNullableText(baseline.getEmbeddingModel()), embeddingModel.getModelName())) {
+        if (!Objects.equals(normalizeNullableText(baseline.getEmbeddingModel()), embeddingModel.getModelName())) {
             throw new ServiceException(ResponseCode.OPERATION_ERROR, KNOWLEDGE_BASE_CONFIG_MODEL_MISMATCH_MESSAGE);
         }
-        if (!java.util.Objects.equals(baseline.getEmbeddingDim(), embeddingDim)) {
+        if (!Objects.equals(baseline.getEmbeddingDim(), embeddingDim)) {
             throw new ServiceException(ResponseCode.OPERATION_ERROR, KNOWLEDGE_BASE_CONFIG_DIM_MISMATCH_MESSAGE);
         }
     }
