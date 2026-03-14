@@ -6,6 +6,7 @@ import cn.zhangchuangla.medicine.admin.model.request.LlmProviderCreateRequest;
 import cn.zhangchuangla.medicine.admin.model.request.LlmProviderModelCreateRequest;
 import cn.zhangchuangla.medicine.admin.model.request.LlmProviderModelUpdateRequest;
 import cn.zhangchuangla.medicine.admin.model.request.LlmProviderUpdateRequest;
+import cn.zhangchuangla.medicine.admin.service.AgentConfigRuntimeSyncService;
 import cn.zhangchuangla.medicine.admin.service.LlmProviderModelService;
 import cn.zhangchuangla.medicine.admin.service.LlmProviderService;
 import cn.zhangchuangla.medicine.common.core.utils.BeanCotyUtils;
@@ -25,6 +26,7 @@ import java.util.List;
 @RequiredArgsConstructor
 public class LlmProviderFacadeImpl implements LlmProviderFacade {
 
+    private final AgentConfigRuntimeSyncService agentConfigRuntimeSyncService;
     private final LlmProviderService llmProviderService;
     private final LlmProviderModelService llmProviderModelService;
 
@@ -53,7 +55,11 @@ public class LlmProviderFacadeImpl implements LlmProviderFacade {
     @Transactional(rollbackFor = Exception.class)
     public boolean createProvider(LlmProviderCreateRequest request) {
         LlmProvider provider = llmProviderService.createProvider(request);
-        return llmProviderModelService.saveProviderModels(provider, request.getModels(), provider.getCreateBy());
+        boolean saved = llmProviderModelService.saveProviderModels(provider, request.getModels(), provider.getCreateBy());
+        if (saved) {
+            agentConfigRuntimeSyncService.syncActiveProviderSnapshot(provider, provider.getCreateBy());
+        }
+        return saved;
     }
 
     /**
@@ -68,7 +74,11 @@ public class LlmProviderFacadeImpl implements LlmProviderFacade {
         LlmProvider provider = llmProviderService.updateProvider(request);
         llmProviderModelService.remove(Wrappers.<LlmProviderModel>lambdaQuery()
                 .eq(LlmProviderModel::getProviderId, provider.getId()));
-        return llmProviderModelService.saveProviderModels(provider, request.getModels(), provider.getUpdateBy());
+        boolean saved = llmProviderModelService.saveProviderModels(provider, request.getModels(), provider.getUpdateBy());
+        if (saved) {
+            agentConfigRuntimeSyncService.syncActiveProviderSnapshot(provider, provider.getUpdateBy());
+        }
+        return saved;
     }
 
     /**
@@ -80,7 +90,8 @@ public class LlmProviderFacadeImpl implements LlmProviderFacade {
     @Override
     @Transactional(rollbackFor = Exception.class)
     public boolean deleteProvider(Long id) {
-        llmProviderService.getRequiredProvider(id);
+        LlmProvider provider = llmProviderService.getRequiredProvider(id);
+        agentConfigRuntimeSyncService.assertProviderCanDelete(provider);
         llmProviderModelService.remove(Wrappers.<LlmProviderModel>lambdaQuery()
                 .eq(LlmProviderModel::getProviderId, id));
         return llmProviderService.deleteProvider(id);

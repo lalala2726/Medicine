@@ -50,6 +50,17 @@ public class AgentConfigController extends BaseController {
     }
 
     /**
+     * 查询知识库选项。
+     *
+     * @return 知识库选项列表
+     */
+    @GetMapping("/knowledge-base/option")
+    @Operation(summary = "知识库选项")
+    public AjaxResult<List<KnowledgeBaseOptionVo>> listKnowledgeBaseOptions() {
+        return success(agentConfigService.listKnowledgeBaseOptions());
+    }
+
+    /**
      * 查询管理端助手 Agent 配置。
      *
      * @return 管理端助手 Agent 配置
@@ -176,17 +187,6 @@ public class AgentConfigController extends BaseController {
     @Operation(summary = "向量模型选项")
     public AjaxResult<List<AgentModelOptionVo>> listEmbeddingModelOptions() {
         return success(agentConfigService.listEmbeddingModelOptions());
-    }
-
-    /**
-     * 查询重排模型选项。
-     *
-     * @return 重排模型选项列表
-     */
-    @GetMapping("/rerank-model/option")
-    @Operation(summary = "重排模型选项")
-    public AjaxResult<List<AgentModelOptionVo>> listRerankModelOptions() {
-        return success(agentConfigService.listRerankModelOptions());
     }
 
     /**

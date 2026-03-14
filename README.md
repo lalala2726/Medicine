@@ -15,6 +15,10 @@ The project uses a **Maven multi-module structure** to organize the codebase and
 - Inter-service communication is implemented using **Apache Dubbo**, supporting both local direct invocation and **Nacos-based service discovery**  
 - Agent configurations are stored in **Redis** and read by an external **Python-based AI service** to coordinate AI workflows  
 
+## Agent Config Contract
+
+The Redis contract consumed by the external AI service is documented in [docs/agent-config-cache-v3.md](docs/agent-config-cache-v3.md).
+
 ## Project Status
 
 The project has already been open-sourced and is still under active development. The core architecture and main functionalities have been largely completed, and further improvements will focus on feature enhancements, system stability, and continued optimization of the AI capabilities.

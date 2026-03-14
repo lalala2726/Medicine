@@ -6,6 +6,7 @@ import cn.zhangchuangla.medicine.admin.model.dto.LlmPresetProviderTemplateDto;
 import cn.zhangchuangla.medicine.admin.model.dto.LlmProviderListDto;
 import cn.zhangchuangla.medicine.admin.model.request.*;
 import cn.zhangchuangla.medicine.admin.model.vo.LlmProviderConnectivityTestVo;
+import cn.zhangchuangla.medicine.admin.service.AgentConfigRuntimeSyncService;
 import cn.zhangchuangla.medicine.admin.service.LlmProviderService;
 import cn.zhangchuangla.medicine.common.core.enums.ResponseCode;
 import cn.zhangchuangla.medicine.common.core.exception.ServiceException;
@@ -65,6 +66,7 @@ public class LlmProviderServiceImpl extends ServiceImpl<LlmProviderMapper, LlmPr
     private final LlmProviderMapper llmProviderMapper;
     private final ObjectMapper objectMapper;
     private final LlmProviderConnectivityClient llmProviderConnectivityClient;
+    private final AgentConfigRuntimeSyncService agentConfigRuntimeSyncService;
 
     private volatile boolean presetProvidersLoaded;
     private volatile List<LlmPresetProviderTemplateDto> presetProviders = List.of();
@@ -218,13 +220,21 @@ public class LlmProviderServiceImpl extends ServiceImpl<LlmProviderMapper, LlmPr
         LlmProvider existing = getRequiredProvider(request.getId());
         String apiKey = normalizeNullableText(request.getApiKey());
         Assert.notEmpty(apiKey, "API Key不能为空");
+        String operator = currentOperator();
 
         LlmProvider provider = LlmProvider.builder()
                 .id(existing.getId())
                 .apiKey(apiKey)
-                .updateBy(currentOperator())
+                .updateBy(operator)
                 .build();
         updateProviderById(provider);
+        agentConfigRuntimeSyncService.syncEnabledProviderChange(LlmProvider.builder()
+                .id(existing.getId())
+                .providerType(existing.getProviderType())
+                .baseUrl(existing.getBaseUrl())
+                .apiKey(apiKey)
+                .status(existing.getStatus())
+                .build(), operator);
         return true;
     }
 
@@ -237,7 +247,8 @@ public class LlmProviderServiceImpl extends ServiceImpl<LlmProviderMapper, LlmPr
     @Override
     @Transactional(rollbackFor = Exception.class)
     public boolean deleteProvider(Long id) {
-        getRequiredProvider(id);
+        LlmProvider provider = getRequiredProvider(id);
+        agentConfigRuntimeSyncService.assertProviderCanDelete(provider);
         return llmProviderMapper.deleteById(id) > 0;
     }
 
@@ -345,7 +356,10 @@ public class LlmProviderServiceImpl extends ServiceImpl<LlmProviderMapper, LlmPr
         String operator = currentOperator();
         Integer targetStatus = request.getStatus();
         if (targetStatus == STATUS_ENABLED) {
+            agentConfigRuntimeSyncService.validateProviderSwitchCompatibility(existing);
             disableOtherEnabledProviders(existing.getId(), operator);
+        } else if (targetStatus == STATUS_DISABLED) {
+            agentConfigRuntimeSyncService.assertProviderCanDisable(existing);
         }
 
         LlmProvider provider = LlmProvider.builder()
@@ -354,6 +368,9 @@ public class LlmProviderServiceImpl extends ServiceImpl<LlmProviderMapper, LlmPr
                 .updateBy(operator)
                 .build();
         updateProviderById(provider);
+        if (targetStatus == STATUS_ENABLED) {
+            agentConfigRuntimeSyncService.syncCurrentEnabledProviderSnapshot(operator);
+        }
         return true;
     }
 

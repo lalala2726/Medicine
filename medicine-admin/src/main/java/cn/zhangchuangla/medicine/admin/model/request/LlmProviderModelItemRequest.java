@@ -17,7 +17,7 @@ public class LlmProviderModelItemRequest {
     @NotBlank(message = "模型名称不能为空")
     private String modelName;
 
-    @Schema(description = "模型类型：CHAT/RERANK/EMBEDDING", example = "CHAT")
+    @Schema(description = "模型类型：CHAT/EMBEDDING", example = "CHAT")
     @NotBlank(message = "模型类型不能为空")
     private String modelType;
 

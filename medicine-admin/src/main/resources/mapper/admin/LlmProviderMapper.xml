@@ -33,7 +33,6 @@
         <result property="updatedAt" column="updated_at"/>
         <result property="modelCount" column="model_count"/>
         <result property="chatModelCount" column="chat_model_count"/>
-        <result property="rerankModelCount" column="rerank_model_count"/>
         <result property="embeddingModelCount" column="embedding_model_count"/>
     </resultMap>
 
@@ -58,7 +57,6 @@
         p.updated_at,
         COALESCE(ms.model_count, 0) AS model_count,
         COALESCE(ms.chat_model_count, 0) AS chat_model_count,
-        COALESCE(ms.rerank_model_count, 0) AS rerank_model_count,
         COALESCE(ms.embedding_model_count, 0) AS embedding_model_count
         FROM llm_provider p
         LEFT JOIN (
@@ -66,7 +64,6 @@
         provider_id,
         COUNT(*) AS model_count,
         SUM(CASE WHEN model_type = 'CHAT' THEN 1 ELSE 0 END) AS chat_model_count,
-        SUM(CASE WHEN model_type = 'RERANK' THEN 1 ELSE 0 END) AS rerank_model_count,
         SUM(CASE WHEN model_type = 'EMBEDDING' THEN 1 ELSE 0 END) AS embedding_model_count
         FROM llm_provider_model
         GROUP BY provider_id

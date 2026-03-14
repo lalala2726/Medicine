@@ -4,6 +4,7 @@ import cn.zhangchuangla.medicine.admin.mapper.LlmProviderModelMapper;
 import cn.zhangchuangla.medicine.admin.model.request.LlmProviderModelCreateRequest;
 import cn.zhangchuangla.medicine.admin.model.request.LlmProviderModelItemRequest;
 import cn.zhangchuangla.medicine.admin.model.request.LlmProviderModelUpdateRequest;
+import cn.zhangchuangla.medicine.admin.service.AgentConfigRuntimeSyncService;
 import cn.zhangchuangla.medicine.common.core.exception.ParamException;
 import cn.zhangchuangla.medicine.model.entity.LlmProvider;
 import cn.zhangchuangla.medicine.model.entity.LlmProviderModel;
@@ -29,12 +30,15 @@ class LlmProviderModelServiceImplTests {
     @Mock
     private LlmProviderModelMapper llmProviderModelMapper;
 
+    @Mock
+    private AgentConfigRuntimeSyncService agentConfigRuntimeSyncService;
+
     @Spy
     @InjectMocks
     private LlmProviderModelServiceImpl llmProviderModelService;
 
     @Test
-    void createProviderModel_ShouldInsertNormalizedModel() {
+    void createProviderModel_ShouldInsertNormalizedModelWithoutTriggeringSync() {
         when(llmProviderModelMapper.selectCount(any())).thenReturn(0L);
         when(llmProviderModelMapper.insert(any(LlmProviderModel.class))).thenReturn(1);
 
@@ -50,12 +54,11 @@ class LlmProviderModelServiceImplTests {
         verify(llmProviderModelMapper).insert(modelCaptor.capture());
         assertEquals("gpt-4.1", modelCaptor.getValue().getModelName());
         assertEquals("CHAT", modelCaptor.getValue().getModelType());
-        assertEquals(0, modelCaptor.getValue().getSupportReasoning());
-        assertEquals(0, modelCaptor.getValue().getSupportVision());
+        verifyNoInteractions(agentConfigRuntimeSyncService);
     }
 
     @Test
-    void updateProviderModel_ShouldUpdateNormalizedModel() {
+    void updateProviderModel_ShouldUpdateNormalizedModelAndTriggerSync() {
         when(llmProviderModelMapper.selectById(1L)).thenReturn(LlmProviderModel.builder()
                 .id(1L)
                 .providerId(1L)
@@ -80,22 +83,23 @@ class LlmProviderModelServiceImplTests {
         boolean result = llmProviderModelService.updateProviderModel(buildProvider(), request);
 
         assertTrue(result);
-        ArgumentCaptor<LlmProviderModel> modelCaptor = ArgumentCaptor.forClass(LlmProviderModel.class);
-        verify(llmProviderModelMapper).updateById(modelCaptor.capture());
-        assertEquals("new-chat", modelCaptor.getValue().getModelName());
-        assertEquals(1, modelCaptor.getValue().getSupportReasoning());
-        assertEquals(1, modelCaptor.getValue().getSupportVision());
+        verify(agentConfigRuntimeSyncService).syncAfterModelUpdate(any(LlmProviderModel.class), any(LlmProviderModel.class), anyString());
     }
 
     @Test
-    void deleteProviderModel_ShouldDeleteById() {
-        when(llmProviderModelMapper.selectById(1L)).thenReturn(LlmProviderModel.builder().id(1L).build());
+    void deleteProviderModel_ShouldDeleteByIdAndTriggerSync() {
+        when(llmProviderModelMapper.selectById(1L)).thenReturn(LlmProviderModel.builder()
+                .id(1L)
+                .providerId(1L)
+                .modelName("gpt-4.1")
+                .modelType("CHAT")
+                .build());
         when(llmProviderModelMapper.deleteById(1L)).thenReturn(1);
 
         boolean result = llmProviderModelService.deleteProviderModel(1L);
 
         assertTrue(result);
-        verify(llmProviderModelMapper).deleteById(1L);
+        verify(agentConfigRuntimeSyncService).syncAfterModelDelete(any(LlmProviderModel.class), anyString());
     }
 
     @Test
@@ -110,6 +114,7 @@ class LlmProviderModelServiceImplTests {
         ArgumentCaptor<Collection<LlmProviderModel>> modelCaptor = ArgumentCaptor.forClass(Collection.class);
         verify(llmProviderModelService).saveBatch(modelCaptor.capture());
         assertEquals(2, modelCaptor.getValue().size());
+        verifyNoInteractions(agentConfigRuntimeSyncService);
     }
 
     @Test

@@ -6,6 +6,7 @@ import cn.zhangchuangla.medicine.admin.model.dto.KnowledgeBaseListDto;
 import cn.zhangchuangla.medicine.admin.model.request.KnowledgeBaseAddRequest;
 import cn.zhangchuangla.medicine.admin.model.request.KnowledgeBaseListRequest;
 import cn.zhangchuangla.medicine.admin.model.request.KnowledgeBaseUpdateRequest;
+import cn.zhangchuangla.medicine.admin.service.AgentConfigRuntimeSyncService;
 import cn.zhangchuangla.medicine.admin.service.KbBaseService;
 import cn.zhangchuangla.medicine.common.core.enums.ResponseCode;
 import cn.zhangchuangla.medicine.common.core.exception.ServiceException;
@@ -19,6 +20,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Date;
+import java.util.List;
 
 /**
  * @author Chuang
@@ -49,6 +51,7 @@ public class KbBaseServiceImpl extends ServiceImpl<KbBaseMapper, KbBase>
     private static final int MAX_EMBEDDING_DIM = 1 << 13;
 
     private final MedicineAgentClient medicineAgentClient;
+    private final AgentConfigRuntimeSyncService agentConfigRuntimeSyncService;
 
     @Override
     public Page<KnowledgeBaseListDto> listKnowledgeBase(KnowledgeBaseListRequest request) {
@@ -63,6 +66,25 @@ public class KbBaseServiceImpl extends ServiceImpl<KbBaseMapper, KbBase>
         KbBase kbBase = getById(id);
         Assert.isTrue(kbBase != null, "知识库不存在");
         return kbBase;
+    }
+
+    @Override
+    public List<KbBase> listEnabledKnowledgeBases() {
+        return lambdaQuery()
+                .eq(KbBase::getStatus, STATUS_ENABLED)
+                .orderByAsc(KbBase::getId)
+                .list();
+    }
+
+    @Override
+    public List<KbBase> listEnabledKnowledgeBasesByNames(List<String> knowledgeNames) {
+        if (knowledgeNames == null || knowledgeNames.isEmpty()) {
+            return List.of();
+        }
+        return lambdaQuery()
+                .eq(KbBase::getStatus, STATUS_ENABLED)
+                .in(KbBase::getKnowledgeName, knowledgeNames)
+                .list();
     }
 
     @Override
@@ -114,6 +136,8 @@ public class KbBaseServiceImpl extends ServiceImpl<KbBaseMapper, KbBase>
     @Override
     public boolean deleteKnowledgeBase(Long id) {
         Assert.isPositive(id, "知识库ID必须大于0");
+        KbBase kbBase = getKnowledgeBaseById(id);
+        agentConfigRuntimeSyncService.assertKnowledgeBaseCanDelete(kbBase.getKnowledgeName());
         return removeById(id);
     }
 
@@ -155,6 +179,7 @@ public class KbBaseServiceImpl extends ServiceImpl<KbBaseMapper, KbBase>
             medicineAgentClient.loadKnowledgeBase(kbBase.getKnowledgeName());
             return;
         }
+        agentConfigRuntimeSyncService.assertKnowledgeBaseCanDisable(kbBase.getKnowledgeName());
         medicineAgentClient.releaseKnowledgeBase(kbBase.getKnowledgeName());
     }
 

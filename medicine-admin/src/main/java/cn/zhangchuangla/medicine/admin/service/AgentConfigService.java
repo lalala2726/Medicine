@@ -26,6 +26,13 @@ public interface AgentConfigService {
     boolean saveKnowledgeBaseConfig(KnowledgeBaseAgentConfigRequest request);
 
     /**
+     * 查询知识库下拉选项列表。
+     *
+     * @return 知识库下拉选项
+     */
+    List<KnowledgeBaseOptionVo> listKnowledgeBaseOptions();
+
+    /**
      * 查询管理端助手 Agent 配置详情。
      *
      * @return 管理端助手 Agent 配置
@@ -106,13 +113,6 @@ public interface AgentConfigService {
      * @return 向量模型选项
      */
     List<AgentModelOptionVo> listEmbeddingModelOptions();
-
-    /**
-     * 查询重排模型选项列表。
-     *
-     * @return 重排模型选项
-     */
-    List<AgentModelOptionVo> listRerankModelOptions();
 
     /**
      * 查询聊天模型选项列表。

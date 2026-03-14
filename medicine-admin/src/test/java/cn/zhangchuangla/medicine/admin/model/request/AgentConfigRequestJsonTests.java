@@ -13,6 +13,7 @@ class AgentConfigRequestJsonTests {
     void knowledgeBaseRequest_ShouldDeserialize() throws Exception {
         String json = """
                 {
+                  "knowledgeNames": ["common_medicine_kb", "otc_guide_kb"],
                   "embeddingDim": 1024,
                   "embeddingModel": {
                     "modelName": "text-embedding-3-large",
@@ -20,17 +21,23 @@ class AgentConfigRequestJsonTests {
                     "maxTokens": 2048,
                     "temperature": 0.0
                   },
-                  "rerankModel": null
+                  "topK": 10,
+                  "rankingEnabled": false,
+                  "rankingModel": null
                 }
                 """;
 
         KnowledgeBaseAgentConfigRequest request = objectMapper.readValue(json, KnowledgeBaseAgentConfigRequest.class);
 
+        assertEquals(2, request.getKnowledgeNames().size());
+        assertEquals("common_medicine_kb", request.getKnowledgeNames().getFirst());
         assertEquals(1024, request.getEmbeddingDim());
         assertNotNull(request.getEmbeddingModel());
         assertEquals(Boolean.FALSE, request.getEmbeddingModel().getReasoningEnabled());
         assertEquals("text-embedding-3-large", request.getEmbeddingModel().getModelName());
-        assertNull(request.getRerankModel());
+        assertEquals(10, request.getTopK());
+        assertEquals(Boolean.FALSE, request.getRankingEnabled());
+        assertNull(request.getRankingModel());
     }
 
     @Test

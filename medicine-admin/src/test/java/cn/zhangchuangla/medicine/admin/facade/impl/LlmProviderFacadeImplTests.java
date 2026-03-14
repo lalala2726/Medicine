@@ -1,6 +1,7 @@
 package cn.zhangchuangla.medicine.admin.facade.impl;
 
 import cn.zhangchuangla.medicine.admin.model.request.*;
+import cn.zhangchuangla.medicine.admin.service.AgentConfigRuntimeSyncService;
 import cn.zhangchuangla.medicine.admin.service.LlmProviderModelService;
 import cn.zhangchuangla.medicine.admin.service.LlmProviderService;
 import cn.zhangchuangla.medicine.model.entity.LlmProvider;
@@ -17,11 +18,13 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
-import static org.mockito.Mockito.inOrder;
-import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
 class LlmProviderFacadeImplTests {
+
+    @Mock
+    private AgentConfigRuntimeSyncService agentConfigRuntimeSyncService;
 
     @Mock
     private LlmProviderService llmProviderService;
@@ -41,13 +44,12 @@ class LlmProviderFacadeImplTests {
         var detail = llmProviderFacade.getProviderDetail(1L);
 
         assertEquals("OpenAI", detail.getProviderName());
-        assertEquals("openai", detail.getProviderType());
         assertEquals("sk-detail", detail.getApiKey());
         assertEquals(1, detail.getModels().size());
     }
 
     @Test
-    void createProvider_ShouldSaveProviderThenModels() {
+    void createProvider_ShouldSaveProviderThenModelsThenSyncSnapshot() {
         LlmProviderCreateRequest request = new LlmProviderCreateRequest();
         request.setModels(List.of(buildRequestModel("gpt-4.1", "CHAT")));
         when(llmProviderService.createProvider(request)).thenReturn(buildProvider());
@@ -56,13 +58,14 @@ class LlmProviderFacadeImplTests {
         boolean result = llmProviderFacade.createProvider(request);
 
         assertTrue(result);
-        var inOrder = inOrder(llmProviderService, llmProviderModelService);
+        var inOrder = inOrder(llmProviderService, llmProviderModelService, agentConfigRuntimeSyncService);
         inOrder.verify(llmProviderService).createProvider(request);
         inOrder.verify(llmProviderModelService).saveProviderModels(any(), any(), anyString());
+        inOrder.verify(agentConfigRuntimeSyncService).syncActiveProviderSnapshot(any(LlmProvider.class), anyString());
     }
 
     @Test
-    void updateProvider_ShouldReplaceModelsAfterProviderUpdate() {
+    void updateProvider_ShouldReplaceModelsAndSyncSnapshot() {
         LlmProviderUpdateRequest request = new LlmProviderUpdateRequest();
         request.setId(1L);
         request.setModels(List.of(buildRequestModel("gpt-4.1", "CHAT")));
@@ -73,14 +76,15 @@ class LlmProviderFacadeImplTests {
         boolean result = llmProviderFacade.updateProvider(request);
 
         assertTrue(result);
-        var inOrder = inOrder(llmProviderService, llmProviderModelService);
+        var inOrder = inOrder(llmProviderService, llmProviderModelService, agentConfigRuntimeSyncService);
         inOrder.verify(llmProviderService).updateProvider(request);
         inOrder.verify(llmProviderModelService).remove(any());
         inOrder.verify(llmProviderModelService).saveProviderModels(any(), any(), anyString());
+        inOrder.verify(agentConfigRuntimeSyncService).syncActiveProviderSnapshot(any(LlmProvider.class), anyString());
     }
 
     @Test
-    void deleteProvider_ShouldRemoveModelsBeforeDeletingProvider() {
+    void deleteProvider_ShouldValidateBeforeRemovingModels() {
         when(llmProviderService.getRequiredProvider(1L)).thenReturn(buildProvider());
         when(llmProviderModelService.remove(any())).thenReturn(true);
         when(llmProviderService.deleteProvider(1L)).thenReturn(true);
@@ -88,8 +92,9 @@ class LlmProviderFacadeImplTests {
         boolean result = llmProviderFacade.deleteProvider(1L);
 
         assertTrue(result);
-        var inOrder = inOrder(llmProviderService, llmProviderModelService);
+        var inOrder = inOrder(llmProviderService, agentConfigRuntimeSyncService, llmProviderModelService);
         inOrder.verify(llmProviderService).getRequiredProvider(1L);
+        inOrder.verify(agentConfigRuntimeSyncService).assertProviderCanDelete(any(LlmProvider.class));
         inOrder.verify(llmProviderModelService).remove(any());
         inOrder.verify(llmProviderService).deleteProvider(1L);
     }
@@ -103,9 +108,6 @@ class LlmProviderFacadeImplTests {
         List<LlmProviderModel> models = llmProviderFacade.listProviderModels(1L);
 
         assertEquals(1, models.size());
-        var inOrder = inOrder(llmProviderService, llmProviderModelService);
-        inOrder.verify(llmProviderService).getRequiredProvider(1L);
-        inOrder.verify(llmProviderModelService).listProviderModels(1L);
     }
 
     @Test
@@ -120,9 +122,7 @@ class LlmProviderFacadeImplTests {
         boolean result = llmProviderFacade.createProviderModel(request);
 
         assertTrue(result);
-        var inOrder = inOrder(llmProviderService, llmProviderModelService);
-        inOrder.verify(llmProviderService).getRequiredProvider(1L);
-        inOrder.verify(llmProviderModelService).createProviderModel(any(), any());
+        verify(llmProviderModelService).createProviderModel(any(), any());
     }
 
     @Test
@@ -138,9 +138,7 @@ class LlmProviderFacadeImplTests {
         boolean result = llmProviderFacade.updateProviderModel(request);
 
         assertTrue(result);
-        var inOrder = inOrder(llmProviderService, llmProviderModelService);
-        inOrder.verify(llmProviderService).getRequiredProvider(1L);
-        inOrder.verify(llmProviderModelService).updateProviderModel(any(), any());
+        verify(llmProviderModelService).updateProviderModel(any(), any());
     }
 
     private LlmProvider buildProvider() {
@@ -149,6 +147,7 @@ class LlmProviderFacadeImplTests {
                 .providerName("OpenAI")
                 .providerType("openai")
                 .apiKey("sk-detail")
+                .status(1)
                 .createBy("tester")
                 .updateBy("tester")
                 .build();

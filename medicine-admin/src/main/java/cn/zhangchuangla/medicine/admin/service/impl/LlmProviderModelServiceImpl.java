@@ -4,6 +4,7 @@ import cn.zhangchuangla.medicine.admin.mapper.LlmProviderModelMapper;
 import cn.zhangchuangla.medicine.admin.model.request.LlmProviderModelCreateRequest;
 import cn.zhangchuangla.medicine.admin.model.request.LlmProviderModelItemRequest;
 import cn.zhangchuangla.medicine.admin.model.request.LlmProviderModelUpdateRequest;
+import cn.zhangchuangla.medicine.admin.service.AgentConfigRuntimeSyncService;
 import cn.zhangchuangla.medicine.admin.service.LlmProviderModelService;
 import cn.zhangchuangla.medicine.common.core.enums.ResponseCode;
 import cn.zhangchuangla.medicine.common.core.exception.ServiceException;
@@ -37,6 +38,7 @@ public class LlmProviderModelServiceImpl extends ServiceImpl<LlmProviderModelMap
     private static final int CAPABILITY_ENABLED = 1;
 
     private final LlmProviderModelMapper llmProviderModelMapper;
+    private final AgentConfigRuntimeSyncService agentConfigRuntimeSyncService;
 
     /**
      * 查询指定提供商下的全部模型。
@@ -94,9 +96,14 @@ public class LlmProviderModelServiceImpl extends ServiceImpl<LlmProviderModelMap
         String modelType = resolveModelType(request.getModelType(), existing.getModelType());
         validateUniqueModel(provider.getId(), modelName, modelType, existing.getId());
 
-        LlmProviderModel model = buildUpdateModelEntity(existing, provider, request, modelName, modelType, currentOperator());
+        String operator = currentOperator();
+        LlmProviderModel model = buildUpdateModelEntity(existing, provider, request, modelName, modelType, operator);
         try {
-            return llmProviderModelMapper.updateById(model) > 0;
+            boolean updated = llmProviderModelMapper.updateById(model) > 0;
+            if (updated) {
+                agentConfigRuntimeSyncService.syncAfterModelUpdate(existing, model, operator);
+            }
+            return updated;
         } catch (DuplicateKeyException ex) {
             throw new ServiceException(ResponseCode.OPERATION_ERROR, "同一提供商下模型名称和类型不能重复");
         }
@@ -111,8 +118,12 @@ public class LlmProviderModelServiceImpl extends ServiceImpl<LlmProviderModelMap
     @Override
     @Transactional(rollbackFor = Exception.class)
     public boolean deleteProviderModel(Long id) {
-        getRequiredProviderModel(id);
-        return llmProviderModelMapper.deleteById(id) > 0;
+        LlmProviderModel existing = getRequiredProviderModel(id);
+        boolean deleted = llmProviderModelMapper.deleteById(id) > 0;
+        if (deleted) {
+            agentConfigRuntimeSyncService.syncAfterModelDelete(existing, currentOperator());
+        }
+        return deleted;
     }
 
     /**

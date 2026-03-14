@@ -8,6 +8,8 @@ import cn.zhangchuangla.medicine.model.entity.KbBase;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.IService;
 
+import java.util.List;
+
 /**
  * @author Chuang
  */
@@ -28,6 +30,21 @@ public interface KbBaseService extends IService<KbBase> {
      * @return 知识库信息
      */
     KbBase getKnowledgeBaseById(Long id);
+
+    /**
+     * 查询全部启用中的知识库。
+     *
+     * @return 启用中的知识库列表
+     */
+    List<KbBase> listEnabledKnowledgeBases();
+
+    /**
+     * 按业务名称查询启用中的知识库。
+     *
+     * @param knowledgeNames 业务名称列表
+     * @return 匹配到的启用知识库列表
+     */
+    List<KbBase> listEnabledKnowledgeBasesByNames(List<String> knowledgeNames);
 
     /**
      * 添加知识库

@@ -12,51 +12,131 @@ class AgentAllConfigCacheJsonTests {
     private final ObjectMapper objectMapper = new ObjectMapper();
 
     @Test
-    void agentAllConfigCache_ShouldSerializeToExpectedStructure() throws Exception {
+    void agentAllConfigCache_ShouldSerializeToSchemaVersion3Structure() throws Exception {
         AgentAllConfigCache cache = new AgentAllConfigCache();
-        cache.setUpdatedAt("2026-03-11T10:30:00+08:00");
+        cache.setUpdatedAt("2026-03-13T10:30:00+08:00");
         cache.setUpdatedBy("admin");
+        cache.setLlm(buildLlmConfig());
         cache.setKnowledgeBase(buildKnowledgeBaseConfig());
         cache.setAdminAssistant(buildAdminAssistantConfig());
-        cache.setSpeech(buildSpeechConfig());
         cache.setImageRecognition(buildImageRecognitionConfig());
         cache.setChatHistorySummary(buildChatHistorySummaryConfig());
         cache.setChatTitle(buildChatTitleConfig());
+        cache.setSpeech(buildSpeechConfig());
 
         String json = objectMapper.writeValueAsString(cache);
         JsonNode root = objectMapper.readTree(json);
 
-        assertTrue(root.has("knowledgeBase"));
-        assertTrue(root.has("adminAssistant"));
+        assertEquals(3, root.path("schemaVersion").asInt());
+        assertTrue(root.has("llm"));
+        assertTrue(root.has("agentConfigs"));
         assertTrue(root.has("speech"));
-        assertTrue(root.has("imageRecognition"));
-        assertTrue(root.has("chatHistorySummary"));
-        assertTrue(root.has("chatTitle"));
-        assertEquals("volcengine", root.path("speech").path("provider").asText());
+        assertFalse(root.has("knowledgeBase"));
+        assertFalse(root.has("adminAssistant"));
+        assertFalse(root.has("imageRecognition"));
+        assertFalse(root.has("chatHistorySummary"));
+        assertFalse(root.has("chatTitle"));
+
+        assertEquals("openai", root.path("llm").path("providerType").asText());
+        assertEquals("https://api.openai.com/v1", root.path("llm").path("baseUrl").asText());
+        assertEquals("sk-llm", root.path("llm").path("apiKey").asText());
+        assertEquals("text-embedding-3-large",
+                root.path("agentConfigs").path("knowledgeBase").path("embeddingModel").asText());
+        assertEquals("common_medicine_kb",
+                root.path("agentConfigs").path("knowledgeBase").path("knowledgeNames").get(0).asText());
+        assertEquals(10, root.path("agentConfigs").path("knowledgeBase").path("topK").asInt());
+        assertTrue(root.path("agentConfigs").path("knowledgeBase").path("rankingEnabled").asBoolean());
+        assertEquals("gpt-4.1-mini",
+                root.path("agentConfigs").path("knowledgeBase").path("rankingModel").asText());
+        assertEquals("gpt-4.1-mini",
+                root.path("agentConfigs").path("adminAssistant").path("chatModel").path("modelName").asText());
+        assertEquals("qwen2.5-vl-72b-instruct",
+                root.path("agentConfigs").path("imageRecognition").path("imageRecognitionModel").path("modelName").asText());
+        assertEquals("gpt-4.1-mini",
+                root.path("agentConfigs").path("chatHistorySummary").path("chatHistorySummaryModel").path("modelName").asText());
+        assertEquals(32,
+                root.path("agentConfigs").path("chatTitle").path("chatTitleModel").path("maxTokens").asInt());
         assertEquals("seed-tts-2.0",
                 root.path("speech").path("textToSpeech").path("resourceId").asText());
-        assertEquals("zh_female_xiaohe_uranus_bigtts",
-                root.path("speech").path("textToSpeech").path("voiceType").asText());
-        assertEquals("EMBEDDING", root.path("knowledgeBase").path("embeddingModel").path("model").path("modelType").asText());
-        assertEquals("CHAT", root.path("adminAssistant").path("chatModel").path("model").path("modelType").asText());
-        assertEquals("qwen2.5-vl-72b-instruct",
-                root.path("imageRecognition").path("imageRecognitionModel").path("model").path("model").asText());
-        assertEquals("gpt-4.1-mini",
-                root.path("chatHistorySummary").path("chatHistorySummaryModel").path("model").path("model").asText());
-        assertEquals(32,
-                root.path("chatTitle").path("chatTitleModel").path("maxTokens").asInt());
+
         assertFalse(json.contains("\"providerId\""));
         assertFalse(json.contains("\"modelId\""));
         assertFalse(json.contains("\"enabled\""));
+        assertFalse(json.contains("\"supportReasoning\""));
+        assertFalse(json.contains("\"supportVision\""));
+        assertFalse(json.contains("\"modelType\""));
+        assertFalse(root.path("agentConfigs").path("knowledgeBase").path("embeddingModel").isObject());
+        assertFalse(root.path("agentConfigs").path("knowledgeBase").path("rankingModel").isObject());
+    }
+
+    @Test
+    void agentAllConfigCache_ShouldReadLegacyKnowledgeBaseRerankFieldsIntoRankingFields() throws Exception {
+        String json = """
+                {
+                  "schemaVersion": 2,
+                  "agentConfigs": {
+                    "knowledgeBase": {
+                      "knowledgeNames": ["common_medicine_kb"],
+                      "embeddingDim": 1024,
+                      "embeddingModel": "text-embedding-3-large",
+                      "topK": 10,
+                      "rerankEnabled": true,
+                      "rerankModel": "gpt-4.1-mini"
+                    }
+                  }
+                }
+                """;
+
+        AgentAllConfigCache cache = objectMapper.readValue(json, AgentAllConfigCache.class);
+
+        assertNotNull(cache.getKnowledgeBase());
+        assertEquals(Boolean.TRUE, cache.getKnowledgeBase().getRankingEnabled());
+        assertEquals("gpt-4.1-mini", cache.getKnowledgeBase().getRankingModel());
+    }
+
+    private AgentLlmConfig buildLlmConfig() {
+        AgentLlmConfig config = new AgentLlmConfig();
+        config.setProviderType("openai");
+        config.setBaseUrl("https://api.openai.com/v1");
+        config.setApiKey("sk-llm");
+        return config;
     }
 
     private KnowledgeBaseAgentConfig buildKnowledgeBaseConfig() {
         KnowledgeBaseAgentConfig config = new KnowledgeBaseAgentConfig();
+        config.setKnowledgeNames(java.util.List.of("common_medicine_kb", "otc_guide_kb"));
         config.setEmbeddingDim(1024);
-        config.setEmbeddingModel(buildSlot("openai", "text-embedding-3-large", "EMBEDDING",
-                "https://api.openai.com/v1", "sk-embedding", false, false, false, 2048, 0.0));
-        config.setRerankModel(buildSlot("aliyun", "gte-rerank-v2", "RERANK",
-                "https://dashscope.aliyuncs.com/compatible-mode/v1", "sk-rerank", false, false, false, 512, 0.0));
+        config.setTopK(10);
+        config.setEmbeddingModel("text-embedding-3-large");
+        config.setRankingEnabled(true);
+        config.setRankingModel("gpt-4.1-mini");
+        return config;
+    }
+
+    private AdminAssistantAgentConfig buildAdminAssistantConfig() {
+        AdminAssistantAgentConfig config = new AdminAssistantAgentConfig();
+        config.setRouteModel(buildSlot("gpt-4.1-mini", false, 1024, 0.0));
+        config.setBusinessNodeSimpleModel(buildSlot("gpt-4.1-mini", false, 2048, 0.3));
+        config.setBusinessNodeComplexModel(buildSlot("gpt-4.1", true, 8192, 0.2));
+        config.setChatModel(buildSlot("gpt-4.1-mini", true, 8192, 0.7));
+        return config;
+    }
+
+    private ImageRecognitionAgentConfig buildImageRecognitionConfig() {
+        ImageRecognitionAgentConfig config = new ImageRecognitionAgentConfig();
+        config.setImageRecognitionModel(buildSlot("qwen2.5-vl-72b-instruct", true, 4096, 0.2));
+        return config;
+    }
+
+    private ChatHistorySummaryAgentConfig buildChatHistorySummaryConfig() {
+        ChatHistorySummaryAgentConfig config = new ChatHistorySummaryAgentConfig();
+        config.setChatHistorySummaryModel(buildSlot("gpt-4.1-mini", false, 4096, 0.3));
+        return config;
+    }
+
+    private ChatTitleAgentConfig buildChatTitleConfig() {
+        ChatTitleAgentConfig config = new ChatTitleAgentConfig();
+        config.setChatTitleModel(buildSlot("gpt-4.1-mini", false, 32, 0.2));
         return config;
     }
 
@@ -76,57 +156,15 @@ class AgentAllConfigCacheJsonTests {
         return config;
     }
 
-    private AdminAssistantAgentConfig buildAdminAssistantConfig() {
-        AdminAssistantAgentConfig config = new AdminAssistantAgentConfig();
-        config.setRouteModel(buildSlot("openai", "gpt-4.1-mini", "CHAT",
-                "https://api.openai.com/v1", "sk-route", true, false, false, 1024, 0.0));
-        config.setBusinessNodeSimpleModel(buildSlot("openai", "gpt-4.1-mini", "CHAT",
-                "https://api.openai.com/v1", "sk-simple", true, false, false, 2048, 0.3));
-        config.setBusinessNodeComplexModel(buildSlot("openai", "gpt-4.1", "CHAT",
-                "https://api.openai.com/v1", "sk-complex", true, false, true, 8192, 0.2));
-        config.setChatModel(buildSlot("aliyun", "qwen-max", "CHAT",
-                "https://dashscope.aliyuncs.com/compatible-mode/v1", "sk-chat", true, true, true, 8192, 0.7));
-        return config;
-    }
-
-    private ImageRecognitionAgentConfig buildImageRecognitionConfig() {
-        ImageRecognitionAgentConfig config = new ImageRecognitionAgentConfig();
-        config.setImageRecognitionModel(buildSlot("aliyun", "qwen2.5-vl-72b-instruct", "CHAT",
-                "https://dashscope.aliyuncs.com/compatible-mode/v1", "sk-recognition", true, true, true, 4096, 0.2));
-        return config;
-    }
-
-    private ChatHistorySummaryAgentConfig buildChatHistorySummaryConfig() {
-        ChatHistorySummaryAgentConfig config = new ChatHistorySummaryAgentConfig();
-        config.setChatHistorySummaryModel(buildSlot("openai", "gpt-4.1-mini", "CHAT",
-                "https://api.openai.com/v1", "sk-summary", true, false, false, 4096, 0.3));
-        return config;
-    }
-
-    private ChatTitleAgentConfig buildChatTitleConfig() {
-        ChatTitleAgentConfig config = new ChatTitleAgentConfig();
-        config.setChatTitleModel(buildSlot("openai", "gpt-4.1-mini", "CHAT",
-                "https://api.openai.com/v1", "sk-title", true, false, false, 32, 0.2));
-        return config;
-    }
-
-    private AgentModelSlotConfig buildSlot(String provider, String model, String modelType, String baseUrl, String apiKey,
-                                           boolean supportReasoning, boolean supportVision, boolean reasoningEnabled,
-                                           Integer maxTokens, Double temperature) {
-        AgentModelRuntimeConfig runtimeConfig = new AgentModelRuntimeConfig();
-        runtimeConfig.setProvider(provider);
-        runtimeConfig.setModel(model);
-        runtimeConfig.setModelType(modelType);
-        runtimeConfig.setBaseUrl(baseUrl);
-        runtimeConfig.setApiKey(apiKey);
-        runtimeConfig.setSupportReasoning(supportReasoning);
-        runtimeConfig.setSupportVision(supportVision);
-
+    private AgentModelSlotConfig buildSlot(String modelName,
+                                           boolean reasoningEnabled,
+                                           Integer maxTokens,
+                                           Double temperature) {
         AgentModelSlotConfig slotConfig = new AgentModelSlotConfig();
+        slotConfig.setModelName(modelName);
         slotConfig.setReasoningEnabled(reasoningEnabled);
         slotConfig.setMaxTokens(maxTokens);
         slotConfig.setTemperature(temperature);
-        slotConfig.setModel(runtimeConfig);
         return slotConfig;
     }
 }

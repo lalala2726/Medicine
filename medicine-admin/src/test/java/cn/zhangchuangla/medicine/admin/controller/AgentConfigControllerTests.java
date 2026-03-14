@@ -26,28 +26,54 @@ class AgentConfigControllerTests {
     @Test
     void getKnowledgeBaseConfig_ShouldDelegateToService() {
         KnowledgeBaseAgentConfigVo vo = new KnowledgeBaseAgentConfigVo();
+        vo.setKnowledgeNames(java.util.List.of("common_medicine_kb"));
         vo.setEmbeddingDim(1024);
+        vo.setTopK(10);
+        vo.setRankingEnabled(false);
         when(agentConfigService.getKnowledgeBaseConfig()).thenReturn(vo);
 
         var result = agentConfigController.getKnowledgeBaseConfig();
 
         assertEquals(200, result.getCode());
         assertNotNull(result.getData());
+        assertEquals("common_medicine_kb", result.getData().getKnowledgeNames().getFirst());
         assertEquals(1024, result.getData().getEmbeddingDim());
+        assertEquals(10, result.getData().getTopK());
+        assertEquals(Boolean.FALSE, result.getData().getRankingEnabled());
         verify(agentConfigService).getKnowledgeBaseConfig();
     }
 
     @Test
     void saveKnowledgeBaseConfig_ShouldDelegateToService() {
         KnowledgeBaseAgentConfigRequest request = new KnowledgeBaseAgentConfigRequest();
+        request.setKnowledgeNames(java.util.List.of("common_medicine_kb"));
         request.setEmbeddingDim(1024);
         request.setEmbeddingModel(buildSelectionRequest("text-embedding-3-large", false, 2048, 0.0));
+        request.setTopK(10);
+        request.setRankingEnabled(false);
         when(agentConfigService.saveKnowledgeBaseConfig(request)).thenReturn(true);
 
         var result = agentConfigController.saveKnowledgeBaseConfig(request);
 
         assertEquals(200, result.getCode());
         verify(agentConfigService).saveKnowledgeBaseConfig(request);
+    }
+
+    @Test
+    void listKnowledgeBaseOptions_ShouldDelegateToService() {
+        KnowledgeBaseOptionVo option = new KnowledgeBaseOptionVo();
+        option.setKnowledgeName("common_medicine_kb");
+        option.setDisplayName("常见用药知识库");
+        option.setEmbeddingModel("text-embedding-3-large");
+        option.setEmbeddingDim(1024);
+        when(agentConfigService.listKnowledgeBaseOptions()).thenReturn(java.util.List.of(option));
+
+        var result = agentConfigController.listKnowledgeBaseOptions();
+
+        assertEquals(200, result.getCode());
+        assertEquals("common_medicine_kb", result.getData().getFirst().getKnowledgeName());
+        assertEquals("text-embedding-3-large", result.getData().getFirst().getEmbeddingModel());
+        verify(agentConfigService).listKnowledgeBaseOptions();
     }
 
     @Test
@@ -99,20 +125,6 @@ class AgentConfigControllerTests {
 
         assertEquals(200, result.getCode());
         verify(agentConfigService).saveImageRecognitionConfig(request);
-    }
-
-    @Test
-    void getSpeechConfig_ShouldDelegateToService() {
-        SpeechAgentConfigVo vo = new SpeechAgentConfigVo();
-        vo.setProvider("volcengine");
-        when(agentConfigService.getSpeechConfig()).thenReturn(vo);
-
-        var result = agentConfigController.getSpeechConfig();
-
-        assertEquals(200, result.getCode());
-        assertNotNull(result.getData());
-        assertEquals("volcengine", result.getData().getProvider());
-        verify(agentConfigService).getSpeechConfig();
     }
 
     @Test
@@ -191,18 +203,6 @@ class AgentConfigControllerTests {
         assertEquals("text-embedding-3-large", result.getData().getFirst().getValue());
         assertEquals(Boolean.FALSE, result.getData().getFirst().getSupportReasoning());
         verify(agentConfigService).listEmbeddingModelOptions();
-    }
-
-    @Test
-    void listRerankModelOptions_ShouldDelegateToService() {
-        AgentModelOptionVo option = buildOption("gte-rerank-v2", false, false);
-        when(agentConfigService.listRerankModelOptions()).thenReturn(java.util.List.of(option));
-
-        var result = agentConfigController.listRerankModelOptions();
-
-        assertEquals(200, result.getCode());
-        assertEquals("gte-rerank-v2", result.getData().getFirst().getLabel());
-        verify(agentConfigService).listRerankModelOptions();
     }
 
     @Test

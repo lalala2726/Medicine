@@ -11,11 +11,9 @@ public final class LlmModelTypeConstants {
 
     public static final String CHAT = "CHAT";
 
-    public static final String RERANK = "RERANK";
-
     public static final String EMBEDDING = "EMBEDDING";
 
-    public static final Set<String> ALL = Set.of(CHAT, RERANK, EMBEDDING);
+    public static final Set<String> ALL = Set.of(CHAT, EMBEDDING);
 
     private LlmModelTypeConstants() {
     }
