@@ -1,65 +1,102 @@
 package cn.zhangchuangla.medicine.agent.service;
 
-import cn.zhangchuangla.medicine.agent.model.vo.admin.PaymentDistribution;
-import cn.zhangchuangla.medicine.agent.model.vo.admin.StatusDistribution;
-import cn.zhangchuangla.medicine.model.vo.analytics.HotProductRank;
-import cn.zhangchuangla.medicine.model.vo.analytics.OrderTrendPoint;
-import cn.zhangchuangla.medicine.model.vo.analytics.OverviewVo;
-import cn.zhangchuangla.medicine.model.vo.analytics.ReturnRateStat;
+import cn.zhangchuangla.medicine.model.vo.analytics.*;
 
 import java.util.List;
 
 /**
  * 智能体运营分析服务接口。
- * <p>
- * 提供运营数据分析服务，包括总览统计、订单趋势、商品排行等。
  *
  * @author Chuang
  */
 public interface AnalyticsService {
 
     /**
-     * 获取运营总览数据。
+     * 获取实时运营总览。
      *
-     * @return 运营总览统计
+     * @return 实时总览数据
      */
-    OverviewVo overview();
+    AnalyticsRealtimeOverviewVo realtimeOverview();
 
     /**
-     * 获取订单趋势数据。
+     * 获取指定时间范围内的经营结果汇总。
      *
-     * @param period 时间周期，支持 DAY/WEEK/MONTH
-     * @return 订单趋势数据点列表
+     * @param days 最近天数，默认30，范围1-730
+     * @return 经营结果汇总
      */
-    List<OrderTrendPoint> orderTrend(String period);
+    AnalyticsRangeSummaryVo rangeSummary(Integer days);
 
     /**
-     * 获取订单状态分布。
+     * 获取指定时间范围内的支付转化汇总。
      *
-     * @return 订单状态分布列表
+     * @param days 最近天数，默认30，范围1-730
+     * @return 支付转化汇总
      */
-    List<StatusDistribution> orderStatusDistribution();
+    AnalyticsConversionSummaryVo conversionSummary(Integer days);
 
     /**
-     * 获取支付方式分布。
+     * 获取指定时间范围内的履约时效汇总。
      *
-     * @return 支付方式分布列表
+     * @param days 最近天数，默认30，范围1-730
+     * @return 履约时效汇总
      */
-    List<PaymentDistribution> paymentDistribution();
+    AnalyticsFulfillmentSummaryVo fulfillmentSummary(Integer days);
 
     /**
-     * 获取热销商品排行榜。
+     * 获取指定时间范围内的售后处理时效汇总。
      *
-     * @param limit 返回数量限制
-     * @return 热销商品排行列表
+     * @param days 最近天数，默认30，范围1-730
+     * @return 售后处理时效汇总
      */
-    List<HotProductRank> hotProducts(int limit);
+    AnalyticsAfterSaleEfficiencySummaryVo afterSaleEfficiencySummary(Integer days);
 
     /**
-     * 获取商品退货率统计。
+     * 获取指定时间范围内的售后状态分布。
      *
-     * @param limit 返回数量限制
-     * @return 商品退货率统计列表
+     * @param days 最近天数，默认30，范围1-730
+     * @return 售后状态分布
      */
-    List<ReturnRateStat> productReturnRates(int limit);
+    List<AnalyticsStatusDistributionItemVo> afterSaleStatusDistribution(Integer days);
+
+    /**
+     * 获取指定时间范围内的售后原因分布。
+     *
+     * @param days 最近天数，默认30，范围1-730
+     * @return 售后原因分布
+     */
+    List<AnalyticsReasonDistributionItemVo> afterSaleReasonDistribution(Integer days);
+
+    /**
+     * 获取指定时间范围内的热销商品排行。
+     *
+     * @param days 最近天数，默认30，范围1-730
+     * @param limit     返回数量限制
+     * @return 热销商品排行
+     */
+    List<AnalyticsTopSellingProductVo> topSellingProducts(Integer days, int limit);
+
+    /**
+     * 获取指定时间范围内的退货退款风险商品排行。
+     *
+     * @param days 最近天数，默认30，范围1-730
+     * @param limit     返回数量限制
+     * @return 风险商品排行
+     */
+    List<AnalyticsReturnRefundRiskProductVo> returnRefundRiskProducts(Integer days, int limit);
+
+    /**
+     * 获取指定时间范围内的成交趋势。
+     *
+     * @param days 最近天数，默认30，范围1-730
+     * @return 成交趋势
+     */
+    AnalyticsSalesTrendVo salesTrend(Integer days);
+
+    /**
+     * 获取指定时间范围内的售后趋势。
+     *
+     * @param days 最近天数，默认30，范围1-730
+     * @return 售后趋势
+     */
+    AnalyticsAfterSaleTrendVo afterSaleTrend(Integer days);
 }

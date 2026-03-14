@@ -10,47 +10,91 @@ import java.util.List;
 public interface AdminAgentAnalyticsRpcService {
 
     /**
-     * 获取管理端运营概览数据。
+     * 获取实时运营总览。
      *
-     * @return 概览统计信息
+     * @return 实时总览数据
      */
-    OverviewVo overview();
+    AnalyticsRealtimeOverviewVo realtimeOverview();
 
     /**
-     * 获取订单趋势数据。
+     * 获取指定时间范围内的经营结果汇总。
      *
-     * @param period 统计周期标识
-     * @return 趋势点列表
+     * @param days 最近天数，默认30，范围1-730
+     * @return 经营结果汇总
      */
-    List<OrderTrendPoint> orderTrend(String period);
+    AnalyticsRangeSummaryVo rangeSummary(Integer days);
 
     /**
-     * 获取订单状态分布数据。
+     * 获取指定时间范围内的支付转化汇总。
      *
-     * @return 订单状态分布列表
+     * @param days 最近天数，默认30，范围1-730
+     * @return 支付转化汇总
      */
-    List<StatusDistribution> orderStatusDistribution();
+    AnalyticsConversionSummaryVo conversionSummary(Integer days);
 
     /**
-     * 获取支付方式分布数据。
+     * 获取指定时间范围内的履约时效汇总。
      *
-     * @return 支付方式分布列表
+     * @param days 最近天数，默认30，范围1-730
+     * @return 履约时效汇总
      */
-    List<PaymentDistribution> paymentDistribution();
+    AnalyticsFulfillmentSummaryVo fulfillmentSummary(Integer days);
 
     /**
-     * 获取热门商品排行。
+     * 获取指定时间范围内的售后处理时效汇总。
      *
-     * @param limit 返回数量上限
-     * @return 热门商品列表
+     * @param days 最近天数，默认30，范围1-730
+     * @return 售后处理时效汇总
      */
-    List<HotProductRank> hotProducts(int limit);
+    AnalyticsAfterSaleEfficiencySummaryVo afterSaleEfficiencySummary(Integer days);
 
     /**
-     * 获取商品退货率排行。
+     * 获取指定时间范围内的售后状态分布。
      *
-     * @param limit 返回数量上限
-     * @return 退货率统计列表
+     * @param days 最近天数，默认30，范围1-730
+     * @return 售后状态分布
      */
-    List<ReturnRateStat> productReturnRates(int limit);
+    List<AnalyticsStatusDistributionItemVo> afterSaleStatusDistribution(Integer days);
+
+    /**
+     * 获取指定时间范围内的售后原因分布。
+     *
+     * @param days 最近天数，默认30，范围1-730
+     * @return 售后原因分布
+     */
+    List<AnalyticsReasonDistributionItemVo> afterSaleReasonDistribution(Integer days);
+
+    /**
+     * 获取指定时间范围内的热销商品排行。
+     *
+     * @param days 最近天数，默认30，范围1-730
+     * @param limit     返回数量限制
+     * @return 热销商品排行
+     */
+    List<AnalyticsTopSellingProductVo> topSellingProducts(Integer days, int limit);
+
+    /**
+     * 获取指定时间范围内的退货退款风险商品排行。
+     *
+     * @param days 最近天数，默认30，范围1-730
+     * @param limit     返回数量限制
+     * @return 风险商品排行
+     */
+    List<AnalyticsReturnRefundRiskProductVo> returnRefundRiskProducts(Integer days, int limit);
+
+    /**
+     * 获取指定时间范围内的成交趋势。
+     *
+     * @param days 最近天数，默认30，范围1-730
+     * @return 成交趋势
+     */
+    AnalyticsSalesTrendVo salesTrend(Integer days);
+
+    /**
+     * 获取指定时间范围内的售后趋势。
+     *
+     * @param days 最近天数，默认30，范围1-730
+     * @return 售后趋势
+     */
+    AnalyticsAfterSaleTrendVo afterSaleTrend(Integer days);
 }
