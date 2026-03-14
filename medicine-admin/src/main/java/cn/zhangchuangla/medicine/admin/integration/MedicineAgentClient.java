@@ -81,6 +81,16 @@ public class MedicineAgentClient {
     }
 
     /**
+     * 调用 Agent 服务删除知识库集合。
+     */
+    public void deleteKnowledgeBase(String knowledgeName) {
+        Assert.notEmpty(knowledgeName, "知识库名称不能为空");
+        String url = buildUrl(CREATE_PATH);
+        String requestBody = JSONUtils.toJson(new KnowledgeBaseDeletePayload(knowledgeName));
+        doRequestWithValidation(HttpMethod.DELETE, url, requestBody, "调用Agent服务删除知识库失败: ");
+    }
+
+    /**
      * 调用 Agent 服务批量删除文档。
      */
     public void deleteDocuments(String knowledgeName, List<Long> documentIds) {
@@ -309,6 +319,9 @@ public class MedicineAgentClient {
     }
 
     private record CollectionPayload(String collection_name) {
+    }
+
+    private record KnowledgeBaseDeletePayload(String knowledge_name) {
     }
 
     private record DocumentDeletePayload(String knowledge_name, List<Long> document_ids) {

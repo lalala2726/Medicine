@@ -142,6 +142,7 @@ public class KbBaseServiceImpl extends ServiceImpl<KbBaseMapper, KbBase>
         Assert.isPositive(id, "知识库ID必须大于0");
         KbBase kbBase = getKnowledgeBaseById(id);
         agentConfigRuntimeSyncService.assertKnowledgeBaseCanDelete(kbBase.getKnowledgeName());
+        medicineAgentClient.deleteKnowledgeBase(kbBase.getKnowledgeName());
         return removeById(id);
     }
 

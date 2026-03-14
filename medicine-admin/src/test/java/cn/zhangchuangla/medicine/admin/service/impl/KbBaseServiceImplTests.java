@@ -4,9 +4,16 @@ import cn.zhangchuangla.medicine.admin.integration.MedicineAgentClient;
 import cn.zhangchuangla.medicine.admin.model.request.KnowledgeBaseAddRequest;
 import cn.zhangchuangla.medicine.admin.model.request.KnowledgeBaseUpdateRequest;
 import cn.zhangchuangla.medicine.admin.service.AgentConfigRuntimeSyncService;
+import cn.zhangchuangla.medicine.admin.service.LlmProviderModelService;
+import cn.zhangchuangla.medicine.admin.service.LlmProviderService;
+import cn.zhangchuangla.medicine.admin.support.KnowledgeBaseEmbeddingDimSupport;
 import cn.zhangchuangla.medicine.common.core.exception.ParamException;
 import cn.zhangchuangla.medicine.common.core.exception.ServiceException;
 import cn.zhangchuangla.medicine.model.entity.KbBase;
+import cn.zhangchuangla.medicine.model.entity.LlmProvider;
+import cn.zhangchuangla.medicine.model.entity.LlmProviderModel;
+import com.baomidou.mybatisplus.extension.conditions.query.LambdaQueryChainWrapper;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.*;
@@ -14,8 +21,10 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.dao.DuplicateKeyException;
 
 import java.util.Date;
+import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.Answers.RETURNS_SELF;
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
 
@@ -28,9 +37,20 @@ class KbBaseServiceImplTests {
     @Mock
     private AgentConfigRuntimeSyncService agentConfigRuntimeSyncService;
 
+    @Mock
+    private LlmProviderService llmProviderService;
+
+    @Mock
+    private LlmProviderModelService llmProviderModelService;
+
     @Spy
     @InjectMocks
     private KbBaseServiceImpl kbBaseService;
+
+    @BeforeEach
+    void setUp() {
+        mockEnabledEmbeddingModel("text-embedding-3-large");
+    }
 
     @Test
     void addKnowledgeBase_ShouldCallAgentWithKnowledgeNameAndSave() {
@@ -122,22 +142,22 @@ class KbBaseServiceImplTests {
     }
 
     @Test
-    void addKnowledgeBase_WhenEmbeddingDimTooSmall_ShouldThrowParamException() {
+    void addKnowledgeBase_WhenEmbeddingDimUnsupported_ShouldThrowParamException() {
         KnowledgeBaseAddRequest request = new KnowledgeBaseAddRequest();
         request.setKnowledgeName("drug_faq");
         request.setDisplayName("常见用药知识库");
         request.setCover("https://example.com/kb-cover.png");
         request.setEmbeddingModel("text-embedding-3-large");
-        request.setEmbeddingDim(64);
+        request.setEmbeddingDim(32);
 
         ParamException exception = assertThrows(ParamException.class, () -> kbBaseService.addKnowledgeBase(request));
-        assertEquals("向量维度必须在128到8192之间", exception.getMessage());
+        assertEquals(KnowledgeBaseEmbeddingDimSupport.SUPPORTED_DIM_MESSAGE, exception.getMessage());
         verify(medicineAgentClient, never()).createKnowledgeBase(anyString(), anyInt(), any());
         verify(kbBaseService, never()).save(any(KbBase.class));
     }
 
     @Test
-    void addKnowledgeBase_WhenEmbeddingDimNotPowerOfTwo_ShouldThrowParamException() {
+    void addKnowledgeBase_WhenEmbeddingDimNotInSupportedSet_ShouldThrowParamException() {
         KnowledgeBaseAddRequest request = new KnowledgeBaseAddRequest();
         request.setKnowledgeName("drug_faq");
         request.setDisplayName("常见用药知识库");
@@ -146,7 +166,7 @@ class KbBaseServiceImplTests {
         request.setEmbeddingDim(1000);
 
         ParamException exception = assertThrows(ParamException.class, () -> kbBaseService.addKnowledgeBase(request));
-        assertEquals("向量维度必须是2的幂", exception.getMessage());
+        assertEquals(KnowledgeBaseEmbeddingDimSupport.SUPPORTED_DIM_MESSAGE, exception.getMessage());
         verify(medicineAgentClient, never()).createKnowledgeBase(anyString(), anyInt(), any());
         verify(kbBaseService, never()).save(any(KbBase.class));
     }
@@ -407,7 +427,7 @@ class KbBaseServiceImplTests {
     }
 
     @Test
-    void deleteKnowledgeBase_ShouldCheckReferenceBeforeDelete() {
+    void deleteKnowledgeBase_ShouldDeleteRemoteBeforeDeleteLocalRecord() {
         KbBase existing = new KbBase();
         existing.setId(1L);
         existing.setKnowledgeName("drug_faq");
@@ -419,7 +439,60 @@ class KbBaseServiceImplTests {
 
         assertTrue(result);
         verify(agentConfigRuntimeSyncService).assertKnowledgeBaseCanDelete("drug_faq");
+        verify(medicineAgentClient).deleteKnowledgeBase("drug_faq");
         verify(kbBaseService).removeById(1L);
+        InOrder inOrder = inOrder(agentConfigRuntimeSyncService, medicineAgentClient, kbBaseService);
+        inOrder.verify(agentConfigRuntimeSyncService).assertKnowledgeBaseCanDelete("drug_faq");
+        inOrder.verify(medicineAgentClient).deleteKnowledgeBase("drug_faq");
+        inOrder.verify(kbBaseService).removeById(1L);
     }
 
+    @Test
+    void deleteKnowledgeBase_WhenRemoteDeleteFailed_ShouldNotDeleteLocalRecord() {
+        KbBase existing = new KbBase();
+        existing.setId(1L);
+        existing.setKnowledgeName("drug_faq");
+
+        doReturn(existing).when(kbBaseService).getById(1L);
+        doThrow(new ServiceException("Agent删除失败")).when(medicineAgentClient).deleteKnowledgeBase("drug_faq");
+
+        ServiceException exception = assertThrows(ServiceException.class, () -> kbBaseService.deleteKnowledgeBase(1L));
+
+        assertEquals("Agent删除失败", exception.getMessage());
+        verify(agentConfigRuntimeSyncService).assertKnowledgeBaseCanDelete("drug_faq");
+        verify(medicineAgentClient).deleteKnowledgeBase("drug_faq");
+        verify(kbBaseService, never()).removeById(anyLong());
+    }
+
+    @SuppressWarnings("unchecked")
+    private void mockEnabledEmbeddingModel(String modelName) {
+        LambdaQueryChainWrapper<LlmProvider> providerWrapper = mock(LambdaQueryChainWrapper.class, RETURNS_SELF);
+        lenient().when(providerWrapper.list()).thenReturn(List.of(buildEnabledProvider()));
+        lenient().when(llmProviderService.lambdaQuery()).thenReturn(providerWrapper);
+
+        LambdaQueryChainWrapper<LlmProviderModel> modelWrapper = mock(LambdaQueryChainWrapper.class, RETURNS_SELF);
+        lenient().when(modelWrapper.list()).thenReturn(List.of(buildEnabledEmbeddingModel(modelName)));
+        lenient().when(llmProviderModelService.lambdaQuery()).thenReturn(modelWrapper);
+    }
+
+    private LlmProvider buildEnabledProvider() {
+        return LlmProvider.builder()
+                .id(1L)
+                .providerName("OpenAI")
+                .providerType("openai")
+                .status(1)
+                .sort(1)
+                .build();
+    }
+
+    private LlmProviderModel buildEnabledEmbeddingModel(String modelName) {
+        return LlmProviderModel.builder()
+                .id(1L)
+                .providerId(1L)
+                .modelName(modelName)
+                .modelType("EMBEDDING")
+                .enabled(0)
+                .sort(1)
+                .build();
+    }
 }
