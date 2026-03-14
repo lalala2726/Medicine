@@ -120,6 +120,13 @@ public class AgentConfigRuntimeSyncService {
         return config;
     }
 
+    /**
+     * 设置知识库配置的排序模型。
+     * 如果模型名称为空或 null，此方法还会将 rankingEnabled 设置为 false。
+     *
+     * @param config    知识库 Agent 配置
+     * @param modelName 要设置的排序模型名称，若为 null 则清除它
+     */
     private static void setKnowledgeBaseRankingModel(KnowledgeBaseAgentConfig config, String modelName) {
         config.setRankingModel(modelName);
         if (!StringUtils.hasText(modelName)) {
@@ -176,9 +183,9 @@ public class AgentConfigRuntimeSyncService {
     /**
      * 保存 Agent 缓存并广播刷新消息。
      *
-     * @param cache          最新缓存
+     * @param cache           最新缓存
      * @param enabledProvider 当前启用提供商
-     * @param operator       操作人
+     * @param operator        操作人
      */
     public void saveCache(AgentAllConfigCache cache, LlmProvider enabledProvider, String operator) {
         AgentAllConfigCache normalizedCache = normalizeCache(cache == null ? new AgentAllConfigCache() : cache);
