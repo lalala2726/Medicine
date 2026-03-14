@@ -1,17 +1,12 @@
 package cn.zhangchuangla.medicine.agent.service.impl;
 
-import cn.zhangchuangla.medicine.agent.model.vo.admin.PaymentDistribution;
-import cn.zhangchuangla.medicine.agent.model.vo.admin.StatusDistribution;
 import cn.zhangchuangla.medicine.agent.service.AnalyticsService;
-import cn.zhangchuangla.medicine.common.core.utils.BeanCotyUtils;
-import cn.zhangchuangla.medicine.model.vo.analytics.HotProductRank;
-import cn.zhangchuangla.medicine.model.vo.analytics.OrderTrendPoint;
-import cn.zhangchuangla.medicine.model.vo.analytics.OverviewVo;
-import cn.zhangchuangla.medicine.model.vo.analytics.ReturnRateStat;
+import cn.zhangchuangla.medicine.model.vo.analytics.*;
 import cn.zhangchuangla.medicine.rpc.admin.AdminAgentAnalyticsRpcService;
 import org.apache.dubbo.config.annotation.DubboReference;
 import org.springframework.stereotype.Service;
 
+import java.util.Collections;
 import java.util.List;
 
 /**
@@ -20,37 +15,91 @@ import java.util.List;
 @Service
 public class AnalyticsServiceImpl implements AnalyticsService {
 
+    private static final int DEFAULT_DAYS = 30;
+
     @DubboReference(group = "medicine-admin", version = "1.0.0", check = false, timeout = 3000, retries = 0,
             url = "${dubbo.references.medicine-admin.url:}")
     private AdminAgentAnalyticsRpcService adminAgentAnalyticsRpcService;
 
     @Override
-    public OverviewVo overview() {
-        return adminAgentAnalyticsRpcService.overview();
+    public AnalyticsRealtimeOverviewVo realtimeOverview() {
+        AnalyticsRealtimeOverviewVo realtimeOverview = adminAgentAnalyticsRpcService.realtimeOverview();
+        return realtimeOverview == null ? new AnalyticsRealtimeOverviewVo() : realtimeOverview;
     }
 
     @Override
-    public List<OrderTrendPoint> orderTrend(String period) {
-        return adminAgentAnalyticsRpcService.orderTrend(period);
+    public AnalyticsRangeSummaryVo rangeSummary(Integer days) {
+        AnalyticsRangeSummaryVo rangeSummary = adminAgentAnalyticsRpcService.rangeSummary(normalizeDays(days));
+        return rangeSummary == null ? new AnalyticsRangeSummaryVo() : rangeSummary;
     }
 
     @Override
-    public List<StatusDistribution> orderStatusDistribution() {
-        return BeanCotyUtils.copyListProperties(adminAgentAnalyticsRpcService.orderStatusDistribution(), StatusDistribution.class);
+    public AnalyticsConversionSummaryVo conversionSummary(Integer days) {
+        AnalyticsConversionSummaryVo conversionSummary = adminAgentAnalyticsRpcService.conversionSummary(normalizeDays(days));
+        return conversionSummary == null ? new AnalyticsConversionSummaryVo() : conversionSummary;
     }
 
     @Override
-    public List<PaymentDistribution> paymentDistribution() {
-        return BeanCotyUtils.copyListProperties(adminAgentAnalyticsRpcService.paymentDistribution(), PaymentDistribution.class);
+    public AnalyticsFulfillmentSummaryVo fulfillmentSummary(Integer days) {
+        AnalyticsFulfillmentSummaryVo fulfillmentSummary =
+                adminAgentAnalyticsRpcService.fulfillmentSummary(normalizeDays(days));
+        return fulfillmentSummary == null ? new AnalyticsFulfillmentSummaryVo() : fulfillmentSummary;
     }
 
     @Override
-    public List<HotProductRank> hotProducts(int limit) {
-        return adminAgentAnalyticsRpcService.hotProducts(limit);
+    public AnalyticsAfterSaleEfficiencySummaryVo afterSaleEfficiencySummary(Integer days) {
+        AnalyticsAfterSaleEfficiencySummaryVo summary =
+                adminAgentAnalyticsRpcService.afterSaleEfficiencySummary(normalizeDays(days));
+        return summary == null ? new AnalyticsAfterSaleEfficiencySummaryVo() : summary;
     }
 
     @Override
-    public List<ReturnRateStat> productReturnRates(int limit) {
-        return adminAgentAnalyticsRpcService.productReturnRates(limit);
+    public List<AnalyticsStatusDistributionItemVo> afterSaleStatusDistribution(Integer days) {
+        return safeList(adminAgentAnalyticsRpcService.afterSaleStatusDistribution(normalizeDays(days)));
+    }
+
+    @Override
+    public List<AnalyticsReasonDistributionItemVo> afterSaleReasonDistribution(Integer days) {
+        return safeList(adminAgentAnalyticsRpcService.afterSaleReasonDistribution(normalizeDays(days)));
+    }
+
+    @Override
+    public List<AnalyticsTopSellingProductVo> topSellingProducts(Integer days, int limit) {
+        return safeList(adminAgentAnalyticsRpcService.topSellingProducts(normalizeDays(days), limit));
+    }
+
+    @Override
+    public List<AnalyticsReturnRefundRiskProductVo> returnRefundRiskProducts(Integer days, int limit) {
+        return safeList(adminAgentAnalyticsRpcService.returnRefundRiskProducts(normalizeDays(days), limit));
+    }
+
+    @Override
+    public AnalyticsSalesTrendVo salesTrend(Integer days) {
+        AnalyticsSalesTrendVo salesTrendVo = adminAgentAnalyticsRpcService.salesTrend(normalizeDays(days));
+        if (salesTrendVo != null) {
+            return salesTrendVo;
+        }
+        AnalyticsSalesTrendVo emptyTrend = new AnalyticsSalesTrendVo();
+        emptyTrend.setPoints(Collections.emptyList());
+        return emptyTrend;
+    }
+
+    @Override
+    public AnalyticsAfterSaleTrendVo afterSaleTrend(Integer days) {
+        AnalyticsAfterSaleTrendVo afterSaleTrendVo = adminAgentAnalyticsRpcService.afterSaleTrend(normalizeDays(days));
+        if (afterSaleTrendVo != null) {
+            return afterSaleTrendVo;
+        }
+        AnalyticsAfterSaleTrendVo emptyTrend = new AnalyticsAfterSaleTrendVo();
+        emptyTrend.setPoints(Collections.emptyList());
+        return emptyTrend;
+    }
+
+    private int normalizeDays(Integer days) {
+        return days == null ? DEFAULT_DAYS : days;
+    }
+
+    private <T> List<T> safeList(List<T> source) {
+        return source == null ? Collections.emptyList() : source;
     }
 }

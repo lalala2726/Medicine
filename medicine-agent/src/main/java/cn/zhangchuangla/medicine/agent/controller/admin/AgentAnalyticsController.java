@@ -1,20 +1,18 @@
 package cn.zhangchuangla.medicine.agent.controller.admin;
 
 import cn.zhangchuangla.medicine.agent.annotation.InternalAgentHeaderTrace;
-import cn.zhangchuangla.medicine.agent.model.vo.admin.PaymentDistribution;
-import cn.zhangchuangla.medicine.agent.model.vo.admin.StatusDistribution;
 import cn.zhangchuangla.medicine.agent.service.AnalyticsService;
 import cn.zhangchuangla.medicine.common.core.base.AjaxResult;
 import cn.zhangchuangla.medicine.common.security.base.BaseController;
-import cn.zhangchuangla.medicine.model.vo.analytics.HotProductRank;
-import cn.zhangchuangla.medicine.model.vo.analytics.OrderTrendPoint;
-import cn.zhangchuangla.medicine.model.vo.analytics.OverviewVo;
-import cn.zhangchuangla.medicine.model.vo.analytics.ReturnRateStat;
+import cn.zhangchuangla.medicine.model.vo.analytics.*;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.constraints.Max;
+import jakarta.validation.constraints.Min;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -24,10 +22,6 @@ import java.util.List;
 
 /**
  * 管理端智能体运营分析工具控制器。
- * <p>
- * 提供给管理端智能体使用的运营数据分析工具接口，
- * 包括订单统计、销售趋势、商品排行等数据分析功能。
- * 仅超级管理员可访问。
  *
  * @author Chuang
  */
@@ -37,102 +31,177 @@ import java.util.List;
 @InternalAgentHeaderTrace
 @RequiredArgsConstructor
 @PreAuthorize("hasRole('super_admin')")
+@Validated
 public class AgentAnalyticsController extends BaseController {
+
+    private static final String DAYS_DESCRIPTION = "最近天数，默认30，范围1-730";
 
     private final AnalyticsService agentAnalyticsService;
 
     /**
-     * 获取运营总览数据。
-     * <p>
-     * 返回平台的关键运营指标，包括总订单数、总销售额、
-     * 总用户数、退款统计等核心数据。
+     * 获取实时运营总览。
      *
-     * @return 运营总览数据
+     * @return 实时总览数据
      */
-    @GetMapping("/overview")
-    @Operation(summary = "运营总览", description = "包括总订单数、总销售额、总用户数等关键指标")
-    public AjaxResult<OverviewVo> overview() {
-        return success(agentAnalyticsService.overview());
+    @GetMapping("/realtime-overview")
+    @Operation(summary = "实时运营总览", description = "返回累计成交、今日成交、待发货和售后待处理等实时指标")
+    public AjaxResult<AnalyticsRealtimeOverviewVo> realtimeOverview() {
+        return success(agentAnalyticsService.realtimeOverview());
     }
 
     /**
-     * 获取订单趋势数据。
-     * <p>
-     * 根据指定的时间周期统计订单数量和金额的变化趋势，
-     * 支持按日(DAY)、周(WEEK)、月(MONTH)三种周期统计。
+     * 获取指定时间范围内的经营结果汇总。
      *
-     * @param period 时间周期，支持 DAY(日)、WEEK(周)、MONTH(月)
-     * @return 订单趋势数据点列表
+     * @param days 最近天数
+     * @return 经营结果汇总
      */
-    @GetMapping("/order/trend")
-    @Operation(summary = "订单趋势", description = "根据指定的时间周期统计订单数量和金额的变化趋势，period 支持 DAY/WEEK/MONTH")
-    public AjaxResult<List<OrderTrendPoint>> orderTrend(
-            @Parameter(description = "时间周期，支持 DAY(日)、WEEK(周)、MONTH(月)")
-            @RequestParam(defaultValue = "DAY") String period
+    @GetMapping("/range-summary")
+    @Operation(summary = "经营结果汇总", description = DAYS_DESCRIPTION)
+    public AjaxResult<AnalyticsRangeSummaryVo> rangeSummary(
+            @Parameter(description = DAYS_DESCRIPTION)
+            @RequestParam(defaultValue = "30") @Min(1) @Max(730) Integer days
     ) {
-        return success(agentAnalyticsService.orderTrend(period));
+        return success(agentAnalyticsService.rangeSummary(days));
     }
 
     /**
-     * 获取订单状态分布。
-     * <p>
-     * 统计不同状态（待付款、待发货、待收货、已完成、已取消等）
-     * 的订单数量及其占比。
+     * 获取指定时间范围内的支付转化汇总。
      *
-     * @return 订单状态分布列表
+     * @param days 最近天数
+     * @return 支付转化汇总
      */
-    @GetMapping("/order/status-distribution")
-    @Operation(summary = "订单状态分布", description = "统计不同状态订单的数量和占比")
-    public AjaxResult<List<StatusDistribution>> orderStatusDistribution() {
-        return success(agentAnalyticsService.orderStatusDistribution());
+    @GetMapping("/conversion-summary")
+    @Operation(summary = "支付转化汇总", description = DAYS_DESCRIPTION)
+    public AjaxResult<AnalyticsConversionSummaryVo> conversionSummary(
+            @Parameter(description = DAYS_DESCRIPTION)
+            @RequestParam(defaultValue = "30") @Min(1) @Max(730) Integer days
+    ) {
+        return success(agentAnalyticsService.conversionSummary(days));
     }
 
     /**
-     * 获取支付方式分布。
-     * <p>
-     * 统计不同支付方式（支付宝、微信等）的使用次数及其占比。
+     * 获取指定时间范围内的履约时效汇总。
      *
-     * @return 支付方式分布列表
+     * @param days 最近天数
+     * @return 履约时效汇总
      */
-    @GetMapping("/order/payment-distribution")
-    @Operation(summary = "支付方式分布", description = "统计不同支付方式的使用情况和占比")
-    public AjaxResult<List<PaymentDistribution>> paymentDistribution() {
-        return success(agentAnalyticsService.paymentDistribution());
+    @GetMapping("/fulfillment-summary")
+    @Operation(summary = "履约时效汇总", description = DAYS_DESCRIPTION)
+    public AjaxResult<AnalyticsFulfillmentSummaryVo> fulfillmentSummary(
+            @Parameter(description = DAYS_DESCRIPTION)
+            @RequestParam(defaultValue = "30") @Min(1) @Max(730) Integer days
+    ) {
+        return success(agentAnalyticsService.fulfillmentSummary(days));
     }
 
     /**
-     * 获取热销商品排行榜。
-     * <p>
-     * 根据已完成订单的销量统计最受欢迎的商品，
-     * 按销量降序排列。
+     * 获取指定时间范围内的售后处理时效汇总。
      *
-     * @param limit 返回数量限制，默认 10 条
-     * @return 热销商品排行榜
+     * @param days 最近天数
+     * @return 售后处理时效汇总
      */
-    @GetMapping("/product/hot")
-    @Operation(summary = "热销商品排行榜", description = "根据销量统计最受欢迎的商品")
-    public AjaxResult<List<HotProductRank>> hotProducts(
-            @Parameter(description = "返回数量限制")
+    @GetMapping("/after-sale-efficiency-summary")
+    @Operation(summary = "售后处理时效汇总", description = DAYS_DESCRIPTION)
+    public AjaxResult<AnalyticsAfterSaleEfficiencySummaryVo> afterSaleEfficiencySummary(
+            @Parameter(description = DAYS_DESCRIPTION)
+            @RequestParam(defaultValue = "30") @Min(1) @Max(730) Integer days
+    ) {
+        return success(agentAnalyticsService.afterSaleEfficiencySummary(days));
+    }
+
+    /**
+     * 获取指定时间范围内的售后状态分布。
+     *
+     * @param days 最近天数
+     * @return 售后状态分布
+     */
+    @GetMapping("/after-sale-status-distribution")
+    @Operation(summary = "售后状态分布", description = DAYS_DESCRIPTION)
+    public AjaxResult<List<AnalyticsStatusDistributionItemVo>> afterSaleStatusDistribution(
+            @Parameter(description = DAYS_DESCRIPTION)
+            @RequestParam(defaultValue = "30") @Min(1) @Max(730) Integer days
+    ) {
+        return success(agentAnalyticsService.afterSaleStatusDistribution(days));
+    }
+
+    /**
+     * 获取指定时间范围内的售后原因分布。
+     *
+     * @param days 最近天数
+     * @return 售后原因分布
+     */
+    @GetMapping("/after-sale-reason-distribution")
+    @Operation(summary = "售后原因分布", description = DAYS_DESCRIPTION)
+    public AjaxResult<List<AnalyticsReasonDistributionItemVo>> afterSaleReasonDistribution(
+            @Parameter(description = DAYS_DESCRIPTION)
+            @RequestParam(defaultValue = "30") @Min(1) @Max(730) Integer days
+    ) {
+        return success(agentAnalyticsService.afterSaleReasonDistribution(days));
+    }
+
+    /**
+     * 获取指定时间范围内的热销商品排行。
+     *
+     * @param days 最近天数
+     * @param limit     返回数量限制
+     * @return 热销商品排行
+     */
+    @GetMapping("/top-selling-products")
+    @Operation(summary = "热销商品排行", description = "支持 days 和 limit，days 默认30范围1-730，limit 默认10最大20")
+    public AjaxResult<List<AnalyticsTopSellingProductVo>> topSellingProducts(
+            @Parameter(description = DAYS_DESCRIPTION)
+            @RequestParam(defaultValue = "30") @Min(1) @Max(730) Integer days,
+            @Parameter(description = "返回数量限制，默认10，最大20")
             @RequestParam(defaultValue = "10") int limit
     ) {
-        return success(agentAnalyticsService.hotProducts(limit));
+        return success(agentAnalyticsService.topSellingProducts(days, limit));
     }
 
     /**
-     * 获取商品退货率统计。
-     * <p>
-     * 统计商品的退货情况，帮助发现潜在的质量问题，
-     * 按退货率降序排列。
+     * 获取指定时间范围内的退货退款风险商品排行。
      *
-     * @param limit 返回数量限制，默认 10 条
-     * @return 商品退货率统计列表
+     * @param days 最近天数
+     * @param limit     返回数量限制
+     * @return 风险商品排行
      */
-    @GetMapping("/product/return-rate")
-    @Operation(summary = "商品退货率", description = "统计商品的退货情况，帮助发现质量问题")
-    public AjaxResult<List<ReturnRateStat>> returnRates(
-            @Parameter(description = "返回数量限制")
+    @GetMapping("/return-refund-risk-products")
+    @Operation(summary = "退货退款风险商品排行", description = "支持 days 和 limit，days 默认30范围1-730，limit 默认10最大20")
+    public AjaxResult<List<AnalyticsReturnRefundRiskProductVo>> returnRefundRiskProducts(
+            @Parameter(description = DAYS_DESCRIPTION)
+            @RequestParam(defaultValue = "30") @Min(1) @Max(730) Integer days,
+            @Parameter(description = "返回数量限制，默认10，最大20")
             @RequestParam(defaultValue = "10") int limit
     ) {
-        return success(agentAnalyticsService.productReturnRates(limit));
+        return success(agentAnalyticsService.returnRefundRiskProducts(days, limit));
+    }
+
+    /**
+     * 获取指定时间范围内的成交趋势。
+     *
+     * @param days 最近天数
+     * @return 成交趋势
+     */
+    @GetMapping("/sales-trend")
+    @Operation(summary = "成交趋势", description = DAYS_DESCRIPTION)
+    public AjaxResult<AnalyticsSalesTrendVo> salesTrend(
+            @Parameter(description = DAYS_DESCRIPTION)
+            @RequestParam(defaultValue = "30") @Min(1) @Max(730) Integer days
+    ) {
+        return success(agentAnalyticsService.salesTrend(days));
+    }
+
+    /**
+     * 获取指定时间范围内的售后趋势。
+     *
+     * @param days 最近天数
+     * @return 售后趋势
+     */
+    @GetMapping("/after-sale-trend")
+    @Operation(summary = "售后趋势", description = DAYS_DESCRIPTION)
+    public AjaxResult<AnalyticsAfterSaleTrendVo> afterSaleTrend(
+            @Parameter(description = DAYS_DESCRIPTION)
+            @RequestParam(defaultValue = "30") @Min(1) @Max(730) Integer days
+    ) {
+        return success(agentAnalyticsService.afterSaleTrend(days));
     }
 }

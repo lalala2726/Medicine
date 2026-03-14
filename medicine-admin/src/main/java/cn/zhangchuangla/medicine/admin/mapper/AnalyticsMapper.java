@@ -13,22 +13,39 @@ import java.util.List;
 @Mapper
 public interface AnalyticsMapper {
 
-    Long countUsers();
+    AnalyticsRealtimeOverviewVo selectRealtimeOverview();
 
-    Long countOrders();
+    AnalyticsRangeSummaryVo selectRangeSummary(@Param("startTime") LocalDateTime startTime,
+                                               @Param("endTime") LocalDateTime endTime);
 
-    OrderAmountStats orderAmountStats();
+    AnalyticsConversionSummaryVo selectConversionSummary(@Param("startTime") LocalDateTime startTime,
+                                                         @Param("endTime") LocalDateTime endTime);
 
-    RefundStats refundStats();
+    AnalyticsFulfillmentSummaryVo selectFulfillmentSummary(@Param("startTime") LocalDateTime startTime,
+                                                           @Param("endTime") LocalDateTime endTime);
 
-    List<OrderTrendPoint> orderTrend(@Param("startTime") LocalDateTime startTime,
-                                     @Param("groupFormat") String groupFormat);
+    AnalyticsAfterSaleEfficiencySummaryVo selectAfterSaleEfficiencySummary(@Param("startTime") LocalDateTime startTime,
+                                                                           @Param("endTime") LocalDateTime endTime);
 
-    List<StatusDistribution> orderStatusDistribution();
+    List<AnalyticsStatusDistributionItemVo> selectAfterSaleStatusDistribution(@Param("startTime") LocalDateTime startTime,
+                                                                              @Param("endTime") LocalDateTime endTime);
 
-    List<PaymentDistribution> paymentDistribution();
+    List<AnalyticsReasonDistributionItemVo> selectAfterSaleReasonDistribution(@Param("startTime") LocalDateTime startTime,
+                                                                              @Param("endTime") LocalDateTime endTime);
 
-    List<HotProductRank> hotProducts(@Param("limit") int limit);
+    List<AnalyticsTopSellingProductVo> selectTopSellingProducts(@Param("startTime") LocalDateTime startTime,
+                                                                @Param("endTime") LocalDateTime endTime,
+                                                                @Param("limit") int limit);
 
-    List<ReturnRateStat> productReturnRates(@Param("limit") int limit);
+    List<AnalyticsReturnRefundRiskProductVo> selectReturnRefundRiskProducts(@Param("startTime") LocalDateTime startTime,
+                                                                            @Param("endTime") LocalDateTime endTime,
+                                                                            @Param("limit") int limit);
+
+    List<AnalyticsTrendPointVo> selectPaidTrend(@Param("startTime") LocalDateTime startTime,
+                                                @Param("endTime") LocalDateTime endTime,
+                                                @Param("groupFormat") String groupFormat);
+
+    List<AnalyticsTrendPointVo> selectAfterSaleTrend(@Param("startTime") LocalDateTime startTime,
+                                                     @Param("endTime") LocalDateTime endTime,
+                                                     @Param("groupFormat") String groupFormat);
 }
