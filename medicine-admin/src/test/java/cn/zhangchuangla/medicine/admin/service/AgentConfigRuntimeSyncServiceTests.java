@@ -80,6 +80,59 @@ class AgentConfigRuntimeSyncServiceTests {
     }
 
     @Test
+    void clearAgentConfigsForProviderSwitch_ShouldClearModelConfigsAndKeepSpeech() {
+        AgentAllConfigCache cache = new AgentAllConfigCache();
+        KnowledgeBaseAgentConfig knowledgeBase = new KnowledgeBaseAgentConfig();
+        knowledgeBase.setEmbeddingModel("text-embedding-v4");
+        cache.setKnowledgeBase(knowledgeBase);
+        AdminAssistantAgentConfig adminAssistant = new AdminAssistantAgentConfig();
+        adminAssistant.setChatModel(buildSlot("gpt-4.1", true, 8192, 0.7));
+        cache.setAdminAssistant(adminAssistant);
+        ImageRecognitionAgentConfig imageRecognition = new ImageRecognitionAgentConfig();
+        imageRecognition.setImageRecognitionModel(buildSlot("qwen-vl-max", true, 4096, 0.2));
+        cache.setImageRecognition(imageRecognition);
+        ChatHistorySummaryAgentConfig chatHistorySummary = new ChatHistorySummaryAgentConfig();
+        chatHistorySummary.setChatHistorySummaryModel(buildSlot("gpt-4.1-mini", false, 4096, 0.3));
+        cache.setChatHistorySummary(chatHistorySummary);
+        ChatTitleAgentConfig chatTitle = new ChatTitleAgentConfig();
+        chatTitle.setChatTitleModel(buildSlot("gpt-4.1-mini", false, 32, 0.2));
+        cache.setChatTitle(chatTitle);
+        SpeechAgentConfig speech = buildSpeech();
+        cache.setSpeech(speech);
+
+        when(valueOperations.get(RedisConstants.AgentConfig.ALL_CONFIG_KEY)).thenReturn(cache);
+        when(llmProviderMapper.selectList(any())).thenReturn(List.of(buildEnabledProvider()));
+
+        syncService.clearAgentConfigsForProviderSwitch("tester");
+
+        ArgumentCaptor<AgentAllConfigCache> cacheCaptor = ArgumentCaptor.forClass(AgentAllConfigCache.class);
+        verify(valueOperations).set(eq(RedisConstants.AgentConfig.ALL_CONFIG_KEY), cacheCaptor.capture());
+        AgentAllConfigCache saved = cacheCaptor.getValue();
+        assertEquals("openai", saved.getLlm().getProviderType());
+        assertNull(saved.getKnowledgeBase());
+        assertNull(saved.getAdminAssistant());
+        assertNull(saved.getImageRecognition());
+        assertNull(saved.getChatHistorySummary());
+        assertNull(saved.getChatTitle());
+        assertNotNull(saved.getSpeech());
+        assertEquals("speech-app-id", saved.getSpeech().getAppId());
+        assertEquals("speech-token", saved.getSpeech().getAccessToken());
+        verify(agentConfigPublisher).publishRefresh(any(AgentConfigRefreshMessage.class));
+    }
+
+    @Test
+    void assertKnowledgeBaseCanDisable_WhenKnowledgeBaseConfigDisabled_ShouldNotThrow() {
+        AgentAllConfigCache cache = new AgentAllConfigCache();
+        KnowledgeBaseAgentConfig knowledgeBase = new KnowledgeBaseAgentConfig();
+        knowledgeBase.setEnabled(false);
+        knowledgeBase.setKnowledgeNames(List.of("drug_faq"));
+        cache.setKnowledgeBase(knowledgeBase);
+        when(valueOperations.get(RedisConstants.AgentConfig.ALL_CONFIG_KEY)).thenReturn(cache);
+
+        assertDoesNotThrow(() -> syncService.assertKnowledgeBaseCanDisable("drug_faq"));
+    }
+
+    @Test
     void validateProviderSwitchCompatibility_WhenTargetModelMissing_ShouldThrowServiceException() {
         AgentAllConfigCache cache = new AgentAllConfigCache();
         KnowledgeBaseAgentConfig knowledgeBase = new KnowledgeBaseAgentConfig();

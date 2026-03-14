@@ -13,6 +13,7 @@ class AgentConfigRequestJsonTests {
     void knowledgeBaseRequest_ShouldDeserialize() throws Exception {
         String json = """
                 {
+                  "enabled": true,
                   "knowledgeNames": ["common_medicine_kb", "otc_guide_kb"],
                   "embeddingDim": 1024,
                   "embeddingModel": {
@@ -29,6 +30,7 @@ class AgentConfigRequestJsonTests {
 
         KnowledgeBaseAgentConfigRequest request = objectMapper.readValue(json, KnowledgeBaseAgentConfigRequest.class);
 
+        assertEquals(Boolean.TRUE, request.getEnabled());
         assertEquals(2, request.getKnowledgeNames().size());
         assertEquals("common_medicine_kb", request.getKnowledgeNames().getFirst());
         assertEquals(1024, request.getEmbeddingDim());

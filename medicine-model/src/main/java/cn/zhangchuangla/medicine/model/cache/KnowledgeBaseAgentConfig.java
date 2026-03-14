@@ -13,6 +13,11 @@ import java.util.List;
 public class KnowledgeBaseAgentConfig implements Serializable {
 
     /**
+     * 是否启用知识库能力。
+     */
+    private Boolean enabled;
+
+    /**
      * Agent 可访问的知识库名称列表。
      */
     private List<String> knowledgeNames;

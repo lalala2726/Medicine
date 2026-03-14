@@ -12,6 +12,9 @@ import java.util.List;
 @Schema(description = "知识库Agent配置视图对象")
 public class KnowledgeBaseAgentConfigVo {
 
+    @Schema(description = "是否启用知识库", example = "true")
+    private Boolean enabled;
+
     @Schema(description = "可访问知识库名称列表")
     private List<String> knowledgeNames;
 

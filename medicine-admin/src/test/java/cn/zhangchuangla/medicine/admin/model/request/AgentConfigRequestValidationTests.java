@@ -29,6 +29,7 @@ class AgentConfigRequestValidationTests {
     @Test
     void knowledgeBaseRequest_ShouldFail_WhenEmbeddingDimIsNotPowerOfTwo() {
         KnowledgeBaseAgentConfigRequest request = new KnowledgeBaseAgentConfigRequest();
+        request.setEnabled(true);
         request.setKnowledgeNames(java.util.List.of("common_medicine_kb"));
         request.setEmbeddingDim(130);
         request.setEmbeddingModel(buildSelection());
@@ -44,6 +45,7 @@ class AgentConfigRequestValidationTests {
     @Test
     void knowledgeBaseRequest_ShouldFail_WhenKnowledgeNamesEmpty() {
         KnowledgeBaseAgentConfigRequest request = new KnowledgeBaseAgentConfigRequest();
+        request.setEnabled(true);
         request.setKnowledgeNames(java.util.List.of());
         request.setEmbeddingDim(1024);
         request.setEmbeddingModel(buildSelection());
@@ -59,6 +61,7 @@ class AgentConfigRequestValidationTests {
     @Test
     void knowledgeBaseRequest_ShouldFail_WhenKnowledgeNamesExceedMaxLimit() {
         KnowledgeBaseAgentConfigRequest request = new KnowledgeBaseAgentConfigRequest();
+        request.setEnabled(true);
         request.setKnowledgeNames(java.util.stream.IntStream.rangeClosed(1, 6)
                 .mapToObj(index -> "knowledge_" + index)
                 .toList());
@@ -71,6 +74,31 @@ class AgentConfigRequestValidationTests {
 
         assertFalse(violations.isEmpty());
         assertTrue(violations.stream().anyMatch(item -> "知识库最多支持5个".equals(item.getMessage())));
+    }
+
+    @Test
+    void knowledgeBaseRequest_ShouldFail_WhenEnabledMissing() {
+        KnowledgeBaseAgentConfigRequest request = new KnowledgeBaseAgentConfigRequest();
+        request.setKnowledgeNames(java.util.List.of("common_medicine_kb"));
+        request.setEmbeddingDim(1024);
+        request.setEmbeddingModel(buildSelection());
+        request.setTopK(10);
+        request.setRankingEnabled(false);
+
+        var violations = validator.validate(request);
+
+        assertFalse(violations.isEmpty());
+        assertTrue(violations.stream().anyMatch(item -> "是否启用知识库不能为空".equals(item.getMessage())));
+    }
+
+    @Test
+    void knowledgeBaseRequest_ShouldPass_WhenDisabledAndFieldsEmpty() {
+        KnowledgeBaseAgentConfigRequest request = new KnowledgeBaseAgentConfigRequest();
+        request.setEnabled(false);
+
+        var violations = validator.validate(request);
+
+        assertTrue(violations.isEmpty());
     }
 
     @Test

@@ -134,7 +134,7 @@ class LlmProviderServiceImplTests {
     }
 
     @Test
-    void updateProviderStatus_ShouldValidateAndRefreshWhenEnabling() {
+    void updateProviderStatus_ShouldRefreshWithoutValidatingCompatibilityWhenEnabling() {
         LlmProvider existing = LlmProvider.builder()
                 .id(2L)
                 .providerName("Backup Provider")
@@ -151,8 +151,32 @@ class LlmProviderServiceImplTests {
         boolean result = llmProviderService.updateProviderStatus(request);
 
         assertTrue(result);
-        verify(agentConfigRuntimeSyncService).validateProviderSwitchCompatibility(existing);
-        verify(agentConfigRuntimeSyncService).syncCurrentEnabledProviderSnapshot(anyString());
+        verify(agentConfigRuntimeSyncService, never()).validateProviderSwitchCompatibility(any());
+        verify(agentConfigRuntimeSyncService).clearAgentConfigsForProviderSwitch(anyString());
+    }
+
+    @Test
+    void updateProviderStatus_WhenCompatibilityWouldFail_ShouldStillEnableProvider() {
+        LlmProvider existing = LlmProvider.builder()
+                .id(3L)
+                .providerName("New Provider")
+                .status(0)
+                .build();
+        LlmProviderUpdateStatusRequest request = new LlmProviderUpdateStatusRequest();
+        request.setId(3L);
+        request.setStatus(1);
+
+        when(llmProviderMapper.selectById(3L)).thenReturn(existing);
+        when(llmProviderMapper.update(any(LlmProvider.class), any())).thenReturn(1);
+        when(llmProviderMapper.updateById(any(LlmProvider.class))).thenReturn(1);
+        doThrow(new ServiceException("切换失败，目标提供商下不存在模型：text-embedding-v4"))
+                .when(agentConfigRuntimeSyncService).validateProviderSwitchCompatibility(existing);
+
+        boolean result = llmProviderService.updateProviderStatus(request);
+
+        assertTrue(result);
+        verify(agentConfigRuntimeSyncService, never()).validateProviderSwitchCompatibility(any());
+        verify(agentConfigRuntimeSyncService).clearAgentConfigsForProviderSwitch(anyString());
     }
 
     @Test

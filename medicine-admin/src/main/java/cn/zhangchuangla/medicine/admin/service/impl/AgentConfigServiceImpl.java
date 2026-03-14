@@ -99,9 +99,11 @@ public class AgentConfigServiceImpl implements AgentConfigService, BaseService {
         AgentAllConfigCache cache = agentConfigRuntimeSyncService.readCache();
         KnowledgeBaseAgentConfig config = cache.getKnowledgeBase();
         if (config == null) {
+            vo.setEnabled(Boolean.FALSE);
             return vo;
         }
         LlmProvider provider = getEnabledProviderOrNull();
+        vo.setEnabled(resolveKnowledgeBaseEnabled(config));
         vo.setKnowledgeNames(copyKnowledgeNames(config.getKnowledgeNames()));
         vo.setEmbeddingDim(config.getEmbeddingDim());
         vo.setTopK(config.getTopK());
@@ -124,30 +126,12 @@ public class AgentConfigServiceImpl implements AgentConfigService, BaseService {
     @Override
     public boolean saveKnowledgeBaseConfig(KnowledgeBaseAgentConfigRequest request) {
         Assert.notNull(request, "知识库Agent配置不能为空");
-        validateEmbeddingDim(request.getEmbeddingDim());
-
-        List<String> knowledgeNames = normalizeKnowledgeNames(request.getKnowledgeNames());
-        Integer topK = normalizeKnowledgeBaseTopK(request.getTopK());
-        LlmProvider provider = getRequiredEnabledProvider();
-        List<KbBase> knowledgeBases = loadEnabledKnowledgeBases(knowledgeNames);
-        KbBase baseline = knowledgeBases.getFirst();
-        KnowledgeBaseAgentConfig config = new KnowledgeBaseAgentConfig();
-        AgentModelSlotConfig embeddingModel = resolveRequiredSlotConfig(provider, request.getEmbeddingModel(),
-                LlmModelTypeConstants.EMBEDDING, false, EMBEDDING_MODEL_MISSING_MESSAGE);
-        validateKnowledgeBasesAgainstBaseline(knowledgeBases, baseline);
-        validateKnowledgeBaseCommonConfig(embeddingModel, request.getEmbeddingDim(), baseline);
-        String rankingModel = resolveKnowledgeBaseRankingModel(provider, request);
-
-        config.setKnowledgeNames(knowledgeNames);
-        config.setEmbeddingDim(request.getEmbeddingDim());
-        config.setTopK(topK);
-        config.setEmbeddingModel(embeddingModel.getModelName());
-        config.setRankingEnabled(Boolean.TRUE.equals(request.getRankingEnabled()));
-        config.setRankingModel(rankingModel);
-
         AgentAllConfigCache cache = agentConfigRuntimeSyncService.readCache();
+        boolean enabled = Boolean.TRUE.equals(request.getEnabled());
+        KnowledgeBaseAgentConfig config = buildKnowledgeBaseConfig(cache.getKnowledgeBase(), request, enabled);
         cache.setKnowledgeBase(config);
-        agentConfigRuntimeSyncService.saveCache(cache, provider, currentOperator());
+        agentConfigRuntimeSyncService.saveCache(cache, enabled ? getRequiredEnabledProvider() : getEnabledProviderOrNull(),
+                currentOperator());
         return true;
     }
 
@@ -575,6 +559,70 @@ public class AgentConfigServiceImpl implements AgentConfigService, BaseService {
         return buildSlotConfig(providerModel, request);
     }
 
+    private KnowledgeBaseAgentConfig buildKnowledgeBaseConfig(KnowledgeBaseAgentConfig existingConfig,
+                                                              KnowledgeBaseAgentConfigRequest request,
+                                                              boolean enabled) {
+        if (!enabled) {
+            return buildDisabledKnowledgeBaseConfig(existingConfig, request);
+        }
+
+        validateEmbeddingDim(request.getEmbeddingDim());
+
+        List<String> knowledgeNames = normalizeKnowledgeNames(request.getKnowledgeNames());
+        Integer topK = normalizeKnowledgeBaseTopK(request.getTopK());
+        LlmProvider provider = getRequiredEnabledProvider();
+        List<KbBase> knowledgeBases = loadEnabledKnowledgeBases(knowledgeNames);
+        KbBase baseline = knowledgeBases.getFirst();
+        AgentModelSlotConfig embeddingModel = resolveRequiredSlotConfig(provider, request.getEmbeddingModel(),
+                LlmModelTypeConstants.EMBEDDING, false, EMBEDDING_MODEL_MISSING_MESSAGE);
+        validateKnowledgeBasesAgainstBaseline(knowledgeBases, baseline);
+        validateKnowledgeBaseCommonConfig(embeddingModel, request.getEmbeddingDim(), baseline);
+        String rankingModel = resolveKnowledgeBaseRankingModel(provider, request);
+
+        KnowledgeBaseAgentConfig config = new KnowledgeBaseAgentConfig();
+        config.setEnabled(Boolean.TRUE);
+        config.setKnowledgeNames(knowledgeNames);
+        config.setEmbeddingDim(request.getEmbeddingDim());
+        config.setTopK(topK);
+        config.setEmbeddingModel(embeddingModel.getModelName());
+        config.setRankingEnabled(Boolean.TRUE.equals(request.getRankingEnabled()));
+        config.setRankingModel(rankingModel);
+        return config;
+    }
+
+    private KnowledgeBaseAgentConfig buildDisabledKnowledgeBaseConfig(KnowledgeBaseAgentConfig existingConfig,
+                                                                      KnowledgeBaseAgentConfigRequest request) {
+        KnowledgeBaseAgentConfig config = copyKnowledgeBaseConfig(existingConfig);
+        config.setEnabled(Boolean.FALSE);
+        if (request.getKnowledgeNames() != null) {
+            config.setKnowledgeNames(copyKnowledgeNames(request.getKnowledgeNames()));
+        }
+        if (request.getEmbeddingDim() != null || request.getEmbeddingModel() != null || request.getTopK() != null
+                || request.getRankingEnabled() != null || request.getRankingModel() != null) {
+            config.setEmbeddingDim(request.getEmbeddingDim());
+            config.setTopK(normalizeKnowledgeBaseTopK(request.getTopK()));
+            config.setEmbeddingModel(normalizeOptionalModelName(request.getEmbeddingModel()));
+            config.setRankingEnabled(request.getRankingEnabled());
+            config.setRankingModel(normalizeOptionalModelName(request.getRankingModel()));
+        }
+        return config;
+    }
+
+    private KnowledgeBaseAgentConfig copyKnowledgeBaseConfig(KnowledgeBaseAgentConfig existingConfig) {
+        KnowledgeBaseAgentConfig config = new KnowledgeBaseAgentConfig();
+        if (existingConfig == null) {
+            return config;
+        }
+        config.setEnabled(existingConfig.getEnabled());
+        config.setKnowledgeNames(copyKnowledgeNames(existingConfig.getKnowledgeNames()));
+        config.setEmbeddingDim(existingConfig.getEmbeddingDim());
+        config.setTopK(existingConfig.getTopK());
+        config.setEmbeddingModel(existingConfig.getEmbeddingModel());
+        config.setRankingEnabled(existingConfig.getRankingEnabled());
+        config.setRankingModel(existingConfig.getRankingModel());
+        return config;
+    }
+
     /**
      * 按提供商、名称和类型查询模型。
      *
@@ -843,6 +891,18 @@ public class AgentConfigServiceImpl implements AgentConfigService, BaseService {
         return number > 0 && (number & (number - 1)) == 0;
     }
 
+    private boolean resolveKnowledgeBaseEnabled(KnowledgeBaseAgentConfig config) {
+        if (config.getEnabled() != null) {
+            return config.getEnabled();
+        }
+        return !copyKnowledgeNames(config.getKnowledgeNames()).isEmpty()
+                || config.getEmbeddingDim() != null
+                || config.getTopK() != null
+                || StringUtils.hasText(config.getEmbeddingModel())
+                || config.getRankingEnabled() != null
+                || StringUtils.hasText(config.getRankingModel());
+    }
+
     private boolean resolveKnowledgeBaseRankingEnabled(KnowledgeBaseAgentConfig config) {
         if (config.getRankingEnabled() != null) {
             return config.getRankingEnabled();
@@ -948,6 +1008,13 @@ public class AgentConfigServiceImpl implements AgentConfigService, BaseService {
 
     private boolean hasSelectedModel(AgentModelSelectionRequest request) {
         return request != null && StringUtils.hasText(normalizeNullableText(request.getModelName()));
+    }
+
+    private String normalizeOptionalModelName(AgentModelSelectionRequest request) {
+        if (request == null) {
+            return null;
+        }
+        return normalizeNullableText(request.getModelName());
     }
 
     /**
