@@ -12,6 +12,7 @@ import org.springframework.util.CollectionUtils;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
+import java.time.Clock;
 import java.time.DayOfWeek;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -42,6 +43,7 @@ public class AnalyticsServiceImpl implements AnalyticsService {
     private static final WeekFields WEEK_FIELDS = WeekFields.ISO;
 
     private final AnalyticsMapper analyticsMapper;
+    private final Clock clock;
 
     /**
      * 获取实时运营总览。
@@ -560,7 +562,7 @@ public class AnalyticsServiceImpl implements AnalyticsService {
      * @return 返回按日聚合使用的时间窗口对象
      */
     private RangeWindow buildDailyWindow(int days) {
-        LocalDate today = LocalDate.now();
+        LocalDate today = LocalDate.now(clock);
         LocalDate startDate = today.minusDays(days - 1L);
         LocalDateTime startTime = startDate.atStartOfDay();
         LocalDateTime endTime = today.plusDays(1L).atStartOfDay();
@@ -578,7 +580,7 @@ public class AnalyticsServiceImpl implements AnalyticsService {
      * @return 返回按周聚合使用的时间窗口对象
      */
     private RangeWindow buildWeeklyWindow(int days) {
-        LocalDate today = LocalDate.now();
+        LocalDate today = LocalDate.now(clock);
         LocalDate startDate = today.minusDays(days - 1L);
         LocalDateTime startTime = startDate.atStartOfDay();
         LocalDateTime endTime = today.plusDays(1L).atStartOfDay();
@@ -599,7 +601,7 @@ public class AnalyticsServiceImpl implements AnalyticsService {
      * @return 返回按月聚合使用的时间窗口对象
      */
     private RangeWindow buildMonthlyWindow(int days) {
-        LocalDate today = LocalDate.now();
+        LocalDate today = LocalDate.now(clock);
         LocalDate startDate = today.minusDays(days - 1L);
         LocalDateTime startTime = startDate.atStartOfDay();
         LocalDateTime endTime = today.plusDays(1L).atStartOfDay();

@@ -76,13 +76,23 @@ public class AnalyticsServiceImpl implements AnalyticsService {
     @Override
     public AnalyticsSalesTrendVo salesTrend(Integer days) {
         AnalyticsSalesTrendVo salesTrendVo = adminAgentAnalyticsRpcService.salesTrend(normalizeDays(days));
-        return salesTrendVo == null ? new AnalyticsSalesTrendVo() : salesTrendVo;
+        if (salesTrendVo != null) {
+            return salesTrendVo;
+        }
+        AnalyticsSalesTrendVo emptyTrend = new AnalyticsSalesTrendVo();
+        emptyTrend.setPoints(Collections.emptyList());
+        return emptyTrend;
     }
 
     @Override
     public AnalyticsAfterSaleTrendVo afterSaleTrend(Integer days) {
         AnalyticsAfterSaleTrendVo afterSaleTrendVo = adminAgentAnalyticsRpcService.afterSaleTrend(normalizeDays(days));
-        return afterSaleTrendVo == null ? new AnalyticsAfterSaleTrendVo() : afterSaleTrendVo;
+        if (afterSaleTrendVo != null) {
+            return afterSaleTrendVo;
+        }
+        AnalyticsAfterSaleTrendVo emptyTrend = new AnalyticsAfterSaleTrendVo();
+        emptyTrend.setPoints(Collections.emptyList());
+        return emptyTrend;
     }
 
     private int normalizeDays(Integer days) {
