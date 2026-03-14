@@ -1,6 +1,7 @@
 package cn.zhangchuangla.medicine.admin.integration;
 
 import cn.zhangchuangla.medicine.admin.config.KnowledgeBaseAiProperties;
+import cn.zhangchuangla.medicine.admin.support.KnowledgeBaseEmbeddingDimSupport;
 import cn.zhangchuangla.medicine.common.core.enums.ResponseCode;
 import cn.zhangchuangla.medicine.common.core.exception.ServiceException;
 import cn.zhangchuangla.medicine.common.core.utils.Assert;
@@ -37,8 +38,6 @@ public class MedicineAgentClient {
     private static final String DOCUMENT_DELETE_PATH = "/knowledge_base/document";
     private static final String DOCUMENT_CHUNK_LIST_PATH = "/knowledge_base/document/chunks/list";
     private static final String DOCUMENT_CHUNK_STATUS_PATH = "/knowledge_base/document/chunk/status";
-    private static final int MIN_EMBEDDING_DIM = 128;
-    private static final int MAX_EMBEDDING_DIM = 1 << 13;
     private static final int CHUNK_STATUS_ENABLED = 0;
     private static final int CHUNK_PAGE_SIZE = 50;
     private static final int MAX_CHUNK_PAGE = 10_000;
@@ -286,15 +285,14 @@ public class MedicineAgentClient {
     }
 
     /**
-     * 校验向量维度：范围 [128, 8192] 且必须为 2 的幂。
+     * 校验知识库向量维度是否属于支持集合。
      *
      * @param embeddingDim 向量维度
      */
     private void validateEmbeddingDim(Integer embeddingDim) {
         Assert.notNull(embeddingDim, "向量维度不能为空");
-        Assert.isParamTrue(embeddingDim >= MIN_EMBEDDING_DIM && embeddingDim <= MAX_EMBEDDING_DIM,
-                "向量维度必须在128到8192之间");
-        Assert.isParamTrue((embeddingDim & (embeddingDim - 1)) == 0, "向量维度必须是2的幂");
+        Assert.isParamTrue(KnowledgeBaseEmbeddingDimSupport.isSupported(embeddingDim),
+                KnowledgeBaseEmbeddingDimSupport.SUPPORTED_DIM_MESSAGE);
     }
 
     private List<Long> normalizeDocumentIds(List<Long> documentIds) {

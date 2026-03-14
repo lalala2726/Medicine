@@ -1,9 +1,12 @@
 package cn.zhangchuangla.medicine.admin.model.request;
 
-import cn.zhangchuangla.medicine.common.core.annotation.PowerOfTwo;
+import cn.zhangchuangla.medicine.admin.support.KnowledgeBaseEmbeddingDimSupport;
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.Valid;
-import jakarta.validation.constraints.*;
+import jakarta.validation.constraints.AssertTrue;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Size;
 import lombok.Data;
 
 import java.util.List;
@@ -23,10 +26,7 @@ public class KnowledgeBaseAgentConfigRequest {
     @Size(max = 5, message = "知识库最多支持5个")
     private List<@NotBlank(message = "知识库名称不能为空") String> knowledgeNames;
 
-    @Schema(description = "向量维度", example = "1024")
-    @Min(value = 128L, message = "向量维度不能小于128")
-    @Max(value = 8192L, message = "向量维度不能大于8192")
-    @PowerOfTwo(message = "向量维度必须是2的次方")
+    @Schema(description = KnowledgeBaseEmbeddingDimSupport.SCHEMA_DESCRIPTION, example = "1024")
     private Integer embeddingDim;
 
     @Schema(description = "向量模型槽位配置")
@@ -51,6 +51,11 @@ public class KnowledgeBaseAgentConfigRequest {
     @AssertTrue(message = "向量维度不能为空")
     public boolean isEmbeddingDimPresentWhenEnabled() {
         return !Boolean.TRUE.equals(enabled) || embeddingDim != null;
+    }
+
+    @AssertTrue(message = KnowledgeBaseEmbeddingDimSupport.SUPPORTED_DIM_MESSAGE)
+    public boolean isEmbeddingDimSupported() {
+        return embeddingDim == null || KnowledgeBaseEmbeddingDimSupport.isSupported(embeddingDim);
     }
 
     @AssertTrue(message = "向量模型槽位配置不能为空")

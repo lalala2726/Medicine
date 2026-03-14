@@ -3,6 +3,7 @@ package cn.zhangchuangla.medicine.admin.service.impl;
 import cn.zhangchuangla.medicine.admin.model.request.*;
 import cn.zhangchuangla.medicine.admin.model.vo.*;
 import cn.zhangchuangla.medicine.admin.service.*;
+import cn.zhangchuangla.medicine.admin.support.KnowledgeBaseEmbeddingDimSupport;
 import cn.zhangchuangla.medicine.common.core.enums.ResponseCode;
 import cn.zhangchuangla.medicine.common.core.exception.ServiceException;
 import cn.zhangchuangla.medicine.common.core.utils.Assert;
@@ -36,8 +37,6 @@ public class AgentConfigServiceImpl implements AgentConfigService, BaseService {
     private static final int KNOWLEDGE_BASE_TOP_K_MAX = 100;
     private static final int MODEL_STATUS_ENABLED = 0;
     private static final int CAPABILITY_ENABLED = 1;
-    private static final int EMBEDDING_DIM_MIN = 128;
-    private static final int EMBEDDING_DIM_MAX = 8192;
     private static final int ADMIN_ASSISTANT_MAX_TOKENS_MIN = 100;
     private static final int ADMIN_ASSISTANT_MAX_TOKENS_MAX = 10000;
     private static final int IMAGE_RECOGNITION_MAX_TOKENS_MIN = 512;
@@ -844,15 +843,14 @@ public class AgentConfigServiceImpl implements AgentConfigService, BaseService {
     }
 
     /**
-     * 校验知识库向量维度范围与 2 的次方要求。
+     * 校验知识库向量维度是否属于支持集合。
      *
      * @param embeddingDim 向量维度
      */
     private void validateEmbeddingDim(Integer embeddingDim) {
         Assert.notNull(embeddingDim, "向量维度不能为空");
-        Assert.isParamTrue(embeddingDim >= EMBEDDING_DIM_MIN, "向量维度不能小于128");
-        Assert.isParamTrue(embeddingDim <= EMBEDDING_DIM_MAX, "向量维度不能大于8192");
-        Assert.isParamTrue(isPowerOfTwo(embeddingDim), "向量维度必须是2的次方");
+        Assert.isParamTrue(KnowledgeBaseEmbeddingDimSupport.isSupported(embeddingDim),
+                KnowledgeBaseEmbeddingDimSupport.SUPPORTED_DIM_MESSAGE);
     }
 
     /**
@@ -969,16 +967,6 @@ public class AgentConfigServiceImpl implements AgentConfigService, BaseService {
             Assert.isParamTrue(temperature <= TEMPERATURE_MAX,
                     "%s温度不能大于2".formatted(slotName));
         }
-    }
-
-    /**
-     * 判断向量维度是否为 2 的次方。
-     *
-     * @param number 目标数值
-     * @return true 表示是 2 的次方
-     */
-    private boolean isPowerOfTwo(int number) {
-        return number > 0 && (number & (number - 1)) == 0;
     }
 
     /**

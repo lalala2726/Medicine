@@ -1,10 +1,8 @@
 package cn.zhangchuangla.medicine.admin.model.request;
 
+import cn.zhangchuangla.medicine.admin.support.KnowledgeBaseEmbeddingDimSupport;
 import io.swagger.v3.oas.annotations.media.Schema;
-import jakarta.validation.constraints.Max;
-import jakarta.validation.constraints.Min;
-import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.*;
 import lombok.Data;
 
 /**
@@ -32,15 +30,18 @@ public class KnowledgeBaseAddRequest {
     @NotBlank(message = "向量模型标识不能为空")
     private String embeddingModel;
 
-    @Schema(description = "向量维度", example = "1024")
+    @Schema(description = KnowledgeBaseEmbeddingDimSupport.SCHEMA_DESCRIPTION, example = "1024")
     @NotNull(message = "向量维度不能为空")
-    @Min(value = 128L, message = "向量维度不能小于128")
-    @Max(value = 8192L, message = "向量维度不能大于8192")
     private Integer embeddingDim;
 
     @Schema(description = "状态（0启用 1停用）", example = "0")
     @Min(value = 0L, message = "状态值不合法")
     @Max(value = 1L, message = "状态值不合法")
     private Integer status;
+
+    @AssertTrue(message = KnowledgeBaseEmbeddingDimSupport.SUPPORTED_DIM_MESSAGE)
+    public boolean isEmbeddingDimSupported() {
+        return embeddingDim == null || KnowledgeBaseEmbeddingDimSupport.isSupported(embeddingDim);
+    }
 
 }

@@ -4,8 +4,10 @@ import cn.zhangchuangla.medicine.admin.model.dto.KnowledgeBaseListDto;
 import cn.zhangchuangla.medicine.admin.model.request.KnowledgeBaseAddRequest;
 import cn.zhangchuangla.medicine.admin.model.request.KnowledgeBaseListRequest;
 import cn.zhangchuangla.medicine.admin.model.request.KnowledgeBaseUpdateRequest;
+import cn.zhangchuangla.medicine.admin.model.vo.AgentModelOptionVo;
 import cn.zhangchuangla.medicine.admin.model.vo.KnowledgeBaseListVo;
 import cn.zhangchuangla.medicine.admin.model.vo.KnowledgeBaseVo;
+import cn.zhangchuangla.medicine.admin.service.AgentConfigService;
 import cn.zhangchuangla.medicine.admin.service.KbBaseService;
 import cn.zhangchuangla.medicine.common.core.base.AjaxResult;
 import cn.zhangchuangla.medicine.common.core.base.TableDataResult;
@@ -38,6 +40,7 @@ import java.util.List;
 public class KnowledgeBaseController extends BaseController {
 
     private final KbBaseService kbBaseService;
+    private final AgentConfigService agentConfigService;
 
     /**
      * 查询知识库列表
@@ -66,6 +69,18 @@ public class KnowledgeBaseController extends BaseController {
         KbBase kbBase = kbBaseService.getKnowledgeBaseById(id);
         KnowledgeBaseVo vo = copyProperties(kbBase, KnowledgeBaseVo.class);
         return success(vo);
+    }
+
+    /**
+     * 查询知识库可选向量模型列表。
+     *
+     * @return 当前激活提供商下的向量模型选项
+     */
+    @GetMapping("/embedding-model/option")
+    @Operation(summary = "知识库向量模型选项")
+    @PreAuthorize("hasAuthority('system:knowledge_base:list') or hasRole('super_admin')")
+    public AjaxResult<List<AgentModelOptionVo>> listKnowledgeBaseEmbeddingModelOptions() {
+        return success(agentConfigService.listEmbeddingModelOptions());
     }
 
     /**
