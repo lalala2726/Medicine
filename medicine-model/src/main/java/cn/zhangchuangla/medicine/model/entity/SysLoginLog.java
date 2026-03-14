@@ -62,11 +62,6 @@ public class SysLoginLog {
     private String ipAddress;
 
     /**
-     * IP归属地。
-     */
-    private String ipRegion;
-
-    /**
      * User-Agent。
      */
     private String userAgent;

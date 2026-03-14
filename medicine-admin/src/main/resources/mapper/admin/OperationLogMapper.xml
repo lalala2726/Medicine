@@ -14,7 +14,6 @@
         <result property="userId" column="user_id"/>
         <result property="username" column="username"/>
         <result property="ip" column="ip"/>
-        <result property="ipLocation" column="ip_location"/>
         <result property="userAgent" column="user_agent"/>
         <result property="requestParams" column="request_params"/>
         <result property="responseResult" column="response_result"/>
@@ -26,7 +25,7 @@
 
     <sql id="Base_Column_List">
         id,module,action,request_uri,http_method,method_name,
-        user_id,username,ip,ip_location,user_agent,
+        user_id,username,ip,user_agent,
         request_params,response_result,cost_time,success,error_msg,
         create_time
     </sql>

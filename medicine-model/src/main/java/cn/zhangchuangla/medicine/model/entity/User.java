@@ -87,11 +87,6 @@ public class User implements Serializable {
     private String lastLoginIp;
 
     /**
-     * 上次登陆地点
-     */
-    private String lastLoginLocation;
-
-    /**
      * 状态
      */
     private Integer status;

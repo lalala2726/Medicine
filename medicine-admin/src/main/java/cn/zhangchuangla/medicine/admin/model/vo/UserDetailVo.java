@@ -81,9 +81,6 @@ public class UserDetailVo {
         @Schema(description = "最后登录IP", example = "192.168.1.1")
         private String lastLoginIp;
 
-        @Schema(description = "最后登录位置", example = "中国北京")
-        private String lastLoginLocation;
-
         @Schema(description = "用户状态", example = "正常")
         private Integer status;
     }

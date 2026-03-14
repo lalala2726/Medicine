@@ -33,9 +33,6 @@ public class LoginLogListVo {
     @Schema(description = "IP地址", example = "127.0.0.1")
     private String ipAddress;
 
-    @Schema(description = "IP归属地", example = "中国 北京")
-    private String ipRegion;
-
     @Schema(description = "登录时间", example = "2026-02-12 10:00:00")
     private Date loginTime;
 }

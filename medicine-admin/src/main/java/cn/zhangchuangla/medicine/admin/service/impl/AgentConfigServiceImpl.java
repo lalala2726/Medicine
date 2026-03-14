@@ -690,7 +690,6 @@ public class AgentConfigServiceImpl implements AgentConfigService, BaseService {
     /**
      * 构建运行时槽位配置。
      *
-     * @param provider      启用提供商
      * @param providerModel 提供商模型实体
      * @param request       编辑态请求
      * @return 运行时槽位配置

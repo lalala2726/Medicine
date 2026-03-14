@@ -31,7 +31,6 @@ public class OperationLogStorageImpl implements OperationLogStorage {
                     .userId(logInfo.getUserId())
                     .username(logInfo.getUsername())
                     .ip(logInfo.getIp())
-                    .ipLocation(logInfo.getIpLocation())
                     .userAgent(logInfo.getUserAgent())
                     .requestParams(logInfo.getRequestParams())
                     .responseResult(logInfo.getResponseResult())

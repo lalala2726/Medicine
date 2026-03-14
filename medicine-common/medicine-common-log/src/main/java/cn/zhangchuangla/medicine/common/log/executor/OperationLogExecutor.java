@@ -1,6 +1,6 @@
 package cn.zhangchuangla.medicine.common.log.executor;
 
-import cn.zhangchuangla.medicine.common.ip.utils.IPUtils;
+import cn.zhangchuangla.medicine.common.core.utils.IpAddressUtils;
 import cn.zhangchuangla.medicine.common.log.model.OperationLogInfo;
 import cn.zhangchuangla.medicine.common.log.spi.OperationLogStorage;
 import cn.zhangchuangla.medicine.common.log.spi.OperationLogStorageLoader;
@@ -8,7 +8,6 @@ import jakarta.servlet.http.HttpServletRequest;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.util.CollectionUtils;
-import org.springframework.util.StringUtils;
 
 import java.util.Date;
 import java.util.List;
@@ -52,11 +51,8 @@ public class OperationLogExecutor {
             return;
         }
         try {
-            String ip = IPUtils.getIpAddress(request);
+            String ip = IpAddressUtils.getIpAddress(request);
             logInfo.setIp(ip);
-            if (StringUtils.hasText(ip)) {
-                logInfo.setIpLocation(IPUtils.getRegion(ip));
-            }
             logInfo.setUserAgent(request.getHeader(USER_AGENT_HEADER));
         } catch (Exception ex) {
             log.warn("Failed to resolve request info for operation log", ex);

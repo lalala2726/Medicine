@@ -4,8 +4,8 @@ import cn.zhangchuangla.medicine.common.core.constants.SecurityConstants;
 import cn.zhangchuangla.medicine.common.core.enums.ResponseCode;
 import cn.zhangchuangla.medicine.common.core.exception.AuthorizationException;
 import cn.zhangchuangla.medicine.common.core.utils.BeanCotyUtils;
+import cn.zhangchuangla.medicine.common.core.utils.IpAddressUtils;
 import cn.zhangchuangla.medicine.common.core.utils.UUIDUtils;
-import cn.zhangchuangla.medicine.common.ip.utils.IPUtils;
 import cn.zhangchuangla.medicine.common.security.entity.AuthTokenVo;
 import cn.zhangchuangla.medicine.common.security.entity.AuthUser;
 import cn.zhangchuangla.medicine.common.security.entity.OnlineLoginUser;
@@ -64,8 +64,7 @@ public class TokenService {
         String accessTokenSessionId = UUIDUtils.simple();
         String refreshTokenSessionId = UUIDUtils.simple();
         HttpServletRequest request = SecurityUtils.getHttpServletRequest();
-        String ipAddress = IPUtils.getIpAddress(request);
-        String location = IPUtils.getRegion(ipAddress);
+        String ipAddress = IpAddressUtils.getIpAddress(request);
         long now = System.currentTimeMillis();
 
         Set<String> authorityCodes = authentication.getAuthorities().stream()
@@ -82,7 +81,6 @@ public class TokenService {
                 .roles(snapshot.roleAuthorities())
                 .permissions(snapshot.permissionAuthorities())
                 .ip(ipAddress)
-                .location(location)
                 .createTime(now)
                 .updateTime(now)
                 .accessTime(now)
@@ -136,8 +134,7 @@ public class TokenService {
         String accessToken = jwtTokenProvider.createJwt(accessTokenSessionId, username);
 
         HttpServletRequest request = SecurityUtils.getHttpServletRequest();
-        String ipAddress = IPUtils.getIpAddress(request);
-        String region = IPUtils.getRegion(ipAddress);
+        String ipAddress = IpAddressUtils.getIpAddress(request);
         long now = System.currentTimeMillis();
 
         OnlineLoginUser onlineLoginUser = OnlineLoginUser.builder()
@@ -149,7 +146,6 @@ public class TokenService {
                 .roles(snapshot.roleAuthorities())
                 .permissions(snapshot.permissionAuthorities())
                 .ip(ipAddress)
-                .location(region)
                 .createTime(now)
                 .updateTime(now)
                 .accessTime(now)

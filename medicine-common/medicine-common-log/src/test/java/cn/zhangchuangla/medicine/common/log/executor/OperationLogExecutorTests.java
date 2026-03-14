@@ -66,6 +66,5 @@ class OperationLogExecutorTests {
         assertNotNull(saved.getCreateTime());
         assertEquals("8.8.8.8", saved.getIp());
         assertEquals("Mozilla/5.0", saved.getUserAgent());
-        assertNotNull(saved.getIpLocation());
     }
 }

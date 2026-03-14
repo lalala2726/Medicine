@@ -8,8 +8,6 @@ import cn.zhangchuangla.medicine.client.service.UserService;
 import cn.zhangchuangla.medicine.client.service.UserWalletService;
 import cn.zhangchuangla.medicine.common.core.utils.Assert;
 import cn.zhangchuangla.medicine.common.core.utils.BeanCotyUtils;
-import cn.zhangchuangla.medicine.common.ip.entity.IPEntity;
-import cn.zhangchuangla.medicine.common.ip.utils.IPUtils;
 import cn.zhangchuangla.medicine.common.security.base.BaseService;
 import cn.zhangchuangla.medicine.model.entity.MallOrder;
 import cn.zhangchuangla.medicine.model.entity.User;
@@ -99,13 +97,10 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User>
         Assert.notNull(userId, "用户ID不能为空");
         Assert.notEmpty(ip, "用户IP不能为空");
 
-        IPEntity regionEntity = IPUtils.getRegionEntity(ip);
-
         User updateUser = new User();
         updateUser.setId(userId);
         updateUser.setLastLoginTime(new Date());
         updateUser.setLastLoginIp(ip);
-        updateUser.setLastLoginLocation(regionEntity.getRegion());
         updateById(updateUser);
     }
 
@@ -176,6 +171,5 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User>
     }
 
 }
-
 
 

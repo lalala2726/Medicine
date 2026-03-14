@@ -36,9 +36,6 @@ public class LoginLogVo {
     @Schema(description = "IP地址", example = "127.0.0.1")
     private String ipAddress;
 
-    @Schema(description = "IP归属地", example = "中国 北京")
-    private String ipRegion;
-
     @Schema(description = "User-Agent")
     private String userAgent;
 

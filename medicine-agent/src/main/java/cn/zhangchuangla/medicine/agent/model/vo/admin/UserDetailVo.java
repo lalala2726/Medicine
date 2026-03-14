@@ -93,10 +93,6 @@ public class UserDetailVo {
         @FieldDescription(description = "最后登录IP")
         private String lastLoginIp;
 
-        @Schema(description = "最后登录位置")
-        @FieldDescription(description = "最后登录位置")
-        private String lastLoginLocation;
-
         @Schema(description = "用户状态")
         @FieldDescription(description = "用户状态")
         @AgentCodeLabel(dictKey = AgentCodeLabelRegistry.AGENT_USER_STATUS)
