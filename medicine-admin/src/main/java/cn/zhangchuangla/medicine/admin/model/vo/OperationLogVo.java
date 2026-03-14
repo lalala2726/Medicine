@@ -39,9 +39,6 @@ public class OperationLogVo {
     @Schema(description = "请求IP", example = "127.0.0.1")
     private String ip;
 
-    @Schema(description = "IP位置", example = "中国 北京")
-    private String ipLocation;
-
     @Schema(description = "User-Agent")
     private String userAgent;
 

@@ -1,6 +1,7 @@
 package cn.zhangchuangla.medicine.admin.integration;
 
 import cn.zhangchuangla.medicine.admin.config.KnowledgeBaseAiProperties;
+import cn.zhangchuangla.medicine.admin.support.KnowledgeBaseEmbeddingDimSupport;
 import cn.zhangchuangla.medicine.common.core.exception.ParamException;
 import cn.zhangchuangla.medicine.common.core.exception.ServiceException;
 import cn.zhangchuangla.medicine.common.core.utils.JSONUtils;
@@ -22,14 +23,14 @@ import static org.mockito.Mockito.*;
 class MedicineAgentClientTests {
 
     @Test
-    void createKnowledgeBase_WhenEmbeddingDimNotPowerOfTwo_ShouldThrowParamException() {
+    void createKnowledgeBase_WhenEmbeddingDimNotInSupportedSet_ShouldThrowParamException() {
         SystemAuthRequestClient requestClient = mock(SystemAuthRequestClient.class);
         MedicineAgentClient client = newClient("http://localhost:8000", requestClient);
 
         ParamException exception = assertThrows(ParamException.class,
                 () -> client.createKnowledgeBase("kb_123", 1000, "desc"));
 
-        assertEquals("向量维度必须是2的幂", exception.getMessage());
+        assertEquals(KnowledgeBaseEmbeddingDimSupport.SUPPORTED_DIM_MESSAGE, exception.getMessage());
         verify(requestClient, never()).post(any(ClientRequest.class));
     }
 
@@ -149,6 +150,36 @@ class MedicineAgentClientTests {
         when(requestClient.post(any(ClientRequest.class))).thenThrow(new HttpClientException("network error"));
 
         assertThrows(ServiceException.class, () -> client.releaseKnowledgeBase("kb_123"));
+    }
+
+    @Test
+    void deleteKnowledgeBase_ShouldSendCorrectDeleteRequest() {
+        SystemAuthRequestClient requestClient = mock(SystemAuthRequestClient.class);
+        MedicineAgentClient client = newClient("http://localhost:8000", requestClient);
+        ArgumentCaptor<ClientRequest> requestCaptor = ArgumentCaptor.forClass(ClientRequest.class);
+        when(requestClient.execute(requestCaptor.capture(), eq(String.class)))
+                .thenReturn(httpOk("{\"code\":200,\"message\":\"删除成功\",\"data\":{\"knowledge_name\":\"kb_123\"}}"));
+
+        client.deleteKnowledgeBase("kb_123");
+
+        ClientRequest request = requestCaptor.getValue();
+        assertEquals(HttpMethod.DELETE, request.getMethod());
+        assertEquals("http://localhost:8000/knowledge_base", request.getUrl().toString());
+        JsonObject bodyJson = JSONUtils.parseObject(request.getBody());
+        assertEquals("kb_123", bodyJson.get("knowledge_name").getAsString());
+        assertNull(request.getHeaders() == null ? null : request.getHeaders().get("Authorization"));
+    }
+
+    @Test
+    void deleteKnowledgeBase_WhenBodyCodeFailed_ShouldThrowException() {
+        SystemAuthRequestClient requestClient = mock(SystemAuthRequestClient.class);
+        MedicineAgentClient client = newClient("http://localhost:8000", requestClient);
+        when(requestClient.execute(any(ClientRequest.class), eq(String.class)))
+                .thenReturn(httpOk("{\"code\":404,\"message\":\"knowledge 不存在\"}"));
+
+        ServiceException exception = assertThrows(ServiceException.class,
+                () -> client.deleteKnowledgeBase("kb_123"));
+        assertEquals("调用Agent服务删除知识库失败: knowledge 不存在", exception.getMessage());
     }
 
     @Test

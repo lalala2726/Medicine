@@ -36,7 +36,6 @@ public class OperationLogConsumer {
                 .userId(message.getUserId())
                 .username(message.getUsername())
                 .ip(message.getIp())
-                .ipLocation(message.getIpLocation())
                 .userAgent(message.getUserAgent())
                 .requestParams(message.getRequestParams())
                 .responseResult(message.getResponseResult())

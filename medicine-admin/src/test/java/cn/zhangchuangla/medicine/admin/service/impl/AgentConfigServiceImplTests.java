@@ -47,6 +47,7 @@ class AgentConfigServiceImplTests {
         AgentConfigServiceImpl service = newService();
         AgentAllConfigCache cache = new AgentAllConfigCache();
         KnowledgeBaseAgentConfig knowledgeBase = new KnowledgeBaseAgentConfig();
+        knowledgeBase.setEnabled(true);
         knowledgeBase.setKnowledgeNames(List.of("common_medicine_kb", "otc_guide_kb"));
         knowledgeBase.setEmbeddingDim(1024);
         knowledgeBase.setTopK(10);
@@ -62,6 +63,7 @@ class AgentConfigServiceImplTests {
 
         var result = service.getKnowledgeBaseConfig();
 
+        assertEquals(Boolean.TRUE, result.getEnabled());
         assertEquals(List.of("common_medicine_kb", "otc_guide_kb"), result.getKnowledgeNames());
         assertEquals(1024, result.getEmbeddingDim());
         assertEquals(10, result.getTopK());
@@ -112,6 +114,7 @@ class AgentConfigServiceImplTests {
         );
 
         KnowledgeBaseAgentConfigRequest request = new KnowledgeBaseAgentConfigRequest();
+        request.setEnabled(true);
         request.setKnowledgeNames(List.of("common_medicine_kb", "otc_guide_kb"));
         request.setEmbeddingDim(1024);
         request.setEmbeddingModel(buildSelection("text-embedding-3-large", false, 2048, 0.0));
@@ -125,6 +128,7 @@ class AgentConfigServiceImplTests {
         ArgumentCaptor<AgentAllConfigCache> cacheCaptor = ArgumentCaptor.forClass(AgentAllConfigCache.class);
         verify(agentConfigRuntimeSyncService).saveCache(cacheCaptor.capture(), any(), any());
         KnowledgeBaseAgentConfig saved = cacheCaptor.getValue().getKnowledgeBase();
+        assertEquals(Boolean.TRUE, saved.getEnabled());
         assertEquals(List.of("common_medicine_kb", "otc_guide_kb"), saved.getKnowledgeNames());
         assertEquals(10, saved.getTopK());
         assertEquals(Boolean.TRUE, saved.getRankingEnabled());
@@ -144,6 +148,7 @@ class AgentConfigServiceImplTests {
         );
 
         KnowledgeBaseAgentConfigRequest request = new KnowledgeBaseAgentConfigRequest();
+        request.setEnabled(true);
         request.setKnowledgeNames(List.of("common_medicine_kb"));
         request.setEmbeddingDim(1024);
         request.setEmbeddingModel(buildSelection("text-embedding-3-large", false, 2048, 0.0));
@@ -172,6 +177,7 @@ class AgentConfigServiceImplTests {
         );
 
         KnowledgeBaseAgentConfigRequest request = new KnowledgeBaseAgentConfigRequest();
+        request.setEnabled(true);
         request.setKnowledgeNames(List.of("common_medicine_kb", "otc_guide_kb"));
         request.setEmbeddingDim(1024);
         request.setEmbeddingModel(buildSelection("text-embedding-3-large", false, 2048, 0.0));
@@ -193,6 +199,7 @@ class AgentConfigServiceImplTests {
                 .toList();
 
         KnowledgeBaseAgentConfigRequest request = new KnowledgeBaseAgentConfigRequest();
+        request.setEnabled(true);
         request.setKnowledgeNames(knowledgeNames);
         request.setEmbeddingDim(1024);
         request.setEmbeddingModel(buildSelection("text-embedding-3-large", false, 2048, 0.0));
@@ -217,6 +224,7 @@ class AgentConfigServiceImplTests {
         );
 
         KnowledgeBaseAgentConfigRequest request = new KnowledgeBaseAgentConfigRequest();
+        request.setEnabled(true);
         request.setKnowledgeNames(List.of("common_medicine_kb"));
         request.setEmbeddingDim(1024);
         request.setEmbeddingModel(buildSelection("text-embedding-3-large", false, 2048, 0.0));
@@ -229,6 +237,38 @@ class AgentConfigServiceImplTests {
         ArgumentCaptor<AgentAllConfigCache> cacheCaptor = ArgumentCaptor.forClass(AgentAllConfigCache.class);
         verify(agentConfigRuntimeSyncService).saveCache(cacheCaptor.capture(), any(), any());
         assertNull(cacheCaptor.getValue().getKnowledgeBase().getTopK());
+    }
+
+    @Test
+    void saveKnowledgeBaseConfig_WhenDisabled_ShouldPersistDisabledStateWithoutProviderValidation() {
+        AgentConfigServiceImpl service = newService();
+        AgentAllConfigCache cache = new AgentAllConfigCache();
+        KnowledgeBaseAgentConfig existing = new KnowledgeBaseAgentConfig();
+        existing.setEnabled(true);
+        existing.setKnowledgeNames(List.of("common_medicine_kb"));
+        existing.setEmbeddingDim(1024);
+        existing.setEmbeddingModel("text-embedding-3-large");
+        existing.setTopK(10);
+        existing.setRankingEnabled(true);
+        existing.setRankingModel("gpt-4.1-mini");
+        cache.setKnowledgeBase(existing);
+        when(agentConfigRuntimeSyncService.readCache()).thenReturn(cache);
+        when(llmProviderService.lambdaQuery()).thenReturn(mockProviderWrapper(List.of()));
+
+        KnowledgeBaseAgentConfigRequest request = new KnowledgeBaseAgentConfigRequest();
+        request.setEnabled(false);
+
+        boolean result = service.saveKnowledgeBaseConfig(request);
+
+        assertTrue(result);
+        ArgumentCaptor<AgentAllConfigCache> cacheCaptor = ArgumentCaptor.forClass(AgentAllConfigCache.class);
+        verify(agentConfigRuntimeSyncService).saveCache(cacheCaptor.capture(), isNull(), any());
+        KnowledgeBaseAgentConfig saved = cacheCaptor.getValue().getKnowledgeBase();
+        assertEquals(Boolean.FALSE, saved.getEnabled());
+        assertEquals(List.of("common_medicine_kb"), saved.getKnowledgeNames());
+        assertEquals("text-embedding-3-large", saved.getEmbeddingModel());
+        verify(kbBaseService, never()).listEnabledKnowledgeBasesByNames(any());
+        verify(llmProviderModelService, never()).lambdaQuery();
     }
 
     @Test

@@ -219,6 +219,17 @@ public class AgentConfigRuntimeSyncService {
     }
 
     /**
+     * 切换启用 provider 后清空业务 Agent 模型配置，但保留独立的语音配置。
+     *
+     * @param operator 操作人
+     */
+    public void clearAgentConfigsForProviderSwitch(String operator) {
+        AgentAllConfigCache cache = readCache();
+        cache.setAgentConfigs(new AgentConfigsCache());
+        saveCache(cache, getEnabledProviderOrNull(), operator);
+    }
+
+    /**
      * 当前启用 provider 的模型快照发生整体变化后刷新缓存。
      *
      * @param provider 当前 provider
@@ -615,11 +626,21 @@ public class AgentConfigRuntimeSyncService {
         }
         AgentAllConfigCache cache = readCache();
         KnowledgeBaseAgentConfig knowledgeBase = cache.getKnowledgeBase();
-        return knowledgeBase != null
+        return isKnowledgeBaseEnabled(knowledgeBase)
                 && knowledgeBase.getKnowledgeNames() != null
                 && knowledgeBase.getKnowledgeNames().stream()
                 .filter(StringUtils::hasText)
                 .anyMatch(knowledgeName::equals);
+    }
+
+    private boolean isKnowledgeBaseEnabled(KnowledgeBaseAgentConfig knowledgeBase) {
+        if (knowledgeBase == null) {
+            return false;
+        }
+        if (knowledgeBase.getEnabled() != null) {
+            return knowledgeBase.getEnabled();
+        }
+        return knowledgeBase.getKnowledgeNames() != null && !knowledgeBase.getKnowledgeNames().isEmpty();
     }
 
     private boolean isProviderEnabled(LlmProvider provider) {

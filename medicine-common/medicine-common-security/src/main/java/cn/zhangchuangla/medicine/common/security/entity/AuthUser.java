@@ -104,11 +104,6 @@ public class AuthUser implements Serializable {
     private String lastLoginIp;
 
     /**
-     * 上次登陆地点
-     */
-    private String lastLoginLocation;
-
-    /**
      * 账号状态，0-正常，非0表示不可用
      */
     private Integer status;

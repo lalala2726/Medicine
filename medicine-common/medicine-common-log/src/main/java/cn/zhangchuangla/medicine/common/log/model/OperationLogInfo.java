@@ -51,11 +51,6 @@ public class OperationLogInfo {
     private String ip;
 
     /**
-     * IP对应位置。
-     */
-    private String ipLocation;
-
-    /**
      * User-Agent。
      */
     private String userAgent;

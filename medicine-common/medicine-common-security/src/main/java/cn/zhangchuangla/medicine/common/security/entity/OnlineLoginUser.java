@@ -66,11 +66,6 @@ public class OnlineLoginUser implements Serializable {
     private String ip;
 
     /**
-     * 登录地点
-     */
-    private String location;
-
-    /**
      * 创建时间（登录写入 Redis 时间）
      */
     private Long createTime;

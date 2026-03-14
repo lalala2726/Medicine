@@ -81,7 +81,6 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User>
         securityInfo.setRegisterTime(user.getCreateTime());
         securityInfo.setLastLoginTime(user.getLastLoginTime());
         securityInfo.setLastLoginIp(user.getLastLoginIp());
-        securityInfo.setLastLoginLocation(user.getLastLoginLocation());
         securityInfo.setStatus(user.getStatus());
 
         UserDetailDto detail = new UserDetailDto();

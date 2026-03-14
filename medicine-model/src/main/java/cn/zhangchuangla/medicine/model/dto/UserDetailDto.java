@@ -116,11 +116,6 @@ public class UserDetailDto implements Serializable {
         private String lastLoginIp;
 
         /**
-         * 最后登录位置
-         */
-        private String lastLoginLocation;
-
-        /**
          * 用户状态（0-正常，非0-异常）
          */
         private Integer status;

@@ -3,6 +3,7 @@ package cn.zhangchuangla.medicine.admin.service.impl;
 import cn.zhangchuangla.medicine.admin.model.request.*;
 import cn.zhangchuangla.medicine.admin.model.vo.*;
 import cn.zhangchuangla.medicine.admin.service.*;
+import cn.zhangchuangla.medicine.admin.support.KnowledgeBaseEmbeddingDimSupport;
 import cn.zhangchuangla.medicine.common.core.enums.ResponseCode;
 import cn.zhangchuangla.medicine.common.core.exception.ServiceException;
 import cn.zhangchuangla.medicine.common.core.utils.Assert;
@@ -17,11 +18,9 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
 
-import java.util.ArrayList;
-import java.util.LinkedHashSet;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.function.Function;
+import java.util.stream.Collectors;
 
 /**
  * Agent 配置服务实现。
@@ -38,8 +37,6 @@ public class AgentConfigServiceImpl implements AgentConfigService, BaseService {
     private static final int KNOWLEDGE_BASE_TOP_K_MAX = 100;
     private static final int MODEL_STATUS_ENABLED = 0;
     private static final int CAPABILITY_ENABLED = 1;
-    private static final int EMBEDDING_DIM_MIN = 128;
-    private static final int EMBEDDING_DIM_MAX = 8192;
     private static final int ADMIN_ASSISTANT_MAX_TOKENS_MIN = 100;
     private static final int ADMIN_ASSISTANT_MAX_TOKENS_MAX = 10000;
     private static final int IMAGE_RECOGNITION_MAX_TOKENS_MIN = 512;
@@ -99,9 +96,11 @@ public class AgentConfigServiceImpl implements AgentConfigService, BaseService {
         AgentAllConfigCache cache = agentConfigRuntimeSyncService.readCache();
         KnowledgeBaseAgentConfig config = cache.getKnowledgeBase();
         if (config == null) {
+            vo.setEnabled(Boolean.FALSE);
             return vo;
         }
         LlmProvider provider = getEnabledProviderOrNull();
+        vo.setEnabled(resolveKnowledgeBaseEnabled(config));
         vo.setKnowledgeNames(copyKnowledgeNames(config.getKnowledgeNames()));
         vo.setEmbeddingDim(config.getEmbeddingDim());
         vo.setTopK(config.getTopK());
@@ -124,30 +123,12 @@ public class AgentConfigServiceImpl implements AgentConfigService, BaseService {
     @Override
     public boolean saveKnowledgeBaseConfig(KnowledgeBaseAgentConfigRequest request) {
         Assert.notNull(request, "知识库Agent配置不能为空");
-        validateEmbeddingDim(request.getEmbeddingDim());
-
-        List<String> knowledgeNames = normalizeKnowledgeNames(request.getKnowledgeNames());
-        Integer topK = normalizeKnowledgeBaseTopK(request.getTopK());
-        LlmProvider provider = getRequiredEnabledProvider();
-        List<KbBase> knowledgeBases = loadEnabledKnowledgeBases(knowledgeNames);
-        KbBase baseline = knowledgeBases.getFirst();
-        KnowledgeBaseAgentConfig config = new KnowledgeBaseAgentConfig();
-        AgentModelSlotConfig embeddingModel = resolveRequiredSlotConfig(provider, request.getEmbeddingModel(),
-                LlmModelTypeConstants.EMBEDDING, false, EMBEDDING_MODEL_MISSING_MESSAGE);
-        validateKnowledgeBasesAgainstBaseline(knowledgeBases, baseline);
-        validateKnowledgeBaseCommonConfig(embeddingModel, request.getEmbeddingDim(), baseline);
-        String rankingModel = resolveKnowledgeBaseRankingModel(provider, request);
-
-        config.setKnowledgeNames(knowledgeNames);
-        config.setEmbeddingDim(request.getEmbeddingDim());
-        config.setTopK(topK);
-        config.setEmbeddingModel(embeddingModel.getModelName());
-        config.setRankingEnabled(Boolean.TRUE.equals(request.getRankingEnabled()));
-        config.setRankingModel(rankingModel);
-
         AgentAllConfigCache cache = agentConfigRuntimeSyncService.readCache();
+        boolean enabled = Boolean.TRUE.equals(request.getEnabled());
+        KnowledgeBaseAgentConfig config = buildKnowledgeBaseConfig(cache.getKnowledgeBase(), request, enabled);
         cache.setKnowledgeBase(config);
-        agentConfigRuntimeSyncService.saveCache(cache, provider, currentOperator());
+        agentConfigRuntimeSyncService.saveCache(cache, enabled ? getRequiredEnabledProvider() : getEnabledProviderOrNull(),
+                currentOperator());
         return true;
     }
 
@@ -396,7 +377,9 @@ public class AgentConfigServiceImpl implements AgentConfigService, BaseService {
     /**
      * 将运行时槽位配置转换为编辑态视图对象。
      *
+     * @param provider   当前启用的模型提供商
      * @param slotConfig 运行时槽位配置
+     * @param modelType  模型类型
      * @return 编辑态视图对象
      */
     private AgentModelSelectionVo toAgentModelSelectionVo(LlmProvider provider,
@@ -414,6 +397,14 @@ public class AgentConfigServiceImpl implements AgentConfigService, BaseService {
         return vo;
     }
 
+    /**
+     * 将知识库中仅保存模型名称的配置转换为编辑态视图对象。
+     *
+     * @param provider  当前启用的模型提供商
+     * @param modelName 模型名称
+     * @param modelType 模型类型
+     * @return 编辑态视图对象；模型名称为空时返回 null
+     */
     private AgentModelSelectionVo toKnowledgeBaseModelSelectionVo(LlmProvider provider,
                                                                   String modelName,
                                                                   String modelType) {
@@ -427,6 +418,16 @@ public class AgentConfigServiceImpl implements AgentConfigService, BaseService {
         return vo;
     }
 
+    /**
+     * 为模型选择视图对象补充能力信息。
+     * <p>
+     * 根据提供商、模型名称和模型类型查询模型元数据，并回填深度思考与图片理解能力标记。
+     *
+     * @param vo        待回填能力信息的视图对象
+     * @param provider  当前启用的模型提供商
+     * @param modelName 模型名称
+     * @param modelType 模型类型
+     */
     private void fillModelCapabilities(AgentModelSelectionVo vo, LlmProvider provider, String modelName, String modelType) {
         if (provider == null || !StringUtils.hasText(modelName)) {
             return;
@@ -511,6 +512,12 @@ public class AgentConfigServiceImpl implements AgentConfigService, BaseService {
         return vo;
     }
 
+    /**
+     * 将知识库实体转换为下拉选项视图对象。
+     *
+     * @param kbBase 知识库实体
+     * @return 知识库下拉选项视图对象
+     */
     private KnowledgeBaseOptionVo toKnowledgeBaseOptionVo(KbBase kbBase) {
         KnowledgeBaseOptionVo vo = new KnowledgeBaseOptionVo();
         vo.setKnowledgeName(kbBase.getKnowledgeName());
@@ -539,6 +546,15 @@ public class AgentConfigServiceImpl implements AgentConfigService, BaseService {
         return resolveSlotConfig(provider, request, modelType, visionRequired, modelMissingMessageForm);
     }
 
+    /**
+     * 解析知识库排序模型名称。
+     * <p>
+     * 当排序关闭时校验不能传入排序模型；当排序开启时校验排序模型必填且必须是可用聊天模型。
+     *
+     * @param provider 启用的模型提供商
+     * @param request  知识库配置请求
+     * @return 排序模型名称；关闭排序时返回 null
+     */
     private String resolveKnowledgeBaseRankingModel(LlmProvider provider,
                                                     KnowledgeBaseAgentConfigRequest request) {
         boolean rankingEnabled = Boolean.TRUE.equals(request.getRankingEnabled());
@@ -573,6 +589,95 @@ public class AgentConfigServiceImpl implements AgentConfigService, BaseService {
         validateReasoningCapability(request, providerModel);
         validateVisionCapability(modelName, providerModel, visionRequired);
         return buildSlotConfig(providerModel, request);
+    }
+
+    /**
+     * 构建知识库运行时配置。
+     * <p>
+     * 启用状态下会完成知识库、向量模型、向量维度和排序模型的完整校验；禁用状态下转为保留历史配置的轻量更新。
+     *
+     * @param existingConfig 现有知识库运行时配置
+     * @param request        知识库编辑态请求
+     * @param enabled        是否启用知识库能力
+     * @return 最终写入缓存的知识库运行时配置
+     */
+    private KnowledgeBaseAgentConfig buildKnowledgeBaseConfig(KnowledgeBaseAgentConfig existingConfig,
+                                                              KnowledgeBaseAgentConfigRequest request,
+                                                              boolean enabled) {
+        if (!enabled) {
+            return buildDisabledKnowledgeBaseConfig(existingConfig, request);
+        }
+
+        validateEmbeddingDim(request.getEmbeddingDim());
+
+        List<String> knowledgeNames = normalizeKnowledgeNames(request.getKnowledgeNames());
+        Integer topK = normalizeKnowledgeBaseTopK(request.getTopK());
+        LlmProvider provider = getRequiredEnabledProvider();
+        List<KbBase> knowledgeBases = loadEnabledKnowledgeBases(knowledgeNames);
+        KbBase baseline = knowledgeBases.getFirst();
+        AgentModelSlotConfig embeddingModel = resolveRequiredSlotConfig(provider, request.getEmbeddingModel(),
+                LlmModelTypeConstants.EMBEDDING, false, EMBEDDING_MODEL_MISSING_MESSAGE);
+        validateKnowledgeBasesAgainstBaseline(knowledgeBases, baseline);
+        validateKnowledgeBaseCommonConfig(embeddingModel, request.getEmbeddingDim(), baseline);
+        String rankingModel = resolveKnowledgeBaseRankingModel(provider, request);
+
+        KnowledgeBaseAgentConfig config = new KnowledgeBaseAgentConfig();
+        config.setEnabled(Boolean.TRUE);
+        config.setKnowledgeNames(knowledgeNames);
+        config.setEmbeddingDim(request.getEmbeddingDim());
+        config.setTopK(topK);
+        config.setEmbeddingModel(embeddingModel.getModelName());
+        config.setRankingEnabled(Boolean.TRUE.equals(request.getRankingEnabled()));
+        config.setRankingModel(rankingModel);
+        return config;
+    }
+
+    /**
+     * 构建禁用状态下的知识库运行时配置。
+     * <p>
+     * 该方法以现有配置为基准复制出新对象，并按请求覆盖允许更新的字段，同时强制将 enabled 置为 false。
+     *
+     * @param existingConfig 现有知识库运行时配置
+     * @param request        知识库编辑态请求
+     * @return 禁用状态下的知识库运行时配置
+     */
+    private KnowledgeBaseAgentConfig buildDisabledKnowledgeBaseConfig(KnowledgeBaseAgentConfig existingConfig,
+                                                                      KnowledgeBaseAgentConfigRequest request) {
+        KnowledgeBaseAgentConfig config = copyKnowledgeBaseConfig(existingConfig);
+        config.setEnabled(Boolean.FALSE);
+        if (request.getKnowledgeNames() != null) {
+            config.setKnowledgeNames(copyKnowledgeNames(request.getKnowledgeNames()));
+        }
+        if (request.getEmbeddingDim() != null || request.getEmbeddingModel() != null || request.getTopK() != null
+                || request.getRankingEnabled() != null || request.getRankingModel() != null) {
+            config.setEmbeddingDim(request.getEmbeddingDim());
+            config.setTopK(normalizeKnowledgeBaseTopK(request.getTopK()));
+            config.setEmbeddingModel(normalizeOptionalModelName(request.getEmbeddingModel()));
+            config.setRankingEnabled(request.getRankingEnabled());
+            config.setRankingModel(normalizeOptionalModelName(request.getRankingModel()));
+        }
+        return config;
+    }
+
+    /**
+     * 拷贝知识库运行时配置，避免直接修改原对象。
+     *
+     * @param existingConfig 原始知识库运行时配置
+     * @return 拷贝后的知识库运行时配置；原配置为空时返回空对象
+     */
+    private KnowledgeBaseAgentConfig copyKnowledgeBaseConfig(KnowledgeBaseAgentConfig existingConfig) {
+        KnowledgeBaseAgentConfig config = new KnowledgeBaseAgentConfig();
+        if (existingConfig == null) {
+            return config;
+        }
+        config.setEnabled(existingConfig.getEnabled());
+        config.setKnowledgeNames(copyKnowledgeNames(existingConfig.getKnowledgeNames()));
+        config.setEmbeddingDim(existingConfig.getEmbeddingDim());
+        config.setTopK(existingConfig.getTopK());
+        config.setEmbeddingModel(existingConfig.getEmbeddingModel());
+        config.setRankingEnabled(existingConfig.getRankingEnabled());
+        config.setRankingModel(existingConfig.getRankingModel());
+        return config;
     }
 
     /**
@@ -642,7 +747,6 @@ public class AgentConfigServiceImpl implements AgentConfigService, BaseService {
     /**
      * 构建运行时槽位配置。
      *
-     * @param provider      启用提供商
      * @param providerModel 提供商模型实体
      * @param request       编辑态请求
      * @return 运行时槽位配置
@@ -657,6 +761,12 @@ public class AgentConfigServiceImpl implements AgentConfigService, BaseService {
         return slotConfig;
     }
 
+    /**
+     * 归一化知识库名称列表，并校验非空、数量上限与重复项。
+     *
+     * @param knowledgeNames 原始知识库名称列表
+     * @return 归一化后的知识库名称列表
+     */
     private List<String> normalizeKnowledgeNames(List<String> knowledgeNames) {
         Assert.notEmpty(knowledgeNames, "知识库名称列表不能为空");
         Assert.isParamTrue(knowledgeNames.size() <= KNOWLEDGE_BASE_MAX_COUNT, "知识库最多支持5个");
@@ -673,10 +783,16 @@ public class AgentConfigServiceImpl implements AgentConfigService, BaseService {
         return normalizedNames;
     }
 
+    /**
+     * 按名称加载启用中的知识库，并保持与请求一致的顺序。
+     *
+     * @param knowledgeNames 知识库名称列表
+     * @return 启用中的知识库列表
+     */
     private List<KbBase> loadEnabledKnowledgeBases(List<String> knowledgeNames) {
         List<KbBase> knowledgeBases = kbBaseService.listEnabledKnowledgeBasesByNames(knowledgeNames);
         Map<String, KbBase> knowledgeBaseMap = knowledgeBases.stream()
-                .collect(java.util.stream.Collectors.toMap(KbBase::getKnowledgeName, Function.identity()));
+                .collect(Collectors.toMap(KbBase::getKnowledgeName, Function.identity()));
         List<KbBase> orderedKnowledgeBases = new ArrayList<>(knowledgeNames.size());
         for (String knowledgeName : knowledgeNames) {
             KbBase kbBase = knowledgeBaseMap.get(knowledgeName);
@@ -689,42 +805,62 @@ public class AgentConfigServiceImpl implements AgentConfigService, BaseService {
         return orderedKnowledgeBases;
     }
 
+    /**
+     * 校验多个知识库的公共向量配置是否与基准知识库一致。
+     *
+     * @param knowledgeBases 待校验的知识库列表
+     * @param baseline       作为基准的第一个知识库
+     */
     private void validateKnowledgeBasesAgainstBaseline(List<KbBase> knowledgeBases, KbBase baseline) {
         for (int index = 1; index < knowledgeBases.size(); index++) {
             KbBase kbBase = knowledgeBases.get(index);
-            if (!java.util.Objects.equals(normalizeNullableText(kbBase.getEmbeddingModel()),
+            if (!Objects.equals(normalizeNullableText(kbBase.getEmbeddingModel()),
                     normalizeNullableText(baseline.getEmbeddingModel()))) {
                 throw new ServiceException(ResponseCode.OPERATION_ERROR,
                         KNOWLEDGE_BASE_MODEL_MISMATCH_MESSAGE.formatted(kbBase.getKnowledgeName()));
             }
-            if (!java.util.Objects.equals(kbBase.getEmbeddingDim(), baseline.getEmbeddingDim())) {
+            if (!Objects.equals(kbBase.getEmbeddingDim(), baseline.getEmbeddingDim())) {
                 throw new ServiceException(ResponseCode.OPERATION_ERROR,
                         KNOWLEDGE_BASE_DIM_MISMATCH_MESSAGE.formatted(kbBase.getKnowledgeName()));
             }
         }
     }
 
+    /**
+     * 校验请求中的知识库公共配置是否与基准知识库一致。
+     *
+     * @param embeddingModel 请求中的向量模型配置
+     * @param embeddingDim   请求中的向量维度
+     * @param baseline       作为基准的知识库
+     */
     private void validateKnowledgeBaseCommonConfig(AgentModelSlotConfig embeddingModel, Integer embeddingDim, KbBase baseline) {
-        if (!java.util.Objects.equals(normalizeNullableText(baseline.getEmbeddingModel()), embeddingModel.getModelName())) {
+        if (!Objects.equals(normalizeNullableText(baseline.getEmbeddingModel()), embeddingModel.getModelName())) {
             throw new ServiceException(ResponseCode.OPERATION_ERROR, KNOWLEDGE_BASE_CONFIG_MODEL_MISMATCH_MESSAGE);
         }
-        if (!java.util.Objects.equals(baseline.getEmbeddingDim(), embeddingDim)) {
+        if (!Objects.equals(baseline.getEmbeddingDim(), embeddingDim)) {
             throw new ServiceException(ResponseCode.OPERATION_ERROR, KNOWLEDGE_BASE_CONFIG_DIM_MISMATCH_MESSAGE);
         }
     }
 
     /**
-     * 校验知识库向量维度范围与 2 的次方要求。
+     * 校验知识库向量维度是否属于支持集合。
      *
      * @param embeddingDim 向量维度
      */
     private void validateEmbeddingDim(Integer embeddingDim) {
         Assert.notNull(embeddingDim, "向量维度不能为空");
-        Assert.isParamTrue(embeddingDim >= EMBEDDING_DIM_MIN, "向量维度不能小于128");
-        Assert.isParamTrue(embeddingDim <= EMBEDDING_DIM_MAX, "向量维度不能大于8192");
-        Assert.isParamTrue(isPowerOfTwo(embeddingDim), "向量维度必须是2的次方");
+        Assert.isParamTrue(KnowledgeBaseEmbeddingDimSupport.isSupported(embeddingDim),
+                KnowledgeBaseEmbeddingDimSupport.SUPPORTED_DIM_MESSAGE);
     }
 
+    /**
+     * 归一化知识库召回条数。
+     * <p>
+     * 当值为 null 或 0 时视为未配置；其余值会校验范围后原样返回。
+     *
+     * @param topK 原始召回条数
+     * @return 归一化后的召回条数；未配置时返回 null
+     */
     private Integer normalizeKnowledgeBaseTopK(Integer topK) {
         if (topK == null || topK == 0) {
             return null;
@@ -834,15 +970,33 @@ public class AgentConfigServiceImpl implements AgentConfigService, BaseService {
     }
 
     /**
-     * 判断向量维度是否为 2 的次方。
+     * 解析知识库配置的启用状态。
+     * <p>
+     * 优先使用显式 enabled 值；未显式设置时，根据是否存在任意知识库配置项推断是否视为启用。
      *
-     * @param number 目标数值
-     * @return true 表示是 2 的次方
+     * @param config 知识库运行时配置
+     * @return 是否启用知识库能力
      */
-    private boolean isPowerOfTwo(int number) {
-        return number > 0 && (number & (number - 1)) == 0;
+    private boolean resolveKnowledgeBaseEnabled(KnowledgeBaseAgentConfig config) {
+        if (config.getEnabled() != null) {
+            return config.getEnabled();
+        }
+        return !copyKnowledgeNames(config.getKnowledgeNames()).isEmpty()
+                || config.getEmbeddingDim() != null
+                || config.getTopK() != null
+                || StringUtils.hasText(config.getEmbeddingModel())
+                || config.getRankingEnabled() != null
+                || StringUtils.hasText(config.getRankingModel());
     }
 
+    /**
+     * 解析知识库排序能力的启用状态。
+     * <p>
+     * 优先使用显式 rankingEnabled 值；未显式设置时，根据是否配置了排序模型推断。
+     *
+     * @param config 知识库运行时配置
+     * @return 是否启用排序能力
+     */
     private boolean resolveKnowledgeBaseRankingEnabled(KnowledgeBaseAgentConfig config) {
         if (config.getRankingEnabled() != null) {
             return config.getRankingEnabled();
@@ -850,6 +1004,12 @@ public class AgentConfigServiceImpl implements AgentConfigService, BaseService {
         return StringUtils.hasText(config.getRankingModel());
     }
 
+    /**
+     * 复制知识库名称列表，避免外部修改内部集合。
+     *
+     * @param knowledgeNames 原始知识库名称列表
+     * @return 不可变的知识库名称列表；为空时返回空列表
+     */
     private List<String> copyKnowledgeNames(List<String> knowledgeNames) {
         if (knowledgeNames == null || knowledgeNames.isEmpty()) {
             return List.of();
@@ -946,8 +1106,27 @@ public class AgentConfigServiceImpl implements AgentConfigService, BaseService {
         return provider;
     }
 
+    /**
+     * 判断请求中是否已经选择了模型。
+     *
+     * @param request 模型选择请求
+     * @return true 表示已选择模型名称
+     */
     private boolean hasSelectedModel(AgentModelSelectionRequest request) {
         return request != null && StringUtils.hasText(normalizeNullableText(request.getModelName()));
+    }
+
+    /**
+     * 归一化可选模型名称。
+     *
+     * @param request 模型选择请求
+     * @return 归一化后的模型名称；未选择时返回 null
+     */
+    private String normalizeOptionalModelName(AgentModelSelectionRequest request) {
+        if (request == null) {
+            return null;
+        }
+        return normalizeNullableText(request.getModelName());
     }
 
     /**

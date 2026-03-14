@@ -8,7 +8,7 @@ import cn.zhangchuangla.medicine.common.core.constants.RolesConstant;
 import cn.zhangchuangla.medicine.common.core.enums.ResponseCode;
 import cn.zhangchuangla.medicine.common.core.exception.LoginException;
 import cn.zhangchuangla.medicine.common.core.utils.Assert;
-import cn.zhangchuangla.medicine.common.ip.utils.IPUtils;
+import cn.zhangchuangla.medicine.common.core.utils.IpAddressUtils;
 import cn.zhangchuangla.medicine.common.security.base.BaseService;
 import cn.zhangchuangla.medicine.common.security.entity.AuthTokenVo;
 import cn.zhangchuangla.medicine.common.security.entity.OnlineLoginUser;
@@ -187,11 +187,8 @@ public class AuthServiceImpl implements AuthService, BaseService {
 
             HttpServletRequest request = resolveRequest();
             if (request != null) {
-                String ip = IPUtils.getIpAddress(request);
+                String ip = IpAddressUtils.getIpAddress(request);
                 message.setIpAddress(ip);
-                if (StringUtils.isNotBlank(ip)) {
-                    message.setIpRegion(IPUtils.getRegion(ip));
-                }
                 String userAgent = request.getHeader(USER_AGENT_HEADER);
                 message.setUserAgent(userAgent);
                 fillUserAgentInfo(message, userAgent);

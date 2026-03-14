@@ -62,11 +62,6 @@ public class OperationLogMessage implements Serializable {
     private String ip;
 
     /**
-     * IP对应位置。
-     */
-    private String ipLocation;
-
-    /**
      * User-Agent。
      */
     private String userAgent;

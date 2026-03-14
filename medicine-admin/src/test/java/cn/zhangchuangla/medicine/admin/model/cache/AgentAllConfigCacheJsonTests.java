@@ -44,6 +44,7 @@ class AgentAllConfigCacheJsonTests {
                 root.path("agentConfigs").path("knowledgeBase").path("embeddingModel").asText());
         assertEquals("common_medicine_kb",
                 root.path("agentConfigs").path("knowledgeBase").path("knowledgeNames").get(0).asText());
+        assertTrue(root.path("agentConfigs").path("knowledgeBase").path("enabled").asBoolean());
         assertEquals(10, root.path("agentConfigs").path("knowledgeBase").path("topK").asInt());
         assertTrue(root.path("agentConfigs").path("knowledgeBase").path("rankingEnabled").asBoolean());
         assertEquals("gpt-4.1-mini",
@@ -61,12 +62,12 @@ class AgentAllConfigCacheJsonTests {
 
         assertFalse(json.contains("\"providerId\""));
         assertFalse(json.contains("\"modelId\""));
-        assertFalse(json.contains("\"enabled\""));
         assertFalse(json.contains("\"supportReasoning\""));
         assertFalse(json.contains("\"supportVision\""));
         assertFalse(json.contains("\"modelType\""));
         assertFalse(root.path("agentConfigs").path("knowledgeBase").path("embeddingModel").isObject());
         assertFalse(root.path("agentConfigs").path("knowledgeBase").path("rankingModel").isObject());
+        assertFalse(root.path("agentConfigs").path("adminAssistant").path("chatModel").has("enabled"));
     }
 
     @Test
@@ -104,6 +105,7 @@ class AgentAllConfigCacheJsonTests {
 
     private KnowledgeBaseAgentConfig buildKnowledgeBaseConfig() {
         KnowledgeBaseAgentConfig config = new KnowledgeBaseAgentConfig();
+        config.setEnabled(true);
         config.setKnowledgeNames(java.util.List.of("common_medicine_kb", "otc_guide_kb"));
         config.setEmbeddingDim(1024);
         config.setTopK(10);

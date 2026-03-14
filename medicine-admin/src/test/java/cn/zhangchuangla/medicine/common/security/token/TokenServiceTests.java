@@ -96,6 +96,7 @@ class TokenServiceTests {
         assertNotNull(onlineLoginUser.getAccessTime());
         String sessionJson = JSONUtils.toJson(onlineLoginUser);
         assertFalse(sessionJson.contains("\"password\""));
+        assertFalse(sessionJson.contains("\"location\""));
     }
 
     @Test
@@ -148,6 +149,7 @@ class TokenServiceTests {
         assertNotNull(onlineLoginUser.getAccessTime());
         String sessionJson = JSONUtils.toJson(onlineLoginUser);
         assertFalse(sessionJson.contains("\"password\""));
+        assertFalse(sessionJson.contains("\"location\""));
 
         ArgumentCaptor<String> accessTokenCaptor = ArgumentCaptor.forClass(String.class);
         verify(redisTokenStore).mapRefreshTokenToAccessToken(eq("refresh-session-1"), accessTokenCaptor.capture());

@@ -35,7 +35,6 @@ public class LoginLogConsumer {
                 .failReason(message.getFailReason())
                 .loginType(message.getLoginType())
                 .ipAddress(message.getIpAddress())
-                .ipRegion(message.getIpRegion())
                 .userAgent(message.getUserAgent())
                 .deviceType(message.getDeviceType())
                 .os(message.getOs())

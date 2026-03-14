@@ -13,7 +13,6 @@
         <result property="failReason" column="fail_reason"/>
         <result property="loginType" column="login_type"/>
         <result property="ipAddress" column="ip_address"/>
-        <result property="ipRegion" column="ip_region"/>
         <result property="userAgent" column="user_agent"/>
         <result property="deviceType" column="device_type"/>
         <result property="os" column="os"/>
@@ -23,7 +22,7 @@
 
     <sql id="Base_Column_List">
         id,user_id,username,login_source,login_status,fail_reason,
-        login_type,ip_address,ip_region,user_agent,device_type,
+        login_type,ip_address,user_agent,device_type,
         os,browser,login_time
     </sql>
 

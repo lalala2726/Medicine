@@ -356,7 +356,6 @@ public class LlmProviderServiceImpl extends ServiceImpl<LlmProviderMapper, LlmPr
         String operator = currentOperator();
         Integer targetStatus = request.getStatus();
         if (targetStatus == STATUS_ENABLED) {
-            agentConfigRuntimeSyncService.validateProviderSwitchCompatibility(existing);
             disableOtherEnabledProviders(existing.getId(), operator);
         } else if (targetStatus == STATUS_DISABLED) {
             agentConfigRuntimeSyncService.assertProviderCanDisable(existing);
@@ -369,7 +368,7 @@ public class LlmProviderServiceImpl extends ServiceImpl<LlmProviderMapper, LlmPr
                 .build();
         updateProviderById(provider);
         if (targetStatus == STATUS_ENABLED) {
-            agentConfigRuntimeSyncService.syncCurrentEnabledProviderSnapshot(operator);
+            agentConfigRuntimeSyncService.clearAgentConfigsForProviderSwitch(operator);
         }
         return true;
     }

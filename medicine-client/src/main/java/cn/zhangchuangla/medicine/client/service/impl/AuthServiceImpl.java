@@ -10,7 +10,7 @@ import cn.zhangchuangla.medicine.common.core.exception.LoginException;
 import cn.zhangchuangla.medicine.common.core.exception.ParamException;
 import cn.zhangchuangla.medicine.common.core.exception.ServiceException;
 import cn.zhangchuangla.medicine.common.core.utils.Assert;
-import cn.zhangchuangla.medicine.common.ip.utils.IPUtils;
+import cn.zhangchuangla.medicine.common.core.utils.IpAddressUtils;
 import cn.zhangchuangla.medicine.common.security.entity.AuthTokenVo;
 import cn.zhangchuangla.medicine.common.security.entity.OnlineLoginUser;
 import cn.zhangchuangla.medicine.common.security.entity.SysUserDetails;
@@ -94,7 +94,7 @@ public class AuthServiceImpl implements AuthService {
             Long userId = sysUserDetails.getUserId();
             // 记录用户表最后登录信息（保留现有逻辑）
             HttpServletRequest request = resolveRequest();
-            String ipAddress = request != null ? IPUtils.getIpAddress(request) : null;
+            String ipAddress = request != null ? IpAddressUtils.getIpAddress(request) : null;
             asyncUserLogService.recordUserLoginLog(userId, ipAddress);
             recordLoginLog(authentication, trimmedUsername, true, null);
             return AuthTokenVo.builder()
@@ -184,11 +184,8 @@ public class AuthServiceImpl implements AuthService {
 
             HttpServletRequest request = resolveRequest();
             if (request != null) {
-                String ip = IPUtils.getIpAddress(request);
+                String ip = IpAddressUtils.getIpAddress(request);
                 message.setIpAddress(ip);
-                if (StringUtils.isNotBlank(ip)) {
-                    message.setIpRegion(IPUtils.getRegion(ip));
-                }
                 String userAgent = request.getHeader(USER_AGENT_HEADER);
                 message.setUserAgent(userAgent);
                 fillUserAgentInfo(message, userAgent);

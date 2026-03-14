@@ -80,7 +80,6 @@ class AgentAuthorizationControllerTests {
                 .idCard("310101199001010011")
                 .lastLoginTime(now)
                 .lastLoginIp("127.0.0.1")
-                .lastLoginLocation("Shanghai")
                 .createTime(now)
                 .updateTime(now)
                 .createBy("system")
