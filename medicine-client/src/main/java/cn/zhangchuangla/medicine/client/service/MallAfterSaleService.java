@@ -1,7 +1,9 @@
 package cn.zhangchuangla.medicine.client.service;
 
 import cn.zhangchuangla.medicine.client.model.request.*;
+import cn.zhangchuangla.medicine.model.dto.ClientAgentAfterSaleEligibilityDto;
 import cn.zhangchuangla.medicine.model.entity.MallAfterSale;
+import cn.zhangchuangla.medicine.model.request.ClientAgentAfterSaleEligibilityRequest;
 import cn.zhangchuangla.medicine.model.vo.AfterSaleDetailVo;
 import cn.zhangchuangla.medicine.model.vo.AfterSaleListVo;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
@@ -48,6 +50,24 @@ public interface MallAfterSaleService extends IService<MallAfterSale> {
      * @return 售后详情
      */
     AfterSaleDetailVo getAfterSaleDetail(Long afterSaleId);
+
+    /**
+     * 按售后单号和用户ID查询售后详情。
+     *
+     * @param afterSaleNo 售后单号
+     * @param userId      用户ID
+     * @return 售后详情
+     */
+    AfterSaleDetailVo getAfterSaleDetail(String afterSaleNo, Long userId);
+
+    /**
+     * 校验指定用户订单或订单项是否满足售后资格。
+     *
+     * @param request 校验请求
+     * @param userId  用户ID
+     * @return 售后资格
+     */
+    ClientAgentAfterSaleEligibilityDto checkAfterSaleEligibility(ClientAgentAfterSaleEligibilityRequest request, Long userId);
 
     /**
      * 申请整单退款

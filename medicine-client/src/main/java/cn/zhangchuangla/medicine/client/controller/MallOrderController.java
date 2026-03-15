@@ -164,7 +164,7 @@ public class MallOrderController extends BaseController {
      */
     @GetMapping("/shipping/{orderNo}")
     @Operation(summary = "查询订单物流信息")
-    public AjaxResult<OrderShippingVo> getOrderShipping(@PathVariable("orderNo") String orderNo) {
+    public AjaxResult<OrderShippingVo> getOrderShipping(@PathVariable String orderNo) {
         OrderShippingVo orderShippingVo = mallOrderService.getOrderShipping(orderNo);
         return success(orderShippingVo);
     }

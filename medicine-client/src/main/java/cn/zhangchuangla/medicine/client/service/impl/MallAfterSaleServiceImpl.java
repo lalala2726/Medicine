@@ -10,12 +10,14 @@ import cn.zhangchuangla.medicine.common.core.enums.ResponseCode;
 import cn.zhangchuangla.medicine.common.core.exception.ServiceException;
 import cn.zhangchuangla.medicine.common.core.utils.JSONUtils;
 import cn.zhangchuangla.medicine.common.security.base.BaseService;
+import cn.zhangchuangla.medicine.model.dto.ClientAgentAfterSaleEligibilityDto;
 import cn.zhangchuangla.medicine.model.dto.OrderTimelineDto;
 import cn.zhangchuangla.medicine.model.entity.MallAfterSale;
 import cn.zhangchuangla.medicine.model.entity.MallOrder;
 import cn.zhangchuangla.medicine.model.entity.MallOrderItem;
 import cn.zhangchuangla.medicine.model.entity.User;
 import cn.zhangchuangla.medicine.model.enums.*;
+import cn.zhangchuangla.medicine.model.request.ClientAgentAfterSaleEligibilityRequest;
 import cn.zhangchuangla.medicine.model.vo.AfterSaleDetailVo;
 import cn.zhangchuangla.medicine.model.vo.AfterSaleListVo;
 import cn.zhangchuangla.medicine.model.vo.AfterSaleTimelineVo;
@@ -45,6 +47,61 @@ import java.util.Objects;
 @RequiredArgsConstructor
 public class MallAfterSaleServiceImpl extends ServiceImpl<MallAfterSaleMapper, MallAfterSale>
         implements MallAfterSaleService, BaseService {
+
+    /**
+     * 售后资格校验范围：整单。
+     */
+    private static final String ELIGIBILITY_SCOPE_ORDER = "ORDER";
+
+    /**
+     * 售后资格校验范围：订单项。
+     */
+    private static final String ELIGIBILITY_SCOPE_ITEM = "ITEM";
+
+    /**
+     * 售后资格校验结果编码：满足资格。
+     */
+    private static final String ELIGIBILITY_REASON_OK = "ELIGIBLE";
+
+    /**
+     * 售后资格校验结果编码：订单不存在或无权访问。
+     */
+    private static final String ELIGIBILITY_REASON_ORDER_NOT_FOUND = "ORDER_NOT_FOUND";
+
+    /**
+     * 售后资格校验结果编码：订单项不存在。
+     */
+    private static final String ELIGIBILITY_REASON_ORDER_ITEM_NOT_FOUND = "ORDER_ITEM_NOT_FOUND";
+
+    /**
+     * 售后资格校验结果编码：订单未支付。
+     */
+    private static final String ELIGIBILITY_REASON_ORDER_NOT_PAID = "ORDER_NOT_PAID";
+
+    /**
+     * 售后资格校验结果编码：订单状态异常。
+     */
+    private static final String ELIGIBILITY_REASON_ORDER_STATUS_INVALID = "ORDER_STATUS_INVALID";
+
+    /**
+     * 售后资格校验结果编码：订单状态不允许售后。
+     */
+    private static final String ELIGIBILITY_REASON_ORDER_STATUS_NOT_ELIGIBLE = "ORDER_STATUS_NOT_ELIGIBLE";
+
+    /**
+     * 售后资格校验结果编码：存在进行中的售后。
+     */
+    private static final String ELIGIBILITY_REASON_AFTER_SALE_IN_PROGRESS = "AFTER_SALE_IN_PROGRESS";
+
+    /**
+     * 售后资格校验结果编码：存在历史售后冲突。
+     */
+    private static final String ELIGIBILITY_REASON_HISTORY_CONFLICT = "HISTORY_CONFLICT";
+
+    /**
+     * 售后资格校验结果编码：无可退款金额。
+     */
+    private static final String ELIGIBILITY_REASON_NO_REFUNDABLE_AMOUNT = "NO_REFUNDABLE_AMOUNT";
 
     private final MallAfterSaleMapper mallAfterSaleMapper;
     private final MallAfterSaleTimelineService mallAfterSaleTimelineService;
@@ -468,33 +525,78 @@ public class MallAfterSaleServiceImpl extends ServiceImpl<MallAfterSaleMapper, M
 
     @Override
     public Page<AfterSaleListVo> getAfterSaleList(AfterSaleListRequest request) {
-        Long userId = getUserId();
-        Page<AfterSaleListVo> page = request.toPage();
-        return mallAfterSaleMapper.selectAfterSaleList(page, request, userId);
+        AfterSaleListRequest safeRequest = request == null ? new AfterSaleListRequest() : request;
+        Page<AfterSaleListVo> page = safeRequest.toPage();
+        return mallAfterSaleMapper.selectAfterSaleList(page, safeRequest, getUserId());
     }
 
     @Override
     public AfterSaleDetailVo getAfterSaleDetail(Long afterSaleId) {
         Long userId = getUserId();
-
-        // 1. 查询售后申请
         MallAfterSale afterSale = getById(afterSaleId);
+        if (afterSale == null || !Objects.equals(afterSale.getUserId(), userId)) {
+            throw new ServiceException(ResponseCode.RESULT_IS_NULL, "售后申请不存在");
+        }
+        return buildAfterSaleDetail(afterSale);
+    }
+
+    @Override
+    public AfterSaleDetailVo getAfterSaleDetail(String afterSaleNo, Long userId) {
+        MallAfterSale afterSale = lambdaQuery()
+                .eq(MallAfterSale::getAfterSaleNo, afterSaleNo)
+                .eq(MallAfterSale::getUserId, userId)
+                .one();
         if (afterSale == null) {
             throw new ServiceException(ResponseCode.RESULT_IS_NULL, "售后申请不存在");
         }
+        return buildAfterSaleDetail(afterSale);
+    }
 
-        // 校验售后申请所属用户
-        if (!Objects.equals(afterSale.getUserId(), userId)) {
-            throw new ServiceException(ResponseCode.OPERATION_ERROR, "售后申请不存在");
+    /**
+     * 校验订单或订单项是否满足售后资格。
+     *
+     * @param request 校验请求
+     * @param userId  指定用户ID
+     * @return 售后资格
+     */
+    @Override
+    public ClientAgentAfterSaleEligibilityDto checkAfterSaleEligibility(ClientAgentAfterSaleEligibilityRequest request, Long userId) {
+        String orderNo = request == null ? null : request.getOrderNo();
+        Long orderItemId = request == null ? null : request.getOrderItemId();
+        String scope = orderItemId == null ? ELIGIBILITY_SCOPE_ORDER : ELIGIBILITY_SCOPE_ITEM;
+
+        MallOrder order = mallOrderService.lambdaQuery()
+                .eq(MallOrder::getOrderNo, orderNo)
+                .eq(MallOrder::getUserId, userId)
+                .one();
+        if (order == null) {
+            return buildEligibility(scope, orderNo, orderItemId, null, null, false,
+                    ELIGIBILITY_REASON_ORDER_NOT_FOUND, "订单不存在或无权访问", BigDecimal.ZERO);
         }
 
-        // 2. 查询用户信息
-        User user = userService.getById(afterSale.getUserId());
+        if (orderItemId == null) {
+            return checkOrderEligibility(order);
+        }
 
-        // 3. 查询订单项信息
+        MallOrderItem orderItem = mallOrderItemService.getById(orderItemId);
+        if (orderItem == null || !Objects.equals(orderItem.getOrderId(), order.getId())) {
+            return buildEligibility(scope, order.getOrderNo(), orderItemId, order.getOrderStatus(),
+                    resolveOrderStatusName(order.getOrderStatus()), false,
+                    ELIGIBILITY_REASON_ORDER_ITEM_NOT_FOUND, "订单商品不存在或不属于当前订单", BigDecimal.ZERO);
+        }
+        return checkOrderItemEligibility(order, orderItem, userId);
+    }
+
+    /**
+     * 组装售后详情对象，复用在按ID和按售后单号两种查询场景中。
+     *
+     * @param afterSale 售后实体
+     * @return 售后详情
+     */
+    private AfterSaleDetailVo buildAfterSaleDetail(MallAfterSale afterSale) {
+        User user = userService.getById(afterSale.getUserId());
         MallOrderItem orderItem = mallOrderItemService.getById(afterSale.getOrderItemId());
 
-        // 4. 构建售后详情
         AfterSaleTypeEnum afterSaleTypeEnum = AfterSaleTypeEnum.fromCode(afterSale.getAfterSaleType());
         AfterSaleStatusEnum afterSaleStatusEnum = AfterSaleStatusEnum.fromCode(afterSale.getAfterSaleStatus());
         AfterSaleReasonEnum afterSaleReasonEnum = AfterSaleReasonEnum.fromCode(afterSale.getApplyReason());
@@ -517,9 +619,7 @@ public class MallAfterSaleServiceImpl extends ServiceImpl<MallAfterSaleMapper, M
                     .build();
         }
 
-        // 5. 查询时间线
-        List<AfterSaleTimelineVo> timeline =
-                mallAfterSaleTimelineService.getTimelineList(afterSaleId);
+        List<AfterSaleTimelineVo> timeline = mallAfterSaleTimelineService.getTimelineList(afterSale.getId());
 
         return AfterSaleDetailVo.builder()
                 .id(afterSale.getId())
@@ -587,5 +687,216 @@ public class MallAfterSaleServiceImpl extends ServiceImpl<MallAfterSaleMapper, M
             order.setUpdateTime(new Date());
             mallOrderService.updateById(order);
         }
+    }
+
+    /**
+     * 校验整单售后资格。
+     *
+     * @param order 订单实体
+     * @return 售后资格
+     */
+    private ClientAgentAfterSaleEligibilityDto checkOrderEligibility(MallOrder order) {
+        OrderStatusEnum orderStatusEnum = OrderStatusEnum.fromCode(order.getOrderStatus());
+        if (!Objects.equals(order.getPaid(), 1)) {
+            return buildEligibility(ELIGIBILITY_SCOPE_ORDER, order.getOrderNo(), null, order.getOrderStatus(),
+                    resolveOrderStatusName(order.getOrderStatus()), false,
+                    ELIGIBILITY_REASON_ORDER_NOT_PAID, "订单未支付，暂不支持申请售后", BigDecimal.ZERO);
+        }
+        if (orderStatusEnum == null) {
+            return buildEligibility(ELIGIBILITY_SCOPE_ORDER, order.getOrderNo(), null, order.getOrderStatus(), "未知", false,
+                    ELIGIBILITY_REASON_ORDER_STATUS_INVALID, "订单状态异常，暂不支持申请售后", BigDecimal.ZERO);
+        }
+        if (!isOrderStatusEligible(orderStatusEnum)) {
+            return buildEligibility(ELIGIBILITY_SCOPE_ORDER, order.getOrderNo(), null, order.getOrderStatus(), orderStatusEnum.getName(), false,
+                    ELIGIBILITY_REASON_ORDER_STATUS_NOT_ELIGIBLE,
+                    String.format("当前订单状态[%s]不允许申请售后", orderStatusEnum.getName()), BigDecimal.ZERO);
+        }
+
+        List<MallOrderItem> orderItems = mallOrderItemService.lambdaQuery()
+                .eq(MallOrderItem::getOrderId, order.getId())
+                .list();
+        for (MallOrderItem orderItem : orderItems) {
+            OrderItemAfterSaleStatusEnum itemStatusEnum = resolveOrderItemStatus(orderItem.getAfterSaleStatus());
+            if (itemStatusEnum == OrderItemAfterSaleStatusEnum.IN_PROGRESS) {
+                return buildEligibility(ELIGIBILITY_SCOPE_ORDER, order.getOrderNo(), null, order.getOrderStatus(), orderStatusEnum.getName(),
+                        false, ELIGIBILITY_REASON_AFTER_SALE_IN_PROGRESS, "订单存在售后中的商品，暂不支持整单申请售后", BigDecimal.ZERO);
+            }
+            if (itemStatusEnum == OrderItemAfterSaleStatusEnum.COMPLETED) {
+                return buildEligibility(ELIGIBILITY_SCOPE_ORDER, order.getOrderNo(), null, order.getOrderStatus(), orderStatusEnum.getName(),
+                        false, ELIGIBILITY_REASON_HISTORY_CONFLICT, "订单包含已完成售后的商品，暂不支持整单再次申请", BigDecimal.ZERO);
+            }
+        }
+        if (hasActiveAfterSale(order.getId(), null, order.getUserId())) {
+            return buildEligibility(ELIGIBILITY_SCOPE_ORDER, order.getOrderNo(), null, order.getOrderStatus(), orderStatusEnum.getName(),
+                    false, ELIGIBILITY_REASON_AFTER_SALE_IN_PROGRESS, "订单存在处理中售后记录，暂不支持再次申请", BigDecimal.ZERO);
+        }
+
+        BigDecimal refundableAmount = calculateOrderRefundableAmount(order);
+        if (refundableAmount.compareTo(BigDecimal.ZERO) <= 0) {
+            return buildEligibility(ELIGIBILITY_SCOPE_ORDER, order.getOrderNo(), null, order.getOrderStatus(), orderStatusEnum.getName(),
+                    false, ELIGIBILITY_REASON_NO_REFUNDABLE_AMOUNT, "订单已无可退款金额", BigDecimal.ZERO);
+        }
+        return buildEligibility(ELIGIBILITY_SCOPE_ORDER, order.getOrderNo(), null, order.getOrderStatus(), orderStatusEnum.getName(),
+                true, ELIGIBILITY_REASON_OK, "订单满足售后条件", refundableAmount);
+    }
+
+    /**
+     * 校验订单项售后资格。
+     *
+     * @param order     订单实体
+     * @param orderItem 订单项实体
+     * @param userId    用户ID
+     * @return 售后资格
+     */
+    private ClientAgentAfterSaleEligibilityDto checkOrderItemEligibility(MallOrder order, MallOrderItem orderItem, Long userId) {
+        OrderStatusEnum orderStatusEnum = OrderStatusEnum.fromCode(order.getOrderStatus());
+        if (!Objects.equals(order.getPaid(), 1)) {
+            return buildEligibility(ELIGIBILITY_SCOPE_ITEM, order.getOrderNo(), orderItem.getId(), order.getOrderStatus(),
+                    resolveOrderStatusName(order.getOrderStatus()), false,
+                    ELIGIBILITY_REASON_ORDER_NOT_PAID, "订单未支付，暂不支持申请售后", BigDecimal.ZERO);
+        }
+        if (orderStatusEnum == null) {
+            return buildEligibility(ELIGIBILITY_SCOPE_ITEM, order.getOrderNo(), orderItem.getId(), order.getOrderStatus(), "未知", false,
+                    ELIGIBILITY_REASON_ORDER_STATUS_INVALID, "订单状态异常，暂不支持申请售后", BigDecimal.ZERO);
+        }
+        if (!isOrderStatusEligible(orderStatusEnum)) {
+            return buildEligibility(ELIGIBILITY_SCOPE_ITEM, order.getOrderNo(), orderItem.getId(), order.getOrderStatus(), orderStatusEnum.getName(),
+                    false, ELIGIBILITY_REASON_ORDER_STATUS_NOT_ELIGIBLE,
+                    String.format("当前订单状态[%s]不允许申请售后", orderStatusEnum.getName()), BigDecimal.ZERO);
+        }
+
+        OrderItemAfterSaleStatusEnum itemStatusEnum = resolveOrderItemStatus(orderItem.getAfterSaleStatus());
+        if (itemStatusEnum == OrderItemAfterSaleStatusEnum.IN_PROGRESS || hasActiveAfterSale(order.getId(), orderItem.getId(), userId)) {
+            return buildEligibility(ELIGIBILITY_SCOPE_ITEM, order.getOrderNo(), orderItem.getId(), order.getOrderStatus(), orderStatusEnum.getName(),
+                    false, ELIGIBILITY_REASON_AFTER_SALE_IN_PROGRESS, "该商品当前存在处理中售后记录", BigDecimal.ZERO);
+        }
+        if (itemStatusEnum == OrderItemAfterSaleStatusEnum.COMPLETED) {
+            return buildEligibility(ELIGIBILITY_SCOPE_ITEM, order.getOrderNo(), orderItem.getId(), order.getOrderStatus(), orderStatusEnum.getName(),
+                    false, ELIGIBILITY_REASON_HISTORY_CONFLICT, "该商品已存在完成售后记录，暂不支持重复申请", BigDecimal.ZERO);
+        }
+
+        BigDecimal refundableAmount = calculateOrderItemRefundableAmount(orderItem);
+        if (refundableAmount.compareTo(BigDecimal.ZERO) <= 0) {
+            return buildEligibility(ELIGIBILITY_SCOPE_ITEM, order.getOrderNo(), orderItem.getId(), order.getOrderStatus(), orderStatusEnum.getName(),
+                    false, ELIGIBILITY_REASON_NO_REFUNDABLE_AMOUNT, "该商品已无可退款金额", BigDecimal.ZERO);
+        }
+        return buildEligibility(ELIGIBILITY_SCOPE_ITEM, order.getOrderNo(), orderItem.getId(), order.getOrderStatus(), orderStatusEnum.getName(),
+                true, ELIGIBILITY_REASON_OK, "该商品满足售后条件", refundableAmount);
+    }
+
+    /**
+     * 判断订单状态是否允许申请售后。
+     *
+     * @param orderStatusEnum 订单状态
+     * @return 是否允许申请售后
+     */
+    private boolean isOrderStatusEligible(OrderStatusEnum orderStatusEnum) {
+        return orderStatusEnum == OrderStatusEnum.PENDING_SHIPMENT
+                || orderStatusEnum == OrderStatusEnum.PENDING_RECEIPT
+                || orderStatusEnum == OrderStatusEnum.COMPLETED;
+    }
+
+    /**
+     * 计算整单可退款金额。
+     *
+     * @param order 订单实体
+     * @return 可退款金额
+     */
+    private BigDecimal calculateOrderRefundableAmount(MallOrder order) {
+        BigDecimal payAmount = order.getPayAmount() == null ? BigDecimal.ZERO : order.getPayAmount();
+        BigDecimal refundedAmount = order.getRefundPrice() == null ? BigDecimal.ZERO : order.getRefundPrice();
+        return payAmount.subtract(refundedAmount);
+    }
+
+    /**
+     * 计算订单项可退款金额。
+     *
+     * @param orderItem 订单项实体
+     * @return 可退款金额
+     */
+    private BigDecimal calculateOrderItemRefundableAmount(MallOrderItem orderItem) {
+        BigDecimal totalPrice = orderItem.getTotalPrice() == null ? BigDecimal.ZERO : orderItem.getTotalPrice();
+        BigDecimal refundedAmount = orderItem.getRefundedAmount() == null ? BigDecimal.ZERO : orderItem.getRefundedAmount();
+        return totalPrice.subtract(refundedAmount);
+    }
+
+    /**
+     * 判断是否存在进行中的售后记录。
+     *
+     * @param orderId     订单ID
+     * @param orderItemId 订单项ID
+     * @param userId      用户ID
+     * @return 是否存在进行中的售后记录
+     */
+    private boolean hasActiveAfterSale(Long orderId, Long orderItemId, Long userId) {
+        var query = lambdaQuery()
+                .eq(MallAfterSale::getOrderId, orderId)
+                .eq(MallAfterSale::getUserId, userId)
+                .in(MallAfterSale::getAfterSaleStatus,
+                        AfterSaleStatusEnum.PENDING.getStatus(),
+                        AfterSaleStatusEnum.APPROVED.getStatus(),
+                        AfterSaleStatusEnum.PROCESSING.getStatus());
+        if (orderItemId != null) {
+            query.eq(MallAfterSale::getOrderItemId, orderItemId);
+        }
+        return query.count() > 0;
+    }
+
+    /**
+     * 统一解析订单项售后状态。
+     *
+     * @param afterSaleStatus 售后状态编码
+     * @return 订单项售后状态枚举
+     */
+    private OrderItemAfterSaleStatusEnum resolveOrderItemStatus(String afterSaleStatus) {
+        String safeStatus = afterSaleStatus == null ? OrderItemAfterSaleStatusEnum.NONE.getStatus() : afterSaleStatus;
+        return OrderItemAfterSaleStatusEnum.fromCode(safeStatus);
+    }
+
+    /**
+     * 解析订单状态名称。
+     *
+     * @param orderStatus 订单状态编码
+     * @return 订单状态名称
+     */
+    private String resolveOrderStatusName(String orderStatus) {
+        OrderStatusEnum orderStatusEnum = OrderStatusEnum.fromCode(orderStatus);
+        return orderStatusEnum == null ? "未知" : orderStatusEnum.getName();
+    }
+
+    /**
+     * 构建售后资格校验结果。
+     *
+     * @param scope            校验范围
+     * @param orderNo          订单编号
+     * @param orderItemId      订单项ID
+     * @param orderStatus      订单状态编码
+     * @param orderStatusName  订单状态名称
+     * @param eligible         是否满足售后资格
+     * @param reasonCode       结果编码
+     * @param reasonMessage    结果说明
+     * @param refundableAmount 可退款金额
+     * @return 售后资格校验结果
+     */
+    private ClientAgentAfterSaleEligibilityDto buildEligibility(String scope,
+                                                                String orderNo,
+                                                                Long orderItemId,
+                                                                String orderStatus,
+                                                                String orderStatusName,
+                                                                boolean eligible,
+                                                                String reasonCode,
+                                                                String reasonMessage,
+                                                                BigDecimal refundableAmount) {
+        return ClientAgentAfterSaleEligibilityDto.builder()
+                .scope(scope)
+                .orderNo(orderNo)
+                .orderItemId(orderItemId)
+                .orderStatus(orderStatus)
+                .orderStatusName(orderStatusName)
+                .eligible(eligible)
+                .reasonCode(reasonCode)
+                .reasonMessage(reasonMessage)
+                .refundableAmount(refundableAmount == null ? BigDecimal.ZERO : refundableAmount)
+                .build();
     }
 }

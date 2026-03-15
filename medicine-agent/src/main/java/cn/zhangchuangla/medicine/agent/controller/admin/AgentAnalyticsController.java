@@ -142,8 +142,8 @@ public class AgentAnalyticsController extends BaseController {
     /**
      * 获取指定时间范围内的热销商品排行。
      *
-     * @param days 最近天数
-     * @param limit     返回数量限制
+     * @param days  最近天数
+     * @param limit 返回数量限制
      * @return 热销商品排行
      */
     @GetMapping("/top-selling-products")
@@ -160,8 +160,8 @@ public class AgentAnalyticsController extends BaseController {
     /**
      * 获取指定时间范围内的退货退款风险商品排行。
      *
-     * @param days 最近天数
-     * @param limit     返回数量限制
+     * @param days  最近天数
+     * @param limit 返回数量限制
      * @return 风险商品排行
      */
     @GetMapping("/return-refund-risk-products")

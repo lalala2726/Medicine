@@ -12,6 +12,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
 import java.util.Date;
+import java.util.List;
 
 /**
  * 订单时间线服务实现类
@@ -67,6 +68,21 @@ public class MallOrderTimelineServiceImpl extends ServiceImpl<MallOrderTimelineM
     }
 
     /**
+     * 根据订单ID查询时间线列表。
+     *
+     * @param orderId 订单ID
+     * @return 时间线列表
+     */
+    @Override
+    public List<MallOrderTimeline> getTimelineByOrderId(Long orderId) {
+        Assert.notNull(orderId, "订单ID不能为空");
+        return lambdaQuery()
+                .eq(MallOrderTimeline::getOrderId, orderId)
+                .orderByAsc(MallOrderTimeline::getCreatedTime)
+                .list();
+    }
+
+    /**
      * 添加时间线记录（如果不存在）
      * <p>
      * 用于自动创建时间线，如果该订单已存在相同的事件类型则跳过，不抛出异常
@@ -108,7 +124,6 @@ public class MallOrderTimelineServiceImpl extends ServiceImpl<MallOrderTimelineM
         }
     }
 }
-
 
 
 

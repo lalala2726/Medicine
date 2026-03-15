@@ -3,6 +3,8 @@ package cn.zhangchuangla.medicine.client.service;
 import cn.zhangchuangla.medicine.client.model.request.*;
 import cn.zhangchuangla.medicine.client.model.vo.*;
 import cn.zhangchuangla.medicine.model.dto.AlipayNotifyDTO;
+import cn.zhangchuangla.medicine.model.dto.ClientAgentOrderCancelCheckDto;
+import cn.zhangchuangla.medicine.model.dto.ClientAgentOrderTimelineDto;
 import cn.zhangchuangla.medicine.model.entity.MallOrder;
 import cn.zhangchuangla.medicine.model.vo.OrderShippingVo;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
@@ -58,6 +60,15 @@ public interface MallOrderService extends IService<MallOrder> {
     OrderShippingVo getOrderShipping(String orderNo);
 
     /**
+     * 按指定用户查询订单物流信息。
+     *
+     * @param orderNo 订单编号
+     * @param userId  用户ID
+     * @return 物流信息
+     */
+    OrderShippingVo getOrderShipping(String orderNo, Long userId);
+
+    /**
      * 分页查询用户订单列表
      *
      * @param request 查询条件
@@ -72,6 +83,33 @@ public interface MallOrderService extends IService<MallOrder> {
      * @return 订单详情
      */
     OrderDetailVo getOrderDetail(String orderNo);
+
+    /**
+     * 按指定用户查询订单详情。
+     *
+     * @param orderNo 订单编号
+     * @param userId  用户ID
+     * @return 订单详情
+     */
+    OrderDetailVo getOrderDetail(String orderNo, Long userId);
+
+    /**
+     * 按指定用户查询订单时间线。
+     *
+     * @param orderNo 订单编号
+     * @param userId  用户ID
+     * @return 订单时间线
+     */
+    ClientAgentOrderTimelineDto getOrderTimeline(String orderNo, Long userId);
+
+    /**
+     * 校验指定用户订单是否允许取消。
+     *
+     * @param orderNo 订单编号
+     * @param userId  用户ID
+     * @return 取消资格
+     */
+    ClientAgentOrderCancelCheckDto checkOrderCancelable(String orderNo, Long userId);
 
     /**
      * 从购物车提交订单（创建订单并锁定库存）

@@ -23,7 +23,7 @@ class AgentRpcExceptionAdviceTests {
     @BeforeEach
     void setUp() {
         mockMvc = MockMvcBuilders
-                .standaloneSetup(new AdminRpcController(), new NonAdminRpcController())
+                .standaloneSetup(new AdminRpcController(), new ClientRpcController(), new NonAdminRpcController())
                 .setControllerAdvice(new AgentRpcExceptionAdvice(new GlobalExceptionHandel()))
                 .build();
     }
@@ -42,6 +42,14 @@ class AgentRpcExceptionAdviceTests {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.code").value(500))
                 .andExpect(jsonPath("$.message").value("rpc invoke failed"));
+    }
+
+    @Test
+    void clientRoute_ShouldReturn503_WhenRpcUnavailable() throws Exception {
+        mockMvc.perform(get("/agent/client/mock/unavailable"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.code").value(503))
+                .andExpect(jsonPath("$.message").value("业务模块未就绪，请稍后再试"));
     }
 
     @Test
@@ -64,6 +72,16 @@ class AgentRpcExceptionAdviceTests {
         @GetMapping("/other")
         public String other() {
             throw new RpcException("rpc invoke failed");
+        }
+    }
+
+    @RestController
+    @RequestMapping("/agent/client/mock")
+    static class ClientRpcController {
+
+        @GetMapping("/unavailable")
+        public String unavailable() {
+            throw new RpcException("No provider available for the service");
         }
     }
 

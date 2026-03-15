@@ -67,4 +67,3 @@ public class AfterSaleListVo {
     @Schema(description = "审核时间", example = "2025-11-08 15:30:00")
     private Date auditTime;
 }
-

@@ -170,10 +170,18 @@ public class MallProductServiceImpl extends ServiceImpl<MallProductMapper, MallP
     public PageResult<MallProductSearchVo> search(MallProductSearchRequest request) {
         int safePageNum = Math.max(request.getPageNum(), 1);
         int safePageSize = Math.max(request.getPageSize(), 1);
-        if (!StringUtils.hasText(request.getKeyword())) {
+        if (!hasSearchCondition(request)) {
             return new PageResult<>((long) safePageNum, (long) safePageSize, 0L, Collections.emptyList());
         }
-        request.setKeyword(request.getKeyword().trim());
+        if (StringUtils.hasText(request.getKeyword())) {
+            request.setKeyword(request.getKeyword().trim());
+        }
+        if (StringUtils.hasText(request.getCategoryName())) {
+            request.setCategoryName(request.getCategoryName().trim());
+        }
+        if (StringUtils.hasText(request.getEfficacy())) {
+            request.setEfficacy(request.getEfficacy().trim());
+        }
         request.setPageNum(safePageNum);
         request.setPageSize(safePageSize);
 
@@ -262,6 +270,18 @@ public class MallProductServiceImpl extends ServiceImpl<MallProductMapper, MallP
     @Override
     public long getViewCount(Long productId, ProductViewPeriod period) {
         return 1L;
+    }
+
+    /**
+     * 判断是否提供了至少一个搜索条件。
+     *
+     * @param request 搜索请求
+     * @return 是否存在有效搜索条件
+     */
+    private boolean hasSearchCondition(MallProductSearchRequest request) {
+        return StringUtils.hasText(request.getKeyword())
+                || StringUtils.hasText(request.getCategoryName())
+                || StringUtils.hasText(request.getEfficacy());
     }
 
     @Override
