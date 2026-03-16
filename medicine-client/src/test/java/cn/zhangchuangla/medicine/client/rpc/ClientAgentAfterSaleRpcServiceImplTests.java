@@ -62,6 +62,24 @@ class ClientAgentAfterSaleRpcServiceImplTests {
         assertEquals(true, result.getEligible());
     }
 
+    @Test
+    void checkAfterSaleEligibility_ShouldPreserveExpiredReason() {
+        ClientAgentAfterSaleEligibilityRequest request = new ClientAgentAfterSaleEligibilityRequest();
+        request.setOrderNo("O202511130001");
+        ClientAgentAfterSaleEligibilityDto dto = ClientAgentAfterSaleEligibilityDto.builder()
+                .orderNo("O202511130001")
+                .eligible(false)
+                .reasonCode("AFTER_SALE_EXPIRED")
+                .reasonMessage("订单确认收货已超过3个月，无法申请售后")
+                .build();
+        when(mallAfterSaleService.checkAfterSaleEligibility(request, 66L)).thenReturn(dto);
+
+        var result = service.checkAfterSaleEligibility(request, 66L);
+
+        assertEquals("AFTER_SALE_EXPIRED", result.getReasonCode());
+        assertEquals("订单确认收货已超过3个月，无法申请售后", result.getReasonMessage());
+    }
+
     private AfterSaleDetailVo createDetailVo() {
         AfterSaleTimelineVo timeline = AfterSaleTimelineVo.builder()
                 .id(1L)

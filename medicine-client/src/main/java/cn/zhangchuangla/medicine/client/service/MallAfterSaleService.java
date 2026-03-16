@@ -1,6 +1,8 @@
 package cn.zhangchuangla.medicine.client.service;
 
 import cn.zhangchuangla.medicine.client.model.request.*;
+import cn.zhangchuangla.medicine.client.model.vo.AfterSaleApplyResultVo;
+import cn.zhangchuangla.medicine.client.model.vo.AfterSaleEligibilityVo;
 import cn.zhangchuangla.medicine.model.dto.ClientAgentAfterSaleEligibilityDto;
 import cn.zhangchuangla.medicine.model.entity.MallAfterSale;
 import cn.zhangchuangla.medicine.model.request.ClientAgentAfterSaleEligibilityRequest;
@@ -8,8 +10,6 @@ import cn.zhangchuangla.medicine.model.vo.AfterSaleDetailVo;
 import cn.zhangchuangla.medicine.model.vo.AfterSaleListVo;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.IService;
-
-import java.util.List;
 
 /**
  * 售后申请Service
@@ -23,9 +23,17 @@ public interface MallAfterSaleService extends IService<MallAfterSale> {
      * 用户申请售后
      *
      * @param request 申请售后请求
-     * @return 售后单号
+     * @return 售后申请结果
      */
-    String applyAfterSale(AfterSaleApplyRequest request);
+    AfterSaleApplyResultVo applyAfterSale(AfterSaleApplyRequest request);
+
+    /**
+     * 用户端售后资格校验。
+     *
+     * @param request 校验请求
+     * @return 售后资格信息
+     */
+    AfterSaleEligibilityVo getAfterSaleEligibility(AfterSaleEligibilityRequest request);
 
     /**
      * 用户取消售后申请
@@ -68,14 +76,6 @@ public interface MallAfterSaleService extends IService<MallAfterSale> {
      * @return 售后资格
      */
     ClientAgentAfterSaleEligibilityDto checkAfterSaleEligibility(ClientAgentAfterSaleEligibilityRequest request, Long userId);
-
-    /**
-     * 申请整单退款
-     *
-     * @param request 退款请求
-     * @return 创建的售后单号列表
-     */
-    List<String> applyOrderRefund(OrderRefundApplyRequest request);
 
     /**
      * 再次发起售后
