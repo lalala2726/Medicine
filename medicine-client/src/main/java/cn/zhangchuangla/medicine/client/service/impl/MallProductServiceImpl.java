@@ -4,8 +4,10 @@ import cn.zhangchuangla.medicine.client.elasticsearch.document.MallProductDocume
 import cn.zhangchuangla.medicine.client.elasticsearch.service.MallProductSearchService;
 import cn.zhangchuangla.medicine.client.enums.ProductViewPeriod;
 import cn.zhangchuangla.medicine.client.mapper.MallProductMapper;
+import cn.zhangchuangla.medicine.client.model.dto.AssistantProductPurchaseCardDto;
 import cn.zhangchuangla.medicine.client.model.dto.RecommendProductDto;
 import cn.zhangchuangla.medicine.client.model.request.MallProductSearchRequest;
+import cn.zhangchuangla.medicine.client.model.vo.AssistantProductPurchaseCardsVo;
 import cn.zhangchuangla.medicine.client.model.vo.MallProductSearchVo;
 import cn.zhangchuangla.medicine.client.model.vo.MallProductVo;
 import cn.zhangchuangla.medicine.client.service.MallOrderItemService;
@@ -30,7 +32,11 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
 
+import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.util.*;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 
 /**
  * @author Chuang
@@ -167,6 +173,62 @@ public class MallProductServiceImpl extends ServiceImpl<MallProductMapper, MallP
     }
 
     @Override
+    public AssistantProductPurchaseCardsVo getAssistantProductPurchaseCards(List<Long> productIds) {
+        if (productIds == null || productIds.isEmpty()) {
+            return emptyAssistantProductPurchaseCards();
+        }
+
+        List<Long> normalizedIds = productIds.stream()
+                .filter(Objects::nonNull)
+                .distinct()
+                .toList();
+        if (normalizedIds.isEmpty()) {
+            return emptyAssistantProductPurchaseCards();
+        }
+
+        List<AssistantProductPurchaseCardDto> cardDtos = mallProductMapper.listAssistantProductPurchaseCardsByIds(normalizedIds);
+        if (cardDtos == null || cardDtos.isEmpty()) {
+            return emptyAssistantProductPurchaseCards();
+        }
+
+        Map<Long, AssistantProductPurchaseCardDto> cardDtoMap = cardDtos.stream()
+                .filter(Objects::nonNull)
+                .filter(item -> item.getId() != null)
+                .collect(Collectors.toMap(
+                        AssistantProductPurchaseCardDto::getId,
+                        Function.identity(),
+                        (left, right) -> left,
+                        LinkedHashMap::new
+                ));
+
+        List<AssistantProductPurchaseCardsVo.AssistantProductPurchaseItemVo> items = new ArrayList<>();
+        BigDecimal totalPrice = BigDecimal.ZERO;
+        for (Long productId : normalizedIds) {
+            AssistantProductPurchaseCardDto cardDto = cardDtoMap.get(productId);
+            if (cardDto == null) {
+                continue;
+            }
+            BigDecimal itemPrice = defaultPrice(cardDto.getPrice());
+            totalPrice = totalPrice.add(itemPrice);
+            items.add(AssistantProductPurchaseCardsVo.AssistantProductPurchaseItemVo.builder()
+                    .id(String.valueOf(cardDto.getId()))
+                    .name(cardDto.getName())
+                    .image(cardDto.getImage())
+                    .price(formatPrice(itemPrice))
+                    .spec(cardDto.getSpec())
+                    .efficacy(cardDto.getEfficacy())
+                    .prescription(cardDto.getPrescription())
+                    .stock(cardDto.getStock())
+                    .build());
+        }
+
+        return AssistantProductPurchaseCardsVo.builder()
+                .totalPrice(formatPrice(totalPrice))
+                .items(items)
+                .build();
+    }
+
+    @Override
     public PageResult<MallProductSearchVo> search(MallProductSearchRequest request) {
         int safePageNum = Math.max(request.getPageNum(), 1);
         int safePageSize = Math.max(request.getPageSize(), 1);
@@ -266,6 +328,22 @@ public class MallProductServiceImpl extends ServiceImpl<MallProductMapper, MallP
         return views + 1 - timeMillis / 1e13;
     }
 
+    private AssistantProductPurchaseCardsVo emptyAssistantProductPurchaseCards() {
+        return AssistantProductPurchaseCardsVo.builder()
+                .totalPrice(formatPrice(BigDecimal.ZERO))
+                .items(Collections.emptyList())
+                .build();
+    }
+
+    private BigDecimal defaultPrice(BigDecimal price) {
+        return price == null ? BigDecimal.ZERO : price;
+    }
+
+    private String formatPrice(BigDecimal price) {
+        return defaultPrice(price)
+                .setScale(2, RoundingMode.HALF_UP)
+                .toPlainString();
+    }
 
     @Override
     public long getViewCount(Long productId, ProductViewPeriod period) {

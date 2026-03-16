@@ -1,5 +1,6 @@
 package cn.zhangchuangla.medicine.client.mapper;
 
+import cn.zhangchuangla.medicine.client.model.dto.AssistantProductPurchaseCardDto;
 import cn.zhangchuangla.medicine.client.model.dto.RecommendProductDto;
 import cn.zhangchuangla.medicine.model.dto.MallProductDetailDto;
 import cn.zhangchuangla.medicine.model.dto.MallProductWithImageDto;
@@ -38,11 +39,18 @@ public interface MallProductMapper extends BaseMapper<MallProduct> {
     MallProductDetailDto getProductAndDrugInfoById(@Param("productId") Long productId);
 
     /**
+     * 批量查询聊天商品购买卡片商品信息。
+     *
+     * @param productIds 商品ID集合
+     * @return 商品购买卡片商品信息
+     */
+    List<AssistantProductPurchaseCardDto> listAssistantProductPurchaseCardsByIds(@Param("productIds") List<Long> productIds);
+
+    /**
      * 根据销量与浏览量推荐商品
      */
     List<RecommendProductDto> listRecommendProducts();
 }
-
 
 
 

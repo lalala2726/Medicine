@@ -239,4 +239,31 @@
           AND p.id = #{productId}
         LIMIT 1
     </select>
+
+    <select id="listAssistantProductPurchaseCardsByIds"
+            resultType="cn.zhangchuangla.medicine.client.model.dto.AssistantProductPurchaseCardDto">
+        SELECT p.id,
+               p.name,
+               cover.image_url AS image,
+               p.price,
+               md.packaging    AS spec,
+               md.efficacy,
+               md.prescription,
+               p.stock
+        FROM mall_product p
+                 LEFT JOIN (SELECT product_id, image_url
+                            FROM (SELECT product_id,
+                                         image_url,
+                                         ROW_NUMBER() OVER (PARTITION BY product_id ORDER BY sort, id) AS rn
+                                  FROM mall_product_image
+                                  WHERE (is_deleted IS NULL OR is_deleted = 0)) ranked_image
+                            WHERE ranked_image.rn = 1) cover ON cover.product_id = p.id
+                 LEFT JOIN drug_detail md ON p.id = md.product_id AND (md.is_deleted = 0)
+        WHERE (p.is_deleted = 0)
+          AND p.status = 1
+          AND p.id IN
+        <foreach collection="productIds" item="id" open="(" separator="," close=")">
+            #{id}
+        </foreach>
+    </select>
 </mapper>

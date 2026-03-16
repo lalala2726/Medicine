@@ -2,6 +2,7 @@ package cn.zhangchuangla.medicine.client.service;
 
 import cn.zhangchuangla.medicine.client.enums.ProductViewPeriod;
 import cn.zhangchuangla.medicine.client.model.request.MallProductSearchRequest;
+import cn.zhangchuangla.medicine.client.model.vo.AssistantProductPurchaseCardsVo;
 import cn.zhangchuangla.medicine.client.model.vo.MallProductSearchVo;
 import cn.zhangchuangla.medicine.client.model.vo.MallProductVo;
 import cn.zhangchuangla.medicine.common.core.base.PageResult;
@@ -51,6 +52,14 @@ public interface MallProductService extends IService<MallProduct> {
      * @return 商品信息
      */
     MallProductWithImageDto getProductWithImagesById(Long id);
+
+    /**
+     * 获取聊天商品购买卡片商品信息。
+     *
+     * @param productIds 商品ID列表
+     * @return 商品购买卡片数据
+     */
+    AssistantProductPurchaseCardsVo getAssistantProductPurchaseCards(List<Long> productIds);
 
 
     /**
