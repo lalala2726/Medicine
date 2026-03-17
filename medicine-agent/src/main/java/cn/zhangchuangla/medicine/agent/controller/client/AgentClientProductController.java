@@ -80,7 +80,9 @@ public class AgentClientProductController extends BaseController {
         MallProductDetailDto detail = clientAgentProductService.getProductDetail(productId);
         ClientAgentProductDetailVo target = copyProperties(detail, ClientAgentProductDetailVo.class);
         DrugDetailDto drugDetailDto = detail.getDrugDetail();
-        target.setDrugDetail(copyProperties(drugDetailDto, ClientAgentProductDetailVo.DrugDetail.class));
+        if (drugDetailDto != null) {
+            target.setDrugDetail(copyProperties(drugDetailDto, ClientAgentProductDetailVo.DrugDetail.class));
+        }
         return success(target);
     }
 
