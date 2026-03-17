@@ -7,10 +7,7 @@ import cn.zhangchuangla.medicine.agent.support.AgentVoDescriptionResolver;
 import cn.zhangchuangla.medicine.common.core.exception.GlobalExceptionHandel;
 import cn.zhangchuangla.medicine.common.security.entity.AuthUser;
 import cn.zhangchuangla.medicine.common.security.entity.SysUserDetails;
-import cn.zhangchuangla.medicine.model.dto.ClientAgentProductSearchDto;
-import cn.zhangchuangla.medicine.model.dto.ClientAgentProductSpecDto;
-import cn.zhangchuangla.medicine.model.dto.DrugDetailDto;
-import cn.zhangchuangla.medicine.model.dto.MallProductDetailDto;
+import cn.zhangchuangla.medicine.model.dto.*;
 import cn.zhangchuangla.medicine.model.request.ClientAgentProductSearchRequest;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -245,7 +242,12 @@ class AgentClientProductControllerTests {
         }
 
         @Override
-        public cn.zhangchuangla.medicine.model.dto.ClientAgentProductPurchaseCardsDto getProductPurchaseCards(List<Long> productIds) {
+        public ClientAgentProductCardsDto getProductCards(List<Long> productIds) {
+            throw new UnsupportedOperationException("not needed in this test");
+        }
+
+        @Override
+        public ClientAgentProductPurchaseCardsDto getProductPurchaseCards(List<ClientAgentProductPurchaseQueryDto> items) {
             throw new UnsupportedOperationException("not needed in this test");
         }
 

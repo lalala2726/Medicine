@@ -6,10 +6,7 @@ import cn.zhangchuangla.medicine.client.model.vo.MallProductSearchVo;
 import cn.zhangchuangla.medicine.client.service.MallProductService;
 import cn.zhangchuangla.medicine.common.core.base.PageResult;
 import cn.zhangchuangla.medicine.common.core.exception.ServiceException;
-import cn.zhangchuangla.medicine.model.dto.ClientAgentProductPurchaseCardsDto;
-import cn.zhangchuangla.medicine.model.dto.ClientAgentProductSpecDto;
-import cn.zhangchuangla.medicine.model.dto.DrugDetailDto;
-import cn.zhangchuangla.medicine.model.dto.MallProductDetailDto;
+import cn.zhangchuangla.medicine.model.dto.*;
 import cn.zhangchuangla.medicine.model.request.ClientAgentProductSearchRequest;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -132,7 +129,7 @@ class ClientAgentProductRpcServiceImplTests {
     }
 
     @Test
-    void getProductPurchaseCards_ShouldMapResultAndPreserveOrder() {
+    void getProductCards_ShouldMapResultAndPreserveOrder() {
         List<Long> productIds = List.of(102L, 101L);
         AssistantProductPurchaseCardsVo cards = AssistantProductPurchaseCardsVo.builder()
                 .totalPrice("36.70")
@@ -161,7 +158,7 @@ class ClientAgentProductRpcServiceImplTests {
                 .build();
         when(mallProductService.getAssistantProductPurchaseCards(productIds)).thenReturn(cards);
 
-        ClientAgentProductPurchaseCardsDto result = service.getProductPurchaseCards(productIds);
+        ClientAgentProductCardsDto result = service.getProductCards(productIds);
 
         assertEquals("36.70", result.getTotalPrice());
         assertEquals(2, result.getItems().size());
@@ -171,12 +168,70 @@ class ClientAgentProductRpcServiceImplTests {
     }
 
     @Test
-    void getProductPurchaseCards_WhenServiceReturnsNull_ShouldReturnEmptyCards() {
+    void getProductCards_WhenServiceReturnsNull_ShouldReturnEmptyCards() {
         when(mallProductService.getAssistantProductPurchaseCards(List.of(999L))).thenReturn(null);
 
-        ClientAgentProductPurchaseCardsDto result = service.getProductPurchaseCards(List.of(999L));
+        ClientAgentProductCardsDto result = service.getProductCards(List.of(999L));
 
         assertEquals("0.00", result.getTotalPrice());
+        assertTrue(result.getItems().isEmpty());
+    }
+
+    @Test
+    void getProductPurchaseCards_ShouldMapResultAndCalculateTotalPrice() {
+        List<ClientAgentProductPurchaseQueryDto> items = List.of(
+                ClientAgentProductPurchaseQueryDto.builder().productId(101L).quantity(2).build(),
+                ClientAgentProductPurchaseQueryDto.builder().productId(205L).quantity(1).build()
+        );
+        AssistantProductPurchaseCardsVo cards = AssistantProductPurchaseCardsVo.builder()
+                .totalPrice("36.70")
+                .items(List.of(
+                        AssistantProductPurchaseCardsVo.AssistantProductPurchaseItemVo.builder()
+                                .id("101")
+                                .name("布洛芬缓释胶囊")
+                                .image("https://example.com/101.png")
+                                .price("16.80")
+                                .spec("24粒/盒")
+                                .efficacy("缓解发热、头痛")
+                                .prescription(false)
+                                .stock(56)
+                                .build(),
+                        AssistantProductPurchaseCardsVo.AssistantProductPurchaseItemVo.builder()
+                                .id("205")
+                                .name("维生素C咀嚼片")
+                                .image("https://example.com/205.png")
+                                .price("19.90")
+                                .spec("60片/瓶")
+                                .efficacy("补充维生素C")
+                                .prescription(false)
+                                .stock(98)
+                                .build()
+                ))
+                .build();
+        when(mallProductService.getAssistantProductPurchaseCards(List.of(101L, 205L))).thenReturn(cards);
+
+        ClientAgentProductPurchaseCardsDto result = service.getProductPurchaseCards(items);
+
+        assertEquals(new BigDecimal("53.50"), result.getTotalPrice());
+        assertEquals(2, result.getItems().size());
+        assertEquals("101", result.getItems().get(0).getId());
+        assertEquals(new BigDecimal("16.80"), result.getItems().get(0).getPrice());
+        assertEquals(2, result.getItems().get(0).getQuantity());
+        assertEquals("205", result.getItems().get(1).getId());
+        assertEquals(1, result.getItems().get(1).getQuantity());
+        verify(mallProductService).getAssistantProductPurchaseCards(List.of(101L, 205L));
+    }
+
+    @Test
+    void getProductPurchaseCards_WhenServiceReturnsNull_ShouldReturnEmptyCards() {
+        List<ClientAgentProductPurchaseQueryDto> items = List.of(
+                ClientAgentProductPurchaseQueryDto.builder().productId(999L).quantity(1).build()
+        );
+        when(mallProductService.getAssistantProductPurchaseCards(List.of(999L))).thenReturn(null);
+
+        ClientAgentProductPurchaseCardsDto result = service.getProductPurchaseCards(items);
+
+        assertEquals(new BigDecimal("0.00"), result.getTotalPrice());
         assertTrue(result.getItems().isEmpty());
     }
 }

@@ -1,19 +1,20 @@
 package cn.zhangchuangla.medicine.agent.controller.client;
 
-import cn.zhangchuangla.medicine.agent.annotation.InternalAgentHeaderTrace;
+import cn.zhangchuangla.medicine.agent.model.request.ClientAgentProductPurchaseCardsRequest;
+import cn.zhangchuangla.medicine.agent.model.vo.client.ClientAgentProductCardsVo;
 import cn.zhangchuangla.medicine.agent.model.vo.client.ClientAgentProductPurchaseCardsVo;
 import cn.zhangchuangla.medicine.agent.service.client.ClientAgentProductService;
 import cn.zhangchuangla.medicine.common.core.base.AjaxResult;
 import cn.zhangchuangla.medicine.common.security.base.BaseController;
+import cn.zhangchuangla.medicine.model.dto.ClientAgentProductCardsDto;
 import cn.zhangchuangla.medicine.model.dto.ClientAgentProductPurchaseCardsDto;
+import cn.zhangchuangla.medicine.model.dto.ClientAgentProductPurchaseQueryDto;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.validation.annotation.Validated;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
@@ -21,9 +22,8 @@ import java.util.List;
  * 客户端智能体商品卡片控制器。
  */
 @RestController
-@RequestMapping("/agent/client/purchase_cards")
+@RequestMapping("/agent/client/card")
 @Tag(name = "客户端智能体商品卡片工具", description = "用于客户端智能体商品卡片补全接口")
-@InternalAgentHeaderTrace
 @Validated
 @RequiredArgsConstructor
 public class AgentClientProductCardController extends BaseController {
@@ -34,15 +34,38 @@ public class AgentClientProductCardController extends BaseController {
     private final ClientAgentProductService clientAgentProductService;
 
     /**
-     * 根据商品ID列表查询商品购买卡片补全结果。
+     * 根据商品ID列表查询商品卡片补全结果。
      *
      * @param productIds 商品ID列表
-     * @return 商品购买卡片补全结果
+     * @return 商品卡片补全结果
      */
-    @GetMapping("/{productIds}")
-    @Operation(summary = "获取商品购买卡片", description = "根据商品ID列表获取客户端智能体商品购买卡片补全结果")
-    public AjaxResult<ClientAgentProductPurchaseCardsVo> getProductPurchaseCards(@PathVariable List<Long> productIds) {
-        ClientAgentProductPurchaseCardsDto cards = clientAgentProductService.getProductPurchaseCards(productIds);
+    @GetMapping("/product/{productIds}")
+    @Operation(summary = "获取商品卡片", description = "根据商品ID列表获取客户端智能体商品卡片补全结果")
+    public AjaxResult<ClientAgentProductCardsVo> getProductCards(@PathVariable List<Long> productIds) {
+        ClientAgentProductCardsDto cards = clientAgentProductService.getProductCards(productIds);
+        ClientAgentProductCardsVo target = copyProperties(cards, ClientAgentProductCardsVo.class);
+        target.setItems(copyListProperties(cards.getItems(), ClientAgentProductCardsVo.ClientAgentProductItemVo.class));
+        return success(target);
+    }
+
+    /**
+     * 根据商品ID和数量查询商品购买卡片。
+     *
+     * @param request 商品购买卡片请求
+     * @return 商品购买卡片结果
+     */
+    @PostMapping("/purchase_cards")
+    @Operation(summary = "获取商品购买卡片", description = "根据商品ID和数量获取客户端智能体商品购买卡片")
+    public AjaxResult<ClientAgentProductPurchaseCardsVo> getProductPurchaseCards(
+            @Valid @RequestBody ClientAgentProductPurchaseCardsRequest request
+    ) {
+        List<ClientAgentProductPurchaseQueryDto> items = request.getItems().stream()
+                .map(item -> ClientAgentProductPurchaseQueryDto.builder()
+                        .productId(item.getProductId())
+                        .quantity(item.getQuantity())
+                        .build())
+                .toList();
+        ClientAgentProductPurchaseCardsDto cards = clientAgentProductService.getProductPurchaseCards(items);
         ClientAgentProductPurchaseCardsVo target = copyProperties(cards, ClientAgentProductPurchaseCardsVo.class);
         target.setItems(copyListProperties(cards.getItems(), ClientAgentProductPurchaseCardsVo.ClientAgentProductPurchaseItemVo.class));
         return success(target);

@@ -1,9 +1,6 @@
 package cn.zhangchuangla.medicine.agent.service.client;
 
-import cn.zhangchuangla.medicine.model.dto.ClientAgentProductPurchaseCardsDto;
-import cn.zhangchuangla.medicine.model.dto.ClientAgentProductSearchDto;
-import cn.zhangchuangla.medicine.model.dto.ClientAgentProductSpecDto;
-import cn.zhangchuangla.medicine.model.dto.MallProductDetailDto;
+import cn.zhangchuangla.medicine.model.dto.*;
 import cn.zhangchuangla.medicine.model.request.ClientAgentProductSearchRequest;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 
@@ -31,12 +28,20 @@ public interface ClientAgentProductService {
     MallProductDetailDto getProductDetail(Long productId);
 
     /**
-     * 查询商品购买卡片补全结果。
+     * 查询商品卡片补全结果。
      *
      * @param productIds 商品ID列表
-     * @return 商品购买卡片补全结果
+     * @return 商品卡片补全结果
      */
-    ClientAgentProductPurchaseCardsDto getProductPurchaseCards(List<Long> productIds);
+    ClientAgentProductCardsDto getProductCards(List<Long> productIds);
+
+    /**
+     * 查询商品购买卡片结果。
+     *
+     * @param items 商品购买项列表
+     * @return 商品购买卡片结果
+     */
+    ClientAgentProductPurchaseCardsDto getProductPurchaseCards(List<ClientAgentProductPurchaseQueryDto> items);
 
     /**
      * 查询商品规格属性。

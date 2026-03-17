@@ -14,7 +14,11 @@ import lombok.RequiredArgsConstructor;
 import org.apache.dubbo.config.annotation.DubboService;
 import org.springframework.util.StringUtils;
 
-import java.util.List;
+import java.math.BigDecimal;
+import java.math.RoundingMode;
+import java.util.*;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 
 /**
  * 客户端智能体商品 RPC Provider。
@@ -53,7 +57,7 @@ public class ClientAgentProductRpcServiceImpl implements ClientAgentProductRpcSe
         query.setCategoryName(normalizeText(safeRequest.getCategoryName()));
         query.setEfficacy(normalizeText(safeRequest.getUsage()));
         query.setPageNum(Math.max(safeRequest.getPageNum(), 1));
-        query.setPageSize(Math.max(safeRequest.getPageSize(), 1));
+        query.setPageSize(Math.min(Math.max(safeRequest.getPageSize(), 1), MAX_PAGE_SIZE));
 
         PageResult<MallProductSearchVo> result = mallProductService.search(query);
         if (result == null) {
@@ -84,9 +88,124 @@ public class ClientAgentProductRpcServiceImpl implements ClientAgentProductRpcSe
      * @return 商品购买卡片补全结果
      */
     @Override
-    public ClientAgentProductPurchaseCardsDto getProductPurchaseCards(List<Long> productIds) {
+    public ClientAgentProductCardsDto getProductCards(List<Long> productIds) {
         AssistantProductPurchaseCardsVo cards = mallProductService.getAssistantProductPurchaseCards(productIds);
-        return toProductPurchaseCardsDto(cards);
+        return toProductCardsDto(cards);
+    }
+
+    /**
+     * 查询商品购买卡片补全结果。
+     *
+     * @param items 商品购买项列表
+     * @return 商品购买卡片补全结果
+     */
+    @Override
+    public ClientAgentProductPurchaseCardsDto getProductPurchaseCards(List<ClientAgentProductPurchaseQueryDto> items) {
+        List<Long> productIds = items == null ? List.of() : items.stream()
+                .filter(Objects::nonNull)
+                .map(ClientAgentProductPurchaseQueryDto::getProductId)
+                .filter(Objects::nonNull)
+                .distinct()
+                .toList();
+        if (productIds.isEmpty()) {
+            return emptyProductPurchaseCardsDto();
+        }
+
+        AssistantProductPurchaseCardsVo cards = mallProductService.getAssistantProductPurchaseCards(productIds);
+        return toProductPurchaseCardsDto(cards, items);
+    }
+
+    /**
+     * 将客户端商品卡片结果映射为 RPC DTO。
+     *
+     * @param source 客户端商品卡片结果
+     * @return RPC DTO
+     */
+    private ClientAgentProductCardsDto toProductCardsDto(AssistantProductPurchaseCardsVo source) {
+        if (source == null) {
+            return emptyProductCardsDto();
+        }
+        List<ClientAgentProductCardsDto.ClientAgentProductItemDto> items =
+                source.getItems() == null ? List.of() : source.getItems().stream()
+                        .map(this::toProductItemDto)
+                        .toList();
+        return ClientAgentProductCardsDto.builder()
+                .totalPrice(source.getTotalPrice())
+                .items(items)
+                .build();
+    }
+
+    /**
+     * 将客户端商品卡片单项映射为 RPC DTO。
+     *
+     * @param source 客户端商品卡片单项
+     * @return RPC DTO
+     */
+    private ClientAgentProductCardsDto.ClientAgentProductItemDto toProductItemDto(
+            AssistantProductPurchaseCardsVo.AssistantProductPurchaseItemVo source
+    ) {
+        if (source == null) {
+            return null;
+        }
+        return ClientAgentProductCardsDto.ClientAgentProductItemDto.builder()
+                .id(source.getId())
+                .name(source.getName())
+                .image(source.getImage())
+                .price(source.getPrice())
+                .spec(source.getSpec())
+                .efficacy(source.getEfficacy())
+                .prescription(source.getPrescription())
+                .stock(source.getStock())
+                .build();
+    }
+
+    /**
+     * 将客户端购买卡片结果映射为 RPC DTO。
+     *
+     * @param source 客户端商品卡片基础信息
+     * @param queries 商品购买项列表
+     * @return RPC DTO
+     */
+    private ClientAgentProductPurchaseCardsDto toProductPurchaseCardsDto(
+            AssistantProductPurchaseCardsVo source,
+            List<ClientAgentProductPurchaseQueryDto> queries
+    ) {
+        if (source == null || source.getItems() == null || source.getItems().isEmpty() || queries == null || queries.isEmpty()) {
+            return emptyProductPurchaseCardsDto();
+        }
+
+        Map<String, AssistantProductPurchaseCardsVo.AssistantProductPurchaseItemVo> itemMap = source.getItems().stream()
+                .filter(Objects::nonNull)
+                .filter(item -> StringUtils.hasText(item.getId()))
+                .collect(Collectors.toMap(
+                        AssistantProductPurchaseCardsVo.AssistantProductPurchaseItemVo::getId,
+                        Function.identity(),
+                        (left, right) -> left,
+                        LinkedHashMap::new
+                ));
+
+        List<ClientAgentProductPurchaseCardsDto.ClientAgentProductPurchaseItemDto> items = new ArrayList<>();
+        BigDecimal totalPrice = scaledPrice(BigDecimal.ZERO);
+        for (ClientAgentProductPurchaseQueryDto query : queries) {
+            if (query == null || query.getProductId() == null || query.getQuantity() == null || query.getQuantity() <= 0) {
+                continue;
+            }
+
+            AssistantProductPurchaseCardsVo.AssistantProductPurchaseItemVo sourceItem =
+                    itemMap.get(String.valueOf(query.getProductId()));
+            if (sourceItem == null) {
+                continue;
+            }
+
+            BigDecimal unitPrice = parsePrice(sourceItem.getPrice());
+            totalPrice = totalPrice.add(unitPrice.multiply(BigDecimal.valueOf(query.getQuantity())));
+            items.add(toProductPurchaseItemDto(sourceItem, query.getQuantity()));
+        }
+
+        return ClientAgentProductPurchaseCardsDto.builder()
+                .totalPrice(scaledPrice(totalPrice))
+                .items(items)
+                .build();
     }
 
     /**
@@ -149,37 +268,20 @@ public class ClientAgentProductRpcServiceImpl implements ClientAgentProductRpcSe
      * @param source 客户端购买卡片结果
      * @return RPC DTO
      */
-    private ClientAgentProductPurchaseCardsDto toProductPurchaseCardsDto(AssistantProductPurchaseCardsVo source) {
-        if (source == null) {
-            return emptyProductPurchaseCardsDto();
-        }
-        List<ClientAgentProductPurchaseCardsDto.ClientAgentProductPurchaseItemDto> items =
-                source.getItems() == null ? List.of() : source.getItems().stream()
-                        .map(this::toProductPurchaseItemDto)
-                        .toList();
-        return ClientAgentProductPurchaseCardsDto.builder()
-                .totalPrice(source.getTotalPrice())
-                .items(items)
-                .build();
-    }
-
-    /**
-     * 将客户端购买卡片单项映射为 RPC DTO。
-     *
-     * @param source 客户端购买卡片单项
-     * @return RPC DTO
-     */
     private ClientAgentProductPurchaseCardsDto.ClientAgentProductPurchaseItemDto toProductPurchaseItemDto(
-            AssistantProductPurchaseCardsVo.AssistantProductPurchaseItemVo source
+            AssistantProductPurchaseCardsVo.AssistantProductPurchaseItemVo source,
+            Integer quantity
     ) {
         if (source == null) {
             return null;
         }
+        BigDecimal price = parsePrice(source.getPrice());
         return ClientAgentProductPurchaseCardsDto.ClientAgentProductPurchaseItemDto.builder()
                 .id(source.getId())
                 .name(source.getName())
                 .image(source.getImage())
-                .price(source.getPrice())
+                .price(price)
+                .quantity(quantity)
                 .spec(source.getSpec())
                 .efficacy(source.getEfficacy())
                 .prescription(source.getPrescription())
@@ -202,15 +304,50 @@ public class ClientAgentProductRpcServiceImpl implements ClientAgentProductRpcSe
     }
 
     /**
+     * 构造空商品卡片结果。
+     *
+     * @return 空商品卡片 DTO
+     */
+    private ClientAgentProductCardsDto emptyProductCardsDto() {
+        return ClientAgentProductCardsDto.builder()
+                .totalPrice("0.00")
+                .items(List.of())
+                .build();
+    }
+
+    /**
      * 构造空购买卡片结果。
      *
      * @return 空购买卡片 DTO
      */
     private ClientAgentProductPurchaseCardsDto emptyProductPurchaseCardsDto() {
         return ClientAgentProductPurchaseCardsDto.builder()
-                .totalPrice("0.00")
+                .totalPrice(scaledPrice(BigDecimal.ZERO))
                 .items(List.of())
                 .build();
+    }
+
+    /**
+     * 将价格文本解析为数值价格。
+     *
+     * @param priceText 价格文本
+     * @return 数值价格
+     */
+    private BigDecimal parsePrice(String priceText) {
+        if (!StringUtils.hasText(priceText)) {
+            return scaledPrice(BigDecimal.ZERO);
+        }
+        return scaledPrice(new BigDecimal(priceText));
+    }
+
+    /**
+     * 统一价格精度，保留两位小数。
+     *
+     * @param price 原始价格
+     * @return 格式化后的价格
+     */
+    private BigDecimal scaledPrice(BigDecimal price) {
+        return (price == null ? BigDecimal.ZERO : price).setScale(2, RoundingMode.HALF_UP);
     }
 
     /**

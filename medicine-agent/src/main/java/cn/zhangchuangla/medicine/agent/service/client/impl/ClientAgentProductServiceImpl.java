@@ -2,10 +2,7 @@ package cn.zhangchuangla.medicine.agent.service.client.impl;
 
 import cn.zhangchuangla.medicine.agent.service.client.ClientAgentProductService;
 import cn.zhangchuangla.medicine.common.core.base.PageResult;
-import cn.zhangchuangla.medicine.model.dto.ClientAgentProductPurchaseCardsDto;
-import cn.zhangchuangla.medicine.model.dto.ClientAgentProductSearchDto;
-import cn.zhangchuangla.medicine.model.dto.ClientAgentProductSpecDto;
-import cn.zhangchuangla.medicine.model.dto.MallProductDetailDto;
+import cn.zhangchuangla.medicine.model.dto.*;
 import cn.zhangchuangla.medicine.model.request.ClientAgentProductSearchRequest;
 import cn.zhangchuangla.medicine.rpc.client.ClientAgentProductRpcService;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
@@ -52,14 +49,35 @@ public class ClientAgentProductServiceImpl implements ClientAgentProductService 
     }
 
     /**
-     * 调用商品模块查询商品购买卡片补全结果。
+     * 调用商品模块查询商品卡片补全结果。
      *
      * @param productIds 商品ID列表
-     * @return 商品购买卡片补全结果
+     * @return 商品卡片补全结果
      */
     @Override
-    public ClientAgentProductPurchaseCardsDto getProductPurchaseCards(List<Long> productIds) {
-        ClientAgentProductPurchaseCardsDto result = clientAgentProductRpcService.getProductPurchaseCards(productIds);
+    public ClientAgentProductCardsDto getProductCards(List<Long> productIds) {
+        ClientAgentProductCardsDto result = clientAgentProductRpcService.getProductCards(productIds);
+        if (result == null) {
+            return emptyProductCards();
+        }
+        if (result.getItems() == null) {
+            result.setItems(List.of());
+        }
+        if (result.getTotalPrice() == null) {
+            result.setTotalPrice("0.00");
+        }
+        return result;
+    }
+
+    /**
+     * 调用商品模块查询商品购买卡片结果。
+     *
+     * @param items 商品购买项列表
+     * @return 商品购买卡片结果
+     */
+    @Override
+    public ClientAgentProductPurchaseCardsDto getProductPurchaseCards(List<ClientAgentProductPurchaseQueryDto> items) {
+        ClientAgentProductPurchaseCardsDto result = clientAgentProductRpcService.getProductPurchaseCards(items);
         if (result == null) {
             return emptyProductPurchaseCards();
         }
@@ -67,7 +85,7 @@ public class ClientAgentProductServiceImpl implements ClientAgentProductService 
             result.setItems(List.of());
         }
         if (result.getTotalPrice() == null) {
-            result.setTotalPrice("0.00");
+            result.setTotalPrice(new java.math.BigDecimal("0.00"));
         }
         return result;
     }
@@ -102,13 +120,25 @@ public class ClientAgentProductServiceImpl implements ClientAgentProductService 
     }
 
     /**
+     * 构造空商品卡片结果。
+     *
+     * @return 空商品卡片结果
+     */
+    private ClientAgentProductCardsDto emptyProductCards() {
+        return ClientAgentProductCardsDto.builder()
+                .totalPrice("0.00")
+                .items(List.of())
+                .build();
+    }
+
+    /**
      * 构造空购买卡片结果。
      *
      * @return 空购买卡片结果
      */
     private ClientAgentProductPurchaseCardsDto emptyProductPurchaseCards() {
         return ClientAgentProductPurchaseCardsDto.builder()
-                .totalPrice("0.00")
+                .totalPrice(new java.math.BigDecimal("0.00"))
                 .items(List.of())
                 .build();
     }

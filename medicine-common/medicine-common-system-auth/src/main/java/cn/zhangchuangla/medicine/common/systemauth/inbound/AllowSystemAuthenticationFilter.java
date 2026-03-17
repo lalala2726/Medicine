@@ -82,12 +82,6 @@ public class AllowSystemAuthenticationFilter extends OncePerRequestFilter {
      * @return 校验结果
      */
     private VerifyResult verifyRequest(CachedBodyHttpServletRequest request) {
-        String authorization = request.getHeader(SystemAuthHeaders.AUTHORIZATION);
-        if (StringUtils.isNotBlank(authorization)) {
-            return VerifyResult.fail(HttpStatus.UNAUTHORIZED, ResponseCode.UNAUTHORIZED,
-                    "Authorization header is not allowed for system-auth endpoint");
-        }
-
         String agentKey = trimHeader(request.getHeader(SystemAuthHeaders.X_AGENT_KEY));
         String agentTimestamp = trimHeader(request.getHeader(SystemAuthHeaders.X_AGENT_TIMESTAMP));
         String agentNonce = trimHeader(request.getHeader(SystemAuthHeaders.X_AGENT_NONCE));
