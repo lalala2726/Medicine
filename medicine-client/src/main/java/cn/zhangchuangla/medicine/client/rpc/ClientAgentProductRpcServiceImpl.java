@@ -1,15 +1,13 @@
 package cn.zhangchuangla.medicine.client.rpc;
 
 import cn.zhangchuangla.medicine.client.model.request.MallProductSearchRequest;
+import cn.zhangchuangla.medicine.client.model.vo.AssistantProductPurchaseCardsVo;
 import cn.zhangchuangla.medicine.client.model.vo.MallProductSearchVo;
 import cn.zhangchuangla.medicine.client.service.MallProductService;
 import cn.zhangchuangla.medicine.common.core.base.PageResult;
 import cn.zhangchuangla.medicine.common.core.enums.ResponseCode;
 import cn.zhangchuangla.medicine.common.core.exception.ServiceException;
-import cn.zhangchuangla.medicine.model.dto.ClientAgentProductSearchDto;
-import cn.zhangchuangla.medicine.model.dto.ClientAgentProductSpecDto;
-import cn.zhangchuangla.medicine.model.dto.DrugDetailDto;
-import cn.zhangchuangla.medicine.model.dto.MallProductDetailDto;
+import cn.zhangchuangla.medicine.model.dto.*;
 import cn.zhangchuangla.medicine.model.request.ClientAgentProductSearchRequest;
 import cn.zhangchuangla.medicine.rpc.client.ClientAgentProductRpcService;
 import lombok.RequiredArgsConstructor;
@@ -80,6 +78,18 @@ public class ClientAgentProductRpcServiceImpl implements ClientAgentProductRpcSe
     }
 
     /**
+     * 查询商品购买卡片补全结果。
+     *
+     * @param productIds 商品ID列表
+     * @return 商品购买卡片补全结果
+     */
+    @Override
+    public ClientAgentProductPurchaseCardsDto getProductPurchaseCards(List<Long> productIds) {
+        AssistantProductPurchaseCardsVo cards = mallProductService.getAssistantProductPurchaseCards(productIds);
+        return toProductPurchaseCardsDto(cards);
+    }
+
+    /**
      * 查询商品规格属性。
      *
      * @param productId 商品ID
@@ -134,6 +144,50 @@ public class ClientAgentProductRpcServiceImpl implements ClientAgentProductRpcSe
     }
 
     /**
+     * 将客户端购买卡片结果映射为 RPC DTO。
+     *
+     * @param source 客户端购买卡片结果
+     * @return RPC DTO
+     */
+    private ClientAgentProductPurchaseCardsDto toProductPurchaseCardsDto(AssistantProductPurchaseCardsVo source) {
+        if (source == null) {
+            return emptyProductPurchaseCardsDto();
+        }
+        List<ClientAgentProductPurchaseCardsDto.ClientAgentProductPurchaseItemDto> items =
+                source.getItems() == null ? List.of() : source.getItems().stream()
+                        .map(this::toProductPurchaseItemDto)
+                        .toList();
+        return ClientAgentProductPurchaseCardsDto.builder()
+                .totalPrice(source.getTotalPrice())
+                .items(items)
+                .build();
+    }
+
+    /**
+     * 将客户端购买卡片单项映射为 RPC DTO。
+     *
+     * @param source 客户端购买卡片单项
+     * @return RPC DTO
+     */
+    private ClientAgentProductPurchaseCardsDto.ClientAgentProductPurchaseItemDto toProductPurchaseItemDto(
+            AssistantProductPurchaseCardsVo.AssistantProductPurchaseItemVo source
+    ) {
+        if (source == null) {
+            return null;
+        }
+        return ClientAgentProductPurchaseCardsDto.ClientAgentProductPurchaseItemDto.builder()
+                .id(source.getId())
+                .name(source.getName())
+                .image(source.getImage())
+                .price(source.getPrice())
+                .spec(source.getSpec())
+                .efficacy(source.getEfficacy())
+                .prescription(source.getPrescription())
+                .stock(source.getStock())
+                .build();
+    }
+
+    /**
      * 查询并校验商品是否对客户端智能体可见。
      *
      * @param productId 商品ID
@@ -145,6 +199,18 @@ public class ClientAgentProductRpcServiceImpl implements ClientAgentProductRpcSe
             throw new ServiceException(ResponseCode.RESULT_IS_NULL, "商品不存在");
         }
         return detail;
+    }
+
+    /**
+     * 构造空购买卡片结果。
+     *
+     * @return 空购买卡片 DTO
+     */
+    private ClientAgentProductPurchaseCardsDto emptyProductPurchaseCardsDto() {
+        return ClientAgentProductPurchaseCardsDto.builder()
+                .totalPrice("0.00")
+                .items(List.of())
+                .build();
     }
 
     /**

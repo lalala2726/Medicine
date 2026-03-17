@@ -245,6 +245,11 @@ class AgentClientProductControllerTests {
         }
 
         @Override
+        public cn.zhangchuangla.medicine.model.dto.ClientAgentProductPurchaseCardsDto getProductPurchaseCards(List<Long> productIds) {
+            throw new UnsupportedOperationException("not needed in this test");
+        }
+
+        @Override
         public ClientAgentProductSpecDto getProductSpec(Long productId) {
             this.specInvoked = true;
             this.capturedSpecProductId = productId;

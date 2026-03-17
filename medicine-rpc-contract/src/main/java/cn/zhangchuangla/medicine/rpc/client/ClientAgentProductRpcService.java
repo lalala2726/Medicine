@@ -1,10 +1,13 @@
 package cn.zhangchuangla.medicine.rpc.client;
 
 import cn.zhangchuangla.medicine.common.core.base.PageResult;
+import cn.zhangchuangla.medicine.model.dto.ClientAgentProductPurchaseCardsDto;
 import cn.zhangchuangla.medicine.model.dto.ClientAgentProductSearchDto;
 import cn.zhangchuangla.medicine.model.dto.ClientAgentProductSpecDto;
 import cn.zhangchuangla.medicine.model.dto.MallProductDetailDto;
 import cn.zhangchuangla.medicine.model.request.ClientAgentProductSearchRequest;
+
+import java.util.List;
 
 /**
  * 客户端智能体商品只读 RPC。
@@ -26,6 +29,14 @@ public interface ClientAgentProductRpcService {
      * @return 商品详情
      */
     MallProductDetailDto getProductDetail(Long productId);
+
+    /**
+     * 查询商品购买卡片补全结果。
+     *
+     * @param productIds 商品ID列表
+     * @return 商品购买卡片补全结果
+     */
+    ClientAgentProductPurchaseCardsDto getProductPurchaseCards(List<Long> productIds);
 
     /**
      * 查询商品规格属性。

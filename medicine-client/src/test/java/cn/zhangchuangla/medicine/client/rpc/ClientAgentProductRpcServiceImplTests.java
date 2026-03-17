@@ -1,10 +1,12 @@
 package cn.zhangchuangla.medicine.client.rpc;
 
 import cn.zhangchuangla.medicine.client.model.request.MallProductSearchRequest;
+import cn.zhangchuangla.medicine.client.model.vo.AssistantProductPurchaseCardsVo;
 import cn.zhangchuangla.medicine.client.model.vo.MallProductSearchVo;
 import cn.zhangchuangla.medicine.client.service.MallProductService;
 import cn.zhangchuangla.medicine.common.core.base.PageResult;
 import cn.zhangchuangla.medicine.common.core.exception.ServiceException;
+import cn.zhangchuangla.medicine.model.dto.ClientAgentProductPurchaseCardsDto;
 import cn.zhangchuangla.medicine.model.dto.ClientAgentProductSpecDto;
 import cn.zhangchuangla.medicine.model.dto.DrugDetailDto;
 import cn.zhangchuangla.medicine.model.dto.MallProductDetailDto;
@@ -127,5 +129,54 @@ class ClientAgentProductRpcServiceImplTests {
         ServiceException exception = assertThrows(ServiceException.class, () -> service.getProductDetail(1L));
 
         assertEquals("商品不存在", exception.getMessage());
+    }
+
+    @Test
+    void getProductPurchaseCards_ShouldMapResultAndPreserveOrder() {
+        List<Long> productIds = List.of(102L, 101L);
+        AssistantProductPurchaseCardsVo cards = AssistantProductPurchaseCardsVo.builder()
+                .totalPrice("36.70")
+                .items(List.of(
+                        AssistantProductPurchaseCardsVo.AssistantProductPurchaseItemVo.builder()
+                                .id("102")
+                                .name("维生素C咀嚼片")
+                                .image("https://example.com/102.png")
+                                .price("19.90")
+                                .spec("60片/瓶")
+                                .efficacy("补充维生素C")
+                                .prescription(false)
+                                .stock(98)
+                                .build(),
+                        AssistantProductPurchaseCardsVo.AssistantProductPurchaseItemVo.builder()
+                                .id("101")
+                                .name("布洛芬缓释胶囊")
+                                .image("https://example.com/101.png")
+                                .price("16.80")
+                                .spec("24粒/盒")
+                                .efficacy("缓解发热、头痛")
+                                .prescription(false)
+                                .stock(56)
+                                .build()
+                ))
+                .build();
+        when(mallProductService.getAssistantProductPurchaseCards(productIds)).thenReturn(cards);
+
+        ClientAgentProductPurchaseCardsDto result = service.getProductPurchaseCards(productIds);
+
+        assertEquals("36.70", result.getTotalPrice());
+        assertEquals(2, result.getItems().size());
+        assertEquals("102", result.getItems().get(0).getId());
+        assertEquals("101", result.getItems().get(1).getId());
+        verify(mallProductService).getAssistantProductPurchaseCards(productIds);
+    }
+
+    @Test
+    void getProductPurchaseCards_WhenServiceReturnsNull_ShouldReturnEmptyCards() {
+        when(mallProductService.getAssistantProductPurchaseCards(List.of(999L))).thenReturn(null);
+
+        ClientAgentProductPurchaseCardsDto result = service.getProductPurchaseCards(List.of(999L));
+
+        assertEquals("0.00", result.getTotalPrice());
+        assertTrue(result.getItems().isEmpty());
     }
 }

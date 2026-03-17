@@ -2,6 +2,7 @@ package cn.zhangchuangla.medicine.agent.service.client.impl;
 
 import cn.zhangchuangla.medicine.agent.service.client.ClientAgentProductService;
 import cn.zhangchuangla.medicine.common.core.base.PageResult;
+import cn.zhangchuangla.medicine.model.dto.ClientAgentProductPurchaseCardsDto;
 import cn.zhangchuangla.medicine.model.dto.ClientAgentProductSearchDto;
 import cn.zhangchuangla.medicine.model.dto.ClientAgentProductSpecDto;
 import cn.zhangchuangla.medicine.model.dto.MallProductDetailDto;
@@ -51,6 +52,27 @@ public class ClientAgentProductServiceImpl implements ClientAgentProductService 
     }
 
     /**
+     * 调用商品模块查询商品购买卡片补全结果。
+     *
+     * @param productIds 商品ID列表
+     * @return 商品购买卡片补全结果
+     */
+    @Override
+    public ClientAgentProductPurchaseCardsDto getProductPurchaseCards(List<Long> productIds) {
+        ClientAgentProductPurchaseCardsDto result = clientAgentProductRpcService.getProductPurchaseCards(productIds);
+        if (result == null) {
+            return emptyProductPurchaseCards();
+        }
+        if (result.getItems() == null) {
+            result.setItems(List.of());
+        }
+        if (result.getTotalPrice() == null) {
+            result.setTotalPrice("0.00");
+        }
+        return result;
+    }
+
+    /**
      * 调用商品模块查询商品规格属性。
      *
      * @param productId 商品ID
@@ -77,5 +99,17 @@ public class ClientAgentProductServiceImpl implements ClientAgentProductService 
         Page<ClientAgentProductSearchDto> page = new Page<>(pageNum, pageSize, total);
         page.setRecords(result.getRows() == null ? List.of() : result.getRows());
         return page;
+    }
+
+    /**
+     * 构造空购买卡片结果。
+     *
+     * @return 空购买卡片结果
+     */
+    private ClientAgentProductPurchaseCardsDto emptyProductPurchaseCards() {
+        return ClientAgentProductPurchaseCardsDto.builder()
+                .totalPrice("0.00")
+                .items(List.of())
+                .build();
     }
 }

@@ -1,6 +1,7 @@
 package cn.zhangchuangla.medicine.agent.service.client.impl;
 
 import cn.zhangchuangla.medicine.common.core.base.PageResult;
+import cn.zhangchuangla.medicine.model.dto.ClientAgentProductPurchaseCardsDto;
 import cn.zhangchuangla.medicine.model.dto.ClientAgentProductSearchDto;
 import cn.zhangchuangla.medicine.model.dto.ClientAgentProductSpecDto;
 import cn.zhangchuangla.medicine.model.request.ClientAgentProductSearchRequest;
@@ -56,5 +57,35 @@ class ClientAgentProductServiceImplTests {
         when(clientAgentProductRpcService.getProductSpec(1L)).thenReturn(specDto);
 
         assertSame(specDto, service.getProductSpec(1L));
+    }
+
+    @Test
+    void getProductPurchaseCards_ShouldDelegateToRpc() {
+        ClientAgentProductPurchaseCardsDto rpcResult = ClientAgentProductPurchaseCardsDto.builder()
+                .totalPrice("36.70")
+                .items(List.of(
+                        ClientAgentProductPurchaseCardsDto.ClientAgentProductPurchaseItemDto.builder()
+                                .id("102")
+                                .name("维生素C咀嚼片")
+                                .build()
+                ))
+                .build();
+        when(clientAgentProductRpcService.getProductPurchaseCards(List.of(102L))).thenReturn(rpcResult);
+
+        var result = service.getProductPurchaseCards(List.of(102L));
+
+        assertEquals("36.70", result.getTotalPrice());
+        assertEquals(1, result.getItems().size());
+        assertEquals("102", result.getItems().getFirst().getId());
+    }
+
+    @Test
+    void getProductPurchaseCards_WhenRpcReturnsNull_ShouldReturnEmptyCards() {
+        when(clientAgentProductRpcService.getProductPurchaseCards(List.of(999L))).thenReturn(null);
+
+        var result = service.getProductPurchaseCards(List.of(999L));
+
+        assertEquals("0.00", result.getTotalPrice());
+        assertTrue(result.getItems().isEmpty());
     }
 }
