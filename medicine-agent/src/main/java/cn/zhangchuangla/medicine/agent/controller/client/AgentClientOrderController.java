@@ -50,9 +50,15 @@ public class AgentClientOrderController extends BaseController {
     ) {
         ClientAgentOrderDetailDto detail = clientAgentOrderService.getOrderDetail(orderNo, getUserId());
         ClientAgentOrderDetailVo target = copyProperties(detail, ClientAgentOrderDetailVo.class);
-        target.setReceiverInfo(copyProperties(detail.getReceiverInfo(), ClientAgentOrderDetailVo.ReceiverInfo.class));
-        target.setItems(copyListProperties(detail.getItems(), ClientAgentOrderDetailVo.OrderItemDetail.class));
-        target.setShippingInfo(copyProperties(detail.getShippingInfo(), ClientAgentOrderDetailVo.ShippingInfo.class));
+        if (detail.getReceiverInfo() != null) {
+            target.setReceiverInfo(copyProperties(detail.getReceiverInfo(), ClientAgentOrderDetailVo.ReceiverInfo.class));
+        }
+        if (detail.getItems() != null) {
+            target.setItems(copyListProperties(detail.getItems(), ClientAgentOrderDetailVo.OrderItemDetail.class));
+        }
+        if (detail.getShippingInfo() != null) {
+            target.setShippingInfo(copyProperties(detail.getShippingInfo(), ClientAgentOrderDetailVo.ShippingInfo.class));
+        }
         return success(target);
     }
 

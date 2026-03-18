@@ -52,17 +52,9 @@ public class AgentClientProductController extends BaseController {
     @GetMapping("/search")
     @Operation(summary = "搜索商品", description = "按关键词分页搜索商品")
     public AjaxResult<TableDataResult> searchProducts(@Validated ClientAgentProductSearchRequest request) {
-        ClientAgentProductSearchRequest safeRequest = request == null ? new ClientAgentProductSearchRequest() : request;
-        String keyword = safeRequest.getKeyword();
-        safeRequest.setKeyword(keyword == null ? null : keyword.trim());
-        String categoryName = safeRequest.getCategoryName();
-        safeRequest.setCategoryName(categoryName == null ? null : categoryName.trim());
-        String usage = safeRequest.getUsage();
-        safeRequest.setUsage(usage == null ? null : usage.trim());
-        safeRequest.setPageNum(Math.max(safeRequest.getPageNum(), 1));
-        safeRequest.setPageSize(Math.max(safeRequest.getPageSize(), 1));
+        ClientAgentProductSearchRequest safeRequest = ClientAgentProductSearchRequest.sanitize(request);
         Page<ClientAgentProductSearchDto> page = clientAgentProductService.searchProducts(safeRequest);
-        List<ClientAgentProductSearchVo> rows = copyListProperties(page.getRecords(), ClientAgentProductSearchVo.class);
+        List<ClientAgentProductSearchVo> rows = copyListProperties(page, ClientAgentProductSearchVo.class);
         return getTableData(page, rows);
     }
 

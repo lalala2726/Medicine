@@ -62,8 +62,10 @@ class AgentClientProductControllerTests {
         setupAuthentication(99L);
         ClientAgentProductSearchRequest request = new ClientAgentProductSearchRequest();
         request.setKeyword("  感冒灵  ");
-        request.setPageNum(1);
-        request.setPageSize(10);
+        request.setCategoryName(" 感冒药 ");
+        request.setUsage(" 缓解头痛 ");
+        request.setPageNum(0);
+        request.setPageSize(0);
         productService.searchPage = createSearchPage();
 
         var result = controller.searchProducts(request);
@@ -71,6 +73,16 @@ class AgentClientProductControllerTests {
         assertEquals(200, result.getCode());
         assertTrue(productService.searchInvoked);
         assertEquals("感冒灵", productService.capturedRequest.getKeyword());
+        assertEquals("感冒药", productService.capturedRequest.getCategoryName());
+        assertEquals("缓解头痛", productService.capturedRequest.getUsage());
+        assertEquals(1, productService.capturedRequest.getPageNum());
+        assertEquals(1, productService.capturedRequest.getPageSize());
+        assertEquals("  感冒灵  ", request.getKeyword());
+        assertEquals(" 感冒药 ", request.getCategoryName());
+        assertEquals(" 缓解头痛 ", request.getUsage());
+        assertEquals(0, request.getPageNum());
+        assertEquals(0, request.getPageSize());
+        assertNotSame(request, productService.capturedRequest);
         assertNotNull(result.getData());
         assertEquals(1, result.getData().getRows().size());
         assertInstanceOf(ClientAgentProductSearchVo.class, result.getData().getRows().getFirst());
