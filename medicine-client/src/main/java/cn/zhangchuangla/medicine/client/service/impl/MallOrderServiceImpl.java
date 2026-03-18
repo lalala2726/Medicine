@@ -13,6 +13,7 @@ import cn.zhangchuangla.medicine.common.core.constants.RedisConstants;
 import cn.zhangchuangla.medicine.common.core.enums.ResponseCode;
 import cn.zhangchuangla.medicine.common.core.exception.ServiceException;
 import cn.zhangchuangla.medicine.common.core.utils.BeanCotyUtils;
+import cn.zhangchuangla.medicine.common.core.utils.JSONUtils;
 import cn.zhangchuangla.medicine.common.redis.core.RedisCache;
 import cn.zhangchuangla.medicine.common.security.base.BaseService;
 import cn.zhangchuangla.medicine.common.security.utils.SecurityUtils;
@@ -27,6 +28,9 @@ import com.alipay.api.AlipayApiException;
 import com.alipay.api.internal.util.AlipaySignature;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
+import com.google.gson.JsonArray;
+import com.google.gson.JsonElement;
+import com.google.gson.JsonObject;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -63,6 +67,11 @@ public class MallOrderServiceImpl extends ServiceImpl<MallOrderMapper, MallOrder
     private static final String PAY_TYPE_ALIPAY = ALIPAY.getType();
     private static final String WAIT_PAY = PayTypeEnum.WAIT_PAY.getType();
     private static final int SALES_SYNC_THRESHOLD = 5;
+    private static final String CANCEL_CHECK_REASON_CAN_CANCEL = "CAN_CANCEL";
+    private static final String CANCEL_CHECK_REASON_ORDER_NOT_FOUND = "ORDER_NOT_FOUND";
+    private static final String CANCEL_CHECK_REASON_STATUS_INVALID = "ORDER_STATUS_INVALID";
+    private static final String CANCEL_CHECK_REASON_STATUS_NOT_CANCELABLE = "ORDER_STATUS_NOT_CANCELABLE";
+    private static final String ORDER_NOT_FOUND_OR_NO_PERMISSION_MESSAGE = "订单不存在或无权访问";
 
     private final MallProductService mallProductService;
     private final MallOrderItemService mallOrderItemService;
@@ -849,61 +858,78 @@ public class MallOrderServiceImpl extends ServiceImpl<MallOrderMapper, MallOrder
 
     @Override
     public OrderShippingVo getOrderShipping(String orderNo) {
-        // 1. 查询订单基本信息并校验所属用户
-        MallOrder mallOrder = lambdaQuery()
-                .eq(MallOrder::getOrderNo, orderNo)
-                .one();
+        return getOrderShipping(orderNo, getUserId());
+    }
 
-        if (mallOrder == null) {
-            throw new ServiceException(ResponseCode.RESULT_IS_NULL, "订单不存在");
-        }
+    /**
+     * 按订单号和指定用户ID查询订单物流。
+     *
+     * @param orderNo 订单编号
+     * @param userId  指定用户ID
+     * @return 订单物流
+     */
+    @Override
+    public OrderShippingVo getOrderShipping(String orderNo, Long userId) {
+        MallOrder mallOrder = getOwnedOrderByOrderNo(orderNo, userId);
+        MallOrderShipping shipping = mallOrderShippingService.getByOrderId(mallOrder.getId());
+        return buildOrderShippingVo(mallOrder, shipping);
+    }
 
-        // 2. 校验订单所属用户
-        Long orderUserId = mallOrder.getUserId();
-        Long userId = getUserId();
-        if (!Objects.equals(orderUserId, userId)) {
-            throw new ServiceException(ResponseCode.OPERATION_ERROR, "订单信息不存在!");
-        }
+    /**
+     * 按订单号和指定用户ID查询订单时间线。
+     *
+     * @param orderNo 订单编号
+     * @param userId  指定用户ID
+     * @return 订单时间线
+     */
+    @Override
+    public ClientAgentOrderTimelineDto getOrderTimeline(String orderNo, Long userId) {
+        MallOrder mallOrder = getOwnedOrderByOrderNo(orderNo, userId);
+        List<MallOrderTimeline> timelineList = mallOrderTimelineService.getTimelineByOrderId(mallOrder.getId());
+        List<ClientAgentOrderTimelineDto.TimelineNode> timeline = timelineList == null ? List.of() : timelineList.stream()
+                .map(this::toOrderTimelineNode)
+                .toList();
 
-        // 3. 查询物流信息
-        Long orderId = mallOrder.getId();
-        MallOrderShipping shipping = mallOrderShippingService.getByOrderId(orderId);
-
-        // 4. 获取订单状态名称
         OrderStatusEnum orderStatusEnum = OrderStatusEnum.fromCode(mallOrder.getOrderStatus());
-        String orderStatusName = orderStatusEnum != null ? orderStatusEnum.getName() : "未知";
-
-        // 5. 组装收货人信息
-        DeliveryTypeEnum deliveryTypeEnum = DeliveryTypeEnum.fromCode(mallOrder.getDeliveryType());
-        OrderShippingVo.ReceiverInfo receiverInfo = OrderShippingVo.ReceiverInfo.builder()
-                .receiverName(mallOrder.getReceiverName())
-                .receiverPhone(mallOrder.getReceiverPhone())
-                .receiverDetail(mallOrder.getReceiverDetail())
-                .deliveryType(mallOrder.getDeliveryType())
-                .deliveryTypeName(deliveryTypeEnum != null ? deliveryTypeEnum.getName() : "未知")
-                .build();
-
-        // 6. 组装返回VO
-        OrderShippingVo.OrderShippingVoBuilder builder = OrderShippingVo.builder()
+        return ClientAgentOrderTimelineDto.builder()
                 .orderId(mallOrder.getId())
                 .orderNo(mallOrder.getOrderNo())
                 .orderStatus(mallOrder.getOrderStatus())
-                .orderStatusName(orderStatusName)
-                .receiverInfo(receiverInfo);
+                .orderStatusName(orderStatusEnum != null ? orderStatusEnum.getName() : "未知")
+                .timeline(timeline)
+                .build();
+    }
 
-        // 7. 如果有物流信息，添加物流详情
-        if (shipping != null) {
-            ShippingStatusEnum statusEnum = ShippingStatusEnum.fromCode(shipping.getStatus());
-            builder.logisticsCompany(shipping.getShippingCompany())
-                    .trackingNumber(shipping.getShippingNo())
-                    .shipmentNote(shipping.getShipmentNote())
-                    .deliverTime(shipping.getDeliverTime())
-                    .receiveTime(shipping.getReceiveTime())
-                    .status(shipping.getStatus())
-                    .statusName(statusEnum != null ? statusEnum.getName() : "未知");
+    /**
+     * 校验订单是否允许取消。
+     *
+     * @param orderNo 订单编号
+     * @param userId  指定用户ID
+     * @return 取消资格
+     */
+    @Override
+    public ClientAgentOrderCancelCheckDto checkOrderCancelable(String orderNo, Long userId) {
+        MallOrder mallOrder = lambdaQuery()
+                .eq(MallOrder::getOrderNo, orderNo)
+                .eq(MallOrder::getUserId, userId)
+                .one();
+        if (mallOrder == null) {
+            return buildOrderCancelCheck(orderNo, null, null, false,
+                    CANCEL_CHECK_REASON_ORDER_NOT_FOUND, ORDER_NOT_FOUND_OR_NO_PERMISSION_MESSAGE);
         }
 
-        return builder.build();
+        OrderStatusEnum orderStatusEnum = OrderStatusEnum.fromCode(mallOrder.getOrderStatus());
+        if (orderStatusEnum == null) {
+            return buildOrderCancelCheck(mallOrder.getOrderNo(), mallOrder.getOrderStatus(), "未知", false,
+                    CANCEL_CHECK_REASON_STATUS_INVALID, "当前订单状态异常，暂不支持取消");
+        }
+        if (orderStatusEnum == OrderStatusEnum.PENDING_PAYMENT) {
+            return buildOrderCancelCheck(mallOrder.getOrderNo(), mallOrder.getOrderStatus(), orderStatusEnum.getName(), true,
+                    CANCEL_CHECK_REASON_CAN_CANCEL, "当前订单允许取消");
+        }
+        return buildOrderCancelCheck(mallOrder.getOrderNo(), mallOrder.getOrderStatus(), orderStatusEnum.getName(), false,
+                CANCEL_CHECK_REASON_STATUS_NOT_CANCELABLE,
+                String.format("当前订单状态[%s]不允许取消", orderStatusEnum.getName()));
     }
 
 
@@ -977,8 +1003,18 @@ public class MallOrderServiceImpl extends ServiceImpl<MallOrderMapper, MallOrder
 
     @Override
     public OrderDetailVo getOrderDetail(String orderNo) {
-        Long userId = getUserId();
+        return getOrderDetail(orderNo, getUserId());
+    }
 
+    /**
+     * 按订单号和指定用户ID查询订单详情，供 Dubbo 场景显式传入用户范围。
+     *
+     * @param orderNo 订单编号
+     * @param userId  指定用户ID
+     * @return 订单详情
+     */
+    @Override
+    public OrderDetailVo getOrderDetail(String orderNo, Long userId) {
         // 1. 查询订单详情
         OrderDetailDto orderDetailDto = baseMapper.getOrderDetailByOrderNo(orderNo, userId);
         if (orderDetailDto == null) {
@@ -1069,6 +1105,219 @@ public class MallOrderServiceImpl extends ServiceImpl<MallOrderMapper, MallOrder
                 .items(itemDetailVos)
                 .shippingInfo(shippingInfo)
                 .build();
+    }
+
+    /**
+     * 查询当前用户范围内的订单。
+     *
+     * @param orderNo 订单编号
+     * @param userId  用户ID
+     * @return 订单实体
+     */
+    private MallOrder getOwnedOrderByOrderNo(String orderNo, Long userId) {
+        MallOrder mallOrder = lambdaQuery()
+                .eq(MallOrder::getOrderNo, orderNo)
+                .eq(MallOrder::getUserId, userId)
+                .one();
+        if (mallOrder == null) {
+            throw new ServiceException(ResponseCode.RESULT_IS_NULL, "订单不存在");
+        }
+        return mallOrder;
+    }
+
+    /**
+     * 构建订单物流返回对象。
+     *
+     * @param mallOrder 订单实体
+     * @param shipping  物流实体
+     * @return 订单物流
+     */
+    private OrderShippingVo buildOrderShippingVo(MallOrder mallOrder, MallOrderShipping shipping) {
+        OrderStatusEnum orderStatusEnum = OrderStatusEnum.fromCode(mallOrder.getOrderStatus());
+        DeliveryTypeEnum deliveryTypeEnum = DeliveryTypeEnum.fromCode(mallOrder.getDeliveryType());
+        OrderShippingVo.ReceiverInfo receiverInfo = OrderShippingVo.ReceiverInfo.builder()
+                .receiverName(mallOrder.getReceiverName())
+                .receiverPhone(mallOrder.getReceiverPhone())
+                .receiverDetail(mallOrder.getReceiverDetail())
+                .deliveryType(mallOrder.getDeliveryType())
+                .deliveryTypeName(deliveryTypeEnum != null ? deliveryTypeEnum.getName() : "未知")
+                .build();
+
+        ShippingStatusEnum shippingStatusEnum = shipping == null
+                ? ShippingStatusEnum.NOT_SHIPPED
+                : ShippingStatusEnum.fromCode(shipping.getStatus());
+
+        OrderShippingVo.OrderShippingVoBuilder builder = OrderShippingVo.builder()
+                .orderId(mallOrder.getId())
+                .orderNo(mallOrder.getOrderNo())
+                .orderStatus(mallOrder.getOrderStatus())
+                .orderStatusName(orderStatusEnum != null ? orderStatusEnum.getName() : "未知")
+                .status(shipping == null ? ShippingStatusEnum.NOT_SHIPPED.getType() : shipping.getStatus())
+                .statusName(shippingStatusEnum != null ? shippingStatusEnum.getName() : "未知")
+                .receiverInfo(receiverInfo)
+                .nodes(shipping == null ? List.of() : parseShippingNodes(shipping.getShippingInfo()));
+
+        if (shipping != null) {
+            builder.logisticsCompany(shipping.getShippingCompany())
+                    .trackingNumber(shipping.getShippingNo())
+                    .shipmentNote(shipping.getShipmentNote())
+                    .deliverTime(shipping.getDeliverTime())
+                    .receiveTime(shipping.getReceiveTime());
+        }
+        return builder.build();
+    }
+
+    /**
+     * 构建订单时间线节点。
+     *
+     * @param source 时间线实体
+     * @return 时间线节点
+     */
+    private ClientAgentOrderTimelineDto.TimelineNode toOrderTimelineNode(MallOrderTimeline source) {
+        if (source == null) {
+            return null;
+        }
+        OrderEventTypeEnum eventTypeEnum = OrderEventTypeEnum.fromCode(source.getEventType());
+        OrderStatusEnum eventStatusEnum = OrderStatusEnum.fromCode(source.getEventStatus());
+        OperatorTypeEnum operatorTypeEnum = OperatorTypeEnum.fromCode(source.getOperatorType());
+        return ClientAgentOrderTimelineDto.TimelineNode.builder()
+                .id(source.getId())
+                .eventType(source.getEventType())
+                .eventTypeName(eventTypeEnum != null ? eventTypeEnum.getName() : "未知")
+                .eventStatus(source.getEventStatus())
+                .eventStatusName(eventStatusEnum != null ? eventStatusEnum.getName() : "未知")
+                .operatorType(source.getOperatorType())
+                .operatorTypeName(operatorTypeEnum != null ? operatorTypeEnum.getName() : "未知")
+                .description(source.getDescription())
+                .createdTime(source.getCreatedTime())
+                .build();
+    }
+
+    /**
+     * 构建订单取消校验结果。
+     *
+     * @param orderNo         订单编号
+     * @param orderStatus     订单状态编码
+     * @param orderStatusName 订单状态名称
+     * @param cancelable      是否可取消
+     * @param reasonCode      结果编码
+     * @param reasonMessage   结果说明
+     * @return 取消校验结果
+     */
+    private ClientAgentOrderCancelCheckDto buildOrderCancelCheck(String orderNo,
+                                                                 String orderStatus,
+                                                                 String orderStatusName,
+                                                                 boolean cancelable,
+                                                                 String reasonCode,
+                                                                 String reasonMessage) {
+        return ClientAgentOrderCancelCheckDto.builder()
+                .orderNo(orderNo)
+                .orderStatus(orderStatus)
+                .orderStatusName(orderStatusName)
+                .cancelable(cancelable)
+                .reasonCode(reasonCode)
+                .reasonMessage(reasonMessage)
+                .build();
+    }
+
+    /**
+     * 解析物流轨迹 JSON。
+     *
+     * @param shippingInfo 物流轨迹 JSON
+     * @return 物流轨迹节点列表
+     */
+    private List<OrderShippingVo.ShippingNode> parseShippingNodes(String shippingInfo) {
+        if (!StringUtils.hasText(shippingInfo)) {
+            return List.of();
+        }
+        try {
+            JsonElement element = JSONUtils.parseLenient(shippingInfo);
+            JsonArray nodeArray = extractShippingNodeArray(element);
+            if (nodeArray == null) {
+                return List.of();
+            }
+
+            List<OrderShippingVo.ShippingNode> nodes = new ArrayList<>();
+            for (JsonElement nodeElement : nodeArray) {
+                if (!nodeElement.isJsonObject()) {
+                    continue;
+                }
+                JsonObject nodeObject = nodeElement.getAsJsonObject();
+                String time = firstNonBlank(nodeObject, "time", "acceptTime", "timestamp", "createTime", "date");
+                String content = firstNonBlank(nodeObject, "content", "description", "status", "remark",
+                        "context", "acceptStation");
+                String location = firstNonBlank(nodeObject, "location", "site", "address", "city", "nodeName");
+                if (!StringUtils.hasText(time) && !StringUtils.hasText(content) && !StringUtils.hasText(location)) {
+                    continue;
+                }
+                nodes.add(OrderShippingVo.ShippingNode.builder()
+                        .time(time)
+                        .content(content)
+                        .location(location)
+                        .build());
+            }
+            return nodes;
+        } catch (Exception ex) {
+            log.warn("解析订单物流轨迹失败，shippingInfo={}", shippingInfo, ex);
+            return List.of();
+        }
+    }
+
+    /**
+     * 提取物流节点数组。
+     *
+     * @param element JSON 节点
+     * @return 物流节点数组
+     */
+    private JsonArray extractShippingNodeArray(JsonElement element) {
+        if (element == null || element.isJsonNull()) {
+            return null;
+        }
+        if (element.isJsonArray()) {
+            return element.getAsJsonArray();
+        }
+        if (!element.isJsonObject()) {
+            return null;
+        }
+
+        JsonObject jsonObject = element.getAsJsonObject();
+        for (String key : List.of("traces", "nodes", "list", "data", "tracks", "shippingNodes")) {
+            JsonElement candidate = jsonObject.get(key);
+            if (candidate == null || candidate.isJsonNull()) {
+                continue;
+            }
+            if (candidate.isJsonArray()) {
+                return candidate.getAsJsonArray();
+            }
+            if (candidate.isJsonObject()) {
+                JsonArray nested = extractShippingNodeArray(candidate);
+                if (nested != null) {
+                    return nested;
+                }
+            }
+        }
+        return null;
+    }
+
+    /**
+     * 读取 JSON 对象中首个非空文本字段。
+     *
+     * @param jsonObject JSON 对象
+     * @param keys       字段名列表
+     * @return 首个非空文本字段
+     */
+    private String firstNonBlank(JsonObject jsonObject, String... keys) {
+        for (String key : keys) {
+            JsonElement value = jsonObject.get(key);
+            if (value == null || value.isJsonNull()) {
+                continue;
+            }
+            String text = value.getAsString();
+            if (StringUtils.hasText(text)) {
+                return text.trim();
+            }
+        }
+        return null;
     }
 
     @Override

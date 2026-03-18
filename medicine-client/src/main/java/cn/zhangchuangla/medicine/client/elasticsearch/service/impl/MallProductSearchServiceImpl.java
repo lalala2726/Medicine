@@ -20,10 +20,7 @@ import org.springframework.util.CollectionUtils;
 import org.springframework.util.StringUtils;
 
 import java.math.BigDecimal;
-import java.util.LinkedHashSet;
-import java.util.List;
-import java.util.Objects;
-import java.util.Set;
+import java.util.*;
 
 /**
  * 商品搜索服务实现。
@@ -75,11 +72,11 @@ public class MallProductSearchServiceImpl implements MallProductSearchService {
             throw new ServiceException(ResponseCode.PARAM_ERROR, "查询数据总数不能超过" + maxOffset + "条");
         }
 
-        if (!StringUtils.hasText(request.getKeyword())) {
-            throw new ServiceException(ResponseCode.PARAM_ERROR, "关键字不能为空");
+        if (!hasSearchCondition(request)) {
+            throw new ServiceException(ResponseCode.PARAM_ERROR, "搜索条件不能为空");
         }
 
-        Criteria criteria = buildKeywordCriteria(request.getKeyword());
+        Criteria criteria = buildSearchCriteria(request);
         // 默认仅查询上架商品，传了 status 则使用入参
         if (request.getStatus() != null) {
             criteria = criteria.and(new Criteria("status").is(request.getStatus()));
@@ -141,6 +138,55 @@ public class MallProductSearchServiceImpl implements MallProductSearchService {
 
     /**
      * 构建检索条件：名称（含拼音）、分类名、品牌、通用名、功效均可命中。
+     */
+    private Criteria buildSearchCriteria(MallProductSearchRequest request) {
+        List<Criteria> criteriaList = new ArrayList<>();
+        if (StringUtils.hasText(request.getKeyword())) {
+            criteriaList.add(buildKeywordCriteria(request.getKeyword()));
+        }
+        if (StringUtils.hasText(request.getCategoryName())) {
+            criteriaList.add(new Criteria("categoryName").is(request.getCategoryName().trim()));
+        }
+        if (StringUtils.hasText(request.getEfficacy())) {
+            criteriaList.add(buildUsageCriteria(request.getEfficacy()));
+        }
+
+        Criteria criteria = criteriaList.getFirst();
+        for (int i = 1; i < criteriaList.size(); i++) {
+            criteria = criteria.and(criteriaList.get(i));
+        }
+        return criteria;
+    }
+
+    /**
+     * 判断是否提供了至少一个可用搜索条件。
+     *
+     * @param request 搜索请求
+     * @return 是否提供了有效搜索条件
+     */
+    private boolean hasSearchCondition(MallProductSearchRequest request) {
+        return StringUtils.hasText(request.getKeyword())
+                || StringUtils.hasText(request.getCategoryName())
+                || StringUtils.hasText(request.getEfficacy());
+    }
+
+    /**
+     * 构建商品用途或适用场景检索条件。
+     *
+     * @param usage 用途关键词
+     * @return 检索条件
+     */
+    private Criteria buildUsageCriteria(String usage) {
+        String normalizedUsage = usage.trim();
+        return new Criteria("efficacy").matches(normalizedUsage)
+                .or(new Criteria("instruction").matches(normalizedUsage));
+    }
+
+    /**
+     * 构建关键字检索条件。
+     *
+     * @param keyword 搜索关键字
+     * @return 关键字检索条件
      */
     private Criteria buildKeywordCriteria(String keyword) {
         String normalizedKeyword = keyword.trim();

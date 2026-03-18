@@ -1,13 +1,15 @@
 package cn.zhangchuangla.medicine.client.service;
 
 import cn.zhangchuangla.medicine.client.model.request.*;
+import cn.zhangchuangla.medicine.client.model.vo.AfterSaleApplyResultVo;
+import cn.zhangchuangla.medicine.client.model.vo.AfterSaleEligibilityVo;
+import cn.zhangchuangla.medicine.model.dto.ClientAgentAfterSaleEligibilityDto;
 import cn.zhangchuangla.medicine.model.entity.MallAfterSale;
+import cn.zhangchuangla.medicine.model.request.ClientAgentAfterSaleEligibilityRequest;
 import cn.zhangchuangla.medicine.model.vo.AfterSaleDetailVo;
 import cn.zhangchuangla.medicine.model.vo.AfterSaleListVo;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.IService;
-
-import java.util.List;
 
 /**
  * 售后申请Service
@@ -21,9 +23,17 @@ public interface MallAfterSaleService extends IService<MallAfterSale> {
      * 用户申请售后
      *
      * @param request 申请售后请求
-     * @return 售后单号
+     * @return 售后申请结果
      */
-    String applyAfterSale(AfterSaleApplyRequest request);
+    AfterSaleApplyResultVo applyAfterSale(AfterSaleApplyRequest request);
+
+    /**
+     * 用户端售后资格校验。
+     *
+     * @param request 校验请求
+     * @return 售后资格信息
+     */
+    AfterSaleEligibilityVo getAfterSaleEligibility(AfterSaleEligibilityRequest request);
 
     /**
      * 用户取消售后申请
@@ -50,12 +60,22 @@ public interface MallAfterSaleService extends IService<MallAfterSale> {
     AfterSaleDetailVo getAfterSaleDetail(Long afterSaleId);
 
     /**
-     * 申请整单退款
+     * 按售后单号和用户ID查询售后详情。
      *
-     * @param request 退款请求
-     * @return 创建的售后单号列表
+     * @param afterSaleNo 售后单号
+     * @param userId      用户ID
+     * @return 售后详情
      */
-    List<String> applyOrderRefund(OrderRefundApplyRequest request);
+    AfterSaleDetailVo getAfterSaleDetail(String afterSaleNo, Long userId);
+
+    /**
+     * 校验指定用户订单或订单项是否满足售后资格。
+     *
+     * @param request 校验请求
+     * @param userId  用户ID
+     * @return 售后资格
+     */
+    ClientAgentAfterSaleEligibilityDto checkAfterSaleEligibility(ClientAgentAfterSaleEligibilityRequest request, Long userId);
 
     /**
      * 再次发起售后

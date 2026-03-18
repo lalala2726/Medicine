@@ -26,4 +26,3 @@ public class AfterSaleListRequest extends PageRequest {
     @Schema(description = "订单编号", example = "O20251108123456789012")
     private String orderNo;
 }
-

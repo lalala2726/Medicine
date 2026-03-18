@@ -69,8 +69,8 @@ public interface AnalyticsService {
     /**
      * 获取指定时间范围内的热销商品排行。
      *
-     * @param days 最近天数，默认30，范围1-730
-     * @param limit     返回数量限制
+     * @param days  最近天数，默认30，范围1-730
+     * @param limit 返回数量限制
      * @return 热销商品排行
      */
     List<AnalyticsTopSellingProductVo> topSellingProducts(Integer days, int limit);
@@ -78,8 +78,8 @@ public interface AnalyticsService {
     /**
      * 获取指定时间范围内的退货退款风险商品排行。
      *
-     * @param days 最近天数，默认30，范围1-730
-     * @param limit     返回数量限制
+     * @param days  最近天数，默认30，范围1-730
+     * @param limit 返回数量限制
      * @return 风险商品排行
      */
     List<AnalyticsReturnRefundRiskProductVo> returnRefundRiskProducts(Integer days, int limit);

@@ -25,6 +25,7 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
 public class AgentRpcExceptionAdvice {
 
     private static final String ADMIN_ROUTE_PREFIX = "/agent/admin/";
+    private static final String CLIENT_ROUTE_PREFIX = "/agent/client/";
 
     private final GlobalExceptionHandel globalExceptionHandel;
 
@@ -58,6 +59,10 @@ public class AgentRpcExceptionAdvice {
             return false;
         }
         String uri = request.getRequestURI();
-        return uri != null && (uri.equals("/agent/admin") || uri.startsWith(ADMIN_ROUTE_PREFIX));
+        return uri != null
+                && (uri.equals("/agent/admin")
+                || uri.startsWith(ADMIN_ROUTE_PREFIX)
+                || uri.equals("/agent/client")
+                || uri.startsWith(CLIENT_ROUTE_PREFIX));
     }
 }

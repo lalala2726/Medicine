@@ -11,6 +11,7 @@ import lombok.NoArgsConstructor;
 import java.io.Serial;
 import java.io.Serializable;
 import java.util.Date;
+import java.util.List;
 
 /**
  * 订单物流信息VO
@@ -64,6 +65,9 @@ public class OrderShippingVo implements Serializable {
     @Schema(description = "收货人信息")
     private ReceiverInfo receiverInfo;
 
+    @Schema(description = "物流轨迹节点")
+    private List<ShippingNode> nodes;
+
     /**
      * 收货人信息内部类
      */
@@ -92,5 +96,28 @@ public class OrderShippingVo implements Serializable {
 
         @Schema(description = "配送方式名称", example = "快递配送")
         private String deliveryTypeName;
+    }
+
+    /**
+     * 物流轨迹节点
+     */
+    @Data
+    @Builder
+    @NoArgsConstructor
+    @AllArgsConstructor
+    @Schema(description = "物流轨迹节点")
+    public static class ShippingNode implements Serializable {
+
+        @Serial
+        private static final long serialVersionUID = 1L;
+
+        @Schema(description = "节点时间", example = "2025-11-08 10:00:00")
+        private String time;
+
+        @Schema(description = "节点内容", example = "快件已到达上海转运中心")
+        private String content;
+
+        @Schema(description = "节点位置", example = "上海")
+        private String location;
     }
 }

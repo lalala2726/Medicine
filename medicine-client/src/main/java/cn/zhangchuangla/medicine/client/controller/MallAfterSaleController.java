@@ -1,6 +1,8 @@
 package cn.zhangchuangla.medicine.client.controller;
 
 import cn.zhangchuangla.medicine.client.model.request.*;
+import cn.zhangchuangla.medicine.client.model.vo.AfterSaleApplyResultVo;
+import cn.zhangchuangla.medicine.client.model.vo.AfterSaleEligibilityVo;
 import cn.zhangchuangla.medicine.client.service.MallAfterSaleService;
 import cn.zhangchuangla.medicine.common.core.base.AjaxResult;
 import cn.zhangchuangla.medicine.common.core.base.TableDataResult;
@@ -15,8 +17,6 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
-
-import java.util.List;
 
 /**
  * 售后管理
@@ -40,20 +40,20 @@ public class MallAfterSaleController extends BaseController {
      * @return 售后申请编号
      */
     @PostMapping("/apply")
-    @Operation(summary = "申请售后", description = "用户申请售后服务(仅退款/退货退款/换货)")
-    public AjaxResult<Void> applyAfterSale(@Validated @RequestBody AfterSaleApplyRequest request) {
-        String afterSaleNo = mallAfterSaleService.applyAfterSale(request);
-        return success(afterSaleNo);
+    @Operation(summary = "申请售后", description = "统一售后申请入口，支持整单退款与单商品售后申请")
+    public AjaxResult<AfterSaleApplyResultVo> applyAfterSale(@Validated @RequestBody AfterSaleApplyRequest request) {
+        AfterSaleApplyResultVo result = mallAfterSaleService.applyAfterSale(request);
+        return success(result);
     }
 
     /**
-     * 申请整单退款
+     * 售后资格校验
      */
-    @PostMapping("/refund/order")
-    @Operation(summary = "申请整单退款", description = "用户对整笔订单发起退款申请，系统自动拆分至订单所有商品")
-    public AjaxResult<List<String>> applyOrderRefund(@Validated @RequestBody OrderRefundApplyRequest request) {
-        List<String> afterSaleNos = mallAfterSaleService.applyOrderRefund(request);
-        return success(afterSaleNos);
+    @GetMapping("/eligibility")
+    @Operation(summary = "售后资格校验", description = "返回订单商品售后资格与可退金额信息")
+    public AjaxResult<AfterSaleEligibilityVo> getAfterSaleEligibility(@Validated AfterSaleEligibilityRequest request) {
+        AfterSaleEligibilityVo result = mallAfterSaleService.getAfterSaleEligibility(request);
+        return success(result);
     }
 
     /**

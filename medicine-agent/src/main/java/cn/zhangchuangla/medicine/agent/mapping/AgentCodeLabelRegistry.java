@@ -80,6 +80,11 @@ public final class AgentCodeLabelRegistry {
      */
     public static final String AGENT_OPERATOR_TYPE = "agent.operator.type";
 
+    /**
+     * 物流状态映射。
+     */
+    public static final String AGENT_SHIPPING_STATUS = "agent.shipping.status";
+
     private static final Map<String, Map<String, String>> DICT = buildDict();
 
     private AgentCodeLabelRegistry() {
@@ -119,6 +124,7 @@ public final class AgentCodeLabelRegistry {
         dict.put(AGENT_AFTER_SALE_RECEIVE_STATUS, buildReceiveStatusDict());
         dict.put(AGENT_ORDER_EVENT_TYPE, buildOrderEventTypeDict());
         dict.put(AGENT_OPERATOR_TYPE, buildOperatorTypeDict());
+        dict.put(AGENT_SHIPPING_STATUS, buildShippingStatusDict());
         return Map.copyOf(dict);
     }
 
@@ -227,6 +233,14 @@ public final class AgentCodeLabelRegistry {
         Map<String, String> mapping = new LinkedHashMap<>();
         for (OperatorTypeEnum operatorTypeEnum : OperatorTypeEnum.values()) {
             mapping.put(operatorTypeEnum.getType(), operatorTypeEnum.getName());
+        }
+        return Map.copyOf(mapping);
+    }
+
+    private static Map<String, String> buildShippingStatusDict() {
+        Map<String, String> mapping = new LinkedHashMap<>();
+        for (ShippingStatusEnum shippingStatusEnum : ShippingStatusEnum.values()) {
+            mapping.put(shippingStatusEnum.getType(), shippingStatusEnum.getName());
         }
         return Map.copyOf(mapping);
     }

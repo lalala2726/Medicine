@@ -25,6 +25,7 @@
         mas.id,
         mas.after_sale_no,
         mas.order_no,
+        mas.order_item_id,
         mas.user_id,
         u.nickname AS user_nickname,
         moi.product_name,
@@ -76,4 +77,3 @@
     </select>
 
 </mapper>
-

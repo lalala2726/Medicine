@@ -1,0 +1,37 @@
+package cn.zhangchuangla.medicine.agent.service.client;
+
+import cn.zhangchuangla.medicine.model.dto.ClientAgentProductSearchDto;
+import cn.zhangchuangla.medicine.model.dto.ClientAgentProductSpecDto;
+import cn.zhangchuangla.medicine.model.dto.MallProductDetailDto;
+import cn.zhangchuangla.medicine.model.request.ClientAgentProductSearchRequest;
+import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
+
+/**
+ * 客户端智能体商品服务接口。
+ */
+public interface ClientAgentProductService {
+
+    /**
+     * 搜索商品。
+     *
+     * @param request 搜索参数
+     * @return 分页结果
+     */
+    Page<ClientAgentProductSearchDto> searchProducts(ClientAgentProductSearchRequest request);
+
+    /**
+     * 查询商品详情。
+     *
+     * @param productId 商品ID
+     * @return 商品详情
+     */
+    MallProductDetailDto getProductDetail(Long productId);
+
+    /**
+     * 查询商品规格属性。
+     *
+     * @param productId 商品ID
+     * @return 商品规格属性
+     */
+    ClientAgentProductSpecDto getProductSpec(Long productId);
+}

@@ -29,10 +29,13 @@ import java.util.TimeZone;
 @Configuration
 public class JacksonConfig {
 
+    private static final String DATE_TIME_PATTERN = "yyyy-MM-dd HH:mm:ss";
+    private static final String DATE_PATTERN = "yyyy-MM-dd";
+
     @Bean
     public JsonMapper jsonMapper() {
-        DateTimeFormatter dateTimeFormatter =
-                DateTimeFormatter.ofPattern("yyyy-MM-dd");
+        DateTimeFormatter dateTimeFormatter = DateTimeFormatter.ofPattern(DATE_TIME_PATTERN);
+        DateTimeFormatter dateFormatter = DateTimeFormatter.ofPattern(DATE_PATTERN);
 
         JavaTimeModule javaTimeModule = new JavaTimeModule();
         javaTimeModule.addSerializer(
@@ -45,11 +48,11 @@ public class JacksonConfig {
         );
         javaTimeModule.addSerializer(
                 LocalDate.class,
-                new LocalDateSerializer(dateTimeFormatter)
+                new LocalDateSerializer(dateFormatter)
         );
         javaTimeModule.addDeserializer(
                 LocalDate.class,
-                new LocalDateDeserializer(dateTimeFormatter)
+                new LocalDateDeserializer(dateFormatter)
         );
 
         SimpleModule numberToStringModule = new SimpleModule();
@@ -67,7 +70,7 @@ public class JacksonConfig {
                 .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false)
                 // 时区
                 .defaultTimeZone(TimeZone.getTimeZone("GMT+8"))
-                .defaultDateFormat(new SimpleDateFormat("yyyy-MM-dd"))
+                .defaultDateFormat(new SimpleDateFormat(DATE_TIME_PATTERN))
                 .build();
     }
 }

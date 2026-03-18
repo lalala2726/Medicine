@@ -136,7 +136,7 @@ public class AnalyticsServiceImpl implements AnalyticsService {
      * 获取指定时间范围内的热销商品排行。
      *
      * @param days  最近天数
-     * @param limit     返回数量限制
+     * @param limit 返回数量限制
      * @return 返回按销量降序排列的热销商品列表
      */
     @Override
@@ -150,7 +150,7 @@ public class AnalyticsServiceImpl implements AnalyticsService {
      * 获取指定时间范围内的退货退款风险商品排行。
      *
      * @param days  最近天数
-     * @param limit     返回数量限制
+     * @param limit 返回数量限制
      * @return 返回按风险程度排序的退货退款商品列表
      */
     @Override

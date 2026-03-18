@@ -11,6 +11,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.security.authorization.AuthorizationDeniedException;
+import org.springframework.validation.BindException;
 import org.springframework.web.HttpRequestMethodNotSupportedException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.MissingServletRequestParameterException;
@@ -37,7 +38,7 @@ public class GlobalExceptionHandel {
 
 
     /**
-     * 处理业务逻辑中抛出的自定义业务异常。
+     * 处理业务逻辑中抛出的自定义业务W异常。
      * ServiceException 通常表示在业务流程中检测到的错误，例如非法操作或不符合预期的状态。
      *
      * @param exception 包含错误信息和状态码的异常对象
@@ -181,18 +182,19 @@ public class GlobalExceptionHandel {
     @ExceptionHandler(MethodArgumentNotValidException.class)
     public AjaxResult<Void> methodArgumentNotValidExceptionHandel(MethodArgumentNotValidException exception) {
         log.error("参数校验失败:", exception);
+        return AjaxResult.error(ResponseCode.PARAM_ERROR, resolveBindingErrorMessage(exception.getBindingResult().getFieldErrors()));
+    }
 
-        // 提取具体的字段错误信息
-        StringBuilder errorMessage = new StringBuilder();
-        exception.getBindingResult().getFieldErrors().forEach(fieldError -> {
-            if (!errorMessage.isEmpty()) {
-                errorMessage.append("; ");
-            }
-            errorMessage.append(fieldError.getDefaultMessage());
-        });
-
-        String message = !errorMessage.isEmpty() ? errorMessage.toString() : "参数校验失败";
-        return AjaxResult.error(ResponseCode.PARAM_ERROR, message);
+    /**
+     * 处理查询参数/表单参数校验失败的情况。
+     *
+     * @param exception 包含字段错误信息的异常对象
+     * @return 返回具体的字段校验错误信息的 AjaxResult 对象
+     */
+    @ExceptionHandler(BindException.class)
+    public AjaxResult<Void> bindExceptionHandel(BindException exception) {
+        log.error("参数绑定校验失败:", exception);
+        return AjaxResult.error(ResponseCode.PARAM_ERROR, resolveBindingErrorMessage(exception.getBindingResult().getFieldErrors()));
     }
 
     /**
@@ -340,6 +342,17 @@ public class GlobalExceptionHandel {
             return "布尔值";
         }
         return null;
+    }
+
+    private String resolveBindingErrorMessage(List<org.springframework.validation.FieldError> fieldErrors) {
+        StringBuilder errorMessage = new StringBuilder();
+        fieldErrors.forEach(fieldError -> {
+            if (!errorMessage.isEmpty()) {
+                errorMessage.append("; ");
+            }
+            errorMessage.append(fieldError.getDefaultMessage());
+        });
+        return !errorMessage.isEmpty() ? errorMessage.toString() : "参数校验失败";
     }
 
 }

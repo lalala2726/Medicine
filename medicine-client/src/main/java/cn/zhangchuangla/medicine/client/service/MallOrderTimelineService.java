@@ -4,6 +4,8 @@ import cn.zhangchuangla.medicine.model.dto.OrderTimelineDto;
 import cn.zhangchuangla.medicine.model.entity.MallOrderTimeline;
 import com.baomidou.mybatisplus.extension.service.IService;
 
+import java.util.List;
+
 /**
  * 订单时间线服务接口
  *
@@ -20,6 +22,14 @@ public interface MallOrderTimelineService extends IService<MallOrderTimeline> {
      * @param dto 时间线数据传输对象
      */
     void addTimeline(OrderTimelineDto dto);
+
+    /**
+     * 根据订单ID查询时间线列表。
+     *
+     * @param orderId 订单ID
+     * @return 时间线列表
+     */
+    List<MallOrderTimeline> getTimelineByOrderId(Long orderId);
 
     /**
      * 添加时间线记录（如果不存在）
