@@ -1,6 +1,4 @@
 package cn.zhangchuangla.medicine.agent.controller.client;
-
-import cn.zhangchuangla.medicine.agent.annotation.InternalAgentHeaderTrace;
 import cn.zhangchuangla.medicine.agent.model.vo.client.ClientAgentAfterSaleDetailVo;
 import cn.zhangchuangla.medicine.agent.model.vo.client.ClientAgentAfterSaleEligibilityVo;
 import cn.zhangchuangla.medicine.agent.service.client.ClientAgentAfterSaleService;
@@ -25,7 +23,6 @@ import org.springframework.web.bind.annotation.RestController;
 @RestController
 @RequestMapping("/agent/client/after-sale")
 @Tag(name = "客户端智能体售后工具", description = "用于客户端智能体售后查询接口")
-@InternalAgentHeaderTrace
 @Validated
 @RequiredArgsConstructor
 public class AgentClientAfterSaleController extends BaseController {

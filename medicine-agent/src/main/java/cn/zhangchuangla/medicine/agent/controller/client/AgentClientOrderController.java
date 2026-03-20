@@ -1,6 +1,4 @@
 package cn.zhangchuangla.medicine.agent.controller.client;
-
-import cn.zhangchuangla.medicine.agent.annotation.InternalAgentHeaderTrace;
 import cn.zhangchuangla.medicine.agent.model.vo.client.ClientAgentOrderCancelCheckVo;
 import cn.zhangchuangla.medicine.agent.model.vo.client.ClientAgentOrderDetailVo;
 import cn.zhangchuangla.medicine.agent.model.vo.client.ClientAgentOrderShippingVo;
@@ -27,7 +25,6 @@ import org.springframework.web.bind.annotation.RestController;
 @RestController
 @RequestMapping("/agent/client/order")
 @Tag(name = "客户端智能体订单工具", description = "用于客户端智能体订单查询接口")
-@InternalAgentHeaderTrace
 @RequiredArgsConstructor
 public class AgentClientOrderController extends BaseController {
 
