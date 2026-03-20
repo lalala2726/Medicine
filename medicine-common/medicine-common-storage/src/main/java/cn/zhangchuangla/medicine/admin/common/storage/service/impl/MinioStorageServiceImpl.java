@@ -1,22 +1,16 @@
 package cn.zhangchuangla.medicine.admin.common.storage.service.impl;
 
 import cn.zhangchuangla.medicine.admin.common.storage.config.MinioConfig;
-import cn.zhangchuangla.medicine.admin.common.storage.model.MinioFileObject;
 import cn.zhangchuangla.medicine.admin.common.storage.service.MinioStorageService;
-import cn.zhangchuangla.medicine.common.core.enums.ResponseCode;
-import cn.zhangchuangla.medicine.common.core.exception.ServiceException;
 import io.minio.*;
 import io.minio.messages.Bucket;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.lang.Contract;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.InputStream;
-import java.net.URI;
-import java.net.URISyntaxException;
 import java.util.List;
 
 /**
@@ -108,8 +102,14 @@ public class MinioStorageServiceImpl implements MinioStorageService {
     @Override
     public String getFileUrl(String bucketName, String objectName) {
         try {
+            String normalizedObjectName = normalizeObjectName(objectName);
+            String publicUrlPrefix = minioConfig.getNormalizedPublicUrlPrefix();
+            if (StringUtils.hasText(publicUrlPrefix)) {
+                return String.format("%s/%s", publicUrlPrefix, normalizedObjectName);
+            }
+
             // 构建直接的文件访问URL，不使用预签名URL
-            return String.format("%s/%s/%s", normalizeEndpoint(minioConfig.getEndpoint()), bucketName, objectName);
+            return String.format("%s/%s/%s", requireNormalizedEndpoint(), bucketName, normalizedObjectName);
         } catch (Exception e) {
             log.error("Failed to get file URL: {}", objectName, e);
             throw new RuntimeException("Failed to get file URL: " + objectName, e);
@@ -141,83 +141,34 @@ public class MinioStorageServiceImpl implements MinioStorageService {
         }
     }
 
-    @Override
-    public MinioFileObject fetchFileByUrl(String fileUrl) {
-        // 统一从 MinIO URL 解析 bucket/object，再读取文件内容，供业务复用
-        MinioLocation location = parseLocation(fileUrl);
-        try {
-            // 先读取对象属性，拿到 Content-Type 便于后续业务做类型判断
-            StatObjectResponse statObject = minioClient.statObject(
-                    StatObjectArgs.builder()
-                            .bucket(location.bucket())
-                            .object(location.object())
-                            .build()
-            );
-            try (InputStream objectStream = minioClient.getObject(
-                    GetObjectArgs.builder()
-                            .bucket(location.bucket())
-                            .object(location.object())
-                            .build())) {
-                byte[] data = objectStream.readAllBytes();
-                return MinioFileObject.builder()
-                        .bucket(location.bucket())
-                        .objectName(location.object())
-                        .filename(extractFilename(location.object()))
-                        .contentType(statObject != null ? statObject.contentType() : null)
-                        .data(data)
-                        .build();
-            }
-        } catch (Exception ex) {
-            log.error("Failed to fetch file from MinIO, url: {}", fileUrl, ex);
-            throw new ServiceException(ResponseCode.OPERATION_ERROR, "读取文件失败，请稍后重试");
-        }
-    }
-
-    @Contract("null -> fail")
-    private String normalizeEndpoint(String endpoint) {
-        if (endpoint == null || endpoint.isBlank()) {
+    /**
+     * 功能描述：获取必填的标准化 MinIO 端点地址，缺失时直接抛出非法状态异常。
+     * <p>
+     * 参数说明：无。
+     * 返回值：{@code String}，标准化后的 MinIO 端点地址。
+     * 异常说明：当 minio.endpoint 未配置时抛出 {@link IllegalStateException}。
+     */
+    private String requireNormalizedEndpoint() {
+        String endpoint = minioConfig.getNormalizedEndpoint();
+        if (!StringUtils.hasText(endpoint)) {
             throw new IllegalStateException("minio.endpoint 未配置");
         }
-        return endpoint.endsWith("/") ? endpoint.substring(0, endpoint.length() - 1) : endpoint;
+        return endpoint;
     }
 
     /**
-     * 将完整的 MinIO URL 拆解为 bucket 与 object，方便后续下载。
+     * 功能描述：将对象名标准化为不带前导斜杠的路径，避免 URL 拼接出现重复分隔符。
+     * <p>
+     * 参数说明：
+     *
+     * @param objectName String MinIO 对象路径。
+     *                   返回值：{@code String}，移除前导斜杠后的对象路径。
+     *                   异常说明：当对象路径为空白时抛出 {@link IllegalArgumentException}。
      */
-    private MinioLocation parseLocation(String fileUrl) {
-        try {
-            URI uri = new URI(fileUrl);
-            String path = uri.getPath();
-            if (!StringUtils.hasText(path)) {
-                throw new ServiceException(ResponseCode.PARAM_ERROR, "文件路径格式不正确");
-            }
-
-            String normalizedPath = path.startsWith("/") ? path.substring(1) : path;
-            int firstSlash = normalizedPath.indexOf('/');
-            if (firstSlash <= 0 || firstSlash == normalizedPath.length() - 1) {
-                throw new ServiceException(ResponseCode.PARAM_ERROR, "文件路径格式不正确");
-            }
-
-            String bucket = normalizedPath.substring(0, firstSlash);
-            String object = normalizedPath.substring(firstSlash + 1);
-            if (!StringUtils.hasText(bucket) || !StringUtils.hasText(object)) {
-                throw new ServiceException(ResponseCode.PARAM_ERROR, "文件路径格式不正确");
-            }
-            return new MinioLocation(bucket, object);
-        } catch (URISyntaxException ex) {
-            throw new ServiceException(ResponseCode.PARAM_ERROR, "文件地址格式不正确");
-        }
-    }
-
-    private String extractFilename(String objectName) {
+    private String normalizeObjectName(String objectName) {
         if (!StringUtils.hasText(objectName)) {
-            return "unknown";
+            throw new IllegalArgumentException("objectName 不能为空");
         }
-        int lastSlash = objectName.lastIndexOf('/');
-        return lastSlash >= 0 ? objectName.substring(lastSlash + 1) : objectName;
+        return objectName.startsWith("/") ? objectName.substring(1) : objectName;
     }
-
-    private record MinioLocation(String bucket, String object) {
-    }
-
 }

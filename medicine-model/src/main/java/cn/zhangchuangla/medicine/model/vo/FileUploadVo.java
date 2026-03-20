@@ -21,7 +21,7 @@ public class FileUploadVo {
     @Schema(description = "文件类型")
     private String fileType;
 
-    @Schema(description = "文件访问地址")
+    @Schema(description = "文件公网访问地址", example = "https://medicine-cdn.zhangchuangla.cn/2026/03/example.pdf")
     private String fileUrl;
 
 }
