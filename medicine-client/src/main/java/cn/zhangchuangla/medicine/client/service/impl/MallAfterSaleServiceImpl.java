@@ -687,11 +687,11 @@ public class MallAfterSaleServiceImpl extends ServiceImpl<MallAfterSaleMapper, M
     /**
      * 构建单个订单项的售后资格结果。
      *
-     * @param orderItem         订单项实体
-     * @param eligible          是否满足资格
-     * @param reasonCode        结果编码
-     * @param reasonMessage     结果说明
-     * @param refundableAmount  当前可退金额
+     * @param orderItem        订单项实体
+     * @param eligible         是否满足资格
+     * @param reasonCode       结果编码
+     * @param reasonMessage    结果说明
+     * @param refundableAmount 当前可退金额
      * @return 返回订单项资格结果
      */
     private ItemEligibilityResult buildItemEligibilityResult(MallOrderItem orderItem,
@@ -748,8 +748,8 @@ public class MallAfterSaleServiceImpl extends ServiceImpl<MallAfterSaleMapper, M
     /**
      * 计算整单申请场景下的失败原因。
      *
-     * @param itemResults            商品维度资格结果
-     * @param totalRefundableAmount  整单可退金额
+     * @param itemResults           商品维度资格结果
+     * @param totalRefundableAmount 整单可退金额
      * @return 返回整单失败原因，若为空表示整单可申请
      */
     private EligibilityFailure evaluateOrderScopeFailure(List<ItemEligibilityResult> itemResults, BigDecimal totalRefundableAmount) {
@@ -822,8 +822,8 @@ public class MallAfterSaleServiceImpl extends ServiceImpl<MallAfterSaleMapper, M
     /**
      * 按订单项 ID 从资格结果列表中查找目标商品。
      *
-     * @param itemResults  商品资格结果列表
-     * @param orderItemId  订单项 ID
+     * @param itemResults 商品资格结果列表
+     * @param orderItemId 订单项 ID
      * @return 返回匹配的订单项资格结果，未找到则返回 {@code null}
      */
     private ItemEligibilityResult resolveSelectedItem(List<ItemEligibilityResult> itemResults, Long orderItemId) {

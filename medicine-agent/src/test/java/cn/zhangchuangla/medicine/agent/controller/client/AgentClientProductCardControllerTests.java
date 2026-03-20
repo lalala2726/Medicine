@@ -316,7 +316,8 @@ class AgentClientProductCardControllerTests {
         return client;
     }
 
-    private record SignedHeaders(String agentKey, String timestamp, String nonce, String signVersion, String signature) {
+    private record SignedHeaders(String agentKey, String timestamp, String nonce, String signVersion,
+                                 String signature) {
     }
 
     private static class StubClientAgentProductService implements ClientAgentProductService {

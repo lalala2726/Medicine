@@ -162,7 +162,7 @@ public class ClientAgentProductRpcServiceImpl implements ClientAgentProductRpcSe
     /**
      * 将客户端购买卡片结果映射为 RPC DTO。
      *
-     * @param source 客户端商品卡片基础信息
+     * @param source  客户端商品卡片基础信息
      * @param queries 商品购买项列表
      * @return RPC DTO
      */
