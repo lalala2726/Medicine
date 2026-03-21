@@ -6,8 +6,9 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 import java.time.Duration;
 
 /**
+ * HTTP 客户端配置。
+ *
  * @author Chuang
- * <p>
  * created on 2026/1/31
  */
 @Data

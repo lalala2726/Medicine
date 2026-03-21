@@ -1,6 +1,5 @@
 package cn.zhangchuangla.medicine.common.http.model;
 
-import lombok.Builder;
 import lombok.Getter;
 import okhttp3.Headers;
 import okhttp3.HttpUrl;
@@ -11,7 +10,6 @@ import okhttp3.HttpUrl;
  * created on 2026/1/31
  */
 @Getter
-@Builder(builderClassName = "Builder", buildMethodName = "buildInternal")
 public final class ClientRequest {
 
     private final HttpMethod method;
@@ -19,8 +17,36 @@ public final class ClientRequest {
     private final Headers headers;
     private final String body;
 
+    /**
+     * 构造客户端请求。
+     *
+     * @param method 请求方法
+     * @param url 请求URL
+     * @param headers 请求头
+     * @param body 请求体
+     */
+    private ClientRequest(HttpMethod method, HttpUrl url, Headers headers, String body) {
+        this.method = method;
+        this.url = url;
+        this.headers = headers;
+        this.body = body;
+    }
+
+    /**
+     * 获取建造器。
+     *
+     * @return 请求建造器
+     */
+    public static Builder builder() {
+        return new Builder();
+    }
+
     public static class Builder {
 
+        private HttpMethod method;
+        private HttpUrl url;
+        private Headers headers;
+        private String body;
         private HttpUrl.Builder urlBuilder;
         private Headers.Builder headersBuilder;
 
@@ -84,6 +110,37 @@ public final class ClientRequest {
                 throw new IllegalStateException("url must not be null");
             }
             return buildInternal();
+        }
+
+        /**
+         * 设置请求方法。
+         *
+         * @param method 请求方法
+         * @return 当前建造器
+         */
+        public Builder method(HttpMethod method) {
+            this.method = method;
+            return this;
+        }
+
+        /**
+         * 设置请求体。
+         *
+         * @param body 请求体
+         * @return 当前建造器
+         */
+        public Builder body(String body) {
+            this.body = body;
+            return this;
+        }
+
+        /**
+         * 构建内部请求对象。
+         *
+         * @return 客户端请求
+         */
+        public ClientRequest buildInternal() {
+            return new ClientRequest(method, url, headers, body);
         }
 
         private void ensureUrlBuilder() {

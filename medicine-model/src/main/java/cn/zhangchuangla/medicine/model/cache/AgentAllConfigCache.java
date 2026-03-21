@@ -8,7 +8,7 @@ import java.io.Serializable;
 /**
  * Agent 全量配置缓存对象。
  * <p>
- * 该对象作为 Redis 中 agent:config:all 的最终保存结构，供管理端写入、Agent 端读取。
+     * 该对象作为 Redis 中 agent:config:all 的最终保存结构，供管理端写入、Agent 端读取。
  */
 @Data
 public class AgentAllConfigCache implements Serializable {
@@ -16,7 +16,7 @@ public class AgentAllConfigCache implements Serializable {
     /**
      * 当前缓存结构版本。
      */
-    public static final int CURRENT_SCHEMA_VERSION = 3;
+    public static final int CURRENT_SCHEMA_VERSION = 4;
 
     /**
      * Redis JSON 结构版本。
@@ -78,6 +78,22 @@ public class AgentAllConfigCache implements Serializable {
     @JsonIgnore
     public void setAdminAssistant(AdminAssistantAgentConfig adminAssistant) {
         ensureAgentConfigs().setAdminAssistant(adminAssistant);
+    }
+
+    /**
+     * 兼容旧调用点的只读访问器，不参与 Redis 序列化。
+     */
+    @JsonIgnore
+    public ClientAssistantAgentConfig getClientAssistant() {
+        return agentConfigs == null ? null : agentConfigs.getClientAssistant();
+    }
+
+    /**
+     * 兼容旧调用点的写访问器，不参与 Redis 序列化。
+     */
+    @JsonIgnore
+    public void setClientAssistant(ClientAssistantAgentConfig clientAssistant) {
+        ensureAgentConfigs().setClientAssistant(clientAssistant);
     }
 
     /**

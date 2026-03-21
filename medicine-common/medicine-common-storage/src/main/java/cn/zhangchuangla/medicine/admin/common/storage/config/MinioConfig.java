@@ -12,9 +12,9 @@ import org.springframework.context.annotation.Configuration;
  * @author Chuang
  * created on 2025/9/25
  */
+@Data
 @Configuration
 @ConfigurationProperties(prefix = "minio")
-@Data
 public class MinioConfig {
 
     /**

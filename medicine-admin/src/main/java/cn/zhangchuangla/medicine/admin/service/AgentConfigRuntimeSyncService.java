@@ -88,6 +88,54 @@ public class AgentConfigRuntimeSyncService {
             ),
             new SlotBinding(
                     LlmModelTypeConstants.CHAT,
+                    false,
+                    cache -> cache.getClientAssistant() == null ? null : cache.getClientAssistant().getRouteModel(),
+                    (cache, slot) -> ensureClientAssistant(cache).setRouteModel(slot)
+            ),
+            new SlotBinding(
+                    LlmModelTypeConstants.CHAT,
+                    false,
+                    cache -> cache.getClientAssistant() == null ? null : cache.getClientAssistant().getChatModel(),
+                    (cache, slot) -> ensureClientAssistant(cache).setChatModel(slot)
+            ),
+            new SlotBinding(
+                    LlmModelTypeConstants.CHAT,
+                    false,
+                    cache -> cache.getClientAssistant() == null ? null : cache.getClientAssistant().getOrderModel(),
+                    (cache, slot) -> ensureClientAssistant(cache).setOrderModel(slot)
+            ),
+            new SlotBinding(
+                    LlmModelTypeConstants.CHAT,
+                    false,
+                    cache -> cache.getClientAssistant() == null ? null : cache.getClientAssistant().getProductModel(),
+                    (cache, slot) -> ensureClientAssistant(cache).setProductModel(slot)
+            ),
+            new SlotBinding(
+                    LlmModelTypeConstants.CHAT,
+                    false,
+                    cache -> cache.getClientAssistant() == null ? null : cache.getClientAssistant().getAfterSaleModel(),
+                    (cache, slot) -> ensureClientAssistant(cache).setAfterSaleModel(slot)
+            ),
+            new SlotBinding(
+                    LlmModelTypeConstants.CHAT,
+                    false,
+                    cache -> cache.getClientAssistant() == null ? null : cache.getClientAssistant().getConsultationComfortModel(),
+                    (cache, slot) -> ensureClientAssistant(cache).setConsultationComfortModel(slot)
+            ),
+            new SlotBinding(
+                    LlmModelTypeConstants.CHAT,
+                    false,
+                    cache -> cache.getClientAssistant() == null ? null : cache.getClientAssistant().getConsultationQuestionModel(),
+                    (cache, slot) -> ensureClientAssistant(cache).setConsultationQuestionModel(slot)
+            ),
+            new SlotBinding(
+                    LlmModelTypeConstants.CHAT,
+                    false,
+                    cache -> cache.getClientAssistant() == null ? null : cache.getClientAssistant().getConsultationFinalDiagnosisModel(),
+                    (cache, slot) -> ensureClientAssistant(cache).setConsultationFinalDiagnosisModel(slot)
+            ),
+            new SlotBinding(
+                    LlmModelTypeConstants.CHAT,
                     true,
                     cache -> cache.getImageRecognition() == null ? null : cache.getImageRecognition().getImageRecognitionModel(),
                     (cache, slot) -> ensureImageRecognition(cache).setImageRecognitionModel(slot)
@@ -139,6 +187,21 @@ public class AgentConfigRuntimeSyncService {
         if (config == null) {
             config = new AdminAssistantAgentConfig();
             cache.setAdminAssistant(config);
+        }
+        return config;
+    }
+
+    /**
+     * 确保缓存中存在客户端助手配置节点。
+     *
+     * @param cache Agent 全量缓存
+     * @return 客户端助手配置节点
+     */
+    private static ClientAssistantAgentConfig ensureClientAssistant(AgentAllConfigCache cache) {
+        ClientAssistantAgentConfig config = cache.getClientAssistant();
+        if (config == null) {
+            config = new ClientAssistantAgentConfig();
+            cache.setClientAssistant(config);
         }
         return config;
     }

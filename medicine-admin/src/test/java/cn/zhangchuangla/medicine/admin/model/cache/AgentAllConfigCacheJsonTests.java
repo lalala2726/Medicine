@@ -12,13 +12,14 @@ class AgentAllConfigCacheJsonTests {
     private final ObjectMapper objectMapper = new ObjectMapper();
 
     @Test
-    void agentAllConfigCache_ShouldSerializeToSchemaVersion3Structure() throws Exception {
+    void agentAllConfigCache_ShouldSerializeToSchemaVersion4Structure() throws Exception {
         AgentAllConfigCache cache = new AgentAllConfigCache();
         cache.setUpdatedAt("2026-03-13T10:30:00+08:00");
         cache.setUpdatedBy("admin");
         cache.setLlm(buildLlmConfig());
         cache.setKnowledgeBase(buildKnowledgeBaseConfig());
         cache.setAdminAssistant(buildAdminAssistantConfig());
+        cache.setClientAssistant(buildClientAssistantConfig());
         cache.setImageRecognition(buildImageRecognitionConfig());
         cache.setChatHistorySummary(buildChatHistorySummaryConfig());
         cache.setChatTitle(buildChatTitleConfig());
@@ -27,12 +28,13 @@ class AgentAllConfigCacheJsonTests {
         String json = objectMapper.writeValueAsString(cache);
         JsonNode root = objectMapper.readTree(json);
 
-        assertEquals(3, root.path("schemaVersion").asInt());
+        assertEquals(4, root.path("schemaVersion").asInt());
         assertTrue(root.has("llm"));
         assertTrue(root.has("agentConfigs"));
         assertTrue(root.has("speech"));
         assertFalse(root.has("knowledgeBase"));
         assertFalse(root.has("adminAssistant"));
+        assertFalse(root.has("clientAssistant"));
         assertFalse(root.has("imageRecognition"));
         assertFalse(root.has("chatHistorySummary"));
         assertFalse(root.has("chatTitle"));
@@ -51,6 +53,8 @@ class AgentAllConfigCacheJsonTests {
                 root.path("agentConfigs").path("knowledgeBase").path("rankingModel").asText());
         assertEquals("gpt-4.1-mini",
                 root.path("agentConfigs").path("adminAssistant").path("chatModel").path("modelName").asText());
+        assertEquals("gpt-4.1",
+                root.path("agentConfigs").path("clientAssistant").path("consultationFinalDiagnosisModel").path("modelName").asText());
         assertEquals("qwen2.5-vl-72b-instruct",
                 root.path("agentConfigs").path("imageRecognition").path("imageRecognitionModel").path("modelName").asText());
         assertEquals("gpt-4.1-mini",
@@ -121,6 +125,19 @@ class AgentAllConfigCacheJsonTests {
         config.setBusinessNodeSimpleModel(buildSlot("gpt-4.1-mini", false, 2048, 0.3));
         config.setBusinessNodeComplexModel(buildSlot("gpt-4.1", true, 8192, 0.2));
         config.setChatModel(buildSlot("gpt-4.1-mini", true, 8192, 0.7));
+        return config;
+    }
+
+    private ClientAssistantAgentConfig buildClientAssistantConfig() {
+        ClientAssistantAgentConfig config = new ClientAssistantAgentConfig();
+        config.setRouteModel(buildSlot("gpt-4.1-mini", false, 1024, 0.0));
+        config.setChatModel(buildSlot("gpt-4.1", true, 4096, 0.7));
+        config.setOrderModel(buildSlot("gpt-4.1-mini", false, 2048, 0.3));
+        config.setProductModel(buildSlot("gpt-4.1-mini", false, 2048, 0.3));
+        config.setAfterSaleModel(buildSlot("gpt-4.1-mini", false, 2048, 0.3));
+        config.setConsultationComfortModel(buildSlot("gpt-4.1-mini", false, 2048, 1.2));
+        config.setConsultationQuestionModel(buildSlot("gpt-4.1", true, 4096, 0.2));
+        config.setConsultationFinalDiagnosisModel(buildSlot("gpt-4.1", true, 4096, 0.2));
         return config;
     }
 

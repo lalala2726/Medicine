@@ -9,13 +9,16 @@ import org.springframework.data.elasticsearch.annotations.*;
 import org.springframework.data.elasticsearch.core.suggest.Completion;
 
 import java.math.BigDecimal;
+import java.util.List;
 
 /**
- * ES 商品索引
+ * ES 商品索引。
  * 支持：
  * - IK + 拼音全文搜索
  * - Completion Suggest（自动补全）
  * - 品牌/名称/通用名 三路补全
+ *
+ * @author Chuang
  */
 @Data
 @Builder
@@ -25,13 +28,19 @@ import java.math.BigDecimal;
 @Setting(settingPath = "/elasticsearch/mall_product-settings.json")
 public class MallProductDocument {
 
+    /**
+     * 商品索引名称。
+     */
     public static final String INDEX_NAME = "mall_product";
 
+    /**
+     * 商品ID。
+     */
     @Id
     private Long id;
 
     /**
-     * 商品名称（text + keyword + 拼音搜索）
+     * 商品名称（text + keyword + 拼音搜索）。
      */
     @MultiField(
             mainField = @Field(type = FieldType.Text, analyzer = "ik_pinyin_index", searchAnalyzer = "ik_pinyin_search"),
@@ -40,37 +49,43 @@ public class MallProductDocument {
     private String name;
 
     /**
-     * 分类名
+     * 分类名。
      */
     @Field(type = FieldType.Keyword)
     private String categoryName;
 
     /**
-     * 是否处方药
+     * 分类ID。
+     */
+    @Field(type = FieldType.Long)
+    private Long categoryId;
+
+    /**
+     * 是否处方药。
      */
     @Field(type = FieldType.Boolean)
     private Boolean prescription;
 
     /**
-     * 商品价格
+     * 商品价格。
      */
     @Field(type = FieldType.Scaled_Float, scalingFactor = 100)
     private BigDecimal price;
 
     /**
-     * 商品销量
+     * 商品销量。
      */
     @Field(type = FieldType.Integer)
     private Integer sales;
 
     /**
-     * 状态
+     * 状态。
      */
     @Field(type = FieldType.Integer)
     private Integer status;
 
     /**
-     * 品牌（text + 拼音搜索）
+     * 品牌（text + 拼音搜索）。
      */
     @MultiField(
             mainField = @Field(type = FieldType.Text, analyzer = "ik_pinyin_index", searchAnalyzer = "ik_pinyin_search"),
@@ -79,7 +94,7 @@ public class MallProductDocument {
     private String brand;
 
     /**
-     * 通用名（如“对乙酰氨基酚”）
+     * 通用名（如“对乙酰氨基酚”）。
      */
     @MultiField(
             mainField = @Field(type = FieldType.Text, analyzer = "ik_pinyin_index", searchAnalyzer = "ik_pinyin_search"),
@@ -88,37 +103,55 @@ public class MallProductDocument {
     private String commonName;
 
     /**
-     * 商品名称补全（拼音+中文）
+     * 商品名称补全（拼音+中文）。
      */
     @CompletionField(analyzer = "ik_pinyin_index", searchAnalyzer = "ik_pinyin_search", maxInputLength = 100)
     private Completion nameSuggest;
 
     /**
-     * 通用名补全
+     * 通用名补全。
      */
     @CompletionField(analyzer = "ik_smart", searchAnalyzer = "ik_smart", maxInputLength = 100)
     private Completion commonNameSuggest;
 
     /**
-     * 品牌补全
+     * 品牌补全。
      */
     @CompletionField(analyzer = "ik_smart", searchAnalyzer = "ik_smart", maxInputLength = 100)
     private Completion brandSuggest;
 
     /**
-     * 功效/主治
+     * 功效/主治。
      */
     @Field(type = FieldType.Text, analyzer = "ik_max_word", searchAnalyzer = "ik_smart")
     private String efficacy;
 
     /**
-     * 主图
+     * 全量标签ID列表。
+     */
+    @Field(type = FieldType.Long)
+    private List<Long> tagIds;
+
+    /**
+     * 聚合标签名称，用于关键词召回。
+     */
+    @Field(type = FieldType.Text, analyzer = "ik_max_word", searchAnalyzer = "ik_smart")
+    private List<String> tagNames;
+
+    /**
+     * 标签类型绑定列表，用于动态类型筛选。
+     */
+    @Field(type = FieldType.Keyword)
+    private List<String> tagTypeBindings;
+
+    /**
+     * 主图。
      */
     @Field(type = FieldType.Keyword, index = false)
     private String coverImage;
 
     /**
-     * 药品说明书
+     * 药品说明书。
      */
     @Field(type = FieldType.Text, analyzer = "ik_max_word", searchAnalyzer = "ik_smart")
     private String instruction;

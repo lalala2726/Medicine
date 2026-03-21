@@ -104,6 +104,37 @@ class AgentConfigControllerTests {
     }
 
     @Test
+    void getClientAssistantConfig_ShouldDelegateToService() {
+        ClientAssistantAgentConfigVo vo = new ClientAssistantAgentConfigVo();
+        when(agentConfigService.getClientAssistantConfig()).thenReturn(vo);
+
+        var result = agentConfigController.getClientAssistantConfig();
+
+        assertEquals(200, result.getCode());
+        assertNotNull(result.getData());
+        verify(agentConfigService).getClientAssistantConfig();
+    }
+
+    @Test
+    void saveClientAssistantConfig_ShouldDelegateToService() {
+        ClientAssistantAgentConfigRequest request = new ClientAssistantAgentConfigRequest();
+        request.setRouteModel(buildSelectionRequest("gpt-4.1-mini", false, 1024, 0.0));
+        request.setChatModel(buildSelectionRequest("gpt-4.1", true, 4096, 0.7));
+        request.setOrderModel(buildSelectionRequest("gpt-4.1-mini", false, 2048, 0.3));
+        request.setProductModel(buildSelectionRequest("gpt-4.1-mini", false, 2048, 0.3));
+        request.setAfterSaleModel(buildSelectionRequest("gpt-4.1-mini", false, 2048, 0.3));
+        request.setConsultationComfortModel(buildSelectionRequest("gpt-4.1-mini", false, 2048, 1.2));
+        request.setConsultationQuestionModel(buildSelectionRequest("gpt-4.1", true, 4096, 0.2));
+        request.setConsultationFinalDiagnosisModel(buildSelectionRequest("gpt-4.1", true, 4096, 0.2));
+        when(agentConfigService.saveClientAssistantConfig(request)).thenReturn(true);
+
+        var result = agentConfigController.saveClientAssistantConfig(request);
+
+        assertEquals(200, result.getCode());
+        verify(agentConfigService).saveClientAssistantConfig(request);
+    }
+
+    @Test
     void getImageRecognitionConfig_ShouldDelegateToService() {
         ImageRecognitionAgentConfigVo vo = new ImageRecognitionAgentConfigVo();
         when(agentConfigService.getImageRecognitionConfig()).thenReturn(vo);

@@ -6,6 +6,8 @@ import java.util.Date;
 
 /**
  * 操作日志记录模型，用于跨模块传递日志信息。
+ *
+ * @author Chuang
  */
 @Data
 public class OperationLogInfo {

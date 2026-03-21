@@ -54,6 +54,9 @@ import java.util.stream.Collectors;
 public class MallProductServiceImpl extends ServiceImpl<MallProductMapper, MallProduct>
         implements MallProductService, BaseService {
 
+    /**
+     * 商品索引批处理的默认批次大小。
+     */
     private static final int DEFAULT_INDEX_BATCH_SIZE = 500;
 
     private final MallProductMapper mallProductMapper;
@@ -61,18 +64,22 @@ public class MallProductServiceImpl extends ServiceImpl<MallProductMapper, MallP
     private final MallProductImageService mallProductImageService;
     private final MallMedicineDetailService medicineDetailService;
     private final MallProductStatsService mallProductStatsService;
+    private final MallProductTagService mallProductTagService;
+    private final MallProductTagRelService mallProductTagRelService;
     private final MallOrderItemMapper mallOrderItemMapper;
     private final MallProductSearchIndexer mallProductSearchIndexer;
     private final RedisCache redisCache;
 
     @Override
     public Page<MallProduct> listMallProduct(MallProductListQueryRequest request) {
+        mallProductTagService.fillTagFilterGroups(request);
         Page<MallProduct> page = page(new Page<>(request.getPageNum(), request.getPageSize()));
         return mallProductMapper.listMallProduct(page, request);
     }
 
     @Override
     public Page<MallProductDetailDto> listMallProductWithCategory(MallProductListQueryRequest request) {
+        mallProductTagService.fillTagFilterGroups(request);
         // 先查询商品列表
         Page<MallProductDetailDto> page = mallProductMapper.listMallProductWithCategory(request.toPage(), request);
 
@@ -93,6 +100,8 @@ public class MallProductServiceImpl extends ServiceImpl<MallProductMapper, MallP
         Map<Long, String> coverImageMap = mallProductImageService.getFirstImageByProductIds(productIds)
                 .stream()
                 .collect(Collectors.toMap(MallProductImage::getProductId, MallProductImage::getImageUrl));
+        Map<Long, List<cn.zhangchuangla.medicine.model.vo.MallProductTagVo>> tagMap =
+                mallProductTagService.listTagVoMapByProductIds(productIds);
 
         // 为每个商品设置销量
         page.getRecords().forEach(product -> {
@@ -101,6 +110,7 @@ public class MallProductServiceImpl extends ServiceImpl<MallProductMapper, MallP
             product.setSales(sales != null ? sales : 0);
             String cover = coverImageMap.get(productId);
             product.setImages(cover == null ? List.of() : List.of(cover));
+            product.setTags(tagMap.getOrDefault(productId, List.of()));
         });
         return page;
     }
@@ -123,6 +133,7 @@ public class MallProductServiceImpl extends ServiceImpl<MallProductMapper, MallP
                 .map(MallProductImage::getImageUrl)
                 .toList();
         product.setImages(images);
+        product.setTags(mallProductTagService.listTagVoMapByProductIds(List.of(id)).getOrDefault(id, List.of()));
         return product;
     }
 
@@ -148,11 +159,14 @@ public class MallProductServiceImpl extends ServiceImpl<MallProductMapper, MallP
                         MallProductImage::getProductId,
                         Collectors.mapping(MallProductImage::getImageUrl, Collectors.toList())
                 ));
+        Map<Long, List<cn.zhangchuangla.medicine.model.vo.MallProductTagVo>> tagMap =
+                mallProductTagService.listTagVoMapByProductIds(productIds);
 
         // 设置图片到每个商品
         products.forEach(product -> {
             List<String> images = imageMap.getOrDefault(product.getId(), List.of());
             product.setImages(images);
+            product.setTags(tagMap.getOrDefault(product.getId(), List.of()));
         });
 
         return products;
@@ -197,6 +211,8 @@ public class MallProductServiceImpl extends ServiceImpl<MallProductMapper, MallP
     @Transactional(rollbackFor = Exception.class)
     @CacheEvict(cacheNames = RedisConstants.MallProduct.CACHE_NAME, allEntries = true)
     public boolean addMallProduct(MallProductAddRequest request) {
+        List<Long> normalizedTagIds = mallProductTagService.normalizeEnabledTagIds(request.getTagIds());
+
         // 检查商品名称是否已存在
         LambdaQueryWrapper<MallProduct> queryWrapper = new LambdaQueryWrapper<>();
         queryWrapper.eq(MallProduct::getName, request.getName());
@@ -234,6 +250,7 @@ public class MallProductServiceImpl extends ServiceImpl<MallProductMapper, MallP
         // 仅聚焦商品与图片：确保至少一张图片后批量写入图片表
         Assert.isTrue(request.getImages() != null && !request.getImages().isEmpty(), "商品图片至少需要上传一张图片");
         mallProductImageService.addProductImages(request.getImages(), product.getId());
+        mallProductTagRelService.replaceProductTags(product.getId(), normalizedTagIds);
         // 上述是通用的商城属性,下面是药品特有的属性
         DrugDetail drugDetail = copyProperties(request.getDrugDetail(), DrugDetail.class);
         drugDetail.setProductId(product.getId());
@@ -250,6 +267,8 @@ public class MallProductServiceImpl extends ServiceImpl<MallProductMapper, MallP
     @Transactional(rollbackFor = Exception.class)
     @CacheEvict(cacheNames = RedisConstants.MallProduct.CACHE_NAME, key = "#request.id", condition = "#request.id != null")
     public boolean updateMallProduct(MallProductUpdateRequest request) {
+        List<Long> normalizedTagIds = mallProductTagService.normalizeEnabledTagIds(request.getTagIds());
+
         // 检查商品是否存在
         MallProduct existingProduct = getById(request.getId());
         if (existingProduct == null) {
@@ -285,6 +304,7 @@ public class MallProductServiceImpl extends ServiceImpl<MallProductMapper, MallP
         // 更新商品主图集合，同样保障后台始终有可展示的图片
         Assert.isTrue(request.getImages() != null && !request.getImages().isEmpty(), "商品图片至少需要上传一张图片");
         mallProductImageService.updateProductImageById(request.getImages(), existingProduct.getId());
+        mallProductTagRelService.replaceProductTags(existingProduct.getId(), normalizedTagIds);
 
         // 更新药品详情
         if (request.getDrugDetail() != null) {
@@ -334,6 +354,9 @@ public class MallProductServiceImpl extends ServiceImpl<MallProductMapper, MallP
         // 删除关联的图片
         mallProductImageService.removeImagesById(ids);
 
+        // 删除关联的商品标签
+        mallProductTagRelService.removeByProductIds(ids);
+
         // 删除关联的药品详情
         medicineDetailService.deleteMedicineDetailByProductIds(ids);
 
@@ -368,6 +391,9 @@ public class MallProductServiceImpl extends ServiceImpl<MallProductMapper, MallP
             String cover = coverImageMap.get(product.getId());
             product.setImages(cover == null ? List.of() : List.of(cover));
         });
+        Map<Long, List<cn.zhangchuangla.medicine.model.vo.MallProductTagVo>> tagMap =
+                mallProductTagService.listTagVoMapByProductIds(productIds);
+        batch.forEach(product -> product.setTags(tagMap.getOrDefault(product.getId(), List.of())));
 
         // 只发布 MQ 消息，索引工作由消费者完成
         mallProductSearchIndexer.reindexBatch(batch);

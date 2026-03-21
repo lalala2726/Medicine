@@ -71,7 +71,7 @@ class AgentConfigRuntimeSyncServiceTests {
         ArgumentCaptor<AgentAllConfigCache> cacheCaptor = ArgumentCaptor.forClass(AgentAllConfigCache.class);
         verify(valueOperations).set(eq(RedisConstants.AgentConfig.ALL_CONFIG_KEY), cacheCaptor.capture());
         AgentAllConfigCache saved = cacheCaptor.getValue();
-        assertEquals(3, saved.getSchemaVersion());
+        assertEquals(4, saved.getSchemaVersion());
         assertEquals("openai", saved.getLlm().getProviderType());
         assertEquals("https://api.openai.com/v1", saved.getLlm().getBaseUrl());
         assertEquals("sk-openai", saved.getLlm().getApiKey());
@@ -88,6 +88,10 @@ class AgentConfigRuntimeSyncServiceTests {
         AdminAssistantAgentConfig adminAssistant = new AdminAssistantAgentConfig();
         adminAssistant.setChatModel(buildSlot("gpt-4.1", true, 8192, 0.7));
         cache.setAdminAssistant(adminAssistant);
+        ClientAssistantAgentConfig clientAssistant = new ClientAssistantAgentConfig();
+        clientAssistant.setChatModel(buildSlot("gpt-4.1-mini", false, 4096, 0.6));
+        clientAssistant.setConsultationFinalDiagnosisModel(buildSlot("gpt-4.1", true, 4096, 0.2));
+        cache.setClientAssistant(clientAssistant);
         ImageRecognitionAgentConfig imageRecognition = new ImageRecognitionAgentConfig();
         imageRecognition.setImageRecognitionModel(buildSlot("qwen-vl-max", true, 4096, 0.2));
         cache.setImageRecognition(imageRecognition);
@@ -111,6 +115,7 @@ class AgentConfigRuntimeSyncServiceTests {
         assertEquals("openai", saved.getLlm().getProviderType());
         assertNull(saved.getKnowledgeBase());
         assertNull(saved.getAdminAssistant());
+        assertNull(saved.getClientAssistant());
         assertNull(saved.getImageRecognition());
         assertNull(saved.getChatHistorySummary());
         assertNull(saved.getChatTitle());
@@ -191,6 +196,27 @@ class AgentConfigRuntimeSyncServiceTests {
     }
 
     @Test
+    void syncAfterModelUpdate_ShouldRenameClientAssistantReferencedSlotAndPublish() {
+        AgentAllConfigCache cache = new AgentAllConfigCache();
+        ClientAssistantAgentConfig clientAssistant = new ClientAssistantAgentConfig();
+        clientAssistant.setConsultationQuestionModel(buildSlot("gpt-4.1-mini", false, 4096, 0.2));
+        cache.setClientAssistant(clientAssistant);
+        when(valueOperations.get(RedisConstants.AgentConfig.ALL_CONFIG_KEY)).thenReturn(cache);
+        when(llmProviderMapper.selectList(any())).thenReturn(List.of(buildEnabledProvider()));
+
+        LlmProviderModel existing = buildModel(1L, "gpt-4.1-mini", LlmModelTypeConstants.CHAT, 0, 1, 0);
+        LlmProviderModel updated = buildModel(1L, "gpt-4.1-mini-renamed", LlmModelTypeConstants.CHAT, 0, 1, 0);
+
+        syncService.syncAfterModelUpdate(existing, updated, "tester");
+
+        ArgumentCaptor<AgentAllConfigCache> cacheCaptor = ArgumentCaptor.forClass(AgentAllConfigCache.class);
+        verify(valueOperations).set(eq(RedisConstants.AgentConfig.ALL_CONFIG_KEY), cacheCaptor.capture());
+        assertEquals("gpt-4.1-mini-renamed",
+                cacheCaptor.getValue().getClientAssistant().getConsultationQuestionModel().getModelName());
+        verify(agentConfigPublisher).publishRefresh(any(AgentConfigRefreshMessage.class));
+    }
+
+    @Test
     void syncAfterModelDelete_ShouldClearKnowledgeBaseRankingModelAndDisableRanking() {
         AgentAllConfigCache cache = new AgentAllConfigCache();
         KnowledgeBaseAgentConfig knowledgeBase = new KnowledgeBaseAgentConfig();
@@ -229,6 +255,26 @@ class AgentConfigRuntimeSyncServiceTests {
         ArgumentCaptor<AgentAllConfigCache> cacheCaptor = ArgumentCaptor.forClass(AgentAllConfigCache.class);
         verify(valueOperations).set(eq(RedisConstants.AgentConfig.ALL_CONFIG_KEY), cacheCaptor.capture());
         assertNull(cacheCaptor.getValue().getImageRecognition().getImageRecognitionModel());
+        verify(agentConfigPublisher).publishRefresh(any(AgentConfigRefreshMessage.class));
+    }
+
+    @Test
+    void syncAfterModelDelete_ShouldClearClientAssistantReferencedSlotAndPublish() {
+        AgentAllConfigCache cache = new AgentAllConfigCache();
+        ClientAssistantAgentConfig clientAssistant = new ClientAssistantAgentConfig();
+        clientAssistant.setConsultationComfortModel(buildSlot("gpt-4.1-mini", false, 2048, 1.2));
+        cache.setClientAssistant(clientAssistant);
+        when(valueOperations.get(RedisConstants.AgentConfig.ALL_CONFIG_KEY)).thenReturn(cache);
+        when(llmProviderMapper.selectList(any())).thenReturn(List.of(buildEnabledProvider()));
+
+        syncService.syncAfterModelDelete(
+                buildModel(1L, "gpt-4.1-mini", LlmModelTypeConstants.CHAT, 0, 1, 0),
+                "tester"
+        );
+
+        ArgumentCaptor<AgentAllConfigCache> cacheCaptor = ArgumentCaptor.forClass(AgentAllConfigCache.class);
+        verify(valueOperations).set(eq(RedisConstants.AgentConfig.ALL_CONFIG_KEY), cacheCaptor.capture());
+        assertNull(cacheCaptor.getValue().getClientAssistant().getConsultationComfortModel());
         verify(agentConfigPublisher).publishRefresh(any(AgentConfigRefreshMessage.class));
     }
 

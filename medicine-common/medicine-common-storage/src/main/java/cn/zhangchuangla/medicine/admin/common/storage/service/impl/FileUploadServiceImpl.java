@@ -23,8 +23,8 @@ import java.util.UUID;
  * @author Chuang
  * created on 2025/9/25
  */
-@Service
 @Slf4j
+@Service
 @RequiredArgsConstructor
 public class FileUploadServiceImpl implements FileUploadService {
 

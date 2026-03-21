@@ -87,6 +87,21 @@
             <if test="request.categoryId != null">
                 AND category_id = #{request.categoryId}
             </if>
+            <if test="request.tagFilterGroups != null and request.tagFilterGroups.size() > 0">
+                <foreach collection="request.tagFilterGroups" item="group">
+                    AND id IN (
+                    SELECT DISTINCT rel.product_id
+                    FROM mall_product_tag_rel rel
+                    INNER JOIN mall_product_tag tag ON rel.tag_id = tag.id
+                    WHERE (tag.is_deleted IS NULL OR tag.is_deleted = 0)
+                    AND tag.type_id = #{group.typeId}
+                    AND rel.tag_id IN
+                    <foreach collection="group.tagIds" item="tagId" open="(" separator="," close=")">
+                        #{tagId}
+                    </foreach>
+                    )
+                </foreach>
+            </if>
             <if test="request.status != null">
                 AND status = #{request.status}
             </if>
@@ -152,6 +167,21 @@
             </if>
             <if test="request.categoryId != null">
                 AND p.category_id = #{request.categoryId}
+            </if>
+            <if test="request.tagFilterGroups != null and request.tagFilterGroups.size() > 0">
+                <foreach collection="request.tagFilterGroups" item="group">
+                    AND p.id IN (
+                    SELECT DISTINCT rel.product_id
+                    FROM mall_product_tag_rel rel
+                    INNER JOIN mall_product_tag tag ON rel.tag_id = tag.id
+                    WHERE (tag.is_deleted IS NULL OR tag.is_deleted = 0)
+                    AND tag.type_id = #{group.typeId}
+                    AND rel.tag_id IN
+                    <foreach collection="group.tagIds" item="tagId" open="(" separator="," close=")">
+                        #{tagId}
+                    </foreach>
+                    )
+                </foreach>
             </if>
             <if test="request.status != null">
                 AND p.status = #{request.status}

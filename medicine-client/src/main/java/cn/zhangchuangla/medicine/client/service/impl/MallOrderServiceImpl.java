@@ -17,10 +17,12 @@ import cn.zhangchuangla.medicine.common.core.utils.JSONUtils;
 import cn.zhangchuangla.medicine.common.redis.core.RedisCache;
 import cn.zhangchuangla.medicine.common.security.base.BaseService;
 import cn.zhangchuangla.medicine.common.security.utils.SecurityUtils;
+import cn.zhangchuangla.medicine.model.constants.MallProductTagConstants;
 import cn.zhangchuangla.medicine.model.dto.*;
 import cn.zhangchuangla.medicine.model.entity.*;
 import cn.zhangchuangla.medicine.model.enums.*;
 import cn.zhangchuangla.medicine.model.vo.OrderShippingVo;
+import cn.zhangchuangla.medicine.model.vo.MallProductTagVo;
 import cn.zhangchuangla.medicine.payment.config.AlipayProperties;
 import cn.zhangchuangla.medicine.payment.model.AlipayPagePayRequest;
 import cn.zhangchuangla.medicine.payment.service.AlipayPaymentService;
@@ -32,8 +34,8 @@ import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import jakarta.servlet.http.HttpServletRequest;
-import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.apache.commons.lang3.time.DateUtils;
 import org.springframework.data.elasticsearch.core.suggest.Completion;
 import org.springframework.stereotype.Service;
@@ -58,9 +60,12 @@ import static cn.zhangchuangla.medicine.model.enums.PayTypeEnum.ALIPAY;
  * @author Chuang
  */
 @Service
-@Slf4j
-@RequiredArgsConstructor
 public class MallOrderServiceImpl extends ServiceImpl<MallOrderMapper, MallOrder> implements MallOrderService, BaseService {
+
+    /**
+     * 日志记录器。
+     */
+    private static final Logger log = LoggerFactory.getLogger(MallOrderServiceImpl.class);
 
     private static final String ORDER_STATUS_WAIT_PAY = OrderStatusEnum.PENDING_PAYMENT.getType();
     private static final String ORDER_STATUS_WAIT_SHIPMENT = OrderStatusEnum.PENDING_SHIPMENT.getType();
@@ -85,6 +90,48 @@ public class MallOrderServiceImpl extends ServiceImpl<MallOrderMapper, MallOrder
     private final UserAddressService userAddressService;
     private final RedisCache redisCache;
     private final MallProductSearchService mallProductSearchService;
+
+    /**
+     * 构造商城订单服务实现。
+     *
+     * @param mallProductService 商品服务
+     * @param mallOrderItemService 订单项服务
+     * @param alipayPaymentService 支付宝支付服务
+     * @param alipayProperties 支付宝配置
+     * @param orderDelayProducer 订单延迟消息生产者
+     * @param userWalletService 用户钱包服务
+     * @param mallOrderTimelineService 订单时间线服务
+     * @param mallOrderShippingService 订单物流服务
+     * @param mallCartService 购物车服务
+     * @param userAddressService 用户地址服务
+     * @param redisCache Redis缓存
+     * @param mallProductSearchService 商品搜索服务
+     */
+    public MallOrderServiceImpl(MallProductService mallProductService,
+                                MallOrderItemService mallOrderItemService,
+                                AlipayPaymentService alipayPaymentService,
+                                AlipayProperties alipayProperties,
+                                OrderDelayProducer orderDelayProducer,
+                                UserWalletService userWalletService,
+                                MallOrderTimelineService mallOrderTimelineService,
+                                MallOrderShippingService mallOrderShippingService,
+                                MallCartService mallCartService,
+                                UserAddressService userAddressService,
+                                RedisCache redisCache,
+                                MallProductSearchService mallProductSearchService) {
+        this.mallProductService = mallProductService;
+        this.mallOrderItemService = mallOrderItemService;
+        this.alipayPaymentService = alipayPaymentService;
+        this.alipayProperties = alipayProperties;
+        this.orderDelayProducer = orderDelayProducer;
+        this.userWalletService = userWalletService;
+        this.mallOrderTimelineService = mallOrderTimelineService;
+        this.mallOrderShippingService = mallOrderShippingService;
+        this.mallCartService = mallCartService;
+        this.userAddressService = userAddressService;
+        this.redisCache = redisCache;
+        this.mallProductSearchService = mallProductSearchService;
+    }
 
 
     /**
@@ -1816,6 +1863,7 @@ public class MallOrderServiceImpl extends ServiceImpl<MallOrderMapper, MallOrder
                 .id(detail.getId())
                 .name(detail.getName())
                 .categoryName(detail.getCategoryName())
+                .categoryId(detail.getCategoryId())
                 .price(detail.getPrice())
                 .sales(detail.getSales())
                 .prescription(drugDetail != null ? drugDetail.getPrescription() : null)
@@ -1823,6 +1871,9 @@ public class MallOrderServiceImpl extends ServiceImpl<MallOrderMapper, MallOrder
                 .brand(drugDetail != null ? drugDetail.getBrand() : null)
                 .commonName(drugDetail != null ? drugDetail.getCommonName() : null)
                 .efficacy(drugDetail != null ? drugDetail.getEfficacy() : null)
+                .tagIds(extractTagIds(detail.getTags()))
+                .tagTypeBindings(extractTagTypeBindings(detail.getTags()))
+                .tagNames(extractTagNames(detail.getTags()))
                 .instruction(drugDetail != null ? drugDetail.getInstruction() : null)
                 .coverImage(coverImage)
                 .nameSuggest(completion(detail.getName()))
@@ -1836,6 +1887,60 @@ public class MallOrderServiceImpl extends ServiceImpl<MallOrderMapper, MallOrder
             return null;
         }
         return new Completion(List.of(value));
+    }
+
+    /**
+     * 提取标签ID列表。
+     *
+     * @param tags 标签列表
+     * @return 标签ID列表
+     */
+    private List<Long> extractTagIds(List<MallProductTagVo> tags) {
+        if (tags == null || tags.isEmpty()) {
+            return List.of();
+        }
+        return tags.stream()
+                .filter(Objects::nonNull)
+                .map(MallProductTagVo::getId)
+                .filter(Objects::nonNull)
+                .distinct()
+                .toList();
+    }
+
+    /**
+     * 提取标签类型绑定列表。
+     *
+     * @param tags 标签列表
+     * @return 标签类型绑定列表
+     */
+    private List<String> extractTagTypeBindings(List<MallProductTagVo> tags) {
+        if (tags == null || tags.isEmpty()) {
+            return List.of();
+        }
+        return tags.stream()
+                .filter(Objects::nonNull)
+                .filter(tag -> tag.getId() != null && StringUtils.hasText(tag.getTypeCode()))
+                .map(tag -> tag.getTypeCode() + MallProductTagConstants.TYPE_BINDING_SEPARATOR + tag.getId())
+                .distinct()
+                .toList();
+    }
+
+    /**
+     * 提取标签名称列表。
+     *
+     * @param tags 标签列表
+     * @return 标签名称列表
+     */
+    private List<String> extractTagNames(List<MallProductTagVo> tags) {
+        if (tags == null || tags.isEmpty()) {
+            return List.of();
+        }
+        return tags.stream()
+                .filter(Objects::nonNull)
+                .map(MallProductTagVo::getName)
+                .filter(Objects::nonNull)
+                .distinct()
+                .toList();
     }
 
     private void runAfterCommit(Runnable task) {

@@ -1,15 +1,13 @@
 package cn.zhangchuangla.medicine.common.systemauth.config;
 
-import lombok.Getter;
-import lombok.Setter;
+import lombok.Data;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.stereotype.Component;
 
 /**
  * 系统签名认证配置。
  */
-@Getter
-@Setter
+@Data
 @Component
 @ConfigurationProperties(prefix = "system-auth")
 public class SystemAuthProperties {
@@ -53,4 +51,5 @@ public class SystemAuthProperties {
      * 本方出站签名密钥。
      */
     private String localSecret;
+
 }

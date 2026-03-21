@@ -72,6 +72,17 @@ public class AgentConfigController extends BaseController {
     }
 
     /**
+     * 查询客户端助手 Agent 配置。
+     *
+     * @return 客户端助手 Agent 配置
+     */
+    @GetMapping("/client-assistant")
+    @Operation(summary = "客户端助手Agent配置详情")
+    public AjaxResult<ClientAssistantAgentConfigVo> getClientAssistantConfig() {
+        return success(agentConfigService.getClientAssistantConfig());
+    }
+
+    /**
      * 保存管理端助手 Agent 配置。
      *
      * @param request 管理端助手 Agent 配置请求
@@ -81,6 +92,18 @@ public class AgentConfigController extends BaseController {
     @Operation(summary = "保存管理端助手Agent配置")
     public AjaxResult<Void> saveAdminAssistantConfig(@Valid @RequestBody AdminAssistantAgentConfigRequest request) {
         return toAjax(agentConfigService.saveAdminAssistantConfig(request));
+    }
+
+    /**
+     * 保存客户端助手 Agent 配置。
+     *
+     * @param request 客户端助手 Agent 配置请求
+     * @return 操作结果
+     */
+    @PutMapping("/client-assistant")
+    @Operation(summary = "保存客户端助手Agent配置")
+    public AjaxResult<Void> saveClientAssistantConfig(@Valid @RequestBody ClientAssistantAgentConfigRequest request) {
+        return toAjax(agentConfigService.saveClientAssistantConfig(request));
     }
 
     /**

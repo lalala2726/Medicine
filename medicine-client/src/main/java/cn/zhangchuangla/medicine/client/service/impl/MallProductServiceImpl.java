@@ -10,10 +10,7 @@ import cn.zhangchuangla.medicine.client.model.request.MallProductSearchRequest;
 import cn.zhangchuangla.medicine.client.model.vo.AssistantProductPurchaseCardsVo;
 import cn.zhangchuangla.medicine.client.model.vo.MallProductSearchVo;
 import cn.zhangchuangla.medicine.client.model.vo.MallProductVo;
-import cn.zhangchuangla.medicine.client.service.MallOrderItemService;
-import cn.zhangchuangla.medicine.client.service.MallProductImageService;
-import cn.zhangchuangla.medicine.client.service.MallProductService;
-import cn.zhangchuangla.medicine.client.service.MallProductViewHistoryService;
+import cn.zhangchuangla.medicine.client.service.*;
 import cn.zhangchuangla.medicine.common.core.base.PageResult;
 import cn.zhangchuangla.medicine.common.core.enums.ResponseCode;
 import cn.zhangchuangla.medicine.common.core.exception.ServiceException;
@@ -46,11 +43,15 @@ import java.util.stream.Collectors;
 public class MallProductServiceImpl extends ServiceImpl<MallProductMapper, MallProduct>
         implements MallProductService, BaseService {
 
+    /**
+     * 推荐商品的最大返回数量。
+     */
     private static final int RECOMMEND_LIMIT = 20;
     private final MallProductMapper mallProductMapper;
     private final MallProductImageService mallProductImageService;
     private final MallProductViewHistoryService mallProductViewHistoryService;
     private final MallOrderItemService mallOrderItemService;
+    private final MallProductTagService mallProductTagService;
     private final MallProductSearchService mallProductSearchService;
 
     @Override
@@ -147,6 +148,7 @@ public class MallProductServiceImpl extends ServiceImpl<MallProductMapper, MallP
         productVo.setStock(productWithImages.getStock());
         productVo.setSales(productWithImages.getSales());
         productVo.setDrugDetail(productWithImages.getDrugDetail());
+        productVo.setTags(mallProductTagService.listEnabledTagVoMapByProductIds(List.of(id)).getOrDefault(id, List.of()));
 
         // 提取图片URL列表
         if (productWithImages.getProductImages() != null && !productWithImages.getProductImages().isEmpty()) {
@@ -241,6 +243,7 @@ public class MallProductServiceImpl extends ServiceImpl<MallProductMapper, MallP
         if (StringUtils.hasText(request.getCategoryName())) {
             request.setCategoryName(request.getCategoryName().trim());
         }
+        mallProductTagService.fillSearchTagGroups(request);
         if (StringUtils.hasText(request.getEfficacy())) {
             request.setEfficacy(request.getEfficacy().trim());
         }
@@ -303,6 +306,7 @@ public class MallProductServiceImpl extends ServiceImpl<MallProductMapper, MallP
                 .map(MallProductImage::getImageUrl)
                 .toList();
         mallProductDetailDto.setImages(imageUrls);
+        mallProductDetailDto.setTags(mallProductTagService.listEnabledTagVoMapByProductIds(List.of(id)).getOrDefault(id, List.of()));
         return mallProductDetailDto;
 
     }
@@ -359,7 +363,9 @@ public class MallProductServiceImpl extends ServiceImpl<MallProductMapper, MallP
     private boolean hasSearchCondition(MallProductSearchRequest request) {
         return StringUtils.hasText(request.getKeyword())
                 || StringUtils.hasText(request.getCategoryName())
-                || StringUtils.hasText(request.getEfficacy());
+                || request.getCategoryId() != null
+                || StringUtils.hasText(request.getEfficacy())
+                || (request.getTagIds() != null && !request.getTagIds().isEmpty());
     }
 
     @Override

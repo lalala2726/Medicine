@@ -82,6 +82,70 @@ class AgentConfigRequestJsonTests {
     }
 
     @Test
+    void clientAssistantRequest_ShouldDeserialize() throws Exception {
+        String json = """
+                {
+                  "routeModel": {
+                    "modelName": "gpt-4.1-mini",
+                    "reasoningEnabled": false,
+                    "maxTokens": 1024,
+                    "temperature": 0.0
+                  },
+                  "chatModel": {
+                    "modelName": "gpt-4.1",
+                    "reasoningEnabled": true,
+                    "maxTokens": 4096,
+                    "temperature": 0.7
+                  },
+                  "orderModel": {
+                    "modelName": "gpt-4.1-mini",
+                    "reasoningEnabled": false,
+                    "maxTokens": 2048,
+                    "temperature": 0.3
+                  },
+                  "productModel": {
+                    "modelName": "gpt-4.1-mini",
+                    "reasoningEnabled": false,
+                    "maxTokens": 2048,
+                    "temperature": 0.3
+                  },
+                  "afterSaleModel": {
+                    "modelName": "gpt-4.1-mini",
+                    "reasoningEnabled": false,
+                    "maxTokens": 2048,
+                    "temperature": 0.3
+                  },
+                  "consultationComfortModel": {
+                    "modelName": "gpt-4.1-mini",
+                    "reasoningEnabled": false,
+                    "maxTokens": 2048,
+                    "temperature": 1.2
+                  },
+                  "consultationQuestionModel": {
+                    "modelName": "gpt-4.1",
+                    "reasoningEnabled": true,
+                    "maxTokens": 4096,
+                    "temperature": 0.2
+                  },
+                  "consultationFinalDiagnosisModel": {
+                    "modelName": "gpt-4.1",
+                    "reasoningEnabled": true,
+                    "maxTokens": 4096,
+                    "temperature": 0.2
+                  }
+                }
+                """;
+
+        ClientAssistantAgentConfigRequest request = objectMapper.readValue(json, ClientAssistantAgentConfigRequest.class);
+
+        assertEquals("gpt-4.1-mini", request.getRouteModel().getModelName());
+        assertEquals("gpt-4.1", request.getChatModel().getModelName());
+        assertEquals("gpt-4.1-mini", request.getAfterSaleModel().getModelName());
+        assertEquals("gpt-4.1", request.getConsultationQuestionModel().getModelName());
+        assertEquals(4096, request.getConsultationFinalDiagnosisModel().getMaxTokens());
+    }
+
+    @Test
     void imageRecognitionRequest_ShouldDeserialize() throws Exception {
         String json = """
                 {

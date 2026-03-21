@@ -39,6 +39,11 @@ public class AgentConfigServiceImpl implements AgentConfigService, BaseService {
     private static final int CAPABILITY_ENABLED = 1;
     private static final int ADMIN_ASSISTANT_MAX_TOKENS_MIN = 100;
     private static final int ADMIN_ASSISTANT_MAX_TOKENS_MAX = 10000;
+    /**
+     * 客户端助手模型槽位允许配置的最小最大 Token 数。
+     */
+    private static final int CLIENT_ASSISTANT_MAX_TOKENS_MIN = 100;
+    private static final int CLIENT_ASSISTANT_MAX_TOKENS_MAX = 10000;
     private static final int IMAGE_RECOGNITION_MAX_TOKENS_MIN = 512;
     private static final int IMAGE_RECOGNITION_MAX_TOKENS_MAX = 10000;
     private static final int CHAT_HISTORY_SUMMARY_MAX_TOKENS_MIN = 100;
@@ -168,6 +173,34 @@ public class AgentConfigServiceImpl implements AgentConfigService, BaseService {
     }
 
     /**
+     * 查询客户端助手 Agent 配置详情。
+     *
+     * @return 客户端助手 Agent 配置
+     */
+    @Override
+    public ClientAssistantAgentConfigVo getClientAssistantConfig() {
+        ClientAssistantAgentConfigVo vo = new ClientAssistantAgentConfigVo();
+        AgentAllConfigCache cache = agentConfigRuntimeSyncService.readCache();
+        ClientAssistantAgentConfig config = cache.getClientAssistant();
+        if (config == null) {
+            return vo;
+        }
+        LlmProvider provider = getEnabledProviderOrNull();
+        vo.setRouteModel(toAgentModelSelectionVo(provider, config.getRouteModel(), LlmModelTypeConstants.CHAT));
+        vo.setChatModel(toAgentModelSelectionVo(provider, config.getChatModel(), LlmModelTypeConstants.CHAT));
+        vo.setOrderModel(toAgentModelSelectionVo(provider, config.getOrderModel(), LlmModelTypeConstants.CHAT));
+        vo.setProductModel(toAgentModelSelectionVo(provider, config.getProductModel(), LlmModelTypeConstants.CHAT));
+        vo.setAfterSaleModel(toAgentModelSelectionVo(provider, config.getAfterSaleModel(), LlmModelTypeConstants.CHAT));
+        vo.setConsultationComfortModel(toAgentModelSelectionVo(provider, config.getConsultationComfortModel(),
+                LlmModelTypeConstants.CHAT));
+        vo.setConsultationQuestionModel(toAgentModelSelectionVo(provider, config.getConsultationQuestionModel(),
+                LlmModelTypeConstants.CHAT));
+        vo.setConsultationFinalDiagnosisModel(toAgentModelSelectionVo(provider,
+                config.getConsultationFinalDiagnosisModel(), LlmModelTypeConstants.CHAT));
+        return vo;
+    }
+
+    /**
      * 保存管理端助手 Agent 配置。
      *
      * @param request 管理端助手 Agent 配置请求
@@ -191,6 +224,43 @@ public class AgentConfigServiceImpl implements AgentConfigService, BaseService {
 
         AgentAllConfigCache cache = agentConfigRuntimeSyncService.readCache();
         cache.setAdminAssistant(config);
+        agentConfigRuntimeSyncService.saveCache(cache, provider, currentOperator());
+        return true;
+    }
+
+    /**
+     * 保存客户端助手 Agent 配置。
+     *
+     * @param request 客户端助手 Agent 配置请求
+     * @return 是否保存成功
+     */
+    @Override
+    public boolean saveClientAssistantConfig(ClientAssistantAgentConfigRequest request) {
+        Assert.notNull(request, "客户端助手Agent配置不能为空");
+        validateClientAssistantRequest(request);
+
+        LlmProvider provider = getRequiredEnabledProvider();
+        ClientAssistantAgentConfig config = new ClientAssistantAgentConfig();
+        config.setRouteModel(resolveRequiredSlotConfig(provider, request.getRouteModel(),
+                LlmModelTypeConstants.CHAT, false, CHAT_MODEL_MISSING_MESSAGE));
+        config.setChatModel(resolveRequiredSlotConfig(provider, request.getChatModel(),
+                LlmModelTypeConstants.CHAT, false, CHAT_MODEL_MISSING_MESSAGE));
+        config.setOrderModel(resolveRequiredSlotConfig(provider, request.getOrderModel(),
+                LlmModelTypeConstants.CHAT, false, CHAT_MODEL_MISSING_MESSAGE));
+        config.setProductModel(resolveRequiredSlotConfig(provider, request.getProductModel(),
+                LlmModelTypeConstants.CHAT, false, CHAT_MODEL_MISSING_MESSAGE));
+        config.setAfterSaleModel(resolveRequiredSlotConfig(provider, request.getAfterSaleModel(),
+                LlmModelTypeConstants.CHAT, false, CHAT_MODEL_MISSING_MESSAGE));
+        config.setConsultationComfortModel(resolveRequiredSlotConfig(provider, request.getConsultationComfortModel(),
+                LlmModelTypeConstants.CHAT, false, CHAT_MODEL_MISSING_MESSAGE));
+        config.setConsultationQuestionModel(resolveRequiredSlotConfig(provider, request.getConsultationQuestionModel(),
+                LlmModelTypeConstants.CHAT, false, CHAT_MODEL_MISSING_MESSAGE));
+        config.setConsultationFinalDiagnosisModel(resolveRequiredSlotConfig(provider,
+                request.getConsultationFinalDiagnosisModel(), LlmModelTypeConstants.CHAT, false,
+                CHAT_MODEL_MISSING_MESSAGE));
+
+        AgentAllConfigCache cache = agentConfigRuntimeSyncService.readCache();
+        cache.setClientAssistant(config);
         agentConfigRuntimeSyncService.saveCache(cache, provider, currentOperator());
         return true;
     }
@@ -884,6 +954,30 @@ public class AgentConfigServiceImpl implements AgentConfigService, BaseService {
                 ADMIN_ASSISTANT_MAX_TOKENS_MAX, "业务节点复杂模型");
         validateSlotAdvancedParams(request.getChatModel(), ADMIN_ASSISTANT_MAX_TOKENS_MIN,
                 ADMIN_ASSISTANT_MAX_TOKENS_MAX, "聊天界面模型");
+    }
+
+    /**
+     * 校验客户端助手请求中的高级参数范围。
+     *
+     * @param request 客户端助手配置请求
+     */
+    private void validateClientAssistantRequest(ClientAssistantAgentConfigRequest request) {
+        validateSlotAdvancedParams(request.getRouteModel(), CLIENT_ASSISTANT_MAX_TOKENS_MIN,
+                CLIENT_ASSISTANT_MAX_TOKENS_MAX, "客户端路由模型");
+        validateSlotAdvancedParams(request.getChatModel(), CLIENT_ASSISTANT_MAX_TOKENS_MIN,
+                CLIENT_ASSISTANT_MAX_TOKENS_MAX, "客户端聊天模型");
+        validateSlotAdvancedParams(request.getOrderModel(), CLIENT_ASSISTANT_MAX_TOKENS_MIN,
+                CLIENT_ASSISTANT_MAX_TOKENS_MAX, "客户端订单模型");
+        validateSlotAdvancedParams(request.getProductModel(), CLIENT_ASSISTANT_MAX_TOKENS_MIN,
+                CLIENT_ASSISTANT_MAX_TOKENS_MAX, "客户端商品模型");
+        validateSlotAdvancedParams(request.getAfterSaleModel(), CLIENT_ASSISTANT_MAX_TOKENS_MIN,
+                CLIENT_ASSISTANT_MAX_TOKENS_MAX, "客户端售后模型");
+        validateSlotAdvancedParams(request.getConsultationComfortModel(), CLIENT_ASSISTANT_MAX_TOKENS_MIN,
+                CLIENT_ASSISTANT_MAX_TOKENS_MAX, "问诊安抚模型");
+        validateSlotAdvancedParams(request.getConsultationQuestionModel(), CLIENT_ASSISTANT_MAX_TOKENS_MIN,
+                CLIENT_ASSISTANT_MAX_TOKENS_MAX, "问诊追问模型");
+        validateSlotAdvancedParams(request.getConsultationFinalDiagnosisModel(), CLIENT_ASSISTANT_MAX_TOKENS_MIN,
+                CLIENT_ASSISTANT_MAX_TOKENS_MAX, "问诊最终诊断模型");
     }
 
     /**

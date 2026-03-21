@@ -1,7 +1,8 @@
 package cn.zhangchuangla.medicine.common.redis.core;
 
 import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.data.redis.core.Cursor;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.data.redis.core.ScanOptions;
@@ -20,11 +21,15 @@ import java.util.concurrent.TimeUnit;
  * <p>
  * created on 2025/7/25
  */
-@Slf4j
 @Component
 @RequiredArgsConstructor
 @SuppressWarnings(value = {"unchecked", "rawtypes"})
 public final class RedisZSetCache {
+
+    /**
+     * 日志记录器。
+     */
+    private static final Logger log = LoggerFactory.getLogger(RedisZSetCache.class);
 
     private final static int scanCount = 1000;
     public final RedisTemplate redisTemplate;

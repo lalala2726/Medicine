@@ -10,6 +10,7 @@ import cn.zhangchuangla.medicine.model.request.MallProductAddRequest;
 import cn.zhangchuangla.medicine.model.request.MallProductListQueryRequest;
 import cn.zhangchuangla.medicine.model.request.MallProductUpdateRequest;
 import cn.zhangchuangla.medicine.model.vo.MallProductListVo;
+import cn.zhangchuangla.medicine.model.vo.MallProductTagVo;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -51,6 +52,9 @@ public class MallProductController extends BaseController {
         List<MallProductListVo> mallProductListVos = page.getRecords().stream()
                 .map(product -> {
                     MallProductListVo productListVo = copyProperties(product, MallProductListVo.class);
+                    List<MallProductTagVo> tags = product.getTags() == null ? List.of() : product.getTags();
+                    productListVo.setTags(tags);
+                    productListVo.setTagNames(tags.stream().map(MallProductTagVo::getName).toList());
                     if (product.getImages() != null && !product.getImages().isEmpty()) {
                         productListVo.setCoverImage(product.getImages().getFirst());
                     }

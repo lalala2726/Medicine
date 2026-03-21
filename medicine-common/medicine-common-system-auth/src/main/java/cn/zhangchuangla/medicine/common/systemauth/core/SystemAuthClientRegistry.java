@@ -124,5 +124,6 @@ public class SystemAuthClientRegistry {
          * 是否启用。
          */
         private Boolean enabled = Boolean.TRUE;
+
     }
 }

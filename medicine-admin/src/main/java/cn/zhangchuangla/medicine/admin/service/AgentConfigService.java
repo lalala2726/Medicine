@@ -40,12 +40,27 @@ public interface AgentConfigService {
     AdminAssistantAgentConfigVo getAdminAssistantConfig();
 
     /**
+     * 查询客户端助手 Agent 配置详情。
+     *
+     * @return 客户端助手 Agent 配置
+     */
+    ClientAssistantAgentConfigVo getClientAssistantConfig();
+
+    /**
      * 保存管理端助手 Agent 配置。
      *
      * @param request 管理端助手 Agent 配置请求
      * @return 是否保存成功
      */
     boolean saveAdminAssistantConfig(AdminAssistantAgentConfigRequest request);
+
+    /**
+     * 保存客户端助手 Agent 配置。
+     *
+     * @param request 客户端助手 Agent 配置请求
+     * @return 是否保存成功
+     */
+    boolean saveClientAssistantConfig(ClientAssistantAgentConfigRequest request);
 
     /**
      * 查询图片识别 Agent 配置详情。
