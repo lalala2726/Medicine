@@ -8,7 +8,7 @@ import java.io.Serializable;
 /**
  * Agent 全量配置缓存对象。
  * <p>
-     * 该对象作为 Redis 中 agent:config:all 的最终保存结构，供管理端写入、Agent 端读取。
+ * 该对象作为 Redis 中 agent:config:all 的最终保存结构，供管理端写入、Agent 端读取。
  */
 @Data
 public class AgentAllConfigCache implements Serializable {

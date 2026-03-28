@@ -28,4 +28,38 @@
         total_expend,currency,status,remark,freeze_reason,freeze_time,version,is_deleted,created_at,
         updated_at
     </sql>
+
+    <!-- 按用户 ID 查询钱包并加写锁。 -->
+    <select id="selectWalletByUserIdForUpdate" resultMap="BaseResultMap">
+        SELECT
+        <include refid="Base_Column_List"/>
+        FROM user_wallet
+        WHERE user_id = #{userId}
+          AND (is_deleted IS NULL OR is_deleted = 0)
+        LIMIT 1
+        FOR UPDATE
+    </select>
+
+    <!-- 原子扣减钱包余额。 -->
+    <update id="deductBalanceAtomic">
+        UPDATE user_wallet
+        SET balance = balance - #{amount},
+            total_expend = total_expend + #{amount},
+            updated_at = NOW()
+        WHERE user_id = #{userId}
+          AND balance >= #{amount}
+          AND status = 0
+          AND (is_deleted IS NULL OR is_deleted = 0)
+    </update>
+
+    <!-- 原子增加钱包余额。 -->
+    <update id="addBalanceAtomic">
+        UPDATE user_wallet
+        SET balance = balance + #{amount},
+            total_income = total_income + #{amount},
+            updated_at = NOW()
+        WHERE user_id = #{userId}
+          AND status = 0
+          AND (is_deleted IS NULL OR is_deleted = 0)
+    </update>
 </mapper>

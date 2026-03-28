@@ -20,10 +20,10 @@ public final class ClientRequest {
     /**
      * 构造客户端请求。
      *
-     * @param method 请求方法
-     * @param url 请求URL
+     * @param method  请求方法
+     * @param url     请求URL
      * @param headers 请求头
-     * @param body 请求体
+     * @param body    请求体
      */
     private ClientRequest(HttpMethod method, HttpUrl url, Headers headers, String body) {
         this.method = method;

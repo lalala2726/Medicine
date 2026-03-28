@@ -55,6 +55,16 @@ public class ClientAgentProductSearchRequest extends PageRequest {
     }
 
     /**
+     * 去除字符串首尾空白。
+     *
+     * @param value 原始字符串
+     * @return 去除首尾空白后的值
+     */
+    private static String trim(String value) {
+        return value == null ? null : value.trim();
+    }
+
+    /**
      * 校验搜索关键词、分类名称、用途至少提供一项。
      *
      * @return 是否提供了有效搜索条件
@@ -75,16 +85,6 @@ public class ClientAgentProductSearchRequest extends PageRequest {
     @Schema(description = "每页数量", type = "integer", format = "int32", defaultValue = "10")
     public int getPageSize() {
         return super.getPageSize();
-    }
-
-    /**
-     * 去除字符串首尾空白。
-     *
-     * @param value 原始字符串
-     * @return 去除首尾空白后的值
-     */
-    private static String trim(String value) {
-        return value == null ? null : value.trim();
     }
 
     /**

@@ -1,4 +1,5 @@
 package cn.zhangchuangla.medicine.agent.controller.admin;
+
 import cn.zhangchuangla.medicine.agent.service.AnalyticsService;
 import cn.zhangchuangla.medicine.common.core.base.AjaxResult;
 import cn.zhangchuangla.medicine.common.security.base.BaseController;

@@ -384,8 +384,8 @@ public class MallProductTagServiceImpl extends ServiceImpl<MallProductTagMapper,
     /**
      * 根据商品ID列表查询标签映射。
      *
-     * @param productIds   商品ID列表
-     * @param enabledOnly  是否仅返回启用标签
+     * @param productIds  商品ID列表
+     * @param enabledOnly 是否仅返回启用标签
      * @return 商品标签映射
      */
     private Map<Long, List<MallProductTagVo>> listTagVoMapByProductIds(List<Long> productIds, boolean enabledOnly) {

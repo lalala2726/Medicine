@@ -334,6 +334,7 @@ public class MallOrderServiceImpl extends ServiceImpl<MallOrderMapper, MallOrder
      * @return 是否更新成功
      */
     @Override
+    @Transactional(rollbackFor = Exception.class)
     public boolean updateOrderPrice(OrderUpdatePriceRequest request) {
         // 根据订单号查询订单
         MallOrder mallOrder = getOrderById(request.getOrderId());
@@ -347,28 +348,68 @@ public class MallOrderServiceImpl extends ServiceImpl<MallOrderMapper, MallOrder
 
         try {
             // 将字符串价格转换为BigDecimal
-            BigDecimal newPrice = new BigDecimal(request.getPrice());
+            BigDecimal newPrice = new BigDecimal(request.getPrice()).setScale(2, RoundingMode.HALF_UP);
 
             // 验证价格是否合法
             if (newPrice.compareTo(BigDecimal.ZERO) <= 0) {
                 throw new ServiceException(ResponseCode.PARAM_ERROR, "价格必须大于0");
             }
 
-            // 更新订单价格
+            // 1. 获取原订单项，计算原总价用于比例分摊
+            List<MallOrderItem> items = mallOrderItemService.lambdaQuery()
+                    .eq(MallOrderItem::getOrderId, mallOrder.getId())
+                    .list();
+
+            if (!CollectionUtils.isEmpty(items)) {
+                BigDecimal originalTotalAmount = items.stream()
+                        .map(MallOrderItem::getTotalPrice)
+                        .reduce(BigDecimal.ZERO, BigDecimal::add);
+
+                if (originalTotalAmount.compareTo(BigDecimal.ZERO) > 0) {
+                    BigDecimal remainingNewPrice = newPrice;
+                    for (int i = 0; i < items.size(); i++) {
+                        MallOrderItem item = items.get(i);
+                        BigDecimal itemNewTotalPrice;
+
+                        if (i == items.size() - 1) {
+                            // 最后一个商品，直接取剩余金额，消除舍入误差
+                            itemNewTotalPrice = remainingNewPrice;
+                        } else {
+                            // 按原价占比分摊新价格
+                            itemNewTotalPrice = item.getTotalPrice()
+                                    .multiply(newPrice)
+                                    .divide(originalTotalAmount, 2, RoundingMode.HALF_UP);
+                            remainingNewPrice = remainingNewPrice.subtract(itemNewTotalPrice);
+                        }
+
+                        item.setTotalPrice(itemNewTotalPrice);
+                        // 重新计算单价
+                        if (item.getQuantity() != null && item.getQuantity() > 0) {
+                            item.setPrice(itemNewTotalPrice.divide(new BigDecimal(item.getQuantity()), 2, RoundingMode.HALF_UP));
+                        }
+                        item.setUpdateTime(new Date());
+                    }
+                    // 批量更新订单项
+                    mallOrderItemService.updateBatchById(items);
+                }
+            }
+
+            // 2. 更新订单主表价格
             mallOrder.setTotalAmount(newPrice);
             // 如果是修改总价，通常支付金额也会相应修改
             mallOrder.setPayAmount(newPrice);
+            mallOrder.setUpdateTime(new Date());
 
             boolean updated = updateById(mallOrder);
 
-            // 添加订单时间线记录
+            // 3. 添加订单时间线记录
             if (updated) {
                 OrderTimelineDto timelineDto = OrderTimelineDto.builder()
                         .orderId(mallOrder.getId())
                         .eventType(OrderEventTypeEnum.OTHER.getType())
                         .eventStatus(mallOrder.getOrderStatus())
                         .operatorType(OperatorTypeEnum.ADMIN.getType())
-                        .description("管理员修改了订单价格")
+                        .description(String.format("管理员修改了订单价格为: %s", newPrice))
                         .build();
                 mallOrderTimelineService.addTimelineIfNotExists(timelineDto);
             }
@@ -589,6 +630,9 @@ public class MallOrderServiceImpl extends ServiceImpl<MallOrderMapper, MallOrder
 
     /**
      * 调用支付宝退款接口，将平台订单号、退款金额等信息传递给网关。
+     *
+     * @param mallOrder 订单实体
+     * @param request   退款请求
      */
     private void processAlipayRefund(MallOrder mallOrder, OrderRefundRequest request) {
         alipayPaymentService.refund(AlipayRefundRequest.builder()

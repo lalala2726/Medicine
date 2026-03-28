@@ -21,8 +21,8 @@ import cn.zhangchuangla.medicine.model.constants.MallProductTagConstants;
 import cn.zhangchuangla.medicine.model.dto.*;
 import cn.zhangchuangla.medicine.model.entity.*;
 import cn.zhangchuangla.medicine.model.enums.*;
-import cn.zhangchuangla.medicine.model.vo.OrderShippingVo;
 import cn.zhangchuangla.medicine.model.vo.MallProductTagVo;
+import cn.zhangchuangla.medicine.model.vo.OrderShippingVo;
 import cn.zhangchuangla.medicine.payment.config.AlipayProperties;
 import cn.zhangchuangla.medicine.payment.model.AlipayPagePayRequest;
 import cn.zhangchuangla.medicine.payment.service.AlipayPaymentService;
@@ -34,9 +34,9 @@ import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import jakarta.servlet.http.HttpServletRequest;
+import org.apache.commons.lang3.time.DateUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.apache.commons.lang3.time.DateUtils;
 import org.springframework.data.elasticsearch.core.suggest.Completion;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -94,17 +94,17 @@ public class MallOrderServiceImpl extends ServiceImpl<MallOrderMapper, MallOrder
     /**
      * 构造商城订单服务实现。
      *
-     * @param mallProductService 商品服务
-     * @param mallOrderItemService 订单项服务
-     * @param alipayPaymentService 支付宝支付服务
-     * @param alipayProperties 支付宝配置
-     * @param orderDelayProducer 订单延迟消息生产者
-     * @param userWalletService 用户钱包服务
+     * @param mallProductService       商品服务
+     * @param mallOrderItemService     订单项服务
+     * @param alipayPaymentService     支付宝支付服务
+     * @param alipayProperties         支付宝配置
+     * @param orderDelayProducer       订单延迟消息生产者
+     * @param userWalletService        用户钱包服务
      * @param mallOrderTimelineService 订单时间线服务
      * @param mallOrderShippingService 订单物流服务
-     * @param mallCartService 购物车服务
-     * @param userAddressService 用户地址服务
-     * @param redisCache Redis缓存
+     * @param mallCartService          购物车服务
+     * @param userAddressService       用户地址服务
+     * @param redisCache               Redis缓存
      * @param mallProductSearchService 商品搜索服务
      */
     public MallOrderServiceImpl(MallProductService mallProductService,

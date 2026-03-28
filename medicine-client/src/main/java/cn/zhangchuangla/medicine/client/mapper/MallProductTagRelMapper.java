@@ -9,4 +9,5 @@ import com.baomidou.mybatisplus.core.mapper.BaseMapper;
  * @author Chuang
  */
 public interface MallProductTagRelMapper extends BaseMapper<MallProductTagRel> {
+
 }
