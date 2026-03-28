@@ -76,10 +76,13 @@ public class MallOrderController extends BaseController {
     /**
      * 获取订单支付信息
      */
-    @GetMapping("/pay_info")
+    @GetMapping("/pay_info/{orderNo}")
     @Operation(summary = "获取订单支付信息")
-    public AjaxResult<OrderPayInfoVo> getOrderPayInfo(@Validated OrderPayInfoRequest request) {
-        OrderPayInfoVo orderPayInfoVo = mallOrderService.getOrderPayInfo(request);
+    public AjaxResult<OrderPayInfoVo> getOrderPayInfo(@PathVariable String orderNo) {
+        if (orderNo == null || orderNo.isEmpty()) {
+            return error("订单编号不能为空");
+        }
+        OrderPayInfoVo orderPayInfoVo = mallOrderService.getOrderPayInfo(orderNo);
         return success(orderPayInfoVo);
     }
 

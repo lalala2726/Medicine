@@ -265,9 +265,9 @@ public class MallOrderServiceImpl extends ServiceImpl<MallOrderMapper, MallOrder
     }
 
     @Override
-    public OrderPayInfoVo getOrderPayInfo(OrderPayInfoRequest request) {
+    public OrderPayInfoVo getOrderPayInfo(String orderNo) {
         MallOrder order = lambdaQuery()
-                .eq(MallOrder::getOrderNo, request.getOrderNo())
+                .eq(MallOrder::getOrderNo, orderNo)
                 .one();
 
         if (order == null) {
