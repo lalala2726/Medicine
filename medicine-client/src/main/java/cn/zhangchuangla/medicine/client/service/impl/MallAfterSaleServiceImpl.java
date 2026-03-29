@@ -1,6 +1,10 @@
 package cn.zhangchuangla.medicine.client.service.impl;
 
 import cn.zhangchuangla.medicine.client.mapper.MallAfterSaleMapper;
+import cn.zhangchuangla.medicine.client.model.bo.AfterSaleEligibilityBo.CommandBo;
+import cn.zhangchuangla.medicine.client.model.bo.AfterSaleEligibilityBo.FailureBo;
+import cn.zhangchuangla.medicine.client.model.bo.AfterSaleEligibilityBo.ItemResultBo;
+import cn.zhangchuangla.medicine.client.model.bo.AfterSaleEligibilityBo.SnapshotBo;
 import cn.zhangchuangla.medicine.client.model.request.*;
 import cn.zhangchuangla.medicine.client.model.vo.AfterSaleApplyResultVo;
 import cn.zhangchuangla.medicine.client.model.vo.AfterSaleEligibilityVo;
@@ -25,9 +29,6 @@ import cn.zhangchuangla.medicine.model.vo.AfterSaleListVo;
 import cn.zhangchuangla.medicine.model.vo.AfterSaleTimelineVo;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Data;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -147,7 +148,7 @@ public class MallAfterSaleServiceImpl extends ServiceImpl<MallAfterSaleMapper, M
     public AfterSaleApplyResultVo applyAfterSale(AfterSaleApplyRequest request) {
         validateApplyRequest(request);
         Long userId = getUserId();
-        EligibilitySnapshot snapshot = buildEligibilitySnapshot(EligibilityCommand.builder()
+        SnapshotBo snapshot = buildEligibilitySnapshot(CommandBo.builder()
                 .orderNo(request.getOrderNo())
                 .requestedScope(request.getScope())
                 .requestedOrderItemId(request.getOrderItemId())
@@ -169,7 +170,7 @@ public class MallAfterSaleServiceImpl extends ServiceImpl<MallAfterSaleMapper, M
         List<String> afterSaleNos = new ArrayList<>();
         List<Long> orderItemIds = new ArrayList<>();
         if (snapshot.getResolvedScope() == AfterSaleScopeEnum.ORDER) {
-            for (ItemEligibilityResult itemResult : getApplicableOrderScopeItems(snapshot)) {
+            for (ItemResultBo itemResult : getApplicableOrderScopeItems(snapshot)) {
                 String afterSaleNo = createOrUpdateAfterSale(snapshot.getOrder(), itemResult.getOrderItem(), userId,
                         request.getAfterSaleType(), itemResult.getRefundableAmount(), request.getApplyReason(),
                         request.getApplyDescription(), evidenceImagesJson, receiveStatus, now);
@@ -177,7 +178,7 @@ public class MallAfterSaleServiceImpl extends ServiceImpl<MallAfterSaleMapper, M
                 orderItemIds.add(itemResult.getOrderItem().getId());
             }
         } else {
-            ItemEligibilityResult selectedItem = requireSelectedItem(snapshot);
+            ItemResultBo selectedItem = requireSelectedItem(snapshot);
             BigDecimal refundAmount = validateItemRefundAmount(request.getRefundAmount(), selectedItem.getRefundableAmount());
             String afterSaleNo = createOrUpdateAfterSale(snapshot.getOrder(), selectedItem.getOrderItem(), userId,
                     request.getAfterSaleType(), refundAmount, request.getApplyReason(), request.getApplyDescription(),
@@ -204,7 +205,7 @@ public class MallAfterSaleServiceImpl extends ServiceImpl<MallAfterSaleMapper, M
     @Override
     public AfterSaleEligibilityVo getAfterSaleEligibility(AfterSaleEligibilityRequest request) {
         AfterSaleEligibilityRequest safeRequest = request == null ? new AfterSaleEligibilityRequest() : request;
-        EligibilitySnapshot snapshot = buildEligibilitySnapshot(EligibilityCommand.builder()
+        SnapshotBo snapshot = buildEligibilitySnapshot(CommandBo.builder()
                 .orderNo(safeRequest.getOrderNo())
                 .requestedScope(safeRequest.getScope() == null ? AfterSaleScopeEnum.ORDER : safeRequest.getScope())
                 .requestedOrderItemId(safeRequest.getOrderItemId())
@@ -283,9 +284,7 @@ public class MallAfterSaleServiceImpl extends ServiceImpl<MallAfterSaleMapper, M
 
         MallOrder order = mallOrderService.getById(afterSale.getOrderId());
         if (order != null) {
-            order.setAfterSaleFlag(OrderItemAfterSaleStatusEnum.IN_PROGRESS);
-            order.setUpdateTime(now);
-            mallOrderService.updateById(order);
+            markOrderAfterSaleInProgress(order, now);
         }
 
         String username = getUsername();
@@ -356,7 +355,7 @@ public class MallAfterSaleServiceImpl extends ServiceImpl<MallAfterSaleMapper, M
             mallOrderItemService.updateById(orderItem);
         }
 
-        refreshOrderAfterSaleFlag(afterSale.getOrderId());
+        refreshOrderAfterSaleFlag(afterSale.getOrderId(), now);
 
         String username = getUsername();
         String description = String.format("用户%s取消了售后申请", username);
@@ -436,7 +435,7 @@ public class MallAfterSaleServiceImpl extends ServiceImpl<MallAfterSaleMapper, M
         ClientAgentAfterSaleEligibilityRequest safeRequest =
                 request == null ? new ClientAgentAfterSaleEligibilityRequest() : request;
         AfterSaleScopeEnum requestedScope = safeRequest.getOrderItemId() == null ? AfterSaleScopeEnum.ORDER : AfterSaleScopeEnum.ITEM;
-        EligibilitySnapshot snapshot = buildEligibilitySnapshot(EligibilityCommand.builder()
+        SnapshotBo snapshot = buildEligibilitySnapshot(CommandBo.builder()
                 .orderNo(safeRequest.getOrderNo())
                 .requestedScope(requestedScope)
                 .requestedOrderItemId(safeRequest.getOrderItemId())
@@ -491,7 +490,7 @@ public class MallAfterSaleServiceImpl extends ServiceImpl<MallAfterSaleMapper, M
      * @param command 售后资格计算命令
      * @return 返回包含订单、商品、金额和结果编码的资格快照
      */
-    private EligibilitySnapshot buildEligibilitySnapshot(EligibilityCommand command) {
+    private SnapshotBo buildEligibilitySnapshot(CommandBo command) {
         AfterSaleScopeEnum requestedScope = command.getRequestedScope() == null ? AfterSaleScopeEnum.ORDER : command.getRequestedScope();
         MallOrder order = mallOrderService.lambdaQuery()
                 .eq(MallOrder::getOrderNo, command.getOrderNo())
@@ -511,13 +510,13 @@ public class MallAfterSaleServiceImpl extends ServiceImpl<MallAfterSaleMapper, M
 
         AfterSaleScopeEnum resolvedScope = resolveScope(requestedScope, command.getRequestedOrderItemId(), orderItems);
         Date deadlineTime = resolveAfterSaleDeadline(order);
-        EligibilityFailure orderFailure = evaluateOrderFailure(order, deadlineTime);
-        List<ItemEligibilityResult> itemResults = buildItemEligibilityResults(order, orderItems, command.getUserId(), orderFailure);
+        FailureBo orderFailure = evaluateOrderFailure(order, deadlineTime);
+        List<ItemResultBo> itemResults = buildItemEligibilityResults(order, orderItems, command.getUserId(), orderFailure);
         BigDecimal totalRefundableAmount = positive(calculateOrderRefundableAmount(order));
 
-        ItemEligibilityResult selectedItem = resolveSelectedItem(itemResults, command.getRequestedOrderItemId());
+        ItemResultBo selectedItem = resolveSelectedItem(itemResults, command.getRequestedOrderItemId());
         if (command.getRequestedOrderItemId() != null && selectedItem == null && resolvedScope == AfterSaleScopeEnum.ITEM) {
-            return EligibilitySnapshot.builder()
+            return SnapshotBo.builder()
                     .orderNo(order.getOrderNo())
                     .requestedScope(requestedScope)
                     .resolvedScope(resolvedScope)
@@ -549,7 +548,7 @@ public class MallAfterSaleServiceImpl extends ServiceImpl<MallAfterSaleMapper, M
         Long selectedOrderItemId;
 
         if (resolvedScope == AfterSaleScopeEnum.ORDER) {
-            EligibilityFailure orderScopeFailure = orderFailure != null ? orderFailure : evaluateOrderScopeFailure(itemResults, totalRefundableAmount);
+            FailureBo orderScopeFailure = orderFailure != null ? orderFailure : evaluateOrderScopeFailure(itemResults, totalRefundableAmount);
             eligible = orderScopeFailure == null;
             reasonCode = eligible ? ELIGIBILITY_REASON_OK : orderScopeFailure.getReasonCode();
             reasonMessage = eligible ? "订单满足售后条件" : orderScopeFailure.getReasonMessage();
@@ -562,17 +561,17 @@ public class MallAfterSaleServiceImpl extends ServiceImpl<MallAfterSaleMapper, M
             selectedRefundableAmount = selectedItem.getRefundableAmount();
             selectedOrderItemId = selectedItem.getOrderItem().getId();
         } else {
-            ItemEligibilityResult firstEligible = findFirstEligibleItem(itemResults);
+            ItemResultBo firstEligible = findFirstEligibleItem(itemResults);
             eligible = firstEligible != null;
             reasonCode = eligible ? ELIGIBILITY_REASON_OK
-                    : itemResults.stream().findFirst().map(ItemEligibilityResult::getReasonCode).orElse(ELIGIBILITY_REASON_ORDER_ITEM_NOT_FOUND);
+                    : itemResults.stream().findFirst().map(ItemResultBo::getReasonCode).orElse(ELIGIBILITY_REASON_ORDER_ITEM_NOT_FOUND);
             reasonMessage = eligible ? "订单存在可申请售后的商品"
-                    : itemResults.stream().findFirst().map(ItemEligibilityResult::getReasonMessage).orElse("订单商品不存在");
+                    : itemResults.stream().findFirst().map(ItemResultBo::getReasonMessage).orElse("订单商品不存在");
             selectedRefundableAmount = BigDecimal.ZERO;
             selectedOrderItemId = null;
         }
 
-        return EligibilitySnapshot.builder()
+        return SnapshotBo.builder()
                 .orderNo(order.getOrderNo())
                 .requestedScope(requestedScope)
                 .resolvedScope(resolvedScope)
@@ -600,10 +599,10 @@ public class MallAfterSaleServiceImpl extends ServiceImpl<MallAfterSaleMapper, M
      * @param requestedOrderItemId 请求订单项 ID
      * @return 返回不可售后的资格快照
      */
-    private EligibilitySnapshot buildNotFoundSnapshot(String orderNo,
-                                                      AfterSaleScopeEnum requestedScope,
-                                                      Long requestedOrderItemId) {
-        return EligibilitySnapshot.builder()
+    private SnapshotBo buildNotFoundSnapshot(String orderNo,
+                                             AfterSaleScopeEnum requestedScope,
+                                             Long requestedOrderItemId) {
+        return SnapshotBo.builder()
                 .orderNo(orderNo)
                 .requestedScope(requestedScope)
                 .resolvedScope(requestedScope)
@@ -649,11 +648,11 @@ public class MallAfterSaleServiceImpl extends ServiceImpl<MallAfterSaleMapper, M
      * @param orderFailure 订单级失败原因
      * @return 返回商品维度的资格结果列表
      */
-    private List<ItemEligibilityResult> buildItemEligibilityResults(MallOrder order,
-                                                                    List<MallOrderItem> orderItems,
-                                                                    Long userId,
-                                                                    EligibilityFailure orderFailure) {
-        List<ItemEligibilityResult> results = new ArrayList<>();
+    private List<ItemResultBo> buildItemEligibilityResults(MallOrder order,
+                                                           List<MallOrderItem> orderItems,
+                                                           Long userId,
+                                                           FailureBo orderFailure) {
+        List<ItemResultBo> results = new ArrayList<>();
         for (MallOrderItem orderItem : orderItems) {
             BigDecimal refundableAmount = positive(calculateOrderItemRefundableAmount(orderItem));
             if (orderFailure != null) {
@@ -694,12 +693,12 @@ public class MallAfterSaleServiceImpl extends ServiceImpl<MallAfterSaleMapper, M
      * @param refundableAmount 当前可退金额
      * @return 返回订单项资格结果
      */
-    private ItemEligibilityResult buildItemEligibilityResult(MallOrderItem orderItem,
-                                                             boolean eligible,
-                                                             String reasonCode,
-                                                             String reasonMessage,
-                                                             BigDecimal refundableAmount) {
-        return ItemEligibilityResult.builder()
+    private ItemResultBo buildItemEligibilityResult(MallOrderItem orderItem,
+                                                    boolean eligible,
+                                                    String reasonCode,
+                                                    String reasonMessage,
+                                                    BigDecimal refundableAmount) {
+        return ItemResultBo.builder()
                 .orderItem(orderItem)
                 .eligible(eligible)
                 .reasonCode(reasonCode)
@@ -715,9 +714,9 @@ public class MallAfterSaleServiceImpl extends ServiceImpl<MallAfterSaleMapper, M
      * @param deadlineTime 售后截止时间
      * @return 返回订单级失败原因，若为空表示订单级校验通过
      */
-    private EligibilityFailure evaluateOrderFailure(MallOrder order, Date deadlineTime) {
+    private FailureBo evaluateOrderFailure(MallOrder order, Date deadlineTime) {
         if (!Objects.equals(order.getPaid(), 1)) {
-            return EligibilityFailure.builder()
+            return FailureBo.builder()
                     .reasonCode(ELIGIBILITY_REASON_ORDER_NOT_PAID)
                     .reasonMessage("订单未支付，暂不支持申请售后")
                     .build();
@@ -725,19 +724,19 @@ public class MallAfterSaleServiceImpl extends ServiceImpl<MallAfterSaleMapper, M
 
         OrderStatusEnum orderStatusEnum = OrderStatusEnum.fromCode(order.getOrderStatus());
         if (orderStatusEnum == null) {
-            return EligibilityFailure.builder()
+            return FailureBo.builder()
                     .reasonCode(ELIGIBILITY_REASON_ORDER_STATUS_INVALID)
                     .reasonMessage("订单状态异常，暂不支持申请售后")
                     .build();
         }
         if (!isOrderStatusEligible(orderStatusEnum)) {
-            return EligibilityFailure.builder()
+            return FailureBo.builder()
                     .reasonCode(ELIGIBILITY_REASON_ORDER_STATUS_NOT_ELIGIBLE)
                     .reasonMessage(String.format("当前订单状态[%s]不允许申请售后", orderStatusEnum.getName()))
                     .build();
         }
         if (deadlineTime != null && deadlineTime.before(new Date())) {
-            return EligibilityFailure.builder()
+            return FailureBo.builder()
                     .reasonCode(ELIGIBILITY_REASON_AFTER_SALE_EXPIRED)
                     .reasonMessage("订单确认收货已超过3个月，无法申请售后")
                     .build();
@@ -752,11 +751,11 @@ public class MallAfterSaleServiceImpl extends ServiceImpl<MallAfterSaleMapper, M
      * @param totalRefundableAmount 整单可退金额
      * @return 返回整单失败原因，若为空表示整单可申请
      */
-    private EligibilityFailure evaluateOrderScopeFailure(List<ItemEligibilityResult> itemResults, BigDecimal totalRefundableAmount) {
+    private FailureBo evaluateOrderScopeFailure(List<ItemResultBo> itemResults, BigDecimal totalRefundableAmount) {
         boolean hasInProgress = itemResults.stream()
                 .anyMatch(item -> ELIGIBILITY_REASON_AFTER_SALE_IN_PROGRESS.equals(item.getReasonCode()));
         if (hasInProgress) {
-            return EligibilityFailure.builder()
+            return FailureBo.builder()
                     .reasonCode(ELIGIBILITY_REASON_AFTER_SALE_IN_PROGRESS)
                     .reasonMessage("订单存在售后中的商品，暂不支持整单申请售后")
                     .build();
@@ -765,7 +764,7 @@ public class MallAfterSaleServiceImpl extends ServiceImpl<MallAfterSaleMapper, M
         boolean hasHistoryConflict = itemResults.stream()
                 .anyMatch(item -> ELIGIBILITY_REASON_HISTORY_CONFLICT.equals(item.getReasonCode()));
         if (hasHistoryConflict) {
-            return EligibilityFailure.builder()
+            return FailureBo.builder()
                     .reasonCode(ELIGIBILITY_REASON_HISTORY_CONFLICT)
                     .reasonMessage("订单包含已完成售后的商品，暂不支持整单再次申请")
                     .build();
@@ -776,7 +775,7 @@ public class MallAfterSaleServiceImpl extends ServiceImpl<MallAfterSaleMapper, M
                         && !ELIGIBILITY_REASON_AFTER_SALE_IN_PROGRESS.equals(item.getReasonCode())
                         && !ELIGIBILITY_REASON_HISTORY_CONFLICT.equals(item.getReasonCode()));
         if (totalRefundableAmount.compareTo(BigDecimal.ZERO) <= 0 || !hasApplicableItems) {
-            return EligibilityFailure.builder()
+            return FailureBo.builder()
                     .reasonCode(ELIGIBILITY_REASON_NO_REFUNDABLE_AMOUNT)
                     .reasonMessage("订单已无可退款金额")
                     .build();
@@ -790,9 +789,9 @@ public class MallAfterSaleServiceImpl extends ServiceImpl<MallAfterSaleMapper, M
      * @param snapshot 售后资格快照
      * @return 返回可用于整单拆单创建售后的商品资格结果列表
      */
-    private List<ItemEligibilityResult> getApplicableOrderScopeItems(EligibilitySnapshot snapshot) {
-        List<ItemEligibilityResult> results = new ArrayList<>();
-        for (ItemEligibilityResult itemResult : snapshot.getItemResults()) {
+    private List<ItemResultBo> getApplicableOrderScopeItems(SnapshotBo snapshot) {
+        List<ItemResultBo> results = new ArrayList<>();
+        for (ItemResultBo itemResult : snapshot.getItemResults()) {
             if (itemResult.getRefundableAmount().compareTo(BigDecimal.ZERO) > 0
                     && !ELIGIBILITY_REASON_AFTER_SALE_IN_PROGRESS.equals(itemResult.getReasonCode())
                     && !ELIGIBILITY_REASON_HISTORY_CONFLICT.equals(itemResult.getReasonCode())) {
@@ -811,8 +810,8 @@ public class MallAfterSaleServiceImpl extends ServiceImpl<MallAfterSaleMapper, M
      * @param snapshot 售后资格快照
      * @return 返回选中的订单项资格结果
      */
-    private ItemEligibilityResult requireSelectedItem(EligibilitySnapshot snapshot) {
-        ItemEligibilityResult selectedItem = resolveSelectedItem(snapshot.getItemResults(), snapshot.getSelectedOrderItemId());
+    private ItemResultBo requireSelectedItem(SnapshotBo snapshot) {
+        ItemResultBo selectedItem = resolveSelectedItem(snapshot.getItemResults(), snapshot.getSelectedOrderItemId());
         if (selectedItem == null) {
             throw new ServiceException(ResponseCode.RESULT_IS_NULL, "订单商品不存在");
         }
@@ -826,7 +825,7 @@ public class MallAfterSaleServiceImpl extends ServiceImpl<MallAfterSaleMapper, M
      * @param orderItemId 订单项 ID
      * @return 返回匹配的订单项资格结果，未找到则返回 {@code null}
      */
-    private ItemEligibilityResult resolveSelectedItem(List<ItemEligibilityResult> itemResults, Long orderItemId) {
+    private ItemResultBo resolveSelectedItem(List<ItemResultBo> itemResults, Long orderItemId) {
         if (orderItemId == null) {
             return null;
         }
@@ -842,7 +841,7 @@ public class MallAfterSaleServiceImpl extends ServiceImpl<MallAfterSaleMapper, M
      * @param itemResults 商品资格结果列表
      * @return 返回首个可申请的商品资格结果，未找到则返回 {@code null}
      */
-    private ItemEligibilityResult findFirstEligibleItem(List<ItemEligibilityResult> itemResults) {
+    private ItemResultBo findFirstEligibleItem(List<ItemResultBo> itemResults) {
         return itemResults.stream()
                 .filter(item -> Boolean.TRUE.equals(item.getEligible()))
                 .findFirst()
@@ -873,7 +872,7 @@ public class MallAfterSaleServiceImpl extends ServiceImpl<MallAfterSaleMapper, M
      * @param snapshot 售后资格快照
      * @return 返回适用于当前失败场景的业务异常
      */
-    private ServiceException buildEligibilityException(EligibilitySnapshot snapshot) {
+    private ServiceException buildEligibilityException(SnapshotBo snapshot) {
         ResponseCode responseCode = resolveResponseCode(snapshot.getReasonCode());
         return new ServiceException(responseCode, snapshot.getReasonMessage());
     }
@@ -989,9 +988,7 @@ public class MallAfterSaleServiceImpl extends ServiceImpl<MallAfterSaleMapper, M
         orderItem.setUpdateTime(now);
         mallOrderItemService.updateById(orderItem);
 
-        order.setAfterSaleFlag(OrderItemAfterSaleStatusEnum.IN_PROGRESS);
-        order.setUpdateTime(now);
-        mallOrderService.updateById(order);
+        markOrderAfterSaleInProgress(order, now);
 
         String username = getUsername();
         String description = String.format("用户%s申请%s", username, afterSaleType.getName());
@@ -1033,9 +1030,9 @@ public class MallAfterSaleServiceImpl extends ServiceImpl<MallAfterSaleMapper, M
      * @param snapshot 售后资格快照
      * @return 返回前端售后资格视图对象
      */
-    private AfterSaleEligibilityVo toEligibilityVo(EligibilitySnapshot snapshot) {
+    private AfterSaleEligibilityVo toEligibilityVo(SnapshotBo snapshot) {
         List<AfterSaleEligibilityVo.ItemEligibility> items = new ArrayList<>();
-        for (ItemEligibilityResult itemResult : snapshot.getItemResults()) {
+        for (ItemResultBo itemResult : snapshot.getItemResults()) {
             MallOrderItem orderItem = itemResult.getOrderItem();
             items.add(AfterSaleEligibilityVo.ItemEligibility.builder()
                     .orderItemId(orderItem.getId())
@@ -1160,28 +1157,97 @@ public class MallAfterSaleServiceImpl extends ServiceImpl<MallAfterSaleMapper, M
      *
      * @param orderId 订单 ID
      */
-    private void refreshOrderAfterSaleFlag(Long orderId) {
+    private void refreshOrderAfterSaleFlag(Long orderId, Date now) {
         if (orderId == null) {
             return;
         }
-        long inProgressCount = mallOrderItemService.lambdaQuery()
-                .eq(MallOrderItem::getOrderId, orderId)
-                .eq(MallOrderItem::getAfterSaleStatus, OrderItemAfterSaleStatusEnum.IN_PROGRESS.getStatus())
-                .count();
-
         MallOrder order = mallOrderService.getById(orderId);
         if (order == null) {
             return;
         }
 
-        OrderItemAfterSaleStatusEnum newFlag = inProgressCount > 0
-                ? OrderItemAfterSaleStatusEnum.IN_PROGRESS
-                : OrderItemAfterSaleStatusEnum.NONE;
-        if (!Objects.equals(order.getAfterSaleFlag(), newFlag)) {
-            order.setAfterSaleFlag(newFlag);
-            order.setUpdateTime(new Date());
-            mallOrderService.updateById(order);
+        OrderItemAfterSaleStatusEnum newFlag = resolveOrderAfterSaleFlag(orderId);
+        order.setAfterSaleFlag(newFlag);
+        if (newFlag == OrderItemAfterSaleStatusEnum.IN_PROGRESS) {
+            order.setOrderStatus(OrderStatusEnum.AFTER_SALE.getType());
+        } else {
+            order.setOrderStatus(resolveOrderStatusAfterAfterSale(order).getType());
         }
+        order.setUpdateTime(now);
+        boolean updated = mallOrderService.updateById(order);
+        if (!updated) {
+            throw new ServiceException(ResponseCode.OPERATION_ERROR, "刷新订单售后状态失败，请稍后重试");
+        }
+    }
+
+    /**
+     * 将订单标记为售后处理中。
+     *
+     * @param order 订单实体
+     * @param now   当前时间
+     */
+    private void markOrderAfterSaleInProgress(MallOrder order, Date now) {
+        order.setAfterSaleFlag(OrderItemAfterSaleStatusEnum.IN_PROGRESS);
+        order.setOrderStatus(OrderStatusEnum.AFTER_SALE.getType());
+        order.setUpdateTime(now);
+        boolean updated = mallOrderService.updateById(order);
+        if (!updated) {
+            throw new ServiceException(ResponseCode.OPERATION_ERROR, "更新订单售后状态失败，请稍后重试");
+        }
+    }
+
+    /**
+     * 解析订单维度的售后标记。
+     *
+     * @param orderId 订单 ID
+     * @return 返回订单售后标记
+     */
+    private OrderItemAfterSaleStatusEnum resolveOrderAfterSaleFlag(Long orderId) {
+        List<MallOrderItem> orderItems = mallOrderItemService.lambdaQuery()
+                .eq(MallOrderItem::getOrderId, orderId)
+                .list();
+        boolean hasCompleted = false;
+        for (MallOrderItem orderItem : orderItems) {
+            OrderItemAfterSaleStatusEnum afterSaleStatusEnum = resolveOrderItemStatus(orderItem.getAfterSaleStatus());
+            if (afterSaleStatusEnum == OrderItemAfterSaleStatusEnum.IN_PROGRESS) {
+                return OrderItemAfterSaleStatusEnum.IN_PROGRESS;
+            }
+            if (afterSaleStatusEnum == OrderItemAfterSaleStatusEnum.COMPLETED) {
+                hasCompleted = true;
+            }
+        }
+        return hasCompleted ? OrderItemAfterSaleStatusEnum.COMPLETED : OrderItemAfterSaleStatusEnum.NONE;
+    }
+
+    /**
+     * 在售后流程结束后恢复订单应有的业务状态。
+     *
+     * @param order 订单实体
+     * @return 返回售后结束后的订单状态
+     */
+    private OrderStatusEnum resolveOrderStatusAfterAfterSale(MallOrder order) {
+        if (isOrderFullyRefunded(order)) {
+            return OrderStatusEnum.REFUNDED;
+        }
+        if (order.getReceiveTime() != null || order.getFinishTime() != null) {
+            return OrderStatusEnum.COMPLETED;
+        }
+        if (order.getDeliverTime() != null) {
+            return OrderStatusEnum.PENDING_RECEIPT;
+        }
+        return OrderStatusEnum.PENDING_SHIPMENT;
+    }
+
+    /**
+     * 判断订单是否已经完成全额退款。
+     *
+     * @param order 订单实体
+     * @return 返回是否全额退款
+     */
+    private boolean isOrderFullyRefunded(MallOrder order) {
+        BigDecimal payAmount = defaultAmount(order.getPayAmount());
+        BigDecimal refundedAmount = defaultAmount(order.getRefundPrice());
+        return payAmount.compareTo(BigDecimal.ZERO) > 0 && refundedAmount.compareTo(payAmount) >= 0;
     }
 
     /**
@@ -1302,53 +1368,5 @@ public class MallAfterSaleServiceImpl extends ServiceImpl<MallAfterSaleMapper, M
      */
     private BigDecimal defaultAmount(BigDecimal amount) {
         return amount == null ? BigDecimal.ZERO : amount;
-    }
-
-    @Data
-    @Builder
-    private static class EligibilityCommand {
-        private String orderNo;
-        private AfterSaleScopeEnum requestedScope;
-        private Long requestedOrderItemId;
-        private Long userId;
-    }
-
-    @Data
-    @Builder
-    private static class EligibilityFailure {
-        private String reasonCode;
-        private String reasonMessage;
-    }
-
-    @Data
-    @Builder
-    private static class ItemEligibilityResult {
-        private MallOrderItem orderItem;
-        private Boolean eligible;
-        private String reasonCode;
-        private String reasonMessage;
-        private BigDecimal refundableAmount;
-    }
-
-    @Data
-    @Builder
-    @AllArgsConstructor
-    private static class EligibilitySnapshot {
-        private String orderNo;
-        private AfterSaleScopeEnum requestedScope;
-        private AfterSaleScopeEnum resolvedScope;
-        private Long requestedOrderItemId;
-        private Long selectedOrderItemId;
-        private String orderStatus;
-        private String orderStatusName;
-        private Boolean eligible;
-        private String reasonCode;
-        private String reasonMessage;
-        private BigDecimal selectedRefundableAmount;
-        private BigDecimal totalRefundableAmount;
-        private Date afterSaleDeadlineTime;
-        private MallOrder order;
-        private List<MallOrderItem> orderItems;
-        private List<ItemEligibilityResult> itemResults;
     }
 }

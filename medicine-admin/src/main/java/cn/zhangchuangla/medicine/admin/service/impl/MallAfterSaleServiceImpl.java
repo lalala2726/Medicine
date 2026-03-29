@@ -45,6 +45,16 @@ import java.util.Objects;
 public class MallAfterSaleServiceImpl extends ServiceImpl<MallAfterSaleMapper, MallAfterSale>
         implements MallAfterSaleService {
 
+    /**
+     * 全额退款完成后的退款状态编码。
+     */
+    private static final String REFUND_STATUS_SUCCESS = "SUCCESS";
+
+    /**
+     * 部分退款完成后的退款状态编码。
+     */
+    private static final String REFUND_STATUS_PARTIAL = "PARTIAL";
+
     private final MallAfterSaleMapper mallAfterSaleMapper;
     private final MallAfterSaleTimelineService mallAfterSaleTimelineService;
     private final MallOrderItemService mallOrderItemService;
@@ -221,7 +231,7 @@ public class MallAfterSaleServiceImpl extends ServiceImpl<MallAfterSaleMapper, M
                 mallOrderItemService.updateById(orderItem);
             }
 
-            refreshOrderAfterSaleFlag(afterSale.getOrderId());
+            refreshOrderAfterSaleFlag(afterSale.getOrderId(), now);
 
             // 添加售后时间线记录
             String description = String.format("管理员%s拒绝了售后申请，原因：%s", adminUsername, request.getRejectReason());
@@ -315,23 +325,11 @@ public class MallAfterSaleServiceImpl extends ServiceImpl<MallAfterSaleMapper, M
             throw new ServiceException(ResponseCode.OPERATION_ERROR, "退款失败：" + e.getMessage());
         }
 
-        // 7. 更新订单退款信息
+        // 7. 先记录订单退款金额与退款时间，最终订单状态在售后完成后统一刷新
         BigDecimal orderRefundPrice = order.getRefundPrice() != null ? order.getRefundPrice() : BigDecimal.ZERO;
         BigDecimal totalRefunded = orderRefundPrice.add(refundAmount);
         order.setRefundPrice(totalRefunded);
         order.setRefundTime(now);
-        order.setUpdateTime(now);
-
-        // 判断是否全额退款
-        BigDecimal payAmount = order.getPayAmount();
-        if (payAmount != null && totalRefunded.compareTo(payAmount) >= 0) {
-            order.setRefundStatus("SUCCESS");
-            order.setOrderStatus(OrderStatusEnum.REFUNDED.getType());
-        } else {
-            order.setRefundStatus("PARTIAL");
-            order.setOrderStatus(OrderStatusEnum.AFTER_SALE.getType());
-        }
-        mallOrderService.updateById(order);
 
         // 8. 更新订单项已退款金额
         MallOrderItem orderItem = mallOrderItemService.getById(afterSale.getOrderItemId());
@@ -349,6 +347,8 @@ public class MallAfterSaleServiceImpl extends ServiceImpl<MallAfterSaleMapper, M
         afterSale.setUpdateTime(now);
         afterSale.setUpdateBy(adminUsername);
         updateById(afterSale);
+
+        refreshOrderAfterSaleFlag(order, now);
 
         // 10. 添加售后时间线记录
         String description = String.format("管理员%s完成了退款处理，退款金额：%.2f元", adminUsername, refundAmount);
@@ -370,8 +370,6 @@ public class MallAfterSaleServiceImpl extends ServiceImpl<MallAfterSaleMapper, M
                 .description(description)
                 .build();
         mallOrderTimelineService.addTimelineIfNotExists(orderTimelineDto);
-
-        refreshOrderAfterSaleFlag(afterSale.getOrderId());
 
         log.info("管理员{}完成售后退款，售后单号：{}，退款金额：{}", adminUsername, afterSale.getAfterSaleNo(), refundAmount);
         return true;
@@ -430,6 +428,9 @@ public class MallAfterSaleServiceImpl extends ServiceImpl<MallAfterSaleMapper, M
         afterSale.setUpdateBy(adminUsername);
         updateById(afterSale);
 
+        MallOrder order = mallOrderService.getById(afterSale.getOrderId());
+        refreshOrderAfterSaleFlag(order, now);
+
         // 8. 添加售后时间线记录
         String description = String.format("管理员%s完成了换货处理%s", adminUsername, exchangeInfo);
         mallAfterSaleTimelineService.addTimeline(
@@ -442,7 +443,6 @@ public class MallAfterSaleServiceImpl extends ServiceImpl<MallAfterSaleMapper, M
         );
 
         // 9. 添加订单时间线记录
-        MallOrder order = mallOrderService.getById(afterSale.getOrderId());
         OrderTimelineDto orderTimelineDto = OrderTimelineDto.builder()
                 .orderId(afterSale.getOrderId())
                 .eventType(OrderEventTypeEnum.AFTER_SALE_COMPLETED.getType())
@@ -452,37 +452,119 @@ public class MallAfterSaleServiceImpl extends ServiceImpl<MallAfterSaleMapper, M
                 .build();
         mallOrderTimelineService.addTimelineIfNotExists(orderTimelineDto);
 
-        refreshOrderAfterSaleFlag(afterSale.getOrderId());
-
         log.info("管理员{}完成售后换货，售后单号：{}{}", adminUsername, afterSale.getAfterSaleNo(), exchangeInfo);
         return true;
     }
 
     /**
-     * 根据订单项售后状态刷新订单售后标记
+     * 根据订单项售后状态刷新订单售后标记，并在售后结束后恢复订单业务状态。
+     *
+     * @param orderId 订单 ID
+     * @param now     当前时间
      */
-    private void refreshOrderAfterSaleFlag(Long orderId) {
+    private void refreshOrderAfterSaleFlag(Long orderId, Date now) {
         if (orderId == null) {
             return;
         }
-        long inProgressCount = mallOrderItemService.lambdaQuery()
-                .eq(MallOrderItem::getOrderId, orderId)
-                .eq(MallOrderItem::getAfterSaleStatus, OrderItemAfterSaleStatusEnum.IN_PROGRESS.getStatus())
-                .count();
-
         MallOrder order = mallOrderService.getById(orderId);
         if (order == null) {
             return;
         }
+        refreshOrderAfterSaleFlag(order, now);
+    }
 
-        OrderItemAfterSaleStatusEnum newFlag = inProgressCount > 0
-                ? OrderItemAfterSaleStatusEnum.IN_PROGRESS
-                : OrderItemAfterSaleStatusEnum.NONE;
-        if (!Objects.equals(order.getAfterSaleFlag(), newFlag)) {
-            order.setAfterSaleFlag(newFlag);
-            order.setUpdateTime(new Date());
-            mallOrderService.updateById(order);
+    /**
+     * 刷新订单的售后标记与订单状态。
+     *
+     * @param order 订单实体
+     * @param now   当前时间
+     */
+    private void refreshOrderAfterSaleFlag(MallOrder order, Date now) {
+        if (order == null || order.getId() == null) {
+            return;
         }
+        OrderItemAfterSaleStatusEnum newFlag = resolveOrderAfterSaleFlag(order.getId());
+        order.setAfterSaleFlag(newFlag);
+        if (isOrderFullyRefunded(order)) {
+            order.setRefundStatus(REFUND_STATUS_SUCCESS);
+            order.setOrderStatus(OrderStatusEnum.REFUNDED.getType());
+        } else {
+            if (defaultAmount(order.getRefundPrice()).compareTo(BigDecimal.ZERO) > 0) {
+                order.setRefundStatus(REFUND_STATUS_PARTIAL);
+            }
+            if (newFlag == OrderItemAfterSaleStatusEnum.IN_PROGRESS) {
+                order.setOrderStatus(OrderStatusEnum.AFTER_SALE.getType());
+            } else {
+                order.setOrderStatus(resolveOrderStatusAfterAfterSale(order).getType());
+            }
+        }
+        order.setUpdateTime(now);
+        boolean updated = mallOrderService.updateById(order);
+        if (!updated) {
+            throw new ServiceException(ResponseCode.OPERATION_ERROR, "刷新订单售后状态失败，请重试");
+        }
+    }
+
+    /**
+     * 解析订单维度的售后标记。
+     *
+     * @param orderId 订单 ID
+     * @return 返回订单售后标记
+     */
+    private OrderItemAfterSaleStatusEnum resolveOrderAfterSaleFlag(Long orderId) {
+        List<MallOrderItem> orderItems = mallOrderItemService.lambdaQuery()
+                .eq(MallOrderItem::getOrderId, orderId)
+                .list();
+        boolean hasCompleted = false;
+        for (MallOrderItem orderItem : orderItems) {
+            OrderItemAfterSaleStatusEnum afterSaleStatusEnum =
+                    OrderItemAfterSaleStatusEnum.fromCode(orderItem.getAfterSaleStatus());
+            if (afterSaleStatusEnum == OrderItemAfterSaleStatusEnum.IN_PROGRESS) {
+                return OrderItemAfterSaleStatusEnum.IN_PROGRESS;
+            }
+            if (afterSaleStatusEnum == OrderItemAfterSaleStatusEnum.COMPLETED) {
+                hasCompleted = true;
+            }
+        }
+        return hasCompleted ? OrderItemAfterSaleStatusEnum.COMPLETED : OrderItemAfterSaleStatusEnum.NONE;
+    }
+
+    /**
+     * 在售后流程结束后恢复订单应有的业务状态。
+     *
+     * @param order 订单实体
+     * @return 返回售后结束后的订单状态
+     */
+    private OrderStatusEnum resolveOrderStatusAfterAfterSale(MallOrder order) {
+        if (order.getReceiveTime() != null || order.getFinishTime() != null) {
+            return OrderStatusEnum.COMPLETED;
+        }
+        if (order.getDeliverTime() != null) {
+            return OrderStatusEnum.PENDING_RECEIPT;
+        }
+        return OrderStatusEnum.PENDING_SHIPMENT;
+    }
+
+    /**
+     * 判断订单是否已经完成全额退款。
+     *
+     * @param order 订单实体
+     * @return 返回是否全额退款
+     */
+    private boolean isOrderFullyRefunded(MallOrder order) {
+        BigDecimal payAmount = defaultAmount(order.getPayAmount());
+        BigDecimal refundedAmount = defaultAmount(order.getRefundPrice());
+        return payAmount.compareTo(BigDecimal.ZERO) > 0 && refundedAmount.compareTo(payAmount) >= 0;
+    }
+
+    /**
+     * 统一处理金额空值，避免空指针影响售后状态回写。
+     *
+     * @param amount 原始金额
+     * @return 返回非空金额
+     */
+    private BigDecimal defaultAmount(BigDecimal amount) {
+        return amount == null ? BigDecimal.ZERO : amount;
     }
 
     /**
