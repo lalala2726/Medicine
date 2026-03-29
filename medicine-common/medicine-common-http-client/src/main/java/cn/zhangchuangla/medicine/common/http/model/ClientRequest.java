@@ -89,10 +89,26 @@ public final class ClientRequest {
 
         /**
          * 追加请求头（在原 headers 基础上追加）。
+         *
+         * @param name  请求头名称
+         * @param value 请求头值
+         * @return 当前建造器
          */
         public Builder addHeader(String name, String value) {
             ensureHeadersBuilder();
             this.headersBuilder.add(name, value);
+            return this;
+        }
+
+        /**
+         * 直接设置完整请求头集合。
+         *
+         * @param headers 请求头集合
+         * @return 当前建造器
+         */
+        public Builder headers(Headers headers) {
+            this.headers = headers;
+            this.headersBuilder = null;
             return this;
         }
 

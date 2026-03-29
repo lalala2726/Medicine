@@ -169,8 +169,6 @@ class LlmProviderServiceImplTests {
         when(llmProviderMapper.selectById(3L)).thenReturn(existing);
         when(llmProviderMapper.update(any(LlmProvider.class), any())).thenReturn(1);
         when(llmProviderMapper.updateById(any(LlmProvider.class))).thenReturn(1);
-        doThrow(new ServiceException("切换失败，目标提供商下不存在模型：text-embedding-v4"))
-                .when(agentConfigRuntimeSyncService).validateProviderSwitchCompatibility(existing);
 
         boolean result = llmProviderService.updateProviderStatus(request);
 

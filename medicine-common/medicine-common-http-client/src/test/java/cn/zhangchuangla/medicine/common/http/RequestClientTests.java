@@ -57,7 +57,7 @@ class RequestClientTests {
     }
 
     @Test
-    void executeParsesJsonToClass() throws Exception {
+    void executeParsesJsonToClass() {
         server.enqueue(new MockResponse()
                 .setResponseCode(200)
                 .setHeader("Content-Type", "application/json")

@@ -19,6 +19,7 @@ import cn.zhangchuangla.medicine.model.request.ClientAgentProductSearchRequest;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.json.JsonMapper;
+import jakarta.servlet.http.HttpServletRequest;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -32,18 +33,15 @@ import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import org.springframework.validation.beanvalidation.LocalValidatorFactoryBean;
 
+import java.lang.reflect.Proxy;
 import java.math.BigDecimal;
 import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
-import java.util.concurrent.TimeUnit;
 
 import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.ArgumentMatchers.*;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
@@ -111,7 +109,7 @@ class AgentClientProductCardControllerTests {
         setupAuthentication(99L);
         productService.productCards = createProductCards();
 
-        mockMvc.perform(get("/agent/client/product/cards/102,101"))
+        mockMvc.perform(get("/agent/client/card/product/102,101"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.code").value(200))
                 .andExpect(jsonPath("$.data.totalPrice").value("36.70"))
@@ -124,9 +122,9 @@ class AgentClientProductCardControllerTests {
     void getProductPurchaseCards_WhenAuthorizationAndSystemHeadersProvided_ShouldPassFilter() throws Exception {
         productService.productPurchaseCards = createProductPurchaseCards();
         byte[] requestBody = objectMapper.writeValueAsBytes(createPurchaseRequest());
-        SignedHeaders signedHeaders = buildSignedHeaders("POST", "/agent/client/purchase_cards", requestBody);
+        SignedHeaders signedHeaders = buildSignedHeaders("POST", "/agent/client/card/purchase_cards", requestBody);
 
-        mockMvcWithSystemAuth.perform(post("/agent/client/purchase_cards")
+        mockMvcWithSystemAuth.perform(post("/agent/client/card/purchase_cards")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(requestBody)
                         .header(SystemAuthHeaders.AUTHORIZATION, "Bearer abc")
@@ -167,7 +165,7 @@ class AgentClientProductCardControllerTests {
         setupAuthentication(99L);
         productService.productPurchaseCards = createProductPurchaseCards();
 
-        mockMvc.perform(post("/agent/client/purchase_cards")
+        mockMvc.perform(post("/agent/client/card/purchase_cards")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(createPurchaseRequest())))
                 .andExpect(status().isOk())
@@ -262,35 +260,143 @@ class AgentClientProductCardControllerTests {
         return request;
     }
 
+    /**
+     * 创建使用手写桩对象的系统签名过滤器，避免依赖 Mockito inline。
+     *
+     * @return 系统签名过滤器
+     */
     private AllowSystemAuthenticationFilter createAllowSystemAuthenticationFilter() {
+        SystemAuthProperties properties = createSystemAuthProperties();
+        return new AllowSystemAuthenticationFilter(
+                properties,
+                createAllowSystemEndpointRegistry(),
+                createSystemAuthClientRegistry(properties),
+                systemAuthCanonicalBuilder,
+                systemAuthSigner,
+                createRedisTemplate()
+        );
+    }
+
+    /**
+     * 创建系统签名测试配置。
+     *
+     * @return 系统签名配置
+     */
+    private SystemAuthProperties createSystemAuthProperties() {
         SystemAuthProperties properties = new SystemAuthProperties();
         properties.setEnabled(true);
         properties.setDefaultSignVersion("v1");
         properties.setMaxSkewSeconds(300);
         properties.setNonceTtlSeconds(600);
         properties.setNonceKeyPrefix("system_auth:nonce");
+        return properties;
+    }
 
-        AllowSystemEndpointRegistry endpointRegistry = mock(AllowSystemEndpointRegistry.class);
-        when(endpointRegistry.requiresSystemAuth(any())).thenReturn(true);
+    /**
+     * 创建固定要求系统签名的端点注册表。
+     *
+     * @return 端点注册表
+     */
+    private AllowSystemEndpointRegistry createAllowSystemEndpointRegistry() {
+        return new AllowSystemEndpointRegistry(null) {
+            @Override
+            public boolean requiresSystemAuth(HttpServletRequest request) {
+                return true;
+            }
+        };
+    }
 
-        SystemAuthClientRegistry clientRegistry = mock(SystemAuthClientRegistry.class);
-        when(clientRegistry.findEnabledClient(SYSTEM_APP_ID)).thenReturn(Optional.of(enabledClient()));
+    /**
+     * 创建固定返回启用客户端的注册表。
+     *
+     * @param properties 系统签名配置
+     * @return 客户端注册表
+     */
+    private SystemAuthClientRegistry createSystemAuthClientRegistry(SystemAuthProperties properties) {
+        return new SystemAuthClientRegistry(properties) {
+            @Override
+            public Optional<SystemAuthClient> findEnabledClient(String appId) {
+                if (!SYSTEM_APP_ID.equals(appId)) {
+                    return Optional.empty();
+                }
+                return Optional.of(enabledClient());
+            }
+        };
+    }
 
-        @SuppressWarnings("unchecked")
-        RedisTemplate<Object, Object> redisTemplate = mock(RedisTemplate.class);
-        @SuppressWarnings("unchecked")
-        ValueOperations<Object, Object> valueOperations = mock(ValueOperations.class);
-        when(redisTemplate.opsForValue()).thenReturn(valueOperations);
-        when(valueOperations.setIfAbsent(anyString(), eq("1"), anyLong(), eq(TimeUnit.SECONDS))).thenReturn(true);
+    /**
+     * 创建只支持 `setIfAbsent` 的 RedisTemplate 桩对象。
+     *
+     * @return RedisTemplate 桩对象
+     */
+    private RedisTemplate<Object, Object> createRedisTemplate() {
+        return new RedisTemplate<>() {
+            private final ValueOperations<Object, Object> valueOperations = createValueOperations();
 
-        return new AllowSystemAuthenticationFilter(
-                properties,
-                endpointRegistry,
-                clientRegistry,
-                systemAuthCanonicalBuilder,
-                systemAuthSigner,
-                redisTemplate
+            @Override
+            public ValueOperations<Object, Object> opsForValue() {
+                return valueOperations;
+            }
+        };
+    }
+
+    /**
+     * 创建满足当前过滤器场景的 ValueOperations 代理。
+     *
+     * @return ValueOperations 代理对象
+     */
+    @SuppressWarnings("unchecked")
+    private ValueOperations<Object, Object> createValueOperations() {
+        return (ValueOperations<Object, Object>) Proxy.newProxyInstance(
+                ValueOperations.class.getClassLoader(),
+                new Class[]{ValueOperations.class},
+                (proxy, method, args) -> {
+                    if ("setIfAbsent".equals(method.getName())) {
+                        return Boolean.TRUE;
+                    }
+                    if ("toString".equals(method.getName())) {
+                        return "AgentClientProductCardValueOperations";
+                    }
+                    return defaultValue(method.getReturnType());
+                }
         );
+    }
+
+    /**
+     * 返回 Java 基本类型的默认值，引用类型返回 null。
+     *
+     * @param returnType 方法返回值类型
+     * @return 默认值
+     */
+    private Object defaultValue(Class<?> returnType) {
+        if (returnType == Void.TYPE) {
+            return null;
+        }
+        if (returnType == Boolean.TYPE) {
+            return false;
+        }
+        if (returnType == Byte.TYPE) {
+            return (byte) 0;
+        }
+        if (returnType == Short.TYPE) {
+            return (short) 0;
+        }
+        if (returnType == Integer.TYPE) {
+            return 0;
+        }
+        if (returnType == Long.TYPE) {
+            return 0L;
+        }
+        if (returnType == Float.TYPE) {
+            return 0F;
+        }
+        if (returnType == Double.TYPE) {
+            return 0D;
+        }
+        if (returnType == Character.TYPE) {
+            return '\0';
+        }
+        return null;
     }
 
     private SignedHeaders buildSignedHeaders(String method, String path, byte[] body) {

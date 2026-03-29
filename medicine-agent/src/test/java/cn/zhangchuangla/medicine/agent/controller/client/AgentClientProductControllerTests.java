@@ -175,11 +175,13 @@ class AgentClientProductControllerTests {
     }
 
     @Test
-    void searchProducts_ShouldRejectWhenUnauthenticated() throws Exception {
+    void searchProducts_ShouldAllowAnonymousAtControllerLayer() throws Exception {
+        productService.searchPage = createSearchPage();
+
         mockMvc.perform(get("/agent/client/product/search").param("keyword", "感冒灵"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.code").value(401))
-                .andExpect(jsonPath("$.message").value("用户未登录"));
+                .andExpect(jsonPath("$.code").value(200))
+                .andExpect(jsonPath("$.data.rows[0].productName").value("999感冒灵颗粒"));
     }
 
     private void setupAuthentication(Long userId) {

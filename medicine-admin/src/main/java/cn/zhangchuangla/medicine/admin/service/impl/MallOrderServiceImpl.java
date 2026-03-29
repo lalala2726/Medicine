@@ -13,6 +13,7 @@ import cn.zhangchuangla.medicine.common.core.base.PageRequest;
 import cn.zhangchuangla.medicine.common.core.enums.ResponseCode;
 import cn.zhangchuangla.medicine.common.core.exception.ServiceException;
 import cn.zhangchuangla.medicine.common.core.utils.Assert;
+import cn.zhangchuangla.medicine.common.rabbitmq.publisher.OrderTimeoutMessagePublisher;
 import cn.zhangchuangla.medicine.common.security.utils.SecurityUtils;
 import cn.zhangchuangla.medicine.model.dto.OrderDetailDto;
 import cn.zhangchuangla.medicine.model.dto.OrderTimelineDto;
@@ -27,15 +28,21 @@ import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.time.DateUtils;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.support.TransactionSynchronization;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
 import org.springframework.util.CollectionUtils;
 import org.springframework.util.StringUtils;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.util.*;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
+
+import static cn.zhangchuangla.medicine.common.core.constants.Constants.ORDER_TIMEOUT_MINUTES;
 
 /**
  * @author Chuang
@@ -63,6 +70,16 @@ public class MallOrderServiceImpl extends ServiceImpl<MallOrderMapper, MallOrder
      */
     private static final String DEFAULT_REFUND_REASON = "管理员发起退款";
 
+    /**
+     * 订单自动关闭的关闭原因文案。
+     */
+    private static final String ORDER_TIMEOUT_CLOSE_REASON = "订单支付超时，系统自动关闭";
+
+    /**
+     * 订单自动关闭时写入的操作人标识。
+     */
+    private static final String SYSTEM_AUTO_CLOSE_OPERATOR = "系统自动关闭";
+
     private final MallOrderMapper mallOrderMapper;
     private final UserMapper userMapper;
     private final MallOrderItemService mallOrderItemService;
@@ -72,6 +89,7 @@ public class MallOrderServiceImpl extends ServiceImpl<MallOrderMapper, MallOrder
     private final UserWalletService userWalletService;
     private final MallOrderShippingService mallOrderShippingService;
     private final MallInventoryService mallInventoryService;
+    private final OrderTimeoutMessagePublisher orderTimeoutMessagePublisher;
 
 
     @Override
@@ -349,6 +367,8 @@ public class MallOrderServiceImpl extends ServiceImpl<MallOrderMapper, MallOrder
         try {
             // 将字符串价格转换为BigDecimal
             BigDecimal newPrice = new BigDecimal(request.getPrice()).setScale(2, RoundingMode.HALF_UP);
+            Date now = new Date();
+            Date newPayExpireTime = DateUtils.addMinutes(now, ORDER_TIMEOUT_MINUTES);
 
             // 验证价格是否合法
             if (newPrice.compareTo(BigDecimal.ZERO) <= 0) {
@@ -387,7 +407,7 @@ public class MallOrderServiceImpl extends ServiceImpl<MallOrderMapper, MallOrder
                         if (item.getQuantity() != null && item.getQuantity() > 0) {
                             item.setPrice(itemNewTotalPrice.divide(new BigDecimal(item.getQuantity()), 2, RoundingMode.HALF_UP));
                         }
-                        item.setUpdateTime(new Date());
+                        item.setUpdateTime(now);
                     }
                     // 批量更新订单项
                     mallOrderItemService.updateBatchById(items);
@@ -398,18 +418,20 @@ public class MallOrderServiceImpl extends ServiceImpl<MallOrderMapper, MallOrder
             mallOrder.setTotalAmount(newPrice);
             // 如果是修改总价，通常支付金额也会相应修改
             mallOrder.setPayAmount(newPrice);
-            mallOrder.setUpdateTime(new Date());
+            mallOrder.setPayExpireTime(newPayExpireTime);
+            mallOrder.setUpdateTime(now);
 
             boolean updated = updateById(mallOrder);
 
             // 3. 添加订单时间线记录
             if (updated) {
+                publishOrderTimeoutAfterCommit(mallOrder.getOrderNo(), ORDER_TIMEOUT_MINUTES, TimeUnit.MINUTES);
                 OrderTimelineDto timelineDto = OrderTimelineDto.builder()
                         .orderId(mallOrder.getId())
                         .eventType(OrderEventTypeEnum.OTHER.getType())
                         .eventStatus(mallOrder.getOrderStatus())
                         .operatorType(OperatorTypeEnum.ADMIN.getType())
-                        .description(String.format("管理员修改了订单价格为: %s", newPrice))
+                        .description(String.format("管理员修改了订单价格为: %s，并重置支付超时为 %d 分钟", newPrice, ORDER_TIMEOUT_MINUTES))
                         .build();
                 mallOrderTimelineService.addTimelineIfNotExists(timelineDto);
             }
@@ -765,6 +787,72 @@ public class MallOrderServiceImpl extends ServiceImpl<MallOrderMapper, MallOrder
         return mallOrderMapper.getExpiredOrderClean(expiredTime);
     }
 
+    /**
+     * 执行过期订单补偿关闭逻辑。
+     *
+     * @param orderNo 订单编号
+     * @return 是否关闭成功
+     */
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public boolean closeExpiredOrderForCompensation(String orderNo) {
+        MallOrder order = lambdaQuery()
+                .eq(MallOrder::getOrderNo, orderNo)
+                .eq(MallOrder::getOrderStatus, OrderStatusEnum.PENDING_PAYMENT.getType())
+                .select(MallOrder::getId, MallOrder::getOrderNo, MallOrder::getVersion, MallOrder::getPayExpireTime)
+                .one();
+
+        if (order == null) {
+            log.info("订单{}补偿关闭跳过，当前状态可能已变更", orderNo);
+            return false;
+        }
+
+        Date now = new Date();
+        Date payExpireTime = order.getPayExpireTime();
+        if (payExpireTime != null && payExpireTime.after(now)) {
+            log.info("订单{}补偿关闭跳过，当前支付过期时间尚未到达", orderNo);
+            return false;
+        }
+
+        List<MallOrderItem> orderItems = mallOrderItemService.lambdaQuery()
+                .eq(MallOrderItem::getOrderId, order.getId())
+                .list();
+
+        boolean updated = lambdaUpdate()
+                .eq(MallOrder::getId, order.getId())
+                .eq(MallOrder::getVersion, order.getVersion())
+                .set(MallOrder::getOrderStatus, OrderStatusEnum.EXPIRED.getType())
+                .set(MallOrder::getCloseReason, ORDER_TIMEOUT_CLOSE_REASON)
+                .set(MallOrder::getCloseTime, now)
+                .set(MallOrder::getUpdateBy, SYSTEM_AUTO_CLOSE_OPERATOR)
+                .set(MallOrder::getUpdateTime, now)
+                .update();
+
+        if (!updated) {
+            log.info("订单{}补偿关闭失败，当前状态可能已变更", orderNo);
+            return false;
+        }
+
+        if (!CollectionUtils.isEmpty(orderItems)) {
+            for (MallOrderItem orderItem : orderItems) {
+                if (orderItem != null && orderItem.getProductId() != null && orderItem.getQuantity() != null) {
+                    mallInventoryService.restoreStock(orderItem.getProductId(), orderItem.getQuantity());
+                }
+            }
+        }
+
+        OrderTimelineDto timelineDto = OrderTimelineDto.builder()
+                .orderId(order.getId())
+                .eventType(OrderEventTypeEnum.ORDER_EXPIRED.getType())
+                .eventStatus(OrderStatusEnum.EXPIRED.getType())
+                .operatorType(OperatorTypeEnum.SYSTEM.getType())
+                .description(ORDER_TIMEOUT_CLOSE_REASON)
+                .build();
+        mallOrderTimelineService.addTimelineIfNotExists(timelineDto);
+        log.info("订单{}已通过补偿任务自动关闭", orderNo);
+        return true;
+    }
+
     @Override
     public Page<MallOrder> getPaidOrderPage(Long userId, PageRequest request) {
         Page<MallOrder> page = request.toPage();
@@ -783,6 +871,35 @@ public class MallOrderServiceImpl extends ServiceImpl<MallOrderMapper, MallOrder
     private String getDeliveryTypeDesc(String deliveryType) {
         DeliveryTypeEnum deliveryTypeEnum = DeliveryTypeEnum.fromCode(deliveryType);
         return deliveryTypeEnum != null ? deliveryTypeEnum.getName() : "未知";
+    }
+
+    /**
+     * 在事务提交成功后发布订单支付超时延迟消息。
+     *
+     * @param orderNo 订单编号
+     * @param delay   延迟时长
+     * @param unit    延迟时间单位
+     */
+    private void publishOrderTimeoutAfterCommit(String orderNo, long delay, TimeUnit unit) {
+        runAfterCommit(() -> orderTimeoutMessagePublisher.publishOrderTimeout(orderNo, delay, unit));
+    }
+
+    /**
+     * 在事务提交成功后执行指定任务。
+     *
+     * @param task 需要延后执行的任务
+     */
+    private void runAfterCommit(Runnable task) {
+        if (TransactionSynchronizationManager.isActualTransactionActive()) {
+            TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
+                @Override
+                public void afterCommit() {
+                    task.run();
+                }
+            });
+        } else {
+            task.run();
+        }
     }
 
 

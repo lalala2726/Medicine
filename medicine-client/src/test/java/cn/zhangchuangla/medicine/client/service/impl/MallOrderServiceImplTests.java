@@ -2,32 +2,46 @@ package cn.zhangchuangla.medicine.client.service.impl;
 
 import cn.zhangchuangla.medicine.client.elasticsearch.service.MallProductSearchService;
 import cn.zhangchuangla.medicine.client.mapper.MallOrderMapper;
+import cn.zhangchuangla.medicine.client.model.request.CartSettleRequest;
+import cn.zhangchuangla.medicine.client.model.request.OrderCheckoutRequest;
+import cn.zhangchuangla.medicine.client.model.request.OrderPayRequest;
 import cn.zhangchuangla.medicine.client.service.*;
-import cn.zhangchuangla.medicine.client.task.OrderDelayProducer;
 import cn.zhangchuangla.medicine.common.core.enums.ResponseCode;
 import cn.zhangchuangla.medicine.common.core.exception.ServiceException;
-import cn.zhangchuangla.medicine.common.redis.core.RedisCache;
-import cn.zhangchuangla.medicine.model.entity.MallOrder;
-import cn.zhangchuangla.medicine.model.entity.MallOrderShipping;
-import cn.zhangchuangla.medicine.model.entity.MallOrderTimeline;
+import cn.zhangchuangla.medicine.common.rabbitmq.publisher.OrderTimeoutMessagePublisher;
+import cn.zhangchuangla.medicine.common.security.entity.AuthUser;
+import cn.zhangchuangla.medicine.common.security.entity.SysUserDetails;
+import cn.zhangchuangla.medicine.model.dto.MallProductWithImageDto;
+import cn.zhangchuangla.medicine.model.dto.OrderTimelineDto;
+import cn.zhangchuangla.medicine.model.entity.*;
 import cn.zhangchuangla.medicine.model.enums.*;
 import cn.zhangchuangla.medicine.payment.config.AlipayProperties;
 import cn.zhangchuangla.medicine.payment.service.AlipayPaymentService;
+import com.baomidou.mybatisplus.core.MybatisConfiguration;
+import com.baomidou.mybatisplus.core.metadata.TableInfoHelper;
 import com.baomidou.mybatisplus.extension.conditions.query.LambdaQueryChainWrapper;
+import com.baomidou.mybatisplus.extension.conditions.update.LambdaUpdateChainWrapper;
+import org.apache.ibatis.builder.MapperBuilderAssistant;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.InjectMocks;
+import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
-import org.mockito.Spy;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.test.util.ReflectionTestUtils;
 
 import java.math.BigDecimal;
 import java.util.Date;
 import java.util.List;
+import java.util.Set;
+import java.util.concurrent.TimeUnit;
 
+import static cn.zhangchuangla.medicine.common.core.constants.Constants.ORDER_TIMEOUT_MINUTES;
 import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
@@ -35,40 +49,334 @@ class MallOrderServiceImplTests {
 
     @Mock
     private MallProductService mallProductService;
+
     @Mock
     private MallOrderItemService mallOrderItemService;
+
     @Mock
     private AlipayPaymentService alipayPaymentService;
+
     @Mock
     private AlipayProperties alipayProperties;
+
     @Mock
-    private OrderDelayProducer orderDelayProducer;
+    private OrderTimeoutMessagePublisher orderTimeoutMessagePublisher;
+
     @Mock
     private UserWalletService userWalletService;
+
     @Mock
     private MallOrderTimelineService mallOrderTimelineService;
+
     @Mock
     private MallOrderShippingService mallOrderShippingService;
+
     @Mock
     private MallCartService mallCartService;
+
     @Mock
     private UserAddressService userAddressService;
-    @Mock
-    private RedisCache redisCache;
+
     @Mock
     private MallProductSearchService mallProductSearchService;
+
     @Mock
     private MallOrderMapper mallOrderMapper;
 
-    @Spy
-    @InjectMocks
     private MallOrderServiceImpl service;
 
     @BeforeEach
     void setUp() {
+        initializeTableInfo(MallOrder.class);
+        initializeTableInfo(MallOrderItem.class);
+        initializeTableInfo(MallCart.class);
+        service = new MallOrderServiceImpl(
+                mallProductService,
+                mallOrderItemService,
+                alipayPaymentService,
+                alipayProperties,
+                orderTimeoutMessagePublisher,
+                userWalletService,
+                mallOrderTimelineService,
+                mallOrderShippingService,
+                mallCartService,
+                userAddressService,
+                null,
+                mallProductSearchService
+        );
+        service = org.mockito.Mockito.spy(service);
         ReflectionTestUtils.setField(service, "baseMapper", mallOrderMapper);
     }
 
+    @AfterEach
+    void tearDown() {
+        SecurityContextHolder.clearContext();
+    }
+
+    /**
+     * 测试目的：验证单商品下单时会写入待支付订单、保存订单项并立即发布 30 分钟超时消息。
+     * 测试结果：订单金额、过期时间、时间线与 RabbitMQ 延迟消息均符合预期。
+     */
+    @Test
+    void checkoutOrder_WhenInputIsValid_ShouldCreateOrderAndPublishTimeoutMessage() {
+        mockAuthenticatedUser(88L, "test-user");
+        MallProductWithImageDto product = createProduct(10L, "连花清瘟胶囊", new BigDecimal("19.90"), 50);
+        product.setProductImages(List.of(MallProductImage.builder()
+                .productId(10L)
+                .imageUrl("https://example.com/product.png")
+                .build()));
+        when(mallProductService.getProductWithImagesById(10L)).thenReturn(product);
+        when(userAddressService.getById(1001L)).thenReturn(createAddress(1001L, 88L));
+        doAnswer(invocation -> {
+            MallOrder order = invocation.getArgument(0);
+            order.setId(200L);
+            return true;
+        }).when(service).save(any(MallOrder.class));
+        when(mallOrderItemService.save(any(MallOrderItem.class))).thenReturn(true);
+
+        OrderCheckoutRequest request = OrderCheckoutRequest.builder()
+                .productId(10L)
+                .quantity(2)
+                .addressId(1001L)
+                .deliveryType(DeliveryTypeEnum.EXPRESS)
+                .remark("请当天发货")
+                .build();
+
+        OrderCheckoutRequest actualRequest = request;
+        var result = service.checkoutOrder(actualRequest);
+
+        // 测试结果：创建出的订单返回值完整，且处于待支付状态。
+        assertNotNull(result.getOrderNo());
+        assertEquals(new BigDecimal("39.80"), result.getTotalAmount());
+        assertEquals(OrderStatusEnum.PENDING_PAYMENT.getType(), result.getOrderStatus());
+        assertNotNull(result.getPayExpireTime());
+        assertEquals("连花清瘟胶囊 2盒", result.getProductSummary());
+
+        ArgumentCaptor<MallOrder> orderCaptor = ArgumentCaptor.forClass(MallOrder.class);
+        verify(service).save(orderCaptor.capture());
+        MallOrder savedOrder = orderCaptor.getValue();
+        assertEquals(88L, savedOrder.getUserId());
+        assertEquals(result.getOrderNo(), savedOrder.getOrderNo());
+        assertEquals(result.getPayExpireTime(), savedOrder.getPayExpireTime());
+        assertEquals(new BigDecimal("39.80"), savedOrder.getTotalAmount());
+        assertEquals("上海市浦东新区 张江药谷 88 号", savedOrder.getReceiverDetail());
+
+        ArgumentCaptor<MallOrderItem> itemCaptor = ArgumentCaptor.forClass(MallOrderItem.class);
+        verify(mallOrderItemService).save(itemCaptor.capture());
+        MallOrderItem savedItem = itemCaptor.getValue();
+        assertEquals(200L, savedItem.getOrderId());
+        assertEquals(10L, savedItem.getProductId());
+        assertEquals(2, savedItem.getQuantity());
+        assertEquals(new BigDecimal("39.80"), savedItem.getTotalPrice());
+
+        verify(mallProductService).deductStock(10L, 2);
+        verify(orderTimeoutMessagePublisher).publishOrderTimeout(result.getOrderNo(), ORDER_TIMEOUT_MINUTES, TimeUnit.MINUTES);
+        verify(mallOrderTimelineService).addTimelineIfNotExists(any(OrderTimelineDto.class));
+    }
+
+    /**
+     * 测试目的：验证购物车结算下单时会批量生成订单项、清理购物车并发布 30 分钟超时消息。
+     * 测试结果：订单总金额、订单项数量与购物车清理动作均符合预期。
+     */
+    @SuppressWarnings("unchecked")
+    @Test
+    void createOrderFromCart_WhenInputIsValid_ShouldCreateOrderAndPublishTimeoutMessage() {
+        mockAuthenticatedUser(88L, "cart-user");
+        TestLambdaQueryChainWrapper<MallCart> cartQuery = createQueryWrapper(MallCart.class);
+        when(mallCartService.lambdaQuery()).thenReturn(cartQuery);
+        MallCart cartItem = MallCart.builder()
+                .id(1L)
+                .userId(88L)
+                .productId(10L)
+                .productName("阿莫西林")
+                .cartNum(3)
+                .build();
+        cartQuery.setListResult(List.of(cartItem));
+        when(mallProductService.getProductWithImagesById(10L))
+                .thenReturn(createProduct(10L, "阿莫西林", new BigDecimal("12.50"), 100));
+        when(userAddressService.getById(1001L)).thenReturn(createAddress(1001L, 88L));
+        doAnswer(invocation -> {
+            MallOrder order = invocation.getArgument(0);
+            order.setId(300L);
+            return true;
+        }).when(service).save(any(MallOrder.class));
+        when(mallOrderItemService.saveBatch(anyList())).thenReturn(true);
+
+        CartSettleRequest request = CartSettleRequest.builder()
+                .cartIds(List.of(1L))
+                .addressId(1001L)
+                .deliveryType(DeliveryTypeEnum.EXPRESS)
+                .remark("购物车结算")
+                .build();
+
+        var result = service.createOrderFromCart(request);
+
+        // 测试结果：购物车下单成功后会返回订单摘要并发送超时消息。
+        assertNotNull(result.getOrderNo());
+        assertEquals(new BigDecimal("37.50"), result.getTotalAmount());
+        assertEquals(1, result.getItemCount());
+        assertEquals(OrderStatusEnum.PENDING_PAYMENT.getType(), result.getOrderStatus());
+        assertNotNull(result.getPayExpireTime());
+
+        verify(mallProductService).deductStock(10L, 3);
+        verify(mallOrderItemService).saveBatch(anyList());
+        verify(orderTimeoutMessagePublisher).publishOrderTimeout(result.getOrderNo(), ORDER_TIMEOUT_MINUTES, TimeUnit.MINUTES);
+        verify(mallCartService).removeCartItems(List.of(1L));
+        verify(mallOrderTimelineService).addTimeline(any(OrderTimelineDto.class));
+    }
+
+    /**
+     * 测试目的：验证钱包支付会扣减余额、标记订单已支付并返回成功结果。
+     * 测试结果：支付结果状态为 SUCCESS，订单状态推进到待发货，并写入支付时间线。
+     */
+    @SuppressWarnings("unchecked")
+    @Test
+    void payOrder_WhenWalletPaymentSucceeds_ShouldMarkOrderPaid() {
+        MallOrder order = createOrder(OrderStatusEnum.PENDING_PAYMENT.getType());
+        order.setTotalAmount(new BigDecimal("59.80"));
+        order.setId(1L);
+
+        TestLambdaQueryChainWrapper<MallOrder> query = createQueryWrapper(MallOrder.class);
+        doReturn(query).when(service).lambdaQuery();
+        query.setOneResult(order);
+        TestLambdaUpdateChainWrapper<MallOrder> update = createUpdateWrapper(MallOrder.class);
+        doReturn(update).when(service).lambdaUpdate();
+        update.setUpdateResult(true);
+        doReturn(88L).when(service).getUserId();
+        when(userWalletService.deductBalance(88L, new BigDecimal("59.80"), "订单支付-O202511130001")).thenReturn(true);
+
+        OrderPayRequest request = OrderPayRequest.builder()
+                .orderNo("O202511130001")
+                .payMethod(PayTypeEnum.WALLET)
+                .build();
+
+        var result = service.payOrder(request);
+
+        // 测试结果：钱包支付走成功分支，并把订单推进到待发货。
+        assertEquals("SUCCESS", result.getPaymentStatus());
+        assertEquals(PayTypeEnum.WALLET.getType(), result.getPaymentMethod());
+        assertEquals(OrderStatusEnum.PENDING_SHIPMENT.getType(), result.getOrderStatus());
+        assertEquals(new BigDecimal("59.80"), result.getPayAmount());
+        assertTrue(update.isUpdateCalled());
+
+        verify(userWalletService).deductBalance(88L, new BigDecimal("59.80"), "订单支付-O202511130001");
+        verify(mallOrderTimelineService).addTimelineIfNotExists(any(OrderTimelineDto.class));
+    }
+
+    /**
+     * 测试目的：验证支付宝支付会生成支付表单，且不会提前修改订单支付状态。
+     * 测试结果：返回待支付中的支付宝表单信息，订单仍保持待支付。
+     */
+    @SuppressWarnings("unchecked")
+    @Test
+    void payOrder_WhenAlipayPaymentRequested_ShouldReturnPendingForm() {
+        MallOrder order = createOrder(OrderStatusEnum.PENDING_PAYMENT.getType());
+        order.setId(1L);
+        order.setTotalAmount(new BigDecimal("88.00"));
+
+        TestLambdaQueryChainWrapper<MallOrder> orderQuery = createQueryWrapper(MallOrder.class);
+        doReturn(orderQuery).when(service).lambdaQuery();
+        orderQuery.setOneResult(order);
+        doReturn(88L).when(service).getUserId();
+        TestLambdaQueryChainWrapper<MallOrderItem> itemQuery = createQueryWrapper(MallOrderItem.class);
+        when(mallOrderItemService.lambdaQuery()).thenReturn(itemQuery);
+        itemQuery.setOneResult(MallOrderItem.builder()
+                .orderId(1L)
+                .productName("三九感冒灵")
+                .quantity(2)
+                .build());
+        when(alipayProperties.getNotifyUrl()).thenReturn("https://notify.example.com");
+        when(alipayProperties.getReturnUrl()).thenReturn("https://return.example.com");
+        when(alipayPaymentService.generatePagePayForm(any())).thenReturn("<form>alipay</form>");
+
+        OrderPayRequest request = OrderPayRequest.builder()
+                .orderNo("O202511130001")
+                .payMethod(PayTypeEnum.ALIPAY)
+                .build();
+
+        var result = service.payOrder(request);
+
+        // 测试结果：支付宝支付不会立即更新订单，而是返回待支付表单。
+        assertEquals("PENDING", result.getPaymentStatus());
+        assertEquals(PayTypeEnum.ALIPAY.getType(), result.getPaymentMethod());
+        assertEquals(OrderStatusEnum.PENDING_PAYMENT.getType(), result.getOrderStatus());
+        assertEquals("<form>alipay</form>", result.getPaymentData());
+
+        verify(alipayPaymentService).generatePagePayForm(any());
+        verifyNoInteractions(userWalletService);
+    }
+
+    /**
+     * 测试目的：验证超时消息提前到达时，不会误关单，而是按剩余过期时间重新投递。
+     * 测试结果：订单保持待支付状态，并重新向 RabbitMQ 发布剩余毫秒数的延迟消息。
+     */
+    @SuppressWarnings("unchecked")
+    @Test
+    void closeOrderIfUnpaid_WhenPayExpireTimeNotReached_ShouldRepublishRemainingDelay() {
+        MallOrder order = MallOrder.builder()
+                .id(1L)
+                .orderNo("O202511130001")
+                .orderStatus(OrderStatusEnum.PENDING_PAYMENT.getType())
+                .payExpireTime(new Date(System.currentTimeMillis() + 60_000L))
+                .version(2)
+                .build();
+
+        TestLambdaQueryChainWrapper<MallOrder> query = createQueryWrapper(MallOrder.class);
+        doReturn(query).when(service).lambdaQuery();
+        query.setOneResult(order);
+
+        service.closeOrderIfUnpaid("O202511130001");
+
+        // 测试结果：订单未被关闭，而是重新投递剩余延迟时间。
+        ArgumentCaptor<Long> delayCaptor = ArgumentCaptor.forClass(Long.class);
+        verify(orderTimeoutMessagePublisher).publishOrderTimeout(eq("O202511130001"), delayCaptor.capture(), eq(TimeUnit.MILLISECONDS));
+        assertTrue(delayCaptor.getValue() > 0);
+        verifyNoInteractions(mallOrderTimelineService);
+    }
+
+    /**
+     * 测试目的：验证真正过期的待支付订单会被关闭、恢复库存并记录时间线。
+     * 测试结果：订单状态更新成功后，会恢复库存并新增“系统自动关闭”时间线。
+     */
+    @SuppressWarnings("unchecked")
+    @Test
+    void closeOrderIfUnpaid_WhenOrderExpired_ShouldCloseOrderAndRestoreStock() {
+        MallOrder order = MallOrder.builder()
+                .id(1L)
+                .orderNo("O202511130001")
+                .orderStatus(OrderStatusEnum.PENDING_PAYMENT.getType())
+                .payExpireTime(new Date(System.currentTimeMillis() - 60_000L))
+                .version(3)
+                .build();
+
+        TestLambdaQueryChainWrapper<MallOrder> orderQuery = createQueryWrapper(MallOrder.class);
+        doReturn(orderQuery).when(service).lambdaQuery();
+        orderQuery.setOneResult(order);
+
+        TestLambdaQueryChainWrapper<MallOrderItem> itemQuery = createQueryWrapper(MallOrderItem.class);
+        when(mallOrderItemService.lambdaQuery()).thenReturn(itemQuery);
+        itemQuery.setListResult(List.of(MallOrderItem.builder()
+                .orderId(1L)
+                .productId(10L)
+                .quantity(2)
+                .build()));
+
+        TestLambdaUpdateChainWrapper<MallOrder> update = createUpdateWrapper(MallOrder.class);
+        doReturn(update).when(service).lambdaUpdate();
+        update.setUpdateResult(true);
+
+        service.closeOrderIfUnpaid("O202511130001");
+
+        // 测试结果：过期订单被关闭，同时恢复库存并补写时间线。
+        assertTrue(update.isUpdateCalled());
+        verify(mallProductService).restoreStock(10L, 2);
+        verify(mallOrderTimelineService).addTimelineIfNotExists(any(OrderTimelineDto.class));
+    }
+
+    /**
+     * 测试目的：验证查询不属于当前用户的订单详情时，会返回“订单不存在”异常。
+     * 测试结果：服务直接抛出业务异常，并且不会继续查询订单项和物流信息。
+     */
     @Test
     void getOrderDetail_WhenOrderDoesNotBelongToUser_ShouldThrowNotFound() {
         when(mallOrderMapper.getOrderDetailByOrderNo("O202511130001", 88L)).thenReturn(null);
@@ -76,18 +384,23 @@ class MallOrderServiceImplTests {
         ServiceException exception = assertThrows(ServiceException.class,
                 () -> service.getOrderDetail("O202511130001", 88L));
 
+        // 测试结果：返回准确的业务错误码和错误信息。
         assertEquals(ResponseCode.RESULT_IS_NULL.getCode(), exception.getCode());
         assertEquals("订单不存在", exception.getMessage());
         verify(mallOrderMapper).getOrderDetailByOrderNo("O202511130001", 88L);
         verifyNoInteractions(mallOrderItemService, mallOrderShippingService);
     }
 
+    /**
+     * 测试目的：验证查询订单物流时，会按照用户维度过滤订单，并正确解析物流节点。
+     * 测试结果：返回的物流节点信息完整且顺序可用于前端直接展示。
+     */
     @SuppressWarnings("unchecked")
     @Test
     void getOrderShipping_ShouldScopeByUserAndParseNodes() {
-        LambdaQueryChainWrapper<MallOrder> query = mock(LambdaQueryChainWrapper.class, RETURNS_SELF);
+        TestLambdaQueryChainWrapper<MallOrder> query = createQueryWrapper(MallOrder.class);
         doReturn(query).when(service).lambdaQuery();
-        when(query.one()).thenReturn(createOrder(OrderStatusEnum.PENDING_RECEIPT.getType()));
+        query.setOneResult(createOrder(OrderStatusEnum.PENDING_RECEIPT.getType()));
         when(mallOrderShippingService.getByOrderId(1L)).thenReturn(MallOrderShipping.builder()
                 .orderId(1L)
                 .shippingCompany("顺丰")
@@ -98,6 +411,7 @@ class MallOrderServiceImplTests {
 
         var result = service.getOrderShipping("O202511130001", 88L);
 
+        // 测试结果：物流公司、单号和节点信息均能正确返回。
         assertNotNull(result);
         assertEquals("O202511130001", result.getOrderNo());
         assertEquals("顺丰", result.getLogisticsCompany());
@@ -105,12 +419,16 @@ class MallOrderServiceImplTests {
         assertEquals("上海", result.getNodes().getFirst().getLocation());
     }
 
+    /**
+     * 测试目的：验证订单时间线查询会将事件类型、订单状态和操作人信息映射为展示对象。
+     * 测试结果：返回的时间线条目具备可读的事件名称和订单状态名称。
+     */
     @SuppressWarnings("unchecked")
     @Test
     void getOrderTimeline_ShouldMapTimelineForOwnedOrder() {
-        LambdaQueryChainWrapper<MallOrder> query = mock(LambdaQueryChainWrapper.class, RETURNS_SELF);
+        TestLambdaQueryChainWrapper<MallOrder> query = createQueryWrapper(MallOrder.class);
         doReturn(query).when(service).lambdaQuery();
-        when(query.one()).thenReturn(createOrder(OrderStatusEnum.PENDING_RECEIPT.getType()));
+        query.setOneResult(createOrder(OrderStatusEnum.PENDING_RECEIPT.getType()));
 
         MallOrderTimeline timeline = new MallOrderTimeline();
         timeline.setId(1L);
@@ -124,40 +442,117 @@ class MallOrderServiceImplTests {
 
         var result = service.getOrderTimeline("O202511130001", 88L);
 
+        // 测试结果：时间线事件名称和订单状态名称都能正确映射。
         assertEquals("O202511130001", result.getOrderNo());
         assertEquals("待收货", result.getOrderStatusName());
         assertEquals(1, result.getTimeline().size());
         assertEquals("订单创建", result.getTimeline().getFirst().getEventTypeName());
     }
 
+    /**
+     * 测试目的：验证当订单不属于当前用户时，取消校验接口会返回不可取消及明确原因。
+     * 测试结果：返回的原因码为 ORDER_NOT_FOUND，提示文案为“订单不存在或无权访问”。
+     */
     @SuppressWarnings("unchecked")
     @Test
     void checkOrderCancelable_WhenOrderDoesNotBelongToUser_ShouldReturnNotFoundResult() {
-        LambdaQueryChainWrapper<MallOrder> query = mock(LambdaQueryChainWrapper.class, RETURNS_SELF);
+        TestLambdaQueryChainWrapper<MallOrder> query = createQueryWrapper(MallOrder.class);
         doReturn(query).when(service).lambdaQuery();
-        when(query.one()).thenReturn(null);
+        query.setOneResult(null);
 
         var result = service.checkOrderCancelable("O202511130001", 88L);
 
+        // 测试结果：取消校验返回不可取消，并附带明确原因。
         assertFalse(result.getCancelable());
         assertEquals("ORDER_NOT_FOUND", result.getReasonCode());
         assertEquals("订单不存在或无权访问", result.getReasonMessage());
     }
 
+    /**
+     * 测试目的：验证待支付订单会被识别为可取消状态。
+     * 测试结果：返回的 cancelable 为 true，状态名称映射为“待支付”。
+     */
     @SuppressWarnings("unchecked")
     @Test
     void checkOrderCancelable_WhenPendingPayment_ShouldReturnCancelable() {
-        LambdaQueryChainWrapper<MallOrder> query = mock(LambdaQueryChainWrapper.class, RETURNS_SELF);
+        TestLambdaQueryChainWrapper<MallOrder> query = createQueryWrapper(MallOrder.class);
         doReturn(query).when(service).lambdaQuery();
-        when(query.one()).thenReturn(createOrder(OrderStatusEnum.PENDING_PAYMENT.getType()));
+        query.setOneResult(createOrder(OrderStatusEnum.PENDING_PAYMENT.getType()));
 
         var result = service.checkOrderCancelable("O202511130001", 88L);
 
-        assertEquals(true, result.getCancelable());
+        // 测试结果：待支付订单允许取消。
+        assertTrue(result.getCancelable());
         assertEquals("CAN_CANCEL", result.getReasonCode());
         assertEquals("待支付", result.getOrderStatusName());
     }
 
+    /**
+     * 构造认证上下文，供直接调用 SecurityUtils 的下单逻辑使用。
+     *
+     * @param userId   登录用户ID
+     * @param username 登录用户名
+     */
+    private void mockAuthenticatedUser(Long userId, String username) {
+        AuthUser authUser = AuthUser.builder()
+                .id(userId)
+                .username(username)
+                .roles(Set.of("ROLE_USER"))
+                .build();
+        SysUserDetails userDetails = new SysUserDetails(authUser);
+        UsernamePasswordAuthenticationToken authentication = new UsernamePasswordAuthenticationToken(
+                userDetails,
+                null,
+                userDetails.getAuthorities()
+        );
+        SecurityContextHolder.getContext().setAuthentication(authentication);
+    }
+
+    /**
+     * 构造测试商品对象。
+     *
+     * @param productId 商品ID
+     * @param name      商品名称
+     * @param price     商品单价
+     * @param stock     商品库存
+     * @return 测试商品
+     */
+    private MallProductWithImageDto createProduct(Long productId, String name, BigDecimal price, Integer stock) {
+        MallProductWithImageDto product = new MallProductWithImageDto();
+        product.setId(productId);
+        product.setName(name);
+        product.setPrice(price);
+        product.setStock(stock);
+        product.setStatus(1);
+        product.setUnit("盒");
+        product.setDeliveryType(DeliveryTypeEnum.EXPRESS.ordinal());
+        return product;
+    }
+
+    /**
+     * 构造测试收货地址。
+     *
+     * @param addressId 地址ID
+     * @param userId    用户ID
+     * @return 测试收货地址
+     */
+    private UserAddress createAddress(Long addressId, Long userId) {
+        UserAddress address = new UserAddress();
+        address.setId(addressId);
+        address.setUserId(userId);
+        address.setReceiverName("张三");
+        address.setReceiverPhone("13800000000");
+        address.setAddress("上海市浦东新区");
+        address.setDetailAddress("张江药谷 88 号");
+        return address;
+    }
+
+    /**
+     * 构造测试订单对象。
+     *
+     * @param orderStatus 订单状态
+     * @return 测试订单
+     */
     private MallOrder createOrder(String orderStatus) {
         return MallOrder.builder()
                 .id(1L)
@@ -169,6 +564,150 @@ class MallOrderServiceImplTests {
                 .receiverPhone("13800000000")
                 .receiverDetail("上海市浦东新区")
                 .totalAmount(new BigDecimal("59.80"))
+                .payExpireTime(new Date(System.currentTimeMillis() + 30_000L))
                 .build();
+    }
+
+    /**
+     * 创建查询包装器测试替身。
+     *
+     * @param entityClass 实体类型
+     * @param <T>         实体泛型
+     * @return 查询包装器测试替身
+     */
+    private <T> TestLambdaQueryChainWrapper<T> createQueryWrapper(Class<T> entityClass) {
+        return new TestLambdaQueryChainWrapper<>(entityClass);
+    }
+
+    /**
+     * 创建更新包装器测试替身。
+     *
+     * @param entityClass 实体类型
+     * @param <T>         实体泛型
+     * @return 更新包装器测试替身
+     */
+    private <T> TestLambdaUpdateChainWrapper<T> createUpdateWrapper(Class<T> entityClass) {
+        return new TestLambdaUpdateChainWrapper<>(entityClass);
+    }
+
+    /**
+     * 初始化 MyBatis-Plus 的实体元数据缓存，避免测试替身解析 Lambda 字段时报错。
+     *
+     * @param entityClass 实体类型
+     */
+    private void initializeTableInfo(Class<?> entityClass) {
+        if (TableInfoHelper.getTableInfo(entityClass) != null) {
+            return;
+        }
+        MapperBuilderAssistant builderAssistant = new MapperBuilderAssistant(new MybatisConfiguration(),
+                entityClass.getSimpleName() + "Mapper");
+        builderAssistant.setCurrentNamespace(entityClass.getName() + "Mapper");
+        TableInfoHelper.initTableInfo(builderAssistant, entityClass);
+    }
+
+    /**
+     * 订单查询包装器测试替身。
+     *
+     * @param <T> 实体泛型
+     */
+    private static final class TestLambdaQueryChainWrapper<T> extends LambdaQueryChainWrapper<T> {
+
+        /**
+         * 单条查询结果。
+         */
+        private T oneResult;
+
+        /**
+         * 列表查询结果。
+         */
+        private List<T> listResult = List.of();
+
+        /**
+         * 构造查询包装器测试替身。
+         *
+         * @param entityClass 实体类型
+         */
+        private TestLambdaQueryChainWrapper(Class<T> entityClass) {
+            super(entityClass);
+        }
+
+        /**
+         * 设置单条查询结果。
+         *
+         * @param oneResult 单条查询结果
+         */
+        private void setOneResult(T oneResult) {
+            this.oneResult = oneResult;
+        }
+
+        /**
+         * 设置列表查询结果。
+         *
+         * @param listResult 列表查询结果
+         */
+        private void setListResult(List<T> listResult) {
+            this.listResult = listResult == null ? List.of() : listResult;
+        }
+
+        @Override
+        public T one() {
+            return oneResult;
+        }
+
+        @Override
+        public List<T> list() {
+            return listResult;
+        }
+    }
+
+    /**
+     * 订单更新包装器测试替身。
+     *
+     * @param <T> 实体泛型
+     */
+    private static final class TestLambdaUpdateChainWrapper<T> extends LambdaUpdateChainWrapper<T> {
+
+        /**
+         * 更新执行结果。
+         */
+        private boolean updateResult;
+
+        /**
+         * 是否执行过更新。
+         */
+        private boolean updateCalled;
+
+        /**
+         * 构造更新包装器测试替身。
+         *
+         * @param entityClass 实体类型
+         */
+        private TestLambdaUpdateChainWrapper(Class<T> entityClass) {
+            super(entityClass);
+        }
+
+        /**
+         * 设置更新执行结果。
+         *
+         * @param updateResult 更新执行结果
+         */
+        private void setUpdateResult(boolean updateResult) {
+            this.updateResult = updateResult;
+        }
+
+        /**
+         * 判断是否执行过更新。
+         *
+         * @return 是否执行过更新
+         */
+        private boolean isUpdateCalled() {
+            return updateCalled;
+        }
+
+        @Override
+        public boolean update() {
+            updateCalled = true;
+            return updateResult;
+        }
     }
 }

@@ -191,7 +191,7 @@
         FROM mall_order
         WHERE (is_deleted IS NULL OR is_deleted = 0)
         AND order_status = 'PENDING_PAYMENT'
-        AND create_time &lt; FROM_UNIXTIME(#{expiredTime} / 1000)
+        AND pay_expire_time &lt; FROM_UNIXTIME(#{expiredTime} / 1000)
     </select>
 
     <select id="getPaidOrderPage" resultMap="BaseResultMap">

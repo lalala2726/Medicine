@@ -12,7 +12,10 @@ import cn.zhangchuangla.medicine.common.core.exception.ServiceException;
 import cn.zhangchuangla.medicine.model.entity.KbBase;
 import cn.zhangchuangla.medicine.model.entity.LlmProvider;
 import cn.zhangchuangla.medicine.model.entity.LlmProviderModel;
+import com.baomidou.mybatisplus.core.MybatisConfiguration;
+import com.baomidou.mybatisplus.core.metadata.TableInfoHelper;
 import com.baomidou.mybatisplus.extension.conditions.query.LambdaQueryChainWrapper;
+import org.apache.ibatis.builder.MapperBuilderAssistant;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -24,7 +27,6 @@ import java.util.Date;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.Answers.RETURNS_SELF;
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
 
@@ -49,6 +51,8 @@ class KbBaseServiceImplTests {
 
     @BeforeEach
     void setUp() {
+        initializeTableInfo(LlmProvider.class);
+        initializeTableInfo(LlmProviderModel.class);
         mockEnabledEmbeddingModel("text-embedding-3-large");
     }
 
@@ -466,13 +470,39 @@ class KbBaseServiceImplTests {
 
     @SuppressWarnings("unchecked")
     private void mockEnabledEmbeddingModel(String modelName) {
-        LambdaQueryChainWrapper<LlmProvider> providerWrapper = mock(LambdaQueryChainWrapper.class, RETURNS_SELF);
-        lenient().when(providerWrapper.list()).thenReturn(List.of(buildEnabledProvider()));
+        TestLambdaQueryChainWrapper<LlmProvider> providerWrapper = createQueryWrapper(LlmProvider.class);
+        providerWrapper.setListResult(List.of(buildEnabledProvider()));
         lenient().when(llmProviderService.lambdaQuery()).thenReturn(providerWrapper);
 
-        LambdaQueryChainWrapper<LlmProviderModel> modelWrapper = mock(LambdaQueryChainWrapper.class, RETURNS_SELF);
-        lenient().when(modelWrapper.list()).thenReturn(List.of(buildEnabledEmbeddingModel(modelName)));
+        TestLambdaQueryChainWrapper<LlmProviderModel> modelWrapper = createQueryWrapper(LlmProviderModel.class);
+        modelWrapper.setListResult(List.of(buildEnabledEmbeddingModel(modelName)));
         lenient().when(llmProviderModelService.lambdaQuery()).thenReturn(modelWrapper);
+    }
+
+    /**
+     * 创建查询包装器测试替身。
+     *
+     * @param entityClass 实体类型
+     * @param <T>         实体泛型
+     * @return 查询包装器测试替身
+     */
+    private <T> TestLambdaQueryChainWrapper<T> createQueryWrapper(Class<T> entityClass) {
+        return new TestLambdaQueryChainWrapper<>(entityClass);
+    }
+
+    /**
+     * 初始化 MyBatis-Plus 的实体元数据缓存。
+     *
+     * @param entityClass 实体类型
+     */
+    private void initializeTableInfo(Class<?> entityClass) {
+        if (TableInfoHelper.getTableInfo(entityClass) != null) {
+            return;
+        }
+        MapperBuilderAssistant builderAssistant = new MapperBuilderAssistant(new MybatisConfiguration(),
+                entityClass.getSimpleName() + "Mapper");
+        builderAssistant.setCurrentNamespace(entityClass.getName() + "Mapper");
+        TableInfoHelper.initTableInfo(builderAssistant, entityClass);
     }
 
     private LlmProvider buildEnabledProvider() {
@@ -494,5 +524,41 @@ class KbBaseServiceImplTests {
                 .enabled(0)
                 .sort(1)
                 .build();
+    }
+
+    /**
+     * 知识库测试使用的查询包装器替身。
+     *
+     * @param <T> 实体泛型
+     */
+    private static final class TestLambdaQueryChainWrapper<T> extends LambdaQueryChainWrapper<T> {
+
+        /**
+         * 列表查询结果。
+         */
+        private List<T> listResult = List.of();
+
+        /**
+         * 构造查询包装器替身。
+         *
+         * @param entityClass 实体类型
+         */
+        private TestLambdaQueryChainWrapper(Class<T> entityClass) {
+            super(entityClass);
+        }
+
+        /**
+         * 设置列表查询结果。
+         *
+         * @param listResult 列表查询结果
+         */
+        private void setListResult(List<T> listResult) {
+            this.listResult = listResult == null ? List.of() : listResult;
+        }
+
+        @Override
+        public List<T> list() {
+            return listResult;
+        }
     }
 }

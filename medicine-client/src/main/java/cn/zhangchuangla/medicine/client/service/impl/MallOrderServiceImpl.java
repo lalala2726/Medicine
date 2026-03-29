@@ -8,12 +8,12 @@ import cn.zhangchuangla.medicine.client.model.dto.OrderDetailDto;
 import cn.zhangchuangla.medicine.client.model.request.*;
 import cn.zhangchuangla.medicine.client.model.vo.*;
 import cn.zhangchuangla.medicine.client.service.*;
-import cn.zhangchuangla.medicine.client.task.OrderDelayProducer;
 import cn.zhangchuangla.medicine.common.core.constants.RedisConstants;
 import cn.zhangchuangla.medicine.common.core.enums.ResponseCode;
 import cn.zhangchuangla.medicine.common.core.exception.ServiceException;
 import cn.zhangchuangla.medicine.common.core.utils.BeanCotyUtils;
 import cn.zhangchuangla.medicine.common.core.utils.JSONUtils;
+import cn.zhangchuangla.medicine.common.rabbitmq.publisher.OrderTimeoutMessagePublisher;
 import cn.zhangchuangla.medicine.common.redis.core.RedisCache;
 import cn.zhangchuangla.medicine.common.security.base.BaseService;
 import cn.zhangchuangla.medicine.common.security.utils.SecurityUtils;
@@ -48,9 +48,9 @@ import java.lang.reflect.Field;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.LocalDateTime;
-import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 import static cn.zhangchuangla.medicine.common.core.constants.Constants.ORDER_TIMEOUT_MINUTES;
@@ -67,22 +67,76 @@ public class MallOrderServiceImpl extends ServiceImpl<MallOrderMapper, MallOrder
      */
     private static final Logger log = LoggerFactory.getLogger(MallOrderServiceImpl.class);
 
+    /**
+     * 待支付订单状态编码。
+     */
     private static final String ORDER_STATUS_WAIT_PAY = OrderStatusEnum.PENDING_PAYMENT.getType();
+
+    /**
+     * 待发货订单状态编码。
+     */
     private static final String ORDER_STATUS_WAIT_SHIPMENT = OrderStatusEnum.PENDING_SHIPMENT.getType();
+
+    /**
+     * 支付宝支付方式编码。
+     */
     private static final String PAY_TYPE_ALIPAY = ALIPAY.getType();
+
+    /**
+     * 待支付的支付类型编码。
+     */
     private static final String WAIT_PAY = PayTypeEnum.WAIT_PAY.getType();
+
+    /**
+     * 触发销量索引同步所需的销量增量阈值。
+     */
     private static final int SALES_SYNC_THRESHOLD = 5;
+
+    /**
+     * 订单允许取消的校验结果编码。
+     */
     private static final String CANCEL_CHECK_REASON_CAN_CANCEL = "CAN_CANCEL";
+
+    /**
+     * 订单不存在时的校验结果编码。
+     */
     private static final String CANCEL_CHECK_REASON_ORDER_NOT_FOUND = "ORDER_NOT_FOUND";
+
+    /**
+     * 订单状态异常时的校验结果编码。
+     */
     private static final String CANCEL_CHECK_REASON_STATUS_INVALID = "ORDER_STATUS_INVALID";
+
+    /**
+     * 订单状态不可取消时的校验结果编码。
+     */
     private static final String CANCEL_CHECK_REASON_STATUS_NOT_CANCELABLE = "ORDER_STATUS_NOT_CANCELABLE";
+
+    /**
+     * 订单不存在或无访问权限时的提示语。
+     */
     private static final String ORDER_NOT_FOUND_OR_NO_PERMISSION_MESSAGE = "订单不存在或无权访问";
+
+    /**
+     * 订单自动关闭的关闭原因文案。
+     */
+    private static final String ORDER_TIMEOUT_CLOSE_REASON = "订单支付超时，系统自动关闭";
+
+    /**
+     * 订单自动关闭时写入的操作人标识。
+     */
+    private static final String SYSTEM_AUTO_CLOSE_OPERATOR = "系统自动关闭";
+
+    /**
+     * 订单超时关闭时重新投递所需的最小延迟毫秒数。
+     */
+    private static final long MIN_REQUEUE_DELAY_MILLIS = 1000L;
 
     private final MallProductService mallProductService;
     private final MallOrderItemService mallOrderItemService;
     private final AlipayPaymentService alipayPaymentService;
     private final AlipayProperties alipayProperties;
-    private final OrderDelayProducer orderDelayProducer;
+    private final OrderTimeoutMessagePublisher orderTimeoutMessagePublisher;
     private final UserWalletService userWalletService;
     private final MallOrderTimelineService mallOrderTimelineService;
     private final MallOrderShippingService mallOrderShippingService;
@@ -94,24 +148,24 @@ public class MallOrderServiceImpl extends ServiceImpl<MallOrderMapper, MallOrder
     /**
      * 构造商城订单服务实现。
      *
-     * @param mallProductService       商品服务
-     * @param mallOrderItemService     订单项服务
-     * @param alipayPaymentService     支付宝支付服务
-     * @param alipayProperties         支付宝配置
-     * @param orderDelayProducer       订单延迟消息生产者
-     * @param userWalletService        用户钱包服务
-     * @param mallOrderTimelineService 订单时间线服务
-     * @param mallOrderShippingService 订单物流服务
-     * @param mallCartService          购物车服务
-     * @param userAddressService       用户地址服务
-     * @param redisCache               Redis缓存
-     * @param mallProductSearchService 商品搜索服务
+     * @param mallProductService           商品服务
+     * @param mallOrderItemService         订单项服务
+     * @param alipayPaymentService         支付宝支付服务
+     * @param alipayProperties             支付宝配置
+     * @param orderTimeoutMessagePublisher 订单超时消息发布器
+     * @param userWalletService            用户钱包服务
+     * @param mallOrderTimelineService     订单时间线服务
+     * @param mallOrderShippingService     订单物流服务
+     * @param mallCartService              购物车服务
+     * @param userAddressService           用户地址服务
+     * @param redisCache                   Redis缓存
+     * @param mallProductSearchService     商品搜索服务
      */
     public MallOrderServiceImpl(MallProductService mallProductService,
                                 MallOrderItemService mallOrderItemService,
                                 AlipayPaymentService alipayPaymentService,
                                 AlipayProperties alipayProperties,
-                                OrderDelayProducer orderDelayProducer,
+                                OrderTimeoutMessagePublisher orderTimeoutMessagePublisher,
                                 UserWalletService userWalletService,
                                 MallOrderTimelineService mallOrderTimelineService,
                                 MallOrderShippingService mallOrderShippingService,
@@ -123,7 +177,7 @@ public class MallOrderServiceImpl extends ServiceImpl<MallOrderMapper, MallOrder
         this.mallOrderItemService = mallOrderItemService;
         this.alipayPaymentService = alipayPaymentService;
         this.alipayProperties = alipayProperties;
-        this.orderDelayProducer = orderDelayProducer;
+        this.orderTimeoutMessagePublisher = orderTimeoutMessagePublisher;
         this.userWalletService = userWalletService;
         this.mallOrderTimelineService = mallOrderTimelineService;
         this.mallOrderShippingService = mallOrderShippingService;
@@ -180,6 +234,7 @@ public class MallOrderServiceImpl extends ServiceImpl<MallOrderMapper, MallOrder
         // 3. 生成业务订单号并补充订单基础信息
         String orderNo = generateOrderNo();
         Date now = new Date();
+        Date expireTime = buildOrderPayExpireTime(now);
 
         // 使用用户选择的配送方式
         String deliveryTypeCode = request.getDeliveryType().getType();
@@ -201,7 +256,7 @@ public class MallOrderServiceImpl extends ServiceImpl<MallOrderMapper, MallOrder
                 .receiverPhone(userAddress.getReceiverPhone())
                 .receiverDetail(receiverDetail)
                 .note(request.getRemark())
-                .payExpireTime(DateUtils.addMinutes(now, ORDER_TIMEOUT_MINUTES))
+                .payExpireTime(expireTime)
                 .afterSaleFlag(OrderItemAfterSaleStatusEnum.NONE)
                 .createTime(now)
                 .updateTime(now)
@@ -234,13 +289,8 @@ public class MallOrderServiceImpl extends ServiceImpl<MallOrderMapper, MallOrder
             throw new ServiceException(ResponseCode.OPERATION_ERROR, "创建订单失败，请稍后再试");
         }
 
-        Date expireTime = Date.from(LocalDateTime.now()
-                .plusMinutes(ORDER_TIMEOUT_MINUTES)
-                .atZone(ZoneId.systemDefault())
-                .toInstant());
-
-        // 设置订单定时关闭
-        orderDelayProducer.addOrderToDelayQueue(orderNo, ORDER_TIMEOUT_MINUTES);
+        // 提交事务后发布订单超时延迟消息。
+        publishOrderTimeoutAfterCommit(orderNo, ORDER_TIMEOUT_MINUTES, TimeUnit.MINUTES);
 
         // 添加订单创建时间线记录
         String username = getUsername();
@@ -291,17 +341,12 @@ public class MallOrderServiceImpl extends ServiceImpl<MallOrderMapper, MallOrder
                 .orderByAsc(MallOrderItem::getId)
                 .list();
 
-        Date payExpireTime = order.getPayExpireTime();
-        if (payExpireTime == null && order.getCreateTime() != null) {
-            payExpireTime = DateUtils.addMinutes(order.getCreateTime(), ORDER_TIMEOUT_MINUTES);
-        }
-
         return OrderPayInfoVo.builder()
                 .orderNo(order.getOrderNo())
                 .totalAmount(order.getTotalAmount())
                 .orderStatus(order.getOrderStatus())
                 .createTime(order.getCreateTime())
-                .payExpireTime(payExpireTime)
+                .payExpireTime(order.getPayExpireTime())
                 .productSummary(buildProductSummary(orderItems))
                 .itemCount(orderItems == null ? 0 : orderItems.size())
                 .build();
@@ -602,11 +647,20 @@ public class MallOrderServiceImpl extends ServiceImpl<MallOrderMapper, MallOrder
         MallOrder order = lambdaQuery()
                 .eq(MallOrder::getOrderNo, orderNo)
                 .eq(MallOrder::getOrderStatus, ORDER_STATUS_WAIT_PAY)
-                .select(MallOrder::getId, MallOrder::getVersion)
+                .select(MallOrder::getId, MallOrder::getVersion, MallOrder::getPayExpireTime)
                 .one();
 
         if (order == null) {
             log.info("订单 {} 未执行关闭，当前状态可能已变更", orderNo);
+            return;
+        }
+
+        Date now = new Date();
+        Date payExpireTime = order.getPayExpireTime();
+        if (payExpireTime != null && payExpireTime.after(now)) {
+            long remainingDelayMillis = Math.max(payExpireTime.getTime() - now.getTime(), MIN_REQUEUE_DELAY_MILLIS);
+            orderTimeoutMessagePublisher.publishOrderTimeout(orderNo, remainingDelayMillis, TimeUnit.MILLISECONDS);
+            log.info("订单 {} 尚未达到最新支付过期时间，已重新投递延迟关闭，剩余 {} ms", orderNo, remainingDelayMillis);
             return;
         }
 
@@ -620,9 +674,9 @@ public class MallOrderServiceImpl extends ServiceImpl<MallOrderMapper, MallOrder
                 .eq(MallOrder::getId, order.getId())
                 .eq(MallOrder::getVersion, order.getVersion())
                 .set(MallOrder::getOrderStatus, OrderStatusEnum.EXPIRED.getType())
-                .set(MallOrder::getCloseReason, "订单支付超时，系统自动关闭")
+                .set(MallOrder::getCloseReason, ORDER_TIMEOUT_CLOSE_REASON)
                 .set(MallOrder::getCloseTime, new Date())
-                .set(MallOrder::getUpdateBy, "系统自动关闭")
+                .set(MallOrder::getUpdateBy, SYSTEM_AUTO_CLOSE_OPERATOR)
                 .set(MallOrder::getUpdateTime, new Date())
                 .update();
 
@@ -643,7 +697,7 @@ public class MallOrderServiceImpl extends ServiceImpl<MallOrderMapper, MallOrder
                     .eventType(OrderEventTypeEnum.ORDER_EXPIRED.getType())
                     .eventStatus(OrderStatusEnum.EXPIRED.getType())
                     .operatorType(OperatorTypeEnum.SYSTEM.getType())
-                    .description("订单支付超时，系统自动关闭")
+                    .description(ORDER_TIMEOUT_CLOSE_REASON)
                     .build();
             mallOrderTimelineService.addTimelineIfNotExists(timelineDto);
         } else {
@@ -1437,6 +1491,7 @@ public class MallOrderServiceImpl extends ServiceImpl<MallOrderMapper, MallOrder
         // 3. 生成订单号
         String orderNo = generateOrderNo();
         Date now = new Date();
+        Date expireTime = buildOrderPayExpireTime(now);
         UserAddress userAddress = getUserAddressOrThrow(userId, request.getAddressId());
         String receiverDetail = buildReceiverDetail(userAddress);
 
@@ -1456,6 +1511,7 @@ public class MallOrderServiceImpl extends ServiceImpl<MallOrderMapper, MallOrder
                 .receiverPhone(userAddress.getReceiverPhone())
                 .receiverDetail(receiverDetail)
                 .note(request.getRemark())
+                .payExpireTime(expireTime)
                 .afterSaleFlag(OrderItemAfterSaleStatusEnum.NONE)
                 .createTime(now)
                 .updateTime(now)
@@ -1487,8 +1543,8 @@ public class MallOrderServiceImpl extends ServiceImpl<MallOrderMapper, MallOrder
                 .build();
         mallOrderTimelineService.addTimeline(timelineDto);
 
-        // 7. 发送延时消息（订单超时自动取消）
-        orderDelayProducer.addOrderToDelayQueue(orderNo, ORDER_TIMEOUT_MINUTES);
+        // 7. 提交事务后发送订单超时延迟消息。
+        publishOrderTimeoutAfterCommit(orderNo, ORDER_TIMEOUT_MINUTES, TimeUnit.MINUTES);
 
         // 9. 删除已结算的购物车商品
         mallCartService.removeCartItems(request.getCartIds());
@@ -1497,12 +1553,6 @@ public class MallOrderServiceImpl extends ServiceImpl<MallOrderMapper, MallOrder
         String productSummary = orderItems.stream()
                 .map(MallOrderItem::getProductName)
                 .collect(Collectors.joining("、"));
-
-        // 11. 计算过期时间
-        Date expireTime = Date.from(LocalDateTime.now()
-                .plusMinutes(ORDER_TIMEOUT_MINUTES)
-                .atZone(ZoneId.systemDefault())
-                .toInstant());
 
         log.info("用户{}从购物车创建订单成功，订单号：{}，共{}件商品",
                 userId, orderNo, orderItems.size());
@@ -1943,6 +1993,32 @@ public class MallOrderServiceImpl extends ServiceImpl<MallOrderMapper, MallOrder
                 .toList();
     }
 
+    /**
+     * 基于当前时间构建订单支付过期时间。
+     *
+     * @param baseTime 基准时间
+     * @return 支付过期时间
+     */
+    private Date buildOrderPayExpireTime(Date baseTime) {
+        return DateUtils.addMinutes(baseTime, ORDER_TIMEOUT_MINUTES);
+    }
+
+    /**
+     * 在事务提交成功后发布订单支付超时延迟消息。
+     *
+     * @param orderNo 订单编号
+     * @param delay   延迟时长
+     * @param unit    延迟时间单位
+     */
+    private void publishOrderTimeoutAfterCommit(String orderNo, long delay, TimeUnit unit) {
+        runAfterCommit(() -> orderTimeoutMessagePublisher.publishOrderTimeout(orderNo, delay, unit));
+    }
+
+    /**
+     * 在事务提交成功后执行指定任务。
+     *
+     * @param task 需要延后执行的任务
+     */
     private void runAfterCommit(Runnable task) {
         if (TransactionSynchronizationManager.isActualTransactionActive()) {
             TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {

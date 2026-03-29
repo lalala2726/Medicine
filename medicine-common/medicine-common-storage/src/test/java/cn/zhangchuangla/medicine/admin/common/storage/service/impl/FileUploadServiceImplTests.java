@@ -4,18 +4,18 @@ import cn.zhangchuangla.medicine.admin.common.storage.config.FileUploadPropertie
 import cn.zhangchuangla.medicine.admin.common.storage.config.MinioConfig;
 import cn.zhangchuangla.medicine.admin.common.storage.service.MinioStorageService;
 import cn.zhangchuangla.medicine.model.vo.FileUploadVo;
+import io.minio.messages.Bucket;
 import org.junit.jupiter.api.Test;
-import org.mockito.ArgumentCaptor;
 import org.springframework.mock.web.MockMultipartFile;
+import org.springframework.web.multipart.MultipartFile;
 
+import java.io.InputStream;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
+import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.*;
 
 /**
  * 文件上传服务对象路径测试。
@@ -34,37 +34,35 @@ class FileUploadServiceImplTests {
 
     @Test
     void uploadBuildsObjectNameWithNormalizedUploadPath() {
-        MinioStorageService minioStorageService = mock(MinioStorageService.class);
+        RecordingMinioStorageService minioStorageService = new RecordingMinioStorageService();
+        minioStorageService.setUploadResult(CDN_FILE_URL);
         FileUploadProperties fileUploadProperties = new FileUploadProperties();
         MinioConfig minioConfig = buildMinioConfig("/resources/");
         FileUploadServiceImpl fileUploadService = new FileUploadServiceImpl(minioStorageService, fileUploadProperties, minioConfig);
         MockMultipartFile multipartFile = buildPdfFile();
-        when(minioStorageService.uploadFile(eq(BUCKET_NAME), any(String.class), eq(multipartFile))).thenReturn(CDN_FILE_URL);
 
         FileUploadVo uploadVo = fileUploadService.upload(multipartFile);
 
-        ArgumentCaptor<String> objectNameCaptor = ArgumentCaptor.forClass(String.class);
-        verify(minioStorageService).uploadFile(eq(BUCKET_NAME), objectNameCaptor.capture(), eq(multipartFile));
-        String actualObjectName = objectNameCaptor.getValue();
+        String actualObjectName = minioStorageService.getLastObjectName();
         assertObjectNameMatches(actualObjectName);
+        assertEquals(BUCKET_NAME, minioStorageService.getLastBucketName());
         assertEquals(CDN_FILE_URL, uploadVo.getFileUrl());
     }
 
     @Test
     void uploadDefaultsUploadPathToResourcesWhenBlank() {
-        MinioStorageService minioStorageService = mock(MinioStorageService.class);
+        RecordingMinioStorageService minioStorageService = new RecordingMinioStorageService();
+        minioStorageService.setUploadResult(CDN_FILE_URL);
         FileUploadProperties fileUploadProperties = new FileUploadProperties();
         MinioConfig minioConfig = buildMinioConfig("   ");
         FileUploadServiceImpl fileUploadService = new FileUploadServiceImpl(minioStorageService, fileUploadProperties, minioConfig);
         MockMultipartFile multipartFile = buildPdfFile();
-        when(minioStorageService.uploadFile(eq(BUCKET_NAME), any(String.class), eq(multipartFile))).thenReturn(CDN_FILE_URL);
 
         fileUploadService.upload(multipartFile);
 
-        ArgumentCaptor<String> objectNameCaptor = ArgumentCaptor.forClass(String.class);
-        verify(minioStorageService).uploadFile(eq(BUCKET_NAME), objectNameCaptor.capture(), eq(multipartFile));
-        String actualObjectName = objectNameCaptor.getValue();
+        String actualObjectName = minioStorageService.getLastObjectName();
         assertObjectNameMatches(actualObjectName);
+        assertEquals(BUCKET_NAME, minioStorageService.getLastBucketName());
         assertTrue(actualObjectName.startsWith("resources/"));
     }
 
@@ -108,5 +106,89 @@ class FileUploadServiceImplTests {
         String expectedPrefix = "resources/" + LocalDate.now().format(DateTimeFormatter.ofPattern("yyyy/MM")) + "/";
         assertTrue(actualObjectName.startsWith(expectedPrefix));
         assertTrue(actualObjectName.endsWith(".pdf"));
+    }
+
+    /**
+     * 记录上传参数的 MinIO 测试替身。
+     */
+    private static final class RecordingMinioStorageService implements MinioStorageService {
+
+        /**
+         * 上传返回地址。
+         */
+        private String uploadResult;
+
+        /**
+         * 最近一次上传的桶名称。
+         */
+        private String lastBucketName;
+
+        /**
+         * 最近一次上传的对象路径。
+         */
+        private String lastObjectName;
+
+        /**
+         * 设置上传返回地址。
+         *
+         * @param uploadResult 上传返回地址
+         */
+        private void setUploadResult(String uploadResult) {
+            this.uploadResult = uploadResult;
+        }
+
+        /**
+         * 获取最近一次上传的桶名称。
+         *
+         * @return 桶名称
+         */
+        private String getLastBucketName() {
+            return lastBucketName;
+        }
+
+        /**
+         * 获取最近一次上传的对象路径。
+         *
+         * @return 对象路径
+         */
+        private String getLastObjectName() {
+            return lastObjectName;
+        }
+
+        @Override
+        public void checkBucketExists(String bucketName) {
+        }
+
+        @Override
+        public String uploadFile(String bucketName, String objectName, InputStream inputStream, long contentLength, String contentType) {
+            throw new UnsupportedOperationException("当前测试不使用输入流上传分支");
+        }
+
+        @Override
+        public String uploadFile(String bucketName, String objectName, MultipartFile file) {
+            this.lastBucketName = bucketName;
+            this.lastObjectName = objectName;
+            return uploadResult;
+        }
+
+        @Override
+        public boolean deleteFile(String bucketName, String objectName) {
+            return false;
+        }
+
+        @Override
+        public String getFileUrl(String bucketName, String objectName) {
+            return null;
+        }
+
+        @Override
+        public List<Bucket> listBuckets() {
+            return List.of();
+        }
+
+        @Override
+        public boolean fileExists(String bucketName, String objectName) {
+            return false;
+        }
     }
 }
