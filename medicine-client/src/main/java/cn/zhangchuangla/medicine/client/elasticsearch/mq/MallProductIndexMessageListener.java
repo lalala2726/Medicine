@@ -19,14 +19,24 @@ import java.util.List;
 
 /**
  * 订阅商品索引事件，落库至 Elasticsearch。
+ *
+ * @author Chuang
  */
 @Slf4j
 @Component
 @RequiredArgsConstructor
 public class MallProductIndexMessageListener {
 
+    /**
+     * 商品搜索服务。
+     */
     private final MallProductSearchService mallProductSearchService;
 
+    /**
+     * 监听商品索引消息。
+     *
+     * @param message 商品索引消息
+     */
     @RabbitListener(queues = ProductIndexQueueConstants.QUEUE)
     public void onMessage(ProductIndexMessage message) {
         if (message == null || message.getOperation() == null) {
@@ -40,15 +50,24 @@ public class MallProductIndexMessageListener {
         }
     }
 
+    /**
+     * 处理商品索引新增或更新。
+     *
+     * @param payload 商品索引载荷
+     */
     private void handleUpsert(ProductIndexPayload payload) {
         if (payload == null || payload.getId() == null) {
             log.warn("跳过商品索引更新操作，payload 为空");
             return;
         }
-        MallProductDocument document = toDocument(payload);
-        mallProductSearchService.save(document);
+        mallProductSearchService.save(toDocument(payload));
     }
 
+    /**
+     * 处理商品索引删除。
+     *
+     * @param productIds 商品ID集合
+     */
     private void handleDelete(Collection<Long> productIds) {
         if (CollectionUtils.isEmpty(productIds)) {
             return;
@@ -56,11 +75,18 @@ public class MallProductIndexMessageListener {
         productIds.forEach(mallProductSearchService::deleteById);
     }
 
+    /**
+     * 将索引载荷转换为 ES 文档。
+     *
+     * @param payload 商品索引载荷
+     * @return ES 文档
+     */
     private MallProductDocument toDocument(ProductIndexPayload payload) {
         return MallProductDocument.builder()
                 .id(payload.getId())
                 .name(payload.getName())
                 .categoryName(payload.getCategoryName())
+                .categoryId(payload.getCategoryId())
                 .price(payload.getPrice())
                 .prescription(payload.getPrescription())
                 .status(payload.getStatus())
@@ -70,12 +96,21 @@ public class MallProductIndexMessageListener {
                 .brandSuggest(completion(payload.getBrand()))
                 .commonNameSuggest(completion(payload.getCommonName()))
                 .efficacy(payload.getEfficacy())
+                .tagIds(payload.getTagIds())
+                .tagNames(payload.getTagNames())
+                .tagTypeBindings(payload.getTagTypeBindings())
                 .sales(payload.getSales())
                 .instruction(payload.getInstruction())
                 .coverImage(payload.getCoverImage())
                 .build();
     }
 
+    /**
+     * 构建自动补全字段。
+     *
+     * @param value 原始值
+     * @return 自动补全对象
+     */
     private Completion completion(String value) {
         if (!StringUtils.hasText(value)) {
             return null;

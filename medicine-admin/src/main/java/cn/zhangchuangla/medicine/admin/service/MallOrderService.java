@@ -138,6 +138,14 @@ public interface MallOrderService extends IService<MallOrder> {
     List<MallOrder> getExpiredOrderClean(long expiredTime);
 
     /**
+     * 执行过期订单补偿关闭。
+     *
+     * @param orderNo 订单编号
+     * @return 是否关闭成功
+     */
+    boolean closeExpiredOrderForCompensation(String orderNo);
+
+    /**
      * 获取用户订单
      *
      * @param userId  用户ID

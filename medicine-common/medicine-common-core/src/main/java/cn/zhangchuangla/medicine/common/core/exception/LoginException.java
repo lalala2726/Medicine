@@ -28,7 +28,7 @@ public final class LoginException extends RuntimeException {
 
     public LoginException(ResponseCode resultCode, String message) {
         super(message);
-        this.code = LOGIN_ERROR.getCode();
+        this.code = resultCode.getCode();
     }
 
     public LoginException(ResponseCode resultCode) {

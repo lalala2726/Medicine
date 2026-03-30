@@ -1,5 +1,6 @@
 package cn.zhangchuangla.medicine.admin.model.request;
 
+import cn.zhangchuangla.medicine.admin.support.KnowledgeBaseEmbeddingDimSupport;
 import jakarta.validation.Validation;
 import jakarta.validation.Validator;
 import org.junit.jupiter.api.BeforeAll;
@@ -39,7 +40,8 @@ class AgentConfigRequestValidationTests {
         var violations = validator.validate(request);
 
         assertFalse(violations.isEmpty());
-        assertTrue(violations.stream().anyMatch(item -> "向量维度必须是2的次方".equals(item.getMessage())));
+        assertTrue(violations.stream().anyMatch(item ->
+                KnowledgeBaseEmbeddingDimSupport.SUPPORTED_DIM_MESSAGE.equals(item.getMessage())));
     }
 
     @Test
@@ -110,6 +112,23 @@ class AgentConfigRequestValidationTests {
 
         assertFalse(violations.isEmpty());
         assertTrue(violations.stream().anyMatch(item -> "模型温度不能大于2".equals(item.getMessage())));
+    }
+
+    @Test
+    void clientAssistantRequest_ShouldFail_WhenRouteModelMissing() {
+        ClientAssistantAgentConfigRequest request = new ClientAssistantAgentConfigRequest();
+        request.setChatModel(buildSelection());
+        request.setOrderModel(buildSelection());
+        request.setProductModel(buildSelection());
+        request.setAfterSaleModel(buildSelection());
+        request.setConsultationComfortModel(buildSelection());
+        request.setConsultationQuestionModel(buildSelection());
+        request.setConsultationFinalDiagnosisModel(buildSelection());
+
+        var violations = validator.validate(request);
+
+        assertFalse(violations.isEmpty());
+        assertTrue(violations.stream().anyMatch(item -> "路由模型槽位配置不能为空".equals(item.getMessage())));
     }
 
     @Test

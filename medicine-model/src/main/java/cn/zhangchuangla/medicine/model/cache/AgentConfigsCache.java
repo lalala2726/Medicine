@@ -18,6 +18,11 @@ public class AgentConfigsCache implements Serializable {
     private AdminAssistantAgentConfig adminAssistant;
 
     /**
+     * 客户端助手相关 Agent 配置。
+     */
+    private ClientAssistantAgentConfig clientAssistant;
+
+    /**
      * 图片识别相关 Agent 配置。
      */
     private ImageRecognitionAgentConfig imageRecognition;
@@ -46,6 +51,14 @@ public class AgentConfigsCache implements Serializable {
 
     public void setAdminAssistant(AdminAssistantAgentConfig adminAssistant) {
         this.adminAssistant = adminAssistant;
+    }
+
+    public ClientAssistantAgentConfig getClientAssistant() {
+        return clientAssistant;
+    }
+
+    public void setClientAssistant(ClientAssistantAgentConfig clientAssistant) {
+        this.clientAssistant = clientAssistant;
     }
 
     public ImageRecognitionAgentConfig getImageRecognition() {

@@ -26,8 +26,8 @@ import org.springframework.web.method.HandlerMethod;
 import org.springframework.web.servlet.mvc.method.RequestMappingInfo;
 import org.springframework.web.servlet.mvc.method.annotation.RequestMappingHandlerMapping;
 
-import java.util.Arrays;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
@@ -37,6 +37,38 @@ import java.util.Set;
 @EnableMethodSecurity
 @Configuration
 public class SecurityConfig {
+
+    /**
+     * 默认允许的跨域来源模式，覆盖本地开发环境以及 zhangchuangla.cn 主域名和全部子域名。
+     */
+    private static final List<String> DEFAULT_ALLOWED_ORIGIN_PATTERNS = List.of(
+            "http://localhost:*",
+            "http://127.0.0.1:*",
+            "http://192.168.*.*",
+            "https://zhangchuangla.cn",
+            "http://zhangchuangla.cn",
+            "https://*.zhangchuangla.cn",
+            "http://*.zhangchuangla.cn"
+    );
+
+    /**
+     * 默认允许的跨域请求方法列表。
+     */
+    private static final List<String> DEFAULT_ALLOWED_METHODS = List.of("GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH");
+
+    /**
+     * 默认允许的跨域请求头列表。
+     */
+    private static final List<String> DEFAULT_ALLOWED_HEADERS = List.of(
+            "*",
+            "Content-Type",
+            "Authorization",
+            "X-Requested-With",
+            "Accept",
+            "Origin",
+            "Access-Control-Request-Method",
+            "Access-Control-Request-Headers"
+    );
 
     private final AuthenticationEntryPointImpl authenticationEntryPoint;
     private final AccessDeniedHandlerImpl accessDeniedHandler;
@@ -99,12 +131,17 @@ public class SecurityConfig {
         return configuration.getAuthenticationManager();
     }
 
+    /**
+     * 创建全局 CORS 配置源。
+     *
+     * @return 全局 CORS 配置源
+     */
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
-        configuration.setAllowedOriginPatterns(Arrays.asList("http://localhost:*", "http://127.0.0.1:*", "http://192.168.*.*", "https://*.zhangchuangla.cn", "http://*.zhangchuangla.cn"));
-        configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"));
-        configuration.setAllowedHeaders(Arrays.asList("*", "Content-Type", "Authorization", "X-Requested-With", "Accept", "Origin", "Access-Control-Request-Method", "Access-Control-Request-Headers"));
+        configuration.setAllowedOriginPatterns(DEFAULT_ALLOWED_ORIGIN_PATTERNS);
+        configuration.setAllowedMethods(DEFAULT_ALLOWED_METHODS);
+        configuration.setAllowedHeaders(DEFAULT_ALLOWED_HEADERS);
         configuration.setAllowCredentials(true);
         configuration.setMaxAge(3600L);
 

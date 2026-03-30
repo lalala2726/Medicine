@@ -1,13 +1,11 @@
 package cn.zhangchuangla.medicine.admin.service.impl;
 
-import cn.zhangchuangla.medicine.admin.model.request.AgentModelSelectionRequest;
-import cn.zhangchuangla.medicine.admin.model.request.KnowledgeBaseAgentConfigRequest;
-import cn.zhangchuangla.medicine.admin.model.request.SpeechAgentConfigRequest;
-import cn.zhangchuangla.medicine.admin.model.request.TextToSpeechConfigRequest;
+import cn.zhangchuangla.medicine.admin.model.request.*;
 import cn.zhangchuangla.medicine.admin.service.AgentConfigRuntimeSyncService;
 import cn.zhangchuangla.medicine.admin.service.KbBaseService;
 import cn.zhangchuangla.medicine.admin.service.LlmProviderModelService;
 import cn.zhangchuangla.medicine.admin.service.LlmProviderService;
+import cn.zhangchuangla.medicine.common.core.exception.ParamException;
 import cn.zhangchuangla.medicine.common.core.exception.ServiceException;
 import cn.zhangchuangla.medicine.model.cache.*;
 import cn.zhangchuangla.medicine.model.constants.LlmModelTypeConstants;
@@ -56,10 +54,8 @@ class AgentConfigServiceImplTests {
         knowledgeBase.setRankingModel(null);
         cache.setKnowledgeBase(knowledgeBase);
         when(agentConfigRuntimeSyncService.readCache()).thenReturn(cache);
-        when(llmProviderService.lambdaQuery()).thenReturn(mockProviderWrapper(List.of(buildEnabledProvider())));
-        when(llmProviderModelService.lambdaQuery()).thenReturn(
-                mockModelWrapper(List.of(buildModel("text-embedding-3-large", LlmModelTypeConstants.EMBEDDING, 0, 0, 0)))
-        );
+        stubProviderQuery(List.of(buildEnabledProvider()));
+        stubModelQueries(List.of(buildModel("text-embedding-3-large", LlmModelTypeConstants.EMBEDDING, 0, 0, 0)));
 
         var result = service.getKnowledgeBaseConfig();
 
@@ -102,15 +98,15 @@ class AgentConfigServiceImplTests {
     void saveKnowledgeBaseConfig_ShouldWriteKnowledgeNamesAndRankingEnabled() {
         AgentConfigServiceImpl service = newService();
         when(agentConfigRuntimeSyncService.readCache()).thenReturn(new AgentAllConfigCache());
-        when(llmProviderService.lambdaQuery()).thenReturn(mockProviderWrapper(List.of(buildEnabledProvider())));
+        stubProviderQuery(List.of(buildEnabledProvider()));
         when(kbBaseService.listEnabledKnowledgeBasesByNames(List.of("common_medicine_kb", "otc_guide_kb")))
                 .thenReturn(List.of(
                         buildKnowledgeBase("common_medicine_kb", "text-embedding-3-large", 1024),
                         buildKnowledgeBase("otc_guide_kb", "text-embedding-3-large", 1024)
                 ));
-        when(llmProviderModelService.lambdaQuery()).thenReturn(
-                mockModelWrapper(List.of(buildModel("text-embedding-3-large", LlmModelTypeConstants.EMBEDDING, 0, 0, 0))),
-                mockModelWrapper(List.of(buildModel("gpt-4.1-mini", LlmModelTypeConstants.CHAT, 0, 0, 0)))
+        stubModelQueries(
+                List.of(buildModel("text-embedding-3-large", LlmModelTypeConstants.EMBEDDING, 0, 0, 0)),
+                List.of(buildModel("gpt-4.1-mini", LlmModelTypeConstants.CHAT, 0, 0, 0))
         );
 
         KnowledgeBaseAgentConfigRequest request = new KnowledgeBaseAgentConfigRequest();
@@ -140,12 +136,10 @@ class AgentConfigServiceImplTests {
     void saveKnowledgeBaseConfig_WhenRankingDisabledAndModelProvided_ShouldThrow() {
         AgentConfigServiceImpl service = newService();
         when(agentConfigRuntimeSyncService.readCache()).thenReturn(new AgentAllConfigCache());
-        when(llmProviderService.lambdaQuery()).thenReturn(mockProviderWrapper(List.of(buildEnabledProvider())));
+        stubProviderQuery(List.of(buildEnabledProvider()));
         when(kbBaseService.listEnabledKnowledgeBasesByNames(List.of("common_medicine_kb")))
                 .thenReturn(List.of(buildKnowledgeBase("common_medicine_kb", "text-embedding-3-large", 1024)));
-        when(llmProviderModelService.lambdaQuery()).thenReturn(
-                mockModelWrapper(List.of(buildModel("text-embedding-3-large", LlmModelTypeConstants.EMBEDDING, 0, 0, 0)))
-        );
+        stubModelQueries(List.of(buildModel("text-embedding-3-large", LlmModelTypeConstants.EMBEDDING, 0, 0, 0)));
 
         KnowledgeBaseAgentConfigRequest request = new KnowledgeBaseAgentConfigRequest();
         request.setEnabled(true);
@@ -156,7 +150,7 @@ class AgentConfigServiceImplTests {
         request.setRankingEnabled(false);
         request.setRankingModel(buildSelection("gpt-4.1-mini", false, 512, 0.0));
 
-        ServiceException exception = assertThrows(ServiceException.class, () -> service.saveKnowledgeBaseConfig(request));
+        ParamException exception = assertThrows(ParamException.class, () -> service.saveKnowledgeBaseConfig(request));
 
         assertEquals("关闭排序时不允许选择排序模型", exception.getMessage());
         verify(agentConfigRuntimeSyncService, never()).saveCache(any(), any(), any());
@@ -166,15 +160,13 @@ class AgentConfigServiceImplTests {
     void saveKnowledgeBaseConfig_WhenKnowledgeBaseEmbeddingMismatch_ShouldThrow() {
         AgentConfigServiceImpl service = newService();
         when(agentConfigRuntimeSyncService.readCache()).thenReturn(new AgentAllConfigCache());
-        when(llmProviderService.lambdaQuery()).thenReturn(mockProviderWrapper(List.of(buildEnabledProvider())));
+        stubProviderQuery(List.of(buildEnabledProvider()));
         when(kbBaseService.listEnabledKnowledgeBasesByNames(List.of("common_medicine_kb", "otc_guide_kb")))
                 .thenReturn(List.of(
                         buildKnowledgeBase("common_medicine_kb", "text-embedding-3-large", 1024),
                         buildKnowledgeBase("otc_guide_kb", "text-embedding-3-small", 1024)
                 ));
-        when(llmProviderModelService.lambdaQuery()).thenReturn(
-                mockModelWrapper(List.of(buildModel("text-embedding-3-large", LlmModelTypeConstants.EMBEDDING, 0, 0, 0)))
-        );
+        stubModelQueries(List.of(buildModel("text-embedding-3-large", LlmModelTypeConstants.EMBEDDING, 0, 0, 0)));
 
         KnowledgeBaseAgentConfigRequest request = new KnowledgeBaseAgentConfigRequest();
         request.setEnabled(true);
@@ -193,6 +185,7 @@ class AgentConfigServiceImplTests {
     @Test
     void saveKnowledgeBaseConfig_WhenKnowledgeBaseCountExceedsMaxLimit_ShouldThrow() {
         AgentConfigServiceImpl service = newService();
+        when(agentConfigRuntimeSyncService.readCache()).thenReturn(new AgentAllConfigCache());
 
         java.util.List<String> knowledgeNames = java.util.stream.IntStream.rangeClosed(1, 6)
                 .mapToObj(index -> "knowledge_" + index)
@@ -206,7 +199,7 @@ class AgentConfigServiceImplTests {
         request.setTopK(10);
         request.setRankingEnabled(false);
 
-        ServiceException exception = assertThrows(ServiceException.class, () -> service.saveKnowledgeBaseConfig(request));
+        ParamException exception = assertThrows(ParamException.class, () -> service.saveKnowledgeBaseConfig(request));
 
         assertEquals("知识库最多支持5个", exception.getMessage());
         verify(agentConfigRuntimeSyncService, never()).saveCache(any(), any(), any());
@@ -216,12 +209,10 @@ class AgentConfigServiceImplTests {
     void saveKnowledgeBaseConfig_WhenTopKIsZero_ShouldPersistAsNull() {
         AgentConfigServiceImpl service = newService();
         when(agentConfigRuntimeSyncService.readCache()).thenReturn(new AgentAllConfigCache());
-        when(llmProviderService.lambdaQuery()).thenReturn(mockProviderWrapper(List.of(buildEnabledProvider())));
+        stubProviderQuery(List.of(buildEnabledProvider()));
         when(kbBaseService.listEnabledKnowledgeBasesByNames(List.of("common_medicine_kb")))
                 .thenReturn(List.of(buildKnowledgeBase("common_medicine_kb", "text-embedding-3-large", 1024)));
-        when(llmProviderModelService.lambdaQuery()).thenReturn(
-                mockModelWrapper(List.of(buildModel("text-embedding-3-large", LlmModelTypeConstants.EMBEDDING, 0, 0, 0)))
-        );
+        stubModelQueries(List.of(buildModel("text-embedding-3-large", LlmModelTypeConstants.EMBEDDING, 0, 0, 0)));
 
         KnowledgeBaseAgentConfigRequest request = new KnowledgeBaseAgentConfigRequest();
         request.setEnabled(true);
@@ -253,7 +244,7 @@ class AgentConfigServiceImplTests {
         existing.setRankingModel("gpt-4.1-mini");
         cache.setKnowledgeBase(existing);
         when(agentConfigRuntimeSyncService.readCache()).thenReturn(cache);
-        when(llmProviderService.lambdaQuery()).thenReturn(mockProviderWrapper(List.of()));
+        stubProviderQuery(List.of());
 
         KnowledgeBaseAgentConfigRequest request = new KnowledgeBaseAgentConfigRequest();
         request.setEnabled(false);
@@ -272,6 +263,81 @@ class AgentConfigServiceImplTests {
     }
 
     @Test
+    void getClientAssistantConfig_ShouldPopulateCapabilitiesFromDatabase() {
+        AgentConfigServiceImpl service = newService();
+        AgentAllConfigCache cache = new AgentAllConfigCache();
+        ClientAssistantAgentConfig clientAssistant = new ClientAssistantAgentConfig();
+        clientAssistant.setRouteModel(buildSlot("gpt-4.1-mini", false, 1024, 0.0));
+        clientAssistant.setChatModel(buildSlot("gpt-4.1", true, 4096, 0.7));
+        clientAssistant.setOrderModel(buildSlot("gpt-4.1-mini", false, 2048, 0.3));
+        clientAssistant.setProductModel(buildSlot("gpt-4.1-mini", false, 2048, 0.3));
+        clientAssistant.setAfterSaleModel(buildSlot("gpt-4.1-mini", false, 2048, 0.3));
+        clientAssistant.setConsultationComfortModel(buildSlot("gpt-4.1-mini", false, 2048, 1.2));
+        clientAssistant.setConsultationQuestionModel(buildSlot("gpt-4.1", true, 4096, 0.2));
+        clientAssistant.setConsultationFinalDiagnosisModel(buildSlot("gpt-4.1", true, 4096, 0.2));
+        cache.setClientAssistant(clientAssistant);
+        when(agentConfigRuntimeSyncService.readCache()).thenReturn(cache);
+        stubProviderQuery(List.of(buildEnabledProvider()));
+        stubModelQueries(
+                List.of(buildModel("gpt-4.1-mini", LlmModelTypeConstants.CHAT, 0, 0, 0)),
+                List.of(buildModel("gpt-4.1", LlmModelTypeConstants.CHAT, 0, 1, 0)),
+                List.of(buildModel("gpt-4.1-mini", LlmModelTypeConstants.CHAT, 0, 0, 0)),
+                List.of(buildModel("gpt-4.1-mini", LlmModelTypeConstants.CHAT, 0, 0, 0)),
+                List.of(buildModel("gpt-4.1-mini", LlmModelTypeConstants.CHAT, 0, 0, 0)),
+                List.of(buildModel("gpt-4.1-mini", LlmModelTypeConstants.CHAT, 0, 0, 0)),
+                List.of(buildModel("gpt-4.1", LlmModelTypeConstants.CHAT, 0, 1, 0)),
+                List.of(buildModel("gpt-4.1", LlmModelTypeConstants.CHAT, 0, 1, 0))
+        );
+
+        var result = service.getClientAssistantConfig();
+
+        assertEquals("gpt-4.1-mini", result.getRouteModel().getModelName());
+        assertEquals(Boolean.TRUE, result.getChatModel().getSupportReasoning());
+        assertEquals("gpt-4.1-mini", result.getAfterSaleModel().getModelName());
+        assertEquals("gpt-4.1", result.getConsultationFinalDiagnosisModel().getModelName());
+    }
+
+    @Test
+    void saveClientAssistantConfig_ShouldPersistAllClientSlots() {
+        AgentConfigServiceImpl service = newService();
+        when(agentConfigRuntimeSyncService.readCache()).thenReturn(new AgentAllConfigCache());
+        stubProviderQuery(List.of(buildEnabledProvider()));
+        stubModelQueries(
+                List.of(buildModel("gpt-4.1-mini", LlmModelTypeConstants.CHAT, 0, 0, 0)),
+                List.of(buildModel("gpt-4.1", LlmModelTypeConstants.CHAT, 0, 1, 0)),
+                List.of(buildModel("gpt-4.1-mini", LlmModelTypeConstants.CHAT, 0, 0, 0)),
+                List.of(buildModel("gpt-4.1-mini", LlmModelTypeConstants.CHAT, 0, 0, 0)),
+                List.of(buildModel("gpt-4.1-mini", LlmModelTypeConstants.CHAT, 0, 0, 0)),
+                List.of(buildModel("gpt-4.1-mini", LlmModelTypeConstants.CHAT, 0, 0, 0)),
+                List.of(buildModel("gpt-4.1", LlmModelTypeConstants.CHAT, 0, 1, 0)),
+                List.of(buildModel("gpt-4.1", LlmModelTypeConstants.CHAT, 0, 1, 0))
+        );
+
+        ClientAssistantAgentConfigRequest request = new ClientAssistantAgentConfigRequest();
+        request.setRouteModel(buildSelection("gpt-4.1-mini", false, 1024, 0.0));
+        request.setChatModel(buildSelection("gpt-4.1", true, 4096, 0.7));
+        request.setOrderModel(buildSelection("gpt-4.1-mini", false, 2048, 0.3));
+        request.setProductModel(buildSelection("gpt-4.1-mini", false, 2048, 0.3));
+        request.setAfterSaleModel(buildSelection("gpt-4.1-mini", false, 2048, 0.3));
+        request.setConsultationComfortModel(buildSelection("gpt-4.1-mini", false, 2048, 1.2));
+        request.setConsultationQuestionModel(buildSelection("gpt-4.1", true, 4096, 0.2));
+        request.setConsultationFinalDiagnosisModel(buildSelection("gpt-4.1", true, 4096, 0.2));
+
+        boolean result = service.saveClientAssistantConfig(request);
+
+        assertTrue(result);
+        ArgumentCaptor<AgentAllConfigCache> cacheCaptor = ArgumentCaptor.forClass(AgentAllConfigCache.class);
+        verify(agentConfigRuntimeSyncService).saveCache(cacheCaptor.capture(), any(), any());
+        ClientAssistantAgentConfig saved = cacheCaptor.getValue().getClientAssistant();
+        assertEquals("gpt-4.1-mini", saved.getRouteModel().getModelName());
+        assertEquals("gpt-4.1", saved.getChatModel().getModelName());
+        assertEquals("gpt-4.1-mini", saved.getOrderModel().getModelName());
+        assertEquals("gpt-4.1-mini", saved.getAfterSaleModel().getModelName());
+        assertEquals("gpt-4.1", saved.getConsultationQuestionModel().getModelName());
+        assertEquals("gpt-4.1", saved.getConsultationFinalDiagnosisModel().getModelName());
+    }
+
+    @Test
     void getImageRecognitionConfig_ShouldPopulateVisionCapabilitiesFromDatabase() {
         AgentConfigServiceImpl service = newService();
         AgentAllConfigCache cache = new AgentAllConfigCache();
@@ -279,10 +345,8 @@ class AgentConfigServiceImplTests {
         imageRecognition.setImageRecognitionModel(buildSlot("qwen-vl-max", true, 4096, 0.2));
         cache.setImageRecognition(imageRecognition);
         when(agentConfigRuntimeSyncService.readCache()).thenReturn(cache);
-        when(llmProviderService.lambdaQuery()).thenReturn(mockProviderWrapper(List.of(buildEnabledProvider())));
-        when(llmProviderModelService.lambdaQuery()).thenReturn(
-                mockModelWrapper(List.of(buildModel("qwen-vl-max", LlmModelTypeConstants.CHAT, 0, 1, 1)))
-        );
+        stubProviderQuery(List.of(buildEnabledProvider()));
+        stubModelQueries(List.of(buildModel("qwen-vl-max", LlmModelTypeConstants.CHAT, 0, 1, 1)));
 
         var result = service.getImageRecognitionConfig();
 
@@ -322,7 +386,7 @@ class AgentConfigServiceImplTests {
         speech.setAccessToken("existing-token");
         cache.setSpeech(speech);
         when(agentConfigRuntimeSyncService.readCache()).thenReturn(cache);
-        when(llmProviderService.lambdaQuery()).thenReturn(mockProviderWrapper(List.of()));
+        stubProviderQuery(List.of());
 
         SpeechAgentConfigRequest request = new SpeechAgentConfigRequest();
         request.setAppId("speech-app-id");
@@ -352,16 +416,66 @@ class AgentConfigServiceImplTests {
 
     @SuppressWarnings("unchecked")
     private LambdaQueryChainWrapper<LlmProvider> mockProviderWrapper(List<LlmProvider> providers) {
-        LambdaQueryChainWrapper<LlmProvider> wrapper = mock(LambdaQueryChainWrapper.class, RETURNS_SELF);
-        when(wrapper.list()).thenReturn(providers);
-        return wrapper;
+        return mock(LambdaQueryChainWrapper.class, invocation -> {
+            String methodName = invocation.getMethod().getName();
+            if ("list".equals(methodName)) {
+                return providers;
+            }
+            if ("toString".equals(methodName)) {
+                return "providerQueryWrapper";
+            }
+            if ("hashCode".equals(methodName)) {
+                return System.identityHashCode(invocation.getMock());
+            }
+            if ("equals".equals(methodName)) {
+                return invocation.getMock() == invocation.getArgument(0);
+            }
+            return invocation.getMock();
+        });
     }
 
     @SuppressWarnings("unchecked")
     private LambdaQueryChainWrapper<LlmProviderModel> mockModelWrapper(List<LlmProviderModel> models) {
-        LambdaQueryChainWrapper<LlmProviderModel> wrapper = mock(LambdaQueryChainWrapper.class, RETURNS_SELF);
-        when(wrapper.list()).thenReturn(models);
-        return wrapper;
+        return mock(LambdaQueryChainWrapper.class, invocation -> {
+            String methodName = invocation.getMethod().getName();
+            if ("list".equals(methodName)) {
+                return models;
+            }
+            if ("toString".equals(methodName)) {
+                return "modelQueryWrapper";
+            }
+            if ("hashCode".equals(methodName)) {
+                return System.identityHashCode(invocation.getMock());
+            }
+            if ("equals".equals(methodName)) {
+                return invocation.getMock() == invocation.getArgument(0);
+            }
+            return invocation.getMock();
+        });
+    }
+
+    /**
+     * 模拟提供商查询链路。
+     *
+     * @param providers 需要返回的提供商列表
+     */
+    private void stubProviderQuery(List<LlmProvider> providers) {
+        LambdaQueryChainWrapper<LlmProvider> wrapper = mockProviderWrapper(providers);
+        when(llmProviderService.lambdaQuery()).thenReturn(wrapper);
+    }
+
+    /**
+     * 按调用顺序模拟模型查询链路。
+     *
+     * @param modelGroups 每次查询需要返回的模型列表
+     */
+    @SafeVarargs
+    private final void stubModelQueries(List<LlmProviderModel>... modelGroups) {
+        LambdaQueryChainWrapper<LlmProviderModel>[] wrappers = java.util.Arrays.stream(modelGroups)
+                .map(this::mockModelWrapper)
+                .toArray(LambdaQueryChainWrapper[]::new);
+        when(llmProviderModelService.lambdaQuery()).thenReturn(wrappers[0], java.util.Arrays.copyOfRange(wrappers, 1,
+                wrappers.length));
     }
 
     private LlmProvider buildEnabledProvider() {

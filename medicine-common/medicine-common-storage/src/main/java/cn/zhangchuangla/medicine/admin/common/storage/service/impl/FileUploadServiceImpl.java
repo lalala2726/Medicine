@@ -23,8 +23,8 @@ import java.util.UUID;
  * @author Chuang
  * created on 2025/9/25
  */
-@Service
 @Slf4j
+@Service
 @RequiredArgsConstructor
 public class FileUploadServiceImpl implements FileUploadService {
 
@@ -51,14 +51,8 @@ public class FileUploadServiceImpl implements FileUploadService {
                 throw new IllegalArgumentException("不支持的文件类型, 文件名: " + originalFilename + ", Content-Type: " + contentType);
             }
 
-            // 生成年月文件夹路径
-            String folderPath = generateYearMonthFolderPath();
-
-            // 生成唯一文件名
-            String uniqueFileName = generateUniqueFileName(originalFilename);
-
             // 构建完整的对象路径
-            String objectName = folderPath + "/" + uniqueFileName;
+            String objectName = buildObjectName(originalFilename);
 
             // 上传文件并返回访问地址
             String bucketName = resolveBucketName();
@@ -78,6 +72,22 @@ public class FileUploadServiceImpl implements FileUploadService {
             log.error("File upload failed", e);
             throw new ServiceException("文件上传失败");
         }
+    }
+
+    /**
+     * 功能描述：构建完整的 MinIO 对象路径，统一追加上传路径前缀、年月目录和随机文件名。
+     * <p>
+     * 参数说明：
+     *
+     * @param originalFilename String 原始文件名。
+     *                         返回值：{@code String}，完整对象路径，格式为 uploadPath/yyyy/MM/uuid.ext。
+     *                         异常说明：无。
+     */
+    private String buildObjectName(String originalFilename) {
+        String uploadPath = resolveUploadPath();
+        String folderPath = generateYearMonthFolderPath();
+        String uniqueFileName = generateUniqueFileName(originalFilename);
+        return uploadPath + "/" + folderPath + "/" + uniqueFileName;
     }
 
     /**
@@ -151,11 +161,29 @@ public class FileUploadServiceImpl implements FileUploadService {
         return originalFilename.substring(lastDotIndex).toLowerCase(Locale.ROOT);
     }
 
+    /**
+     * 功能描述：获取当前上传使用的桶名称，缺失时直接阻断上传。
+     * <p>
+     * 参数说明：无。
+     * 返回值：{@code String}，配置中的桶名称。
+     * 异常说明：当 minio.bucket-name 未配置时抛出 {@link IllegalStateException}。
+     */
     private String resolveBucketName() {
         String bucketName = minioConfig.getBucketName();
         if (bucketName == null || bucketName.isBlank()) {
             throw new IllegalStateException("minio.bucket-name 未配置");
         }
         return bucketName;
+    }
+
+    /**
+     * 功能描述：获取标准化后的上传路径前缀，保证对象不会直接落在桶根目录。
+     * <p>
+     * 参数说明：无。
+     * 返回值：{@code String}，标准化后的上传路径前缀。
+     * 异常说明：无。
+     */
+    private String resolveUploadPath() {
+        return minioConfig.getNormalizedUploadPath();
     }
 }

@@ -1,19 +1,17 @@
 package cn.zhangchuangla.medicine.admin.service.impl;
 
+import cn.zhangchuangla.medicine.admin.mapper.MallOrderItemMapper;
 import cn.zhangchuangla.medicine.admin.mapper.MallProductMapper;
-import cn.zhangchuangla.medicine.admin.service.MallCategoryService;
-import cn.zhangchuangla.medicine.admin.service.MallMedicineDetailService;
-import cn.zhangchuangla.medicine.admin.service.MallProductImageService;
-import cn.zhangchuangla.medicine.admin.service.MallProductStatsService;
+import cn.zhangchuangla.medicine.admin.service.*;
 import cn.zhangchuangla.medicine.admin.task.MallProductSearchIndexer;
 import cn.zhangchuangla.medicine.model.dto.MallProductDetailDto;
 import cn.zhangchuangla.medicine.model.entity.MallProductImage;
+import cn.zhangchuangla.medicine.model.vo.MallProductTagVo;
 import com.baomidou.mybatisplus.extension.conditions.query.LambdaQueryChainWrapper;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.InjectMocks;
 import org.mockito.Mock;
-import org.mockito.Spy;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.math.BigDecimal;
@@ -44,13 +42,35 @@ class MallProductServiceImplGetMallProductByIdsTests {
     private MallProductStatsService mallProductStatsService;
 
     @Mock
+    private MallProductTagService mallProductTagService;
+
+    @Mock
+    private MallProductTagRelService mallProductTagRelService;
+
+    @Mock
+    private MallOrderItemMapper mallOrderItemMapper;
+
+    @Mock
     private MallProductSearchIndexer mallProductSearchIndexer;
 
-    // RedisCache 是 final 类，无法 mock，但 getMallProductByIds 方法不使用它
-
-    @Spy
-    @InjectMocks
     private MallProductServiceImpl mallProductService;
+
+    @BeforeEach
+    void setUp() {
+        mallProductService = new MallProductServiceImpl(
+                mallProductMapper,
+                mallCategoryService,
+                mallProductImageService,
+                medicineDetailService,
+                mallProductStatsService,
+                mallProductTagService,
+                mallProductTagRelService,
+                mallOrderItemMapper,
+                mallProductSearchIndexer,
+                null
+        );
+        lenient().when(mallProductTagService.listTagVoMapByProductIds(anyList())).thenReturn(java.util.Collections.<Long, List<MallProductTagVo>>emptyMap());
+    }
 
     @Test
     void getMallProductByIds_WhenInputIsNull_ShouldReturnEmptyList() {
@@ -96,6 +116,8 @@ class MallProductServiceImplGetMallProductByIdsTests {
         assertNotNull(detail.getImages());
         assertEquals(1, detail.getImages().size());
         assertEquals("http://example.com/image1.jpg", detail.getImages().getFirst());
+        assertNotNull(detail.getTags());
+        assertTrue(detail.getTags().isEmpty());
     }
 
     @Test
@@ -119,12 +141,14 @@ class MallProductServiceImplGetMallProductByIdsTests {
         assertEquals(1L, detail1.getId());
         assertEquals("商品1", detail1.getName());
         assertEquals(1, detail1.getImages().size());
+        assertTrue(detail1.getTags().isEmpty());
 
         // 验证第二个商品
         MallProductDetailDto detail2 = result.get(1);
         assertEquals(2L, detail2.getId());
         assertEquals("商品2", detail2.getName());
         assertEquals(1, detail2.getImages().size());
+        assertTrue(detail2.getTags().isEmpty());
     }
 
     @Test
@@ -141,6 +165,7 @@ class MallProductServiceImplGetMallProductByIdsTests {
         assertEquals(1, result.size());
         assertNotNull(result.getFirst().getImages());
         assertTrue(result.getFirst().getImages().isEmpty());
+        assertTrue(result.getFirst().getTags().isEmpty());
     }
 
     @Test
@@ -160,6 +185,7 @@ class MallProductServiceImplGetMallProductByIdsTests {
         assertEquals(1, result.size());
         assertNotNull(result.getFirst().getImages());
         assertEquals(3, result.getFirst().getImages().size());
+        assertTrue(result.getFirst().getTags().isEmpty());
     }
 
     @Test

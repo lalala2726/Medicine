@@ -13,7 +13,11 @@ import cn.zhangchuangla.medicine.model.entity.User;
 import cn.zhangchuangla.medicine.model.enums.*;
 import cn.zhangchuangla.medicine.model.request.ClientAgentAfterSaleEligibilityRequest;
 import cn.zhangchuangla.medicine.model.vo.AfterSaleTimelineVo;
+import com.baomidou.mybatisplus.core.MybatisConfiguration;
+import com.baomidou.mybatisplus.core.metadata.TableInfoHelper;
 import com.baomidou.mybatisplus.extension.conditions.query.LambdaQueryChainWrapper;
+import org.apache.ibatis.builder.MapperBuilderAssistant;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
@@ -52,13 +56,21 @@ class MallAfterSaleServiceImplTests {
     @InjectMocks
     private MallAfterSaleServiceImpl service;
 
-    @SuppressWarnings("unchecked")
+    /**
+     * 初始化测试所需的 MyBatis-Plus 实体元数据。
+     */
+    @BeforeEach
+    void setUp() {
+        initializeTableInfo(MallAfterSale.class);
+        initializeTableInfo(MallOrder.class);
+        initializeTableInfo(MallOrderItem.class);
+    }
+
     @Test
     void getAfterSaleDetail_WhenAfterSaleDoesNotBelongToUser_ShouldThrowNotFound() {
-        LambdaQueryChainWrapper<MallAfterSale> query = mock(LambdaQueryChainWrapper.class, RETURNS_SELF);
+        TestLambdaQueryChainWrapper<MallAfterSale> query = createQueryWrapper(MallAfterSale.class);
+        query.setOneResult(null);
         doReturn(query).when(service).lambdaQuery();
-        when(query.one()).thenReturn(null);
-        doReturn(66L).when(service).getUserId();
 
         ServiceException exception = assertThrows(ServiceException.class,
                 () -> service.getAfterSaleDetail("AS202511130001", 66L));
@@ -67,12 +79,11 @@ class MallAfterSaleServiceImplTests {
         assertEquals("售后申请不存在", exception.getMessage());
     }
 
-    @SuppressWarnings("unchecked")
     @Test
     void getAfterSaleDetail_ShouldAssembleProductInfoAndTimeline() {
-        LambdaQueryChainWrapper<MallAfterSale> query = mock(LambdaQueryChainWrapper.class, RETURNS_SELF);
+        TestLambdaQueryChainWrapper<MallAfterSale> query = createQueryWrapper(MallAfterSale.class);
+        query.setOneResult(createAfterSale());
         doReturn(query).when(service).lambdaQuery();
-        when(query.one()).thenReturn(createAfterSale());
         when(userService.getById(66L)).thenReturn(createUser());
         when(mallOrderItemService.getById(9L)).thenReturn(createOrderItem(9L, new BigDecimal("29.90"), BigDecimal.ZERO));
         when(mallAfterSaleTimelineService.getTimelineList(1L)).thenReturn(List.of(createTimeline()));
@@ -89,12 +100,11 @@ class MallAfterSaleServiceImplTests {
         verify(mallAfterSaleTimelineService).getTimelineList(1L);
     }
 
-    @SuppressWarnings("unchecked")
     @Test
     void checkAfterSaleEligibility_WhenOrderNotFound_ShouldReturnIneligibleResult() {
-        LambdaQueryChainWrapper<MallOrder> orderQuery = mock(LambdaQueryChainWrapper.class, RETURNS_SELF);
+        TestLambdaQueryChainWrapper<MallOrder> orderQuery = createQueryWrapper(MallOrder.class);
+        orderQuery.setOneResult(null);
         when(mallOrderService.lambdaQuery()).thenReturn(orderQuery);
-        when(orderQuery.one()).thenReturn(null);
 
         ClientAgentAfterSaleEligibilityRequest request = new ClientAgentAfterSaleEligibilityRequest();
         request.setOrderNo("O202511130001");
@@ -107,7 +117,6 @@ class MallAfterSaleServiceImplTests {
         assertEquals("订单不存在或无权访问", result.getReasonMessage());
     }
 
-    @SuppressWarnings("unchecked")
     @Test
     void checkAfterSaleEligibility_ForOrderItem_ShouldReturnRefundableAmountWhenEligible() {
         mockOrderQuery(createCompletedOrder("O202511130001", new BigDecimal("59.80"), BigDecimal.ZERO, daysAgo(10)));
@@ -115,10 +124,10 @@ class MallAfterSaleServiceImplTests {
                 createOrderItem(9L, new BigDecimal("29.90"), new BigDecimal("10.00")),
                 createOrderItem(10L, new BigDecimal("29.90"), BigDecimal.ZERO)
         ));
-        LambdaQueryChainWrapper<MallAfterSale> activeQuery1 = mock(LambdaQueryChainWrapper.class, RETURNS_SELF);
-        LambdaQueryChainWrapper<MallAfterSale> activeQuery2 = mock(LambdaQueryChainWrapper.class, RETURNS_SELF);
-        when(activeQuery1.count()).thenReturn(0L);
-        when(activeQuery2.count()).thenReturn(0L);
+        TestLambdaQueryChainWrapper<MallAfterSale> activeQuery1 = createQueryWrapper(MallAfterSale.class);
+        TestLambdaQueryChainWrapper<MallAfterSale> activeQuery2 = createQueryWrapper(MallAfterSale.class);
+        activeQuery1.setCountResult(0L);
+        activeQuery2.setCountResult(0L);
         mockAfterSaleQuerySequence(activeQuery1, activeQuery2);
 
         ClientAgentAfterSaleEligibilityRequest request = new ClientAgentAfterSaleEligibilityRequest();
@@ -133,7 +142,6 @@ class MallAfterSaleServiceImplTests {
         assertEquals(new BigDecimal("19.90"), result.getRefundableAmount());
     }
 
-    @SuppressWarnings("unchecked")
     @Test
     void checkAfterSaleEligibility_WhenCompletedOrderExpired_ShouldReturnExpiredReason() {
         mockOrderQuery(createCompletedOrder("O202511130001", new BigDecimal("29.90"), BigDecimal.ZERO, daysAgo(95)));
@@ -149,7 +157,6 @@ class MallAfterSaleServiceImplTests {
         assertEquals("订单确认收货已超过3个月，无法申请售后", result.getReasonMessage());
     }
 
-    @SuppressWarnings("unchecked")
     @Test
     void getAfterSaleEligibility_ShouldReturnItemsAndAmounts() {
         doReturn(66L).when(service).getUserId();
@@ -158,10 +165,10 @@ class MallAfterSaleServiceImplTests {
                 createOrderItem(9L, new BigDecimal("19.90"), BigDecimal.ZERO),
                 createOrderItem(10L, new BigDecimal("39.90"), BigDecimal.ZERO)
         ));
-        LambdaQueryChainWrapper<MallAfterSale> activeQuery1 = mock(LambdaQueryChainWrapper.class, RETURNS_SELF);
-        LambdaQueryChainWrapper<MallAfterSale> activeQuery2 = mock(LambdaQueryChainWrapper.class, RETURNS_SELF);
-        when(activeQuery1.count()).thenReturn(0L);
-        when(activeQuery2.count()).thenReturn(0L);
+        TestLambdaQueryChainWrapper<MallAfterSale> activeQuery1 = createQueryWrapper(MallAfterSale.class);
+        TestLambdaQueryChainWrapper<MallAfterSale> activeQuery2 = createQueryWrapper(MallAfterSale.class);
+        activeQuery1.setCountResult(0L);
+        activeQuery2.setCountResult(0L);
         mockAfterSaleQuerySequence(activeQuery1, activeQuery2);
 
         AfterSaleEligibilityRequest request = new AfterSaleEligibilityRequest();
@@ -179,17 +186,16 @@ class MallAfterSaleServiceImplTests {
         assertEquals(new BigDecimal("19.90"), result.getItems().getFirst().getRefundableAmount());
     }
 
-    @SuppressWarnings("unchecked")
     @Test
     void applyAfterSale_ShouldAutoConvertSingleItemToOrderScopeAndIgnoreClientRefundAmount() {
         doReturn(66L).when(service).getUserId();
         doReturn("tester").when(service).getUsername();
         mockOrderQuery(createCompletedOrder("O202511130001", new BigDecimal("29.90"), BigDecimal.ZERO, daysAgo(5)));
         mockOrderItemsQuery(List.of(createOrderItem(9L, new BigDecimal("29.90"), new BigDecimal("10.00"))));
-        LambdaQueryChainWrapper<MallAfterSale> activeQuery = mock(LambdaQueryChainWrapper.class, RETURNS_SELF);
-        LambdaQueryChainWrapper<MallAfterSale> existingQuery = mock(LambdaQueryChainWrapper.class, RETURNS_SELF);
-        when(activeQuery.count()).thenReturn(0L);
-        when(existingQuery.one()).thenReturn(null);
+        TestLambdaQueryChainWrapper<MallAfterSale> activeQuery = createQueryWrapper(MallAfterSale.class);
+        TestLambdaQueryChainWrapper<MallAfterSale> existingQuery = createQueryWrapper(MallAfterSale.class);
+        activeQuery.setCountResult(0L);
+        existingQuery.setOneResult(null);
         mockAfterSaleQuerySequence(activeQuery, existingQuery);
         doAnswer(invocation -> {
             MallAfterSale afterSale = invocation.getArgument(0);
@@ -237,22 +243,62 @@ class MallAfterSaleServiceImplTests {
         assertEquals("整单申请仅支持仅退款", exception.getMessage());
     }
 
+    /**
+     * 创建查询包装器测试替身。
+     *
+     * @param entityClass 实体类型
+     * @param <T>         实体泛型
+     * @return 查询包装器测试替身
+     */
+    private <T> TestLambdaQueryChainWrapper<T> createQueryWrapper(Class<T> entityClass) {
+        return new TestLambdaQueryChainWrapper<>(entityClass);
+    }
+
+    /**
+     * 初始化 MyBatis-Plus 的实体元数据缓存。
+     *
+     * @param entityClass 实体类型
+     */
+    private void initializeTableInfo(Class<?> entityClass) {
+        if (TableInfoHelper.getTableInfo(entityClass) != null) {
+            return;
+        }
+        MapperBuilderAssistant builderAssistant = new MapperBuilderAssistant(new MybatisConfiguration(),
+                entityClass.getSimpleName() + "Mapper");
+        builderAssistant.setCurrentNamespace(entityClass.getName() + "Mapper");
+        TableInfoHelper.initTableInfo(builderAssistant, entityClass);
+    }
+
+    /**
+     * 模拟订单查询结果。
+     *
+     * @param order 订单查询结果
+     */
     private void mockOrderQuery(MallOrder order) {
-        @SuppressWarnings("unchecked")
-        LambdaQueryChainWrapper<MallOrder> orderQuery = mock(LambdaQueryChainWrapper.class, RETURNS_SELF);
+        TestLambdaQueryChainWrapper<MallOrder> orderQuery = createQueryWrapper(MallOrder.class);
+        orderQuery.setOneResult(order);
         when(mallOrderService.lambdaQuery()).thenReturn(orderQuery);
-        when(orderQuery.one()).thenReturn(order);
     }
 
+    /**
+     * 模拟订单项查询结果。
+     *
+     * @param orderItems 订单项列表
+     */
     private void mockOrderItemsQuery(List<MallOrderItem> orderItems) {
-        @SuppressWarnings("unchecked")
-        LambdaQueryChainWrapper<MallOrderItem> orderItemQuery = mock(LambdaQueryChainWrapper.class, RETURNS_SELF);
+        TestLambdaQueryChainWrapper<MallOrderItem> orderItemQuery = createQueryWrapper(MallOrderItem.class);
+        orderItemQuery.setListResult(orderItems);
         when(mallOrderItemService.lambdaQuery()).thenReturn(orderItemQuery);
-        when(orderItemQuery.list()).thenReturn(orderItems);
     }
 
-    private void mockAfterSaleQuerySequence(LambdaQueryChainWrapper<MallAfterSale> first,
-                                            LambdaQueryChainWrapper<MallAfterSale> second) {
+    /**
+     * 模拟售后查询包装器的连续调用结果。
+     *
+     * @param first  第一次调用返回的包装器
+     * @param second 第二次调用返回的包装器
+     */
+    private void mockAfterSaleQuerySequence(TestLambdaQueryChainWrapper<MallAfterSale> first,
+                                            TestLambdaQueryChainWrapper<MallAfterSale> second) {
         doReturn(first, second).when(service).lambdaQuery();
     }
 
@@ -325,5 +371,79 @@ class MallAfterSaleServiceImplTests {
                 .description("用户申请退款")
                 .createTime(new Date())
                 .build();
+    }
+
+    /**
+     * 售后测试使用的查询包装器替身。
+     *
+     * @param <T> 实体泛型
+     */
+    private static final class TestLambdaQueryChainWrapper<T> extends LambdaQueryChainWrapper<T> {
+
+        /**
+         * 单条查询结果。
+         */
+        private T oneResult;
+
+        /**
+         * 列表查询结果。
+         */
+        private List<T> listResult = List.of();
+
+        /**
+         * 聚合计数结果。
+         */
+        private Long countResult = 0L;
+
+        /**
+         * 构造查询包装器替身。
+         *
+         * @param entityClass 实体类型
+         */
+        private TestLambdaQueryChainWrapper(Class<T> entityClass) {
+            super(entityClass);
+        }
+
+        /**
+         * 设置单条查询结果。
+         *
+         * @param oneResult 单条查询结果
+         */
+        private void setOneResult(T oneResult) {
+            this.oneResult = oneResult;
+        }
+
+        /**
+         * 设置列表查询结果。
+         *
+         * @param listResult 列表查询结果
+         */
+        private void setListResult(List<T> listResult) {
+            this.listResult = listResult == null ? List.of() : listResult;
+        }
+
+        /**
+         * 设置聚合计数结果。
+         *
+         * @param countResult 聚合计数结果
+         */
+        private void setCountResult(Long countResult) {
+            this.countResult = countResult == null ? 0L : countResult;
+        }
+
+        @Override
+        public T one() {
+            return oneResult;
+        }
+
+        @Override
+        public List<T> list() {
+            return listResult;
+        }
+
+        @Override
+        public Long count() {
+            return countResult;
+        }
     }
 }

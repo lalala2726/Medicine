@@ -9,6 +9,8 @@ import lombok.EqualsAndHashCode;
 
 /**
  * 客户端智能体商品搜索请求。
+ *
+ * @author Chuang
  */
 @Data
 @EqualsAndHashCode(callSuper = true)
@@ -32,6 +34,35 @@ public class ClientAgentProductSearchRequest extends PageRequest {
      */
     @Schema(description = "商品用途或适用场景", example = "缓解感冒引起的头痛、鼻塞")
     private String usage;
+
+    /**
+     * 构造一个经过规范化处理的新请求对象，避免直接修改入参。
+     *
+     * @param source 原始请求
+     * @return 规范化后的新请求对象
+     */
+    public static ClientAgentProductSearchRequest sanitize(ClientAgentProductSearchRequest source) {
+        ClientAgentProductSearchRequest sanitized = new ClientAgentProductSearchRequest();
+        if (source == null) {
+            return sanitized;
+        }
+        sanitized.setKeyword(trim(source.getKeyword()));
+        sanitized.setCategoryName(trim(source.getCategoryName()));
+        sanitized.setUsage(trim(source.getUsage()));
+        sanitized.setPageNum(Math.max(source.getPageNum(), 1));
+        sanitized.setPageSize(Math.max(source.getPageSize(), 1));
+        return sanitized;
+    }
+
+    /**
+     * 去除字符串首尾空白。
+     *
+     * @param value 原始字符串
+     * @return 去除首尾空白后的值
+     */
+    private static String trim(String value) {
+        return value == null ? null : value.trim();
+    }
 
     /**
      * 校验搜索关键词、分类名称、用途至少提供一项。

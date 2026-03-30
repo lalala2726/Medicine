@@ -22,6 +22,7 @@ import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
 
@@ -86,16 +87,30 @@ class AllowSystemAuthenticationFilterTests {
     }
 
     @Test
-    void doFilter_WhenAuthorizationHeaderExists_ShouldReturn401() throws Exception {
+    void doFilter_WhenAuthorizationHeaderExistsAndRequestValid_ShouldPass() throws Exception {
         when(endpointRegistry.requiresSystemAuth(any())).thenReturn(true);
+        when(valueOperations.setIfAbsent(anyString(), eq("1"), anyLong(), eq(TimeUnit.SECONDS))).thenReturn(true);
         MockHttpServletRequest request = buildSignedRequest(Instant.now().getEpochSecond());
         request.addHeader(SystemAuthHeaders.AUTHORIZATION, "Bearer abc");
         MockHttpServletResponse response = new MockHttpServletResponse();
 
         filter.doFilter(request, response, new MockFilterChain());
 
+        assertEquals(200, response.getStatus());
+        verify(valueOperations).setIfAbsent(anyString(), eq("1"), anyLong(), eq(TimeUnit.SECONDS));
+    }
+
+    @Test
+    void doFilter_WhenAuthorizationHeaderExistsAndMissingSystemHeaders_ShouldReturn401() throws Exception {
+        when(endpointRegistry.requiresSystemAuth(any())).thenReturn(true);
+        MockHttpServletRequest request = new MockHttpServletRequest("GET", "/internal/path");
+        request.addHeader(SystemAuthHeaders.AUTHORIZATION, "Bearer abc");
+        MockHttpServletResponse response = new MockHttpServletResponse();
+
+        filter.doFilter(request, response, new MockFilterChain());
+
         assertEquals(401, response.getStatus());
-        verify(valueOperations, never()).setIfAbsent(anyString(), eq("1"), anyLong(), eq(TimeUnit.SECONDS));
+        assertTrue(response.getContentAsString().contains("Missing required system-auth headers"));
     }
 
     @Test
@@ -122,15 +137,17 @@ class AllowSystemAuthenticationFilterTests {
     }
 
     @Test
-    void doFilter_WhenSignatureMismatch_ShouldReturn401() throws Exception {
+    void doFilter_WhenAuthorizationHeaderExistsAndSignatureMismatch_ShouldReturn401() throws Exception {
         when(endpointRegistry.requiresSystemAuth(any())).thenReturn(true);
         when(clientRegistry.findEnabledClient(APP_ID)).thenReturn(Optional.of(enabledClient(APP_ID, "another-secret")));
         MockHttpServletRequest request = buildSignedRequest(Instant.now().getEpochSecond());
+        request.addHeader(SystemAuthHeaders.AUTHORIZATION, "Bearer abc");
         MockHttpServletResponse response = new MockHttpServletResponse();
 
         filter.doFilter(request, response, new MockFilterChain());
 
         assertEquals(401, response.getStatus());
+        assertTrue(response.getContentAsString().contains("Signature mismatch"));
     }
 
     @Test

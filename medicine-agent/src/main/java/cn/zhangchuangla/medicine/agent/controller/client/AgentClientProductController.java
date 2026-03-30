@@ -1,6 +1,5 @@
 package cn.zhangchuangla.medicine.agent.controller.client;
 
-import cn.zhangchuangla.medicine.agent.annotation.InternalAgentHeaderTrace;
 import cn.zhangchuangla.medicine.agent.model.vo.client.ClientAgentProductDetailVo;
 import cn.zhangchuangla.medicine.agent.model.vo.client.ClientAgentProductSearchVo;
 import cn.zhangchuangla.medicine.agent.model.vo.client.ClientAgentProductSpecVo;
@@ -32,7 +31,6 @@ import java.util.List;
 @RestController
 @RequestMapping("/agent/client/product")
 @Tag(name = "客户端智能体商品工具", description = "用于客户端智能体商品查询接口")
-@InternalAgentHeaderTrace
 @Validated
 @RequiredArgsConstructor
 public class AgentClientProductController extends BaseController {
@@ -52,17 +50,9 @@ public class AgentClientProductController extends BaseController {
     @GetMapping("/search")
     @Operation(summary = "搜索商品", description = "按关键词分页搜索商品")
     public AjaxResult<TableDataResult> searchProducts(@Validated ClientAgentProductSearchRequest request) {
-        ClientAgentProductSearchRequest safeRequest = request == null ? new ClientAgentProductSearchRequest() : request;
-        String keyword = safeRequest.getKeyword();
-        safeRequest.setKeyword(keyword == null ? null : keyword.trim());
-        String categoryName = safeRequest.getCategoryName();
-        safeRequest.setCategoryName(categoryName == null ? null : categoryName.trim());
-        String usage = safeRequest.getUsage();
-        safeRequest.setUsage(usage == null ? null : usage.trim());
-        safeRequest.setPageNum(Math.max(safeRequest.getPageNum(), 1));
-        safeRequest.setPageSize(Math.max(safeRequest.getPageSize(), 1));
+        ClientAgentProductSearchRequest safeRequest = ClientAgentProductSearchRequest.sanitize(request);
         Page<ClientAgentProductSearchDto> page = clientAgentProductService.searchProducts(safeRequest);
-        List<ClientAgentProductSearchVo> rows = copyListProperties(page.getRecords(), ClientAgentProductSearchVo.class);
+        List<ClientAgentProductSearchVo> rows = copyListProperties(page, ClientAgentProductSearchVo.class);
         return getTableData(page, rows);
     }
 
@@ -80,7 +70,9 @@ public class AgentClientProductController extends BaseController {
         MallProductDetailDto detail = clientAgentProductService.getProductDetail(productId);
         ClientAgentProductDetailVo target = copyProperties(detail, ClientAgentProductDetailVo.class);
         DrugDetailDto drugDetailDto = detail.getDrugDetail();
-        target.setDrugDetail(copyProperties(drugDetailDto, ClientAgentProductDetailVo.DrugDetail.class));
+        if (drugDetailDto != null) {
+            target.setDrugDetail(copyProperties(drugDetailDto, ClientAgentProductDetailVo.DrugDetail.class));
+        }
         return success(target);
     }
 

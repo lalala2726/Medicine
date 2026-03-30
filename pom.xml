@@ -40,8 +40,7 @@
         <gson.version>2.11.0</gson.version>
         <swagger-annotations.version>2.2.27</swagger-annotations.version>
         <alipay-sdk.version>4.34.0.ALL</alipay-sdk.version>
-        <redisson.version>3.52.0</redisson.version>
-        <lombok.version>1.18.34</lombok.version>
+        <lombok.version>1.18.42</lombok.version>
         <h2.version>2.3.232</h2.version>
         <exp4j.version>0.4.8</exp4j.version>
         <zxing.version>3.5.2</zxing.version>
@@ -343,11 +342,6 @@
                 <version>${lombok.version}</version>
             </dependency>
             <dependency>
-                <groupId>org.redisson</groupId>
-                <artifactId>redisson</artifactId>
-                <version>${redisson.version}</version>
-            </dependency>
-            <dependency>
                 <groupId>org.apache.dubbo</groupId>
                 <artifactId>dubbo-spring-boot-starter</artifactId>
                 <version>${dubbo.version}</version>
@@ -380,4 +374,23 @@
         <module>medicine-agent</module>
         <module>medicine-common/medicine-common-http-client</module>
     </modules>
+
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-compiler-plugin</artifactId>
+                <configuration>
+                    <parameters>true</parameters>
+                    <annotationProcessorPaths>
+                        <path>
+                            <groupId>org.projectlombok</groupId>
+                            <artifactId>lombok</artifactId>
+                            <version>${lombok.version}</version>
+                        </path>
+                    </annotationProcessorPaths>
+                </configuration>
+            </plugin>
+        </plugins>
+    </build>
 </project>

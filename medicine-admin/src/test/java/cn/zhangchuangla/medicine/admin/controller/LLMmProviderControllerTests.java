@@ -104,7 +104,6 @@ class LLMmProviderControllerTests {
         assertEquals(200, result.getCode());
         assertEquals("OpenAI", result.getData().getProviderName());
         assertEquals("openai", result.getData().getProviderType());
-        assertEquals("sk-detail", result.getData().getApiKey());
         assertEquals(1, result.getData().getModels().size());
         verify(llmProviderFacade).getProviderDetail(1L);
     }

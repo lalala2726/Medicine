@@ -8,23 +8,42 @@ import lombok.Data;
 import java.lang.reflect.Type;
 
 /**
+ * 通用业务响应对象。
+ *
+ * @param <T> 业务数据类型
  * @author Chuang
- * <p>
  * created on 2026/2/1
  */
 @Data
 public class BaseResponse<T> {
 
+    /**
+     * 业务成功状态码。
+     */
     private static final int SUCCESS_CODE = 200;
 
+    /**
+     * 业务状态码。
+     */
     private int code;
 
+    /**
+     * 业务消息。
+     */
     private String message;
 
+    /**
+     * 业务数据。
+     */
     private T data;
 
     /**
      * 根据 dataClass 解析 JSON 为 BaseResponse。
+     *
+     * @param json      原始 JSON
+     * @param dataClass 业务数据类型
+     * @param <T>       业务数据泛型
+     * @return 解析后的 BaseResponse
      */
     public static <T> BaseResponse<T> fromJson(String json, Class<T> dataClass) {
         Type type = TypeToken.getParameterized(BaseResponse.class, dataClass).getType();
@@ -33,6 +52,11 @@ public class BaseResponse<T> {
 
     /**
      * 根据 dataType 解析 JSON 为 BaseResponse（支持泛型）。
+     *
+     * @param json     原始 JSON
+     * @param dataType 业务数据类型
+     * @param <T>      业务数据泛型
+     * @return 解析后的 BaseResponse
      */
     public static <T> BaseResponse<T> fromJson(String json, Type dataType) {
         Type type = TypeToken.getParameterized(BaseResponse.class, dataType).getType();
@@ -106,6 +130,12 @@ public class BaseResponse<T> {
         }
     }
 
+    /**
+     * 将 data 字段转为 JSON。
+     *
+     * @param httpResult HTTP 调用结果
+     * @return data JSON 字符串
+     */
     private static String toDataJson(HttpResult<String> httpResult) {
         BaseResponse<Object> response = parseAndValidate(httpResult);
         Object data = response.getData();
@@ -115,6 +145,12 @@ public class BaseResponse<T> {
         return JSONUtils.toJson(data);
     }
 
+    /**
+     * 解析并校验业务响应。
+     *
+     * @param httpResult HTTP 调用结果
+     * @return 解析后的业务响应
+     */
     private static BaseResponse<Object> parseAndValidate(HttpResult<String> httpResult) {
         if (httpResult == null) {
             throw new HttpClientException("HttpResult 不能为空");

@@ -6,6 +6,8 @@ import cn.zhangchuangla.medicine.client.elasticsearch.service.MallProductSearchS
 import cn.zhangchuangla.medicine.client.model.request.MallProductSearchRequest;
 import cn.zhangchuangla.medicine.common.core.enums.ResponseCode;
 import cn.zhangchuangla.medicine.common.core.exception.ServiceException;
+import cn.zhangchuangla.medicine.model.constants.MallProductTagConstants;
+import cn.zhangchuangla.medicine.model.dto.MallProductTagFilterGroup;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.PageRequest;
@@ -24,18 +26,39 @@ import java.util.*;
 
 /**
  * 商品搜索服务实现。
+ *
+ * @author Chuang
  */
 @Slf4j
 @Service
 @RequiredArgsConstructor
 public class MallProductSearchServiceImpl implements MallProductSearchService {
 
+    /**
+     * 单次查询允许的最大页大小。
+     */
     private static final int MAX_PAGE_SIZE = 50;
+
+    /**
+     * 自动补全允许的最大返回数量。
+     */
     private static final int MAX_SUGGEST_SIZE = 20;
 
+    /**
+     * 商品搜索仓库。
+     */
     private final MallProductSearchRepository searchRepository;
+
+    /**
+     * Elasticsearch 操作对象。
+     */
     private final ElasticsearchOperations elasticsearchOperations;
 
+    /**
+     * 保存商品索引文档。
+     *
+     * @param document 商品索引文档
+     */
     @Override
     public void save(MallProductDocument document) {
         if (document == null || document.getId() == null) {
@@ -45,6 +68,11 @@ public class MallProductSearchServiceImpl implements MallProductSearchService {
         searchRepository.save(document);
     }
 
+    /**
+     * 批量保存商品索引文档。
+     *
+     * @param documents 商品索引文档列表
+     */
     @Override
     public void saveAll(List<MallProductDocument> documents) {
         if (CollectionUtils.isEmpty(documents)) {
@@ -53,6 +81,11 @@ public class MallProductSearchServiceImpl implements MallProductSearchService {
         searchRepository.saveAll(documents);
     }
 
+    /**
+     * 删除商品索引文档。
+     *
+     * @param productId 商品ID
+     */
     @Override
     public void deleteById(Long productId) {
         if (productId == null) {
@@ -61,9 +94,14 @@ public class MallProductSearchServiceImpl implements MallProductSearchService {
         searchRepository.deleteById(productId);
     }
 
+    /**
+     * 搜索商品索引。
+     *
+     * @param request 搜索请求
+     * @return 搜索结果
+     */
     @Override
     public SearchHits<MallProductDocument> search(MallProductSearchRequest request) {
-        // 限制最大查询深度，防止深分页导致性能问题
         int maxOffset = 500;
         int pageNum = Math.max(request.getPageNum(), 1);
         int pageSize = Math.min(Math.max(request.getPageSize(), 1), MAX_PAGE_SIZE);
@@ -71,13 +109,11 @@ public class MallProductSearchServiceImpl implements MallProductSearchService {
         if (offset + pageSize > maxOffset) {
             throw new ServiceException(ResponseCode.PARAM_ERROR, "查询数据总数不能超过" + maxOffset + "条");
         }
-
         if (!hasSearchCondition(request)) {
             throw new ServiceException(ResponseCode.PARAM_ERROR, "搜索条件不能为空");
         }
 
         Criteria criteria = buildSearchCriteria(request);
-        // 默认仅查询上架商品，传了 status 则使用入参
         if (request.getStatus() != null) {
             criteria = criteria.and(new Criteria("status").is(request.getStatus()));
         } else {
@@ -91,10 +127,16 @@ public class MallProductSearchServiceImpl implements MallProductSearchService {
         if (sort.isSorted()) {
             query.addSort(sort);
         }
-
         return elasticsearchOperations.search(query, MallProductDocument.class);
     }
 
+    /**
+     * 商品搜索自动补全。
+     *
+     * @param keyword 搜索关键字
+     * @param size    返回数量
+     * @return 自动补全结果
+     */
     @Override
     public List<String> suggest(String keyword, int size) {
         if (!StringUtils.hasText(keyword)) {
@@ -125,10 +167,16 @@ public class MallProductSearchServiceImpl implements MallProductSearchService {
                 break;
             }
         }
-
         return suggestions.stream().limit(limit).toList();
     }
 
+    /**
+     * 追加自动补全候选项。
+     *
+     * @param value       原始值
+     * @param suggestions 候选集合
+     * @param limit       返回上限
+     */
     private void addSuggestion(String value, Set<String> suggestions, int limit) {
         if (!StringUtils.hasText(value) || suggestions.size() >= limit) {
             return;
@@ -137,7 +185,10 @@ public class MallProductSearchServiceImpl implements MallProductSearchService {
     }
 
     /**
-     * 构建检索条件：名称（含拼音）、分类名、品牌、通用名、功效均可命中。
+     * 构建检索条件。
+     *
+     * @param request 搜索请求
+     * @return 检索条件
      */
     private Criteria buildSearchCriteria(MallProductSearchRequest request) {
         List<Criteria> criteriaList = new ArrayList<>();
@@ -147,9 +198,13 @@ public class MallProductSearchServiceImpl implements MallProductSearchService {
         if (StringUtils.hasText(request.getCategoryName())) {
             criteriaList.add(new Criteria("categoryName").is(request.getCategoryName().trim()));
         }
+        if (request.getCategoryId() != null) {
+            criteriaList.add(new Criteria("categoryId").is(request.getCategoryId()));
+        }
         if (StringUtils.hasText(request.getEfficacy())) {
             criteriaList.add(buildUsageCriteria(request.getEfficacy()));
         }
+        appendTagCriteria(criteriaList, request.getTagFilterGroups());
 
         Criteria criteria = criteriaList.getFirst();
         for (int i = 1; i < criteriaList.size(); i++) {
@@ -167,7 +222,9 @@ public class MallProductSearchServiceImpl implements MallProductSearchService {
     private boolean hasSearchCondition(MallProductSearchRequest request) {
         return StringUtils.hasText(request.getKeyword())
                 || StringUtils.hasText(request.getCategoryName())
-                || StringUtils.hasText(request.getEfficacy());
+                || request.getCategoryId() != null
+                || StringUtils.hasText(request.getEfficacy())
+                || !CollectionUtils.isEmpty(request.getTagIds());
     }
 
     /**
@@ -197,7 +254,8 @@ public class MallProductSearchServiceImpl implements MallProductSearchService {
                 new Criteria("categoryName").matches(normalizedKeyword),
                 new Criteria("brand").matches(normalizedKeyword),
                 new Criteria("commonName").matches(normalizedKeyword),
-                new Criteria("efficacy").matches(normalizedKeyword)
+                new Criteria("efficacy").matches(normalizedKeyword),
+                new Criteria("tagNames").matches(normalizedKeyword)
         };
         Criteria keywordCriteria = combineWithOr(matchFields);
 
@@ -210,10 +268,15 @@ public class MallProductSearchServiceImpl implements MallProductSearchService {
             };
             keywordCriteria = keywordCriteria.or(combineWithOr(keywordPrefixFields));
         }
-
         return keywordCriteria;
     }
 
+    /**
+     * 以 OR 组合多个 Criteria。
+     *
+     * @param criteriaArr Criteria 数组
+     * @return 组合后的 Criteria
+     */
     private Criteria combineWithOr(Criteria[] criteriaArr) {
         Criteria combined = Objects.requireNonNull(criteriaArr[0]);
         for (int i = 1; i < criteriaArr.length; i++) {
@@ -222,6 +285,40 @@ public class MallProductSearchServiceImpl implements MallProductSearchService {
         return combined;
     }
 
+    /**
+     * 追加按类型分组后的标签过滤条件。
+     *
+     * @param criteriaList 条件列表
+     * @param filterGroups 标签分组
+     */
+    private void appendTagCriteria(List<Criteria> criteriaList, List<MallProductTagFilterGroup> filterGroups) {
+        if (CollectionUtils.isEmpty(filterGroups)) {
+            return;
+        }
+        for (MallProductTagFilterGroup group : filterGroups) {
+            if (group == null || !StringUtils.hasText(group.getTypeCode()) || CollectionUtils.isEmpty(group.getTagIds())) {
+                continue;
+            }
+            Criteria[] criteriaArr = group.getTagIds().stream()
+                    .filter(Objects::nonNull)
+                    .distinct()
+                    .map(tagId -> new Criteria("tagTypeBindings").is(
+                            group.getTypeCode() + MallProductTagConstants.TYPE_BINDING_SEPARATOR + tagId
+                    ))
+                    .toArray(Criteria[]::new);
+            if (criteriaArr.length > 0) {
+                criteriaList.add(combineWithOr(criteriaArr));
+            }
+        }
+    }
+
+    /**
+     * 追加价格过滤条件。
+     *
+     * @param criteria 现有条件
+     * @param request  搜索请求
+     * @return 追加价格过滤后的条件
+     */
     private Criteria applyPriceCriteria(Criteria criteria, MallProductSearchRequest request) {
         if (request.getPrice() != null) {
             return criteria.and(new Criteria("price").is(request.getPrice()));
@@ -240,6 +337,12 @@ public class MallProductSearchServiceImpl implements MallProductSearchService {
         return criteria;
     }
 
+    /**
+     * 构建排序条件。
+     *
+     * @param request 搜索请求
+     * @return 排序条件
+     */
     private Sort buildSort(MallProductSearchRequest request) {
         Sort.Direction priceDirection = parseDirection(request.getPriceSort());
         Sort.Direction salesDirection = parseDirection(request.getSalesSort());
@@ -255,6 +358,12 @@ public class MallProductSearchServiceImpl implements MallProductSearchService {
         return Sort.unsorted();
     }
 
+    /**
+     * 解析排序方向。
+     *
+     * @param direction 排序方向
+     * @return Spring Sort 排序方向
+     */
     private Sort.Direction parseDirection(String direction) {
         if (!StringUtils.hasText(direction)) {
             return null;

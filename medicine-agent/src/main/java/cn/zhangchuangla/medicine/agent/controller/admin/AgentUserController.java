@@ -1,6 +1,5 @@
 package cn.zhangchuangla.medicine.agent.controller.admin;
 
-import cn.zhangchuangla.medicine.agent.annotation.InternalAgentHeaderTrace;
 import cn.zhangchuangla.medicine.agent.model.vo.admin.*;
 import cn.zhangchuangla.medicine.agent.service.UserService;
 import cn.zhangchuangla.medicine.common.core.base.AjaxResult;
@@ -32,7 +31,6 @@ import java.util.List;
 @RestController
 @RequestMapping("/agent/admin/user")
 @Tag(name = "管理端智能体用户工具", description = "用于管理端智能体用户查询接口")
-@InternalAgentHeaderTrace
 @RequiredArgsConstructor
 public class AgentUserController extends BaseController {
 

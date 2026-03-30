@@ -38,7 +38,7 @@ public class GlobalExceptionHandel {
 
 
     /**
-     * 处理业务逻辑中抛出的自定义业务W异常。
+     * 处理业务逻辑中抛出的自定义业务异常。
      * ServiceException 通常表示在业务流程中检测到的错误，例如非法操作或不符合预期的状态。
      *
      * @param exception 包含错误信息和状态码的异常对象

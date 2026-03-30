@@ -90,7 +90,6 @@ public class JwtTokenProvider {
      */
     public Claims getClaimsFromToken(String token) {
         try {
-            log.info("解析JWT: {}", token);
             Jws<Claims> jwsClaims = Jwts.parserBuilder()
                     .setSigningKey(jwtSecretKey)
                     .build()

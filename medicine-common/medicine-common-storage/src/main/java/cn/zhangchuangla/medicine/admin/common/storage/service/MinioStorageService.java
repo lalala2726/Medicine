@@ -1,6 +1,5 @@
 package cn.zhangchuangla.medicine.admin.common.storage.service;
 
-import cn.zhangchuangla.medicine.admin.common.storage.model.MinioFileObject;
 import io.minio.messages.Bucket;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -58,7 +57,7 @@ public interface MinioStorageService {
      *
      * @param bucketName 存储桶名称
      * @param objectName 对象名称
-     * @return 文件访问地址
+     * @return 文件访问地址；配置了公网前缀时返回 CDN 地址，否则返回 MinIO 原始地址
      */
     String getFileUrl(String bucketName, String objectName);
 
@@ -78,11 +77,4 @@ public interface MinioStorageService {
      */
     boolean fileExists(String bucketName, String objectName);
 
-    /**
-     * 根据完整的 MinIO 访问地址下载文件
-     *
-     * @param fileUrl MinIO 中文件的完整 URL（例如 <a href="http://minio-host/bucket/path/example.txt">...</a>）
-     * @return 带桶名、对象路径、文件名、Content-Type 与二进制内容的封装对象
-     */
-    MinioFileObject fetchFileByUrl(String fileUrl);
 }

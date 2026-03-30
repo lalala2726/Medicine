@@ -94,6 +94,12 @@ minio:
   # 默认文件桶。
   # 示例: medicine
   bucket-name: ${MINIO_BUCKET_NAME:medicine}
+  # 文件上传路径前缀，防止对象直接落在桶根目录。
+  # 示例: resources
+  upload-path: ${MINIO_UPLOAD_PATH:resources}
+  # 文件公网访问前缀，配置后上传接口返回该前缀下的 CDN 地址。
+  # 示例: https://medicine-cdn.zhangchuangla.cn/
+  public-url-prefix: ${MINIO_PUBLIC_URL_PREFIX:}
 
 file:
   upload:

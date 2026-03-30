@@ -1,6 +1,5 @@
 package cn.zhangchuangla.medicine.agent.controller.admin;
 
-import cn.zhangchuangla.medicine.agent.annotation.InternalAgentHeaderTrace;
 import cn.zhangchuangla.medicine.agent.model.vo.admin.AgentDrugDetailVo;
 import cn.zhangchuangla.medicine.agent.model.vo.admin.AgentProductDetailVo;
 import cn.zhangchuangla.medicine.agent.model.vo.admin.AgentProductListVo;
@@ -34,7 +33,6 @@ import java.util.List;
 @RestController
 @RequestMapping("/agent/admin/product")
 @Tag(name = "管理端智能体商品工具", description = "用于管理端智能体商品查询接口")
-@InternalAgentHeaderTrace
 @RequiredArgsConstructor
 public class AgentProductController extends BaseController {
 

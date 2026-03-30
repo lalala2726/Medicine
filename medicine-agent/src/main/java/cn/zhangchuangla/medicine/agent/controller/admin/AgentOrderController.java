@@ -1,6 +1,5 @@
 package cn.zhangchuangla.medicine.agent.controller.admin;
 
-import cn.zhangchuangla.medicine.agent.annotation.InternalAgentHeaderTrace;
 import cn.zhangchuangla.medicine.agent.model.request.AdminMallOrderListRequest;
 import cn.zhangchuangla.medicine.agent.model.vo.admin.AdminMallOrderListVo;
 import cn.zhangchuangla.medicine.agent.model.vo.admin.MallOrderProductInfoVo;
@@ -36,7 +35,6 @@ import java.util.List;
 @RestController
 @RequestMapping("/agent/admin/order")
 @Tag(name = "管理端智能体订单工具", description = "用于管理端智能体订单查询接口")
-@InternalAgentHeaderTrace
 @RequiredArgsConstructor
 public class AgentOrderController extends BaseController {
 

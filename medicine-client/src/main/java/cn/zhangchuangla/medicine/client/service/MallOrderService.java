@@ -164,8 +164,7 @@ public interface MallOrderService extends IService<MallOrder> {
     /**
      * 获取订单支付信息（待支付订单重进支付页使用）。
      *
-     * @param request 订单支付信息请求参数
      * @return 支付信息
      */
-    OrderPayInfoVo getOrderPayInfo(OrderPayInfoRequest request);
+    OrderPayInfoVo getOrderPayInfo(String orderNo);
 }

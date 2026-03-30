@@ -7,10 +7,7 @@ import cn.zhangchuangla.medicine.agent.support.AgentVoDescriptionResolver;
 import cn.zhangchuangla.medicine.common.core.exception.GlobalExceptionHandel;
 import cn.zhangchuangla.medicine.common.security.entity.AuthUser;
 import cn.zhangchuangla.medicine.common.security.entity.SysUserDetails;
-import cn.zhangchuangla.medicine.model.dto.ClientAgentProductSearchDto;
-import cn.zhangchuangla.medicine.model.dto.ClientAgentProductSpecDto;
-import cn.zhangchuangla.medicine.model.dto.DrugDetailDto;
-import cn.zhangchuangla.medicine.model.dto.MallProductDetailDto;
+import cn.zhangchuangla.medicine.model.dto.*;
 import cn.zhangchuangla.medicine.model.request.ClientAgentProductSearchRequest;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -65,8 +62,10 @@ class AgentClientProductControllerTests {
         setupAuthentication(99L);
         ClientAgentProductSearchRequest request = new ClientAgentProductSearchRequest();
         request.setKeyword("  感冒灵  ");
-        request.setPageNum(1);
-        request.setPageSize(10);
+        request.setCategoryName(" 感冒药 ");
+        request.setUsage(" 缓解头痛 ");
+        request.setPageNum(0);
+        request.setPageSize(0);
         productService.searchPage = createSearchPage();
 
         var result = controller.searchProducts(request);
@@ -74,6 +73,16 @@ class AgentClientProductControllerTests {
         assertEquals(200, result.getCode());
         assertTrue(productService.searchInvoked);
         assertEquals("感冒灵", productService.capturedRequest.getKeyword());
+        assertEquals("感冒药", productService.capturedRequest.getCategoryName());
+        assertEquals("缓解头痛", productService.capturedRequest.getUsage());
+        assertEquals(1, productService.capturedRequest.getPageNum());
+        assertEquals(1, productService.capturedRequest.getPageSize());
+        assertEquals("  感冒灵  ", request.getKeyword());
+        assertEquals(" 感冒药 ", request.getCategoryName());
+        assertEquals(" 缓解头痛 ", request.getUsage());
+        assertEquals(0, request.getPageNum());
+        assertEquals(0, request.getPageSize());
+        assertNotSame(request, productService.capturedRequest);
         assertNotNull(result.getData());
         assertEquals(1, result.getData().getRows().size());
         assertInstanceOf(ClientAgentProductSearchVo.class, result.getData().getRows().getFirst());
@@ -166,11 +175,13 @@ class AgentClientProductControllerTests {
     }
 
     @Test
-    void searchProducts_ShouldRejectWhenUnauthenticated() throws Exception {
+    void searchProducts_ShouldAllowAnonymousAtControllerLayer() throws Exception {
+        productService.searchPage = createSearchPage();
+
         mockMvc.perform(get("/agent/client/product/search").param("keyword", "感冒灵"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.code").value(401))
-                .andExpect(jsonPath("$.message").value("用户未登录"));
+                .andExpect(jsonPath("$.code").value(200))
+                .andExpect(jsonPath("$.data.rows[0].productName").value("999感冒灵颗粒"));
     }
 
     private void setupAuthentication(Long userId) {
@@ -242,6 +253,16 @@ class AgentClientProductControllerTests {
             this.detailInvoked = true;
             this.capturedProductId = productId;
             return productDetail;
+        }
+
+        @Override
+        public ClientAgentProductCardsDto getProductCards(List<Long> productIds) {
+            throw new UnsupportedOperationException("not needed in this test");
+        }
+
+        @Override
+        public ClientAgentProductPurchaseCardsDto getProductPurchaseCards(List<ClientAgentProductPurchaseQueryDto> items) {
+            throw new UnsupportedOperationException("not needed in this test");
         }
 
         @Override
