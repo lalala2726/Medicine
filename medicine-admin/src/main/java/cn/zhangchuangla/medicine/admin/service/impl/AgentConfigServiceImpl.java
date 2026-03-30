@@ -19,6 +19,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
 
 import java.util.*;
+import java.util.function.BiConsumer;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
@@ -97,26 +98,7 @@ public class AgentConfigServiceImpl implements AgentConfigService, BaseService {
      */
     @Override
     public KnowledgeBaseAgentConfigVo getKnowledgeBaseConfig() {
-        KnowledgeBaseAgentConfigVo vo = new KnowledgeBaseAgentConfigVo();
-        AgentAllConfigCache cache = agentConfigRuntimeSyncService.readCache();
-        KnowledgeBaseAgentConfig config = cache.getKnowledgeBase();
-        if (config == null) {
-            vo.setEnabled(Boolean.FALSE);
-            return vo;
-        }
-        LlmProvider provider = getEnabledProviderOrNull();
-        vo.setEnabled(resolveKnowledgeBaseEnabled(config));
-        vo.setKnowledgeNames(copyKnowledgeNames(config.getKnowledgeNames()));
-        vo.setEmbeddingDim(config.getEmbeddingDim());
-        vo.setTopK(config.getTopK());
-        vo.setEmbeddingModel(toKnowledgeBaseModelSelectionVo(provider, config.getEmbeddingModel(),
-                LlmModelTypeConstants.EMBEDDING));
-        boolean rankingEnabled = resolveKnowledgeBaseRankingEnabled(config);
-        vo.setRankingEnabled(rankingEnabled);
-        vo.setRankingModel(rankingEnabled
-                ? toKnowledgeBaseModelSelectionVo(provider, config.getRankingModel(), LlmModelTypeConstants.CHAT)
-                : null);
-        return vo;
+        return toKnowledgeBaseConfigVo(agentConfigRuntimeSyncService.readCache().getKnowledgeBase());
     }
 
     /**
@@ -127,14 +109,7 @@ public class AgentConfigServiceImpl implements AgentConfigService, BaseService {
      */
     @Override
     public boolean saveKnowledgeBaseConfig(KnowledgeBaseAgentConfigRequest request) {
-        Assert.notNull(request, "知识库Agent配置不能为空");
-        AgentAllConfigCache cache = agentConfigRuntimeSyncService.readCache();
-        boolean enabled = Boolean.TRUE.equals(request.getEnabled());
-        KnowledgeBaseAgentConfig config = buildKnowledgeBaseConfig(cache.getKnowledgeBase(), request, enabled);
-        cache.setKnowledgeBase(config);
-        agentConfigRuntimeSyncService.saveCache(cache, enabled ? getRequiredEnabledProvider() : getEnabledProviderOrNull(),
-                currentOperator());
-        return true;
+        return saveKnowledgeBaseConfig(request, AgentAllConfigCache::getKnowledgeBase, AgentAllConfigCache::setKnowledgeBase);
     }
 
     /**
@@ -144,9 +119,39 @@ public class AgentConfigServiceImpl implements AgentConfigService, BaseService {
      */
     @Override
     public List<KnowledgeBaseOptionVo> listKnowledgeBaseOptions() {
-        return kbBaseService.listEnabledKnowledgeBases().stream()
-                .map(this::toKnowledgeBaseOptionVo)
-                .toList();
+        return buildKnowledgeBaseOptions();
+    }
+
+    /**
+     * 查询客户端知识库 Agent 配置详情。
+     *
+     * @return 客户端知识库 Agent 配置
+     */
+    @Override
+    public KnowledgeBaseAgentConfigVo getClientKnowledgeBaseConfig() {
+        return toKnowledgeBaseConfigVo(agentConfigRuntimeSyncService.readCache().getClientKnowledgeBase());
+    }
+
+    /**
+     * 保存客户端知识库 Agent 配置。
+     *
+     * @param request 客户端知识库 Agent 配置请求
+     * @return 是否保存成功
+     */
+    @Override
+    public boolean saveClientKnowledgeBaseConfig(KnowledgeBaseAgentConfigRequest request) {
+        return saveKnowledgeBaseConfig(request, AgentAllConfigCache::getClientKnowledgeBase,
+                AgentAllConfigCache::setClientKnowledgeBase);
+    }
+
+    /**
+     * 查询客户端知识库下拉选项列表。
+     *
+     * @return 客户端知识库下拉选项
+     */
+    @Override
+    public List<KnowledgeBaseOptionVo> listClientKnowledgeBaseOptions() {
+        return buildKnowledgeBaseOptions();
     }
 
     /**
@@ -163,12 +168,8 @@ public class AgentConfigServiceImpl implements AgentConfigService, BaseService {
             return vo;
         }
         LlmProvider provider = getEnabledProviderOrNull();
-        vo.setRouteModel(toAgentModelSelectionVo(provider, config.getRouteModel(), LlmModelTypeConstants.CHAT));
-        vo.setBusinessNodeSimpleModel(toAgentModelSelectionVo(provider, config.getBusinessNodeSimpleModel(),
+        vo.setAdminNodeModel(toAgentModelSelectionVo(provider, config.getAdminNodeModel(),
                 LlmModelTypeConstants.CHAT));
-        vo.setBusinessNodeComplexModel(toAgentModelSelectionVo(provider, config.getBusinessNodeComplexModel(),
-                LlmModelTypeConstants.CHAT));
-        vo.setChatModel(toAgentModelSelectionVo(provider, config.getChatModel(), LlmModelTypeConstants.CHAT));
         return vo;
     }
 
@@ -187,16 +188,11 @@ public class AgentConfigServiceImpl implements AgentConfigService, BaseService {
         }
         LlmProvider provider = getEnabledProviderOrNull();
         vo.setRouteModel(toAgentModelSelectionVo(provider, config.getRouteModel(), LlmModelTypeConstants.CHAT));
+        vo.setBusinessNodeModel(toAgentModelSelectionVo(provider, config.getBusinessNodeModel(),
+                LlmModelTypeConstants.CHAT));
         vo.setChatModel(toAgentModelSelectionVo(provider, config.getChatModel(), LlmModelTypeConstants.CHAT));
-        vo.setOrderModel(toAgentModelSelectionVo(provider, config.getOrderModel(), LlmModelTypeConstants.CHAT));
-        vo.setProductModel(toAgentModelSelectionVo(provider, config.getProductModel(), LlmModelTypeConstants.CHAT));
-        vo.setAfterSaleModel(toAgentModelSelectionVo(provider, config.getAfterSaleModel(), LlmModelTypeConstants.CHAT));
-        vo.setConsultationComfortModel(toAgentModelSelectionVo(provider, config.getConsultationComfortModel(),
+        vo.setDiagnosisNodeModel(toAgentModelSelectionVo(provider, config.getDiagnosisNodeModel(),
                 LlmModelTypeConstants.CHAT));
-        vo.setConsultationQuestionModel(toAgentModelSelectionVo(provider, config.getConsultationQuestionModel(),
-                LlmModelTypeConstants.CHAT));
-        vo.setConsultationFinalDiagnosisModel(toAgentModelSelectionVo(provider,
-                config.getConsultationFinalDiagnosisModel(), LlmModelTypeConstants.CHAT));
         return vo;
     }
 
@@ -213,13 +209,7 @@ public class AgentConfigServiceImpl implements AgentConfigService, BaseService {
 
         LlmProvider provider = getRequiredEnabledProvider();
         AdminAssistantAgentConfig config = new AdminAssistantAgentConfig();
-        config.setRouteModel(resolveRequiredSlotConfig(provider, request.getRouteModel(),
-                LlmModelTypeConstants.CHAT, false, CHAT_MODEL_MISSING_MESSAGE));
-        config.setBusinessNodeSimpleModel(resolveRequiredSlotConfig(provider, request.getBusinessNodeSimpleModel(),
-                LlmModelTypeConstants.CHAT, false, CHAT_MODEL_MISSING_MESSAGE));
-        config.setBusinessNodeComplexModel(resolveRequiredSlotConfig(provider, request.getBusinessNodeComplexModel(),
-                LlmModelTypeConstants.CHAT, false, CHAT_MODEL_MISSING_MESSAGE));
-        config.setChatModel(resolveRequiredSlotConfig(provider, request.getChatModel(),
+        config.setAdminNodeModel(resolveRequiredSlotConfig(provider, request.getAdminNodeModel(),
                 LlmModelTypeConstants.CHAT, false, CHAT_MODEL_MISSING_MESSAGE));
 
         AgentAllConfigCache cache = agentConfigRuntimeSyncService.readCache();
@@ -243,21 +233,12 @@ public class AgentConfigServiceImpl implements AgentConfigService, BaseService {
         ClientAssistantAgentConfig config = new ClientAssistantAgentConfig();
         config.setRouteModel(resolveRequiredSlotConfig(provider, request.getRouteModel(),
                 LlmModelTypeConstants.CHAT, false, CHAT_MODEL_MISSING_MESSAGE));
+        config.setBusinessNodeModel(resolveRequiredSlotConfig(provider, request.getBusinessNodeModel(),
+                LlmModelTypeConstants.CHAT, false, CHAT_MODEL_MISSING_MESSAGE));
         config.setChatModel(resolveRequiredSlotConfig(provider, request.getChatModel(),
                 LlmModelTypeConstants.CHAT, false, CHAT_MODEL_MISSING_MESSAGE));
-        config.setOrderModel(resolveRequiredSlotConfig(provider, request.getOrderModel(),
+        config.setDiagnosisNodeModel(resolveRequiredSlotConfig(provider, request.getDiagnosisNodeModel(),
                 LlmModelTypeConstants.CHAT, false, CHAT_MODEL_MISSING_MESSAGE));
-        config.setProductModel(resolveRequiredSlotConfig(provider, request.getProductModel(),
-                LlmModelTypeConstants.CHAT, false, CHAT_MODEL_MISSING_MESSAGE));
-        config.setAfterSaleModel(resolveRequiredSlotConfig(provider, request.getAfterSaleModel(),
-                LlmModelTypeConstants.CHAT, false, CHAT_MODEL_MISSING_MESSAGE));
-        config.setConsultationComfortModel(resolveRequiredSlotConfig(provider, request.getConsultationComfortModel(),
-                LlmModelTypeConstants.CHAT, false, CHAT_MODEL_MISSING_MESSAGE));
-        config.setConsultationQuestionModel(resolveRequiredSlotConfig(provider, request.getConsultationQuestionModel(),
-                LlmModelTypeConstants.CHAT, false, CHAT_MODEL_MISSING_MESSAGE));
-        config.setConsultationFinalDiagnosisModel(resolveRequiredSlotConfig(provider,
-                request.getConsultationFinalDiagnosisModel(), LlmModelTypeConstants.CHAT, false,
-                CHAT_MODEL_MISSING_MESSAGE));
 
         AgentAllConfigCache cache = agentConfigRuntimeSyncService.readCache();
         cache.setClientAssistant(config);
@@ -751,6 +732,65 @@ public class AgentConfigServiceImpl implements AgentConfigService, BaseService {
     }
 
     /**
+     * 将知识库运行时配置转换为前端视图对象。
+     *
+     * @param config 知识库运行时配置
+     * @return 知识库前端视图对象
+     */
+    private KnowledgeBaseAgentConfigVo toKnowledgeBaseConfigVo(KnowledgeBaseAgentConfig config) {
+        KnowledgeBaseAgentConfigVo vo = new KnowledgeBaseAgentConfigVo();
+        if (config == null) {
+            vo.setEnabled(Boolean.FALSE);
+            return vo;
+        }
+        LlmProvider provider = getEnabledProviderOrNull();
+        vo.setEnabled(resolveKnowledgeBaseEnabled(config));
+        vo.setKnowledgeNames(copyKnowledgeNames(config.getKnowledgeNames()));
+        vo.setEmbeddingDim(config.getEmbeddingDim());
+        vo.setTopK(config.getTopK());
+        vo.setEmbeddingModel(toKnowledgeBaseModelSelectionVo(provider, config.getEmbeddingModel(),
+                LlmModelTypeConstants.EMBEDDING));
+        boolean rankingEnabled = resolveKnowledgeBaseRankingEnabled(config);
+        vo.setRankingEnabled(rankingEnabled);
+        vo.setRankingModel(rankingEnabled
+                ? toKnowledgeBaseModelSelectionVo(provider, config.getRankingModel(), LlmModelTypeConstants.CHAT)
+                : null);
+        return vo;
+    }
+
+    /**
+     * 保存指定槽位上的知识库配置。
+     *
+     * @param request            知识库编辑态请求
+     * @param existingConfigFunc 读取当前知识库配置的函数
+     * @param configSetter       写入知识库配置的函数
+     * @return 是否保存成功
+     */
+    private boolean saveKnowledgeBaseConfig(KnowledgeBaseAgentConfigRequest request,
+                                            Function<AgentAllConfigCache, KnowledgeBaseAgentConfig> existingConfigFunc,
+                                            BiConsumer<AgentAllConfigCache, KnowledgeBaseAgentConfig> configSetter) {
+        Assert.notNull(request, "知识库Agent配置不能为空");
+        AgentAllConfigCache cache = agentConfigRuntimeSyncService.readCache();
+        boolean enabled = Boolean.TRUE.equals(request.getEnabled());
+        KnowledgeBaseAgentConfig config = buildKnowledgeBaseConfig(existingConfigFunc.apply(cache), request, enabled);
+        configSetter.accept(cache, config);
+        agentConfigRuntimeSyncService.saveCache(cache, enabled ? getRequiredEnabledProvider() : getEnabledProviderOrNull(),
+                currentOperator());
+        return true;
+    }
+
+    /**
+     * 构建知识库下拉选项列表。
+     *
+     * @return 知识库下拉选项列表
+     */
+    private List<KnowledgeBaseOptionVo> buildKnowledgeBaseOptions() {
+        return kbBaseService.listEnabledKnowledgeBases().stream()
+                .map(this::toKnowledgeBaseOptionVo)
+                .toList();
+    }
+
+    /**
      * 按提供商、名称和类型查询模型。
      *
      * @param provider                启用提供商
@@ -946,14 +986,8 @@ public class AgentConfigServiceImpl implements AgentConfigService, BaseService {
      * @param request 管理端助手配置请求
      */
     private void validateAdminAssistantRequest(AdminAssistantAgentConfigRequest request) {
-        validateSlotAdvancedParams(request.getRouteModel(), ADMIN_ASSISTANT_MAX_TOKENS_MIN,
-                ADMIN_ASSISTANT_MAX_TOKENS_MAX, "路由模型");
-        validateSlotAdvancedParams(request.getBusinessNodeSimpleModel(), ADMIN_ASSISTANT_MAX_TOKENS_MIN,
-                ADMIN_ASSISTANT_MAX_TOKENS_MAX, "业务节点普通模型");
-        validateSlotAdvancedParams(request.getBusinessNodeComplexModel(), ADMIN_ASSISTANT_MAX_TOKENS_MIN,
-                ADMIN_ASSISTANT_MAX_TOKENS_MAX, "业务节点复杂模型");
-        validateSlotAdvancedParams(request.getChatModel(), ADMIN_ASSISTANT_MAX_TOKENS_MIN,
-                ADMIN_ASSISTANT_MAX_TOKENS_MAX, "聊天界面模型");
+        validateSlotAdvancedParams(request.getAdminNodeModel(), ADMIN_ASSISTANT_MAX_TOKENS_MIN,
+                ADMIN_ASSISTANT_MAX_TOKENS_MAX, "管理端节点模型");
     }
 
     /**
@@ -964,20 +998,28 @@ public class AgentConfigServiceImpl implements AgentConfigService, BaseService {
     private void validateClientAssistantRequest(ClientAssistantAgentConfigRequest request) {
         validateSlotAdvancedParams(request.getRouteModel(), CLIENT_ASSISTANT_MAX_TOKENS_MIN,
                 CLIENT_ASSISTANT_MAX_TOKENS_MAX, "客户端路由模型");
+        validateSlotAdvancedParams(request.getBusinessNodeModel(), CLIENT_ASSISTANT_MAX_TOKENS_MIN,
+                CLIENT_ASSISTANT_MAX_TOKENS_MAX, "客户端业务节点模型");
         validateSlotAdvancedParams(request.getChatModel(), CLIENT_ASSISTANT_MAX_TOKENS_MIN,
                 CLIENT_ASSISTANT_MAX_TOKENS_MAX, "客户端聊天模型");
-        validateSlotAdvancedParams(request.getOrderModel(), CLIENT_ASSISTANT_MAX_TOKENS_MIN,
-                CLIENT_ASSISTANT_MAX_TOKENS_MAX, "客户端订单模型");
-        validateSlotAdvancedParams(request.getProductModel(), CLIENT_ASSISTANT_MAX_TOKENS_MIN,
-                CLIENT_ASSISTANT_MAX_TOKENS_MAX, "客户端商品模型");
-        validateSlotAdvancedParams(request.getAfterSaleModel(), CLIENT_ASSISTANT_MAX_TOKENS_MIN,
-                CLIENT_ASSISTANT_MAX_TOKENS_MAX, "客户端售后模型");
-        validateSlotAdvancedParams(request.getConsultationComfortModel(), CLIENT_ASSISTANT_MAX_TOKENS_MIN,
-                CLIENT_ASSISTANT_MAX_TOKENS_MAX, "问诊安抚模型");
-        validateSlotAdvancedParams(request.getConsultationQuestionModel(), CLIENT_ASSISTANT_MAX_TOKENS_MIN,
-                CLIENT_ASSISTANT_MAX_TOKENS_MAX, "问诊追问模型");
-        validateSlotAdvancedParams(request.getConsultationFinalDiagnosisModel(), CLIENT_ASSISTANT_MAX_TOKENS_MIN,
-                CLIENT_ASSISTANT_MAX_TOKENS_MAX, "问诊最终诊断模型");
+        validateDiagnosisNodeAdvancedParams(request.getDiagnosisNodeModel());
+    }
+
+    /**
+     * 校验诊断节点请求不允许提交高级参数。
+     *
+     * @param request 诊断节点模型槽位请求
+     */
+    private void validateDiagnosisNodeAdvancedParams(AgentModelSelectionRequest request) {
+        if (request == null) {
+            return;
+        }
+        Assert.isParamTrue(!Boolean.TRUE.equals(request.getReasoningEnabled()),
+                "诊断节点模型不支持修改深度思考");
+        Assert.isParamTrue(request.getMaxTokens() == null,
+                "诊断节点模型不支持修改最大token数");
+        Assert.isParamTrue(request.getTemperature() == null,
+                "诊断节点模型不支持修改温度");
     }
 
     /**

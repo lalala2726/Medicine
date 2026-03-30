@@ -13,6 +13,11 @@ public class AgentConfigsCache implements Serializable {
     private KnowledgeBaseAgentConfig knowledgeBase;
 
     /**
+     * 客户端聊天知识库相关 Agent 配置。
+     */
+    private KnowledgeBaseAgentConfig clientKnowledgeBase;
+
+    /**
      * 管理端助手相关 Agent 配置。
      */
     private AdminAssistantAgentConfig adminAssistant;
@@ -43,6 +48,24 @@ public class AgentConfigsCache implements Serializable {
 
     public void setKnowledgeBase(KnowledgeBaseAgentConfig knowledgeBase) {
         this.knowledgeBase = knowledgeBase;
+    }
+
+    /**
+     * 读取客户端聊天知识库相关 Agent 配置。
+     *
+     * @return 客户端聊天知识库相关 Agent 配置
+     */
+    public KnowledgeBaseAgentConfig getClientKnowledgeBase() {
+        return clientKnowledgeBase;
+    }
+
+    /**
+     * 写入客户端聊天知识库相关 Agent 配置。
+     *
+     * @param clientKnowledgeBase 客户端聊天知识库相关 Agent 配置
+     */
+    public void setClientKnowledgeBase(KnowledgeBaseAgentConfig clientKnowledgeBase) {
+        this.clientKnowledgeBase = clientKnowledgeBase;
     }
 
     public AdminAssistantAgentConfig getAdminAssistant() {

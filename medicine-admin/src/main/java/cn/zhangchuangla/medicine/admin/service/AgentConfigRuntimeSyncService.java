@@ -24,6 +24,7 @@ import java.util.List;
 import java.util.Objects;
 import java.util.function.BiConsumer;
 import java.util.function.Function;
+import java.util.stream.Stream;
 
 /**
  * Agent 运行时 Redis 与 MQ 联动同步服务。
@@ -101,26 +102,8 @@ public class AgentConfigRuntimeSyncService {
             new SlotBinding(
                     LlmModelTypeConstants.CHAT,
                     false,
-                    cache -> cache.getAdminAssistant() == null ? null : cache.getAdminAssistant().getRouteModel(),
-                    (cache, slot) -> ensureAdminAssistant(cache).setRouteModel(slot)
-            ),
-            new SlotBinding(
-                    LlmModelTypeConstants.CHAT,
-                    false,
-                    cache -> cache.getAdminAssistant() == null ? null : cache.getAdminAssistant().getBusinessNodeSimpleModel(),
-                    (cache, slot) -> ensureAdminAssistant(cache).setBusinessNodeSimpleModel(slot)
-            ),
-            new SlotBinding(
-                    LlmModelTypeConstants.CHAT,
-                    false,
-                    cache -> cache.getAdminAssistant() == null ? null : cache.getAdminAssistant().getBusinessNodeComplexModel(),
-                    (cache, slot) -> ensureAdminAssistant(cache).setBusinessNodeComplexModel(slot)
-            ),
-            new SlotBinding(
-                    LlmModelTypeConstants.CHAT,
-                    false,
-                    cache -> cache.getAdminAssistant() == null ? null : cache.getAdminAssistant().getChatModel(),
-                    (cache, slot) -> ensureAdminAssistant(cache).setChatModel(slot)
+                    cache -> cache.getAdminAssistant() == null ? null : cache.getAdminAssistant().getAdminNodeModel(),
+                    (cache, slot) -> ensureAdminAssistant(cache).setAdminNodeModel(slot)
             ),
             // 客户端助手相关槽位
             new SlotBinding(
@@ -132,44 +115,20 @@ public class AgentConfigRuntimeSyncService {
             new SlotBinding(
                     LlmModelTypeConstants.CHAT,
                     false,
+                    cache -> cache.getClientAssistant() == null ? null : cache.getClientAssistant().getBusinessNodeModel(),
+                    (cache, slot) -> ensureClientAssistant(cache).setBusinessNodeModel(slot)
+            ),
+            new SlotBinding(
+                    LlmModelTypeConstants.CHAT,
+                    false,
                     cache -> cache.getClientAssistant() == null ? null : cache.getClientAssistant().getChatModel(),
                     (cache, slot) -> ensureClientAssistant(cache).setChatModel(slot)
             ),
             new SlotBinding(
                     LlmModelTypeConstants.CHAT,
                     false,
-                    cache -> cache.getClientAssistant() == null ? null : cache.getClientAssistant().getOrderModel(),
-                    (cache, slot) -> ensureClientAssistant(cache).setOrderModel(slot)
-            ),
-            new SlotBinding(
-                    LlmModelTypeConstants.CHAT,
-                    false,
-                    cache -> cache.getClientAssistant() == null ? null : cache.getClientAssistant().getProductModel(),
-                    (cache, slot) -> ensureClientAssistant(cache).setProductModel(slot)
-            ),
-            new SlotBinding(
-                    LlmModelTypeConstants.CHAT,
-                    false,
-                    cache -> cache.getClientAssistant() == null ? null : cache.getClientAssistant().getAfterSaleModel(),
-                    (cache, slot) -> ensureClientAssistant(cache).setAfterSaleModel(slot)
-            ),
-            new SlotBinding(
-                    LlmModelTypeConstants.CHAT,
-                    false,
-                    cache -> cache.getClientAssistant() == null ? null : cache.getClientAssistant().getConsultationComfortModel(),
-                    (cache, slot) -> ensureClientAssistant(cache).setConsultationComfortModel(slot)
-            ),
-            new SlotBinding(
-                    LlmModelTypeConstants.CHAT,
-                    false,
-                    cache -> cache.getClientAssistant() == null ? null : cache.getClientAssistant().getConsultationQuestionModel(),
-                    (cache, slot) -> ensureClientAssistant(cache).setConsultationQuestionModel(slot)
-            ),
-            new SlotBinding(
-                    LlmModelTypeConstants.CHAT,
-                    false,
-                    cache -> cache.getClientAssistant() == null ? null : cache.getClientAssistant().getConsultationFinalDiagnosisModel(),
-                    (cache, slot) -> ensureClientAssistant(cache).setConsultationFinalDiagnosisModel(slot)
+                    cache -> cache.getClientAssistant() == null ? null : cache.getClientAssistant().getDiagnosisNodeModel(),
+                    (cache, slot) -> ensureClientAssistant(cache).setDiagnosisNodeModel(slot)
             ),
             // 多模态与通用能力槽位
             new SlotBinding(
@@ -207,6 +166,23 @@ public class AgentConfigRuntimeSyncService {
             cache.setKnowledgeBase(config);
         }
         return config;
+    }
+
+    /**
+     * 返回当前缓存中的所有知识库配置节点。
+     * <p>
+     * 当前包括管理端知识库与客户端聊天知识库两套独立配置。
+     *
+     * @param cache Agent 全量缓存
+     * @return 已存在的知识库配置节点列表
+     */
+    private static List<KnowledgeBaseAgentConfig> listKnowledgeBaseConfigs(AgentAllConfigCache cache) {
+        if (cache == null) {
+            return List.of();
+        }
+        return Stream.of(cache.getKnowledgeBase(), cache.getClientKnowledgeBase())
+                .filter(Objects::nonNull)
+                .toList();
     }
 
     /**
@@ -378,7 +354,9 @@ public class AgentConfigRuntimeSyncService {
         }
         AgentAllConfigCache cache = readCache();
         List<LlmProviderModel> models = listProviderModels(provider.getId());
-        validateKnowledgeBaseModelCompatibility(cache.getKnowledgeBase(), models);
+        for (KnowledgeBaseAgentConfig knowledgeBase : listKnowledgeBaseConfigs(cache)) {
+            validateKnowledgeBaseModelCompatibility(knowledgeBase, models);
+        }
         for (SlotBinding binding : SLOT_BINDINGS) {
             AgentModelSlotConfig slot = binding.getter().apply(cache);
             if (!hasSelectedModel(slot)) {
@@ -456,7 +434,10 @@ public class AgentConfigRuntimeSyncService {
         }
 
         AgentAllConfigCache cache = readCache();
-        boolean changed = syncKnowledgeBaseModelUpdate(cache.getKnowledgeBase(), existing, updated);
+        boolean changed = false;
+        for (KnowledgeBaseAgentConfig knowledgeBase : listKnowledgeBaseConfigs(cache)) {
+            changed |= syncKnowledgeBaseModelUpdate(knowledgeBase, existing, updated);
+        }
         for (SlotBinding binding : SLOT_BINDINGS) {
             AgentModelSlotConfig slot = binding.getter().apply(cache);
             if (!matchesSlot(slot, binding, existing.getModelName(), existing.getModelType())) {
@@ -490,8 +471,10 @@ public class AgentConfigRuntimeSyncService {
             return;
         }
         AgentAllConfigCache cache = readCache();
-        boolean changed = clearKnowledgeBaseModelReferences(cache.getKnowledgeBase(),
-                existing.getModelName(), existing.getModelType());
+        boolean changed = false;
+        for (KnowledgeBaseAgentConfig knowledgeBase : listKnowledgeBaseConfigs(cache)) {
+            changed |= clearKnowledgeBaseModelReferences(knowledgeBase, existing.getModelName(), existing.getModelType());
+        }
         changed |= clearSlotsReferencing(cache, existing.getModelName(), existing.getModelType());
         if (changed) {
             saveCache(cache, enabledProvider, operator);
@@ -545,7 +528,9 @@ public class AgentConfigRuntimeSyncService {
      * 调和全量槽位配置与当前可用的模型列表。
      */
     private void reconcileSlotsWithModels(AgentAllConfigCache cache, List<LlmProviderModel> models) {
-        reconcileKnowledgeBaseModelReferences(cache.getKnowledgeBase(), models);
+        for (KnowledgeBaseAgentConfig knowledgeBase : listKnowledgeBaseConfigs(cache)) {
+            reconcileKnowledgeBaseModelReferences(knowledgeBase, models);
+        }
         for (SlotBinding binding : SLOT_BINDINGS) {
             AgentModelSlotConfig slot = binding.getter().apply(cache);
             if (!hasSelectedModel(slot)) {
@@ -818,10 +803,11 @@ public class AgentConfigRuntimeSyncService {
             return false;
         }
         AgentAllConfigCache cache = readCache();
-        KnowledgeBaseAgentConfig knowledgeBase = cache.getKnowledgeBase();
-        return isKnowledgeBaseEnabled(knowledgeBase)
-                && knowledgeBase.getKnowledgeNames() != null
-                && knowledgeBase.getKnowledgeNames().stream()
+        return listKnowledgeBaseConfigs(cache).stream()
+                .filter(this::isKnowledgeBaseEnabled)
+                .map(KnowledgeBaseAgentConfig::getKnowledgeNames)
+                .filter(Objects::nonNull)
+                .flatMap(List::stream)
                 .filter(StringUtils::hasText)
                 .anyMatch(knowledgeName::equals);
     }

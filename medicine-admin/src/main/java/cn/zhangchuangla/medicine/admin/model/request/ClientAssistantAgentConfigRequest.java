@@ -17,38 +17,18 @@ public class ClientAssistantAgentConfigRequest {
     @NotNull(message = "路由模型槽位配置不能为空")
     private AgentModelSelectionRequest routeModel;
 
+    @Schema(description = "业务节点模型槽位配置")
+    @Valid
+    @NotNull(message = "业务节点模型槽位配置不能为空")
+    private AgentModelSelectionRequest businessNodeModel;
+
     @Schema(description = "聊天模型槽位配置")
     @Valid
     @NotNull(message = "聊天模型槽位配置不能为空")
     private AgentModelSelectionRequest chatModel;
 
-    @Schema(description = "订单模型槽位配置")
+    @Schema(description = "诊断节点模型槽位配置")
     @Valid
-    @NotNull(message = "订单模型槽位配置不能为空")
-    private AgentModelSelectionRequest orderModel;
-
-    @Schema(description = "商品模型槽位配置")
-    @Valid
-    @NotNull(message = "商品模型槽位配置不能为空")
-    private AgentModelSelectionRequest productModel;
-
-    @Schema(description = "售后模型槽位配置")
-    @Valid
-    @NotNull(message = "售后模型槽位配置不能为空")
-    private AgentModelSelectionRequest afterSaleModel;
-
-    @Schema(description = "问诊安抚模型槽位配置")
-    @Valid
-    @NotNull(message = "问诊安抚模型槽位配置不能为空")
-    private AgentModelSelectionRequest consultationComfortModel;
-
-    @Schema(description = "问诊追问模型槽位配置")
-    @Valid
-    @NotNull(message = "问诊追问模型槽位配置不能为空")
-    private AgentModelSelectionRequest consultationQuestionModel;
-
-    @Schema(description = "问诊最终诊断模型槽位配置")
-    @Valid
-    @NotNull(message = "问诊最终诊断模型槽位配置不能为空")
-    private AgentModelSelectionRequest consultationFinalDiagnosisModel;
+    @NotNull(message = "诊断节点模型槽位配置不能为空")
+    private AgentModelSelectionRequest diagnosisNodeModel;
 }

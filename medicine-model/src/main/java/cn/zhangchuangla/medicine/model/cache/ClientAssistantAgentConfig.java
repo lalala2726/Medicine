@@ -16,37 +16,17 @@ public class ClientAssistantAgentConfig implements Serializable {
     private AgentModelSlotConfig routeModel;
 
     /**
+     * 业务节点模型槽位配置。
+     */
+    private AgentModelSlotConfig businessNodeModel;
+
+    /**
      * 聊天节点模型槽位配置。
      */
     private AgentModelSlotConfig chatModel;
 
     /**
-     * 订单节点模型槽位配置。
+     * 诊断节点模型槽位配置。
      */
-    private AgentModelSlotConfig orderModel;
-
-    /**
-     * 商品节点模型槽位配置。
-     */
-    private AgentModelSlotConfig productModel;
-
-    /**
-     * 售后节点模型槽位配置。
-     */
-    private AgentModelSlotConfig afterSaleModel;
-
-    /**
-     * 问诊安抚节点模型槽位配置。
-     */
-    private AgentModelSlotConfig consultationComfortModel;
-
-    /**
-     * 问诊追问节点模型槽位配置。
-     */
-    private AgentModelSlotConfig consultationQuestionModel;
-
-    /**
-     * 问诊最终诊断节点模型槽位配置。
-     */
-    private AgentModelSlotConfig consultationFinalDiagnosisModel;
+    private AgentModelSlotConfig diagnosisNodeModel;
 }

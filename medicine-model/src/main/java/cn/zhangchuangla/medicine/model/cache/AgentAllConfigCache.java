@@ -16,7 +16,7 @@ public class AgentAllConfigCache implements Serializable {
     /**
      * 当前缓存结构版本。
      */
-    public static final int CURRENT_SCHEMA_VERSION = 4;
+    public static final int CURRENT_SCHEMA_VERSION = 6;
 
     /**
      * Redis JSON 结构版本。
@@ -62,6 +62,22 @@ public class AgentAllConfigCache implements Serializable {
     @JsonIgnore
     public void setKnowledgeBase(KnowledgeBaseAgentConfig knowledgeBase) {
         ensureAgentConfigs().setKnowledgeBase(knowledgeBase);
+    }
+
+    /**
+     * 读取客户端知识库配置，不参与 Redis 序列化。
+     */
+    @JsonIgnore
+    public KnowledgeBaseAgentConfig getClientKnowledgeBase() {
+        return agentConfigs == null ? null : agentConfigs.getClientKnowledgeBase();
+    }
+
+    /**
+     * 写入客户端知识库配置，不参与 Redis 序列化。
+     */
+    @JsonIgnore
+    public void setClientKnowledgeBase(KnowledgeBaseAgentConfig clientKnowledgeBase) {
+        ensureAgentConfigs().setClientKnowledgeBase(clientKnowledgeBase);
     }
 
     /**

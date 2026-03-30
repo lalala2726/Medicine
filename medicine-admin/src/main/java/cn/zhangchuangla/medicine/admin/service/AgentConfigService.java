@@ -33,6 +33,28 @@ public interface AgentConfigService {
     List<KnowledgeBaseOptionVo> listKnowledgeBaseOptions();
 
     /**
+     * 查询客户端知识库 Agent 配置详情。
+     *
+     * @return 客户端知识库 Agent 配置
+     */
+    KnowledgeBaseAgentConfigVo getClientKnowledgeBaseConfig();
+
+    /**
+     * 保存客户端知识库 Agent 配置。
+     *
+     * @param request 客户端知识库 Agent 配置请求
+     * @return 是否保存成功
+     */
+    boolean saveClientKnowledgeBaseConfig(KnowledgeBaseAgentConfigRequest request);
+
+    /**
+     * 查询客户端知识库下拉选项列表。
+     *
+     * @return 客户端知识库下拉选项
+     */
+    List<KnowledgeBaseOptionVo> listClientKnowledgeBaseOptions();
+
+    /**
      * 查询管理端助手 Agent 配置详情。
      *
      * @return 管理端助手 Agent 配置

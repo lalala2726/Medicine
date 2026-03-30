@@ -61,6 +61,41 @@ public class AgentConfigController extends BaseController {
     }
 
     /**
+     * 查询客户端知识库 Agent 配置。
+     *
+     * @return 客户端知识库 Agent 配置
+     */
+    @GetMapping("/client-knowledge-base")
+    @Operation(summary = "客户端知识库Agent配置详情")
+    public AjaxResult<KnowledgeBaseAgentConfigVo> getClientKnowledgeBaseConfig() {
+        return success(agentConfigService.getClientKnowledgeBaseConfig());
+    }
+
+    /**
+     * 保存客户端知识库 Agent 配置。
+     *
+     * @param request 客户端知识库 Agent 配置请求
+     * @return 操作结果
+     */
+    @PutMapping("/client-knowledge-base")
+    @Operation(summary = "保存客户端知识库Agent配置")
+    public AjaxResult<Void> saveClientKnowledgeBaseConfig(
+            @Valid @RequestBody KnowledgeBaseAgentConfigRequest request) {
+        return toAjax(agentConfigService.saveClientKnowledgeBaseConfig(request));
+    }
+
+    /**
+     * 查询客户端知识库选项。
+     *
+     * @return 客户端知识库选项列表
+     */
+    @GetMapping("/client-knowledge-base/option")
+    @Operation(summary = "客户端知识库选项")
+    public AjaxResult<List<KnowledgeBaseOptionVo>> listClientKnowledgeBaseOptions() {
+        return success(agentConfigService.listClientKnowledgeBaseOptions());
+    }
+
+    /**
      * 查询管理端助手 Agent 配置。
      *
      * @return 管理端助手 Agent 配置

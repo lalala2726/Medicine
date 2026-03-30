@@ -11,22 +11,7 @@ import java.io.Serializable;
 public class AdminAssistantAgentConfig implements Serializable {
 
     /**
-     * 路由模型槽位配置
+     * 管理端节点模型槽位配置。
      */
-    private AgentModelSlotConfig routeModel;
-
-    /**
-     * 业务节点普通模型槽位配置
-     */
-    private AgentModelSlotConfig businessNodeSimpleModel;
-
-    /**
-     * 业务节点复杂模型槽位配置
-     */
-    private AgentModelSlotConfig businessNodeComplexModel;
-
-    /**
-     * 聊天界面模型槽位配置
-     */
-    private AgentModelSlotConfig chatModel;
+    private AgentModelSlotConfig adminNodeModel;
 }
