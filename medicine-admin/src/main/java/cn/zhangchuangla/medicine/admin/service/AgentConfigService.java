@@ -85,11 +85,11 @@ public interface AgentConfigService {
     boolean saveClientAssistantConfig(ClientAssistantAgentConfigRequest request);
 
     /**
-     * 查询图片识别 Agent 配置详情。
+     * 查询通用能力 Agent 配置详情。
      *
-     * @return 图片识别 Agent 配置
+     * @return 通用能力 Agent 配置
      */
-    ImageRecognitionAgentConfigVo getImageRecognitionConfig();
+    CommonCapabilityAgentConfigVo getCommonCapabilityConfig();
 
     /**
      * 查询豆包语音 Agent 配置详情。
@@ -99,12 +99,12 @@ public interface AgentConfigService {
     SpeechAgentConfigVo getSpeechConfig();
 
     /**
-     * 保存图片识别 Agent 配置。
+     * 保存通用能力 Agent 配置。
      *
-     * @param request 图片识别 Agent 配置请求
+     * @param request 通用能力 Agent 配置请求
      * @return 是否保存成功
      */
-    boolean saveImageRecognitionConfig(ImageRecognitionAgentConfigRequest request);
+    boolean saveCommonCapabilityConfig(CommonCapabilityAgentConfigRequest request);
 
     /**
      * 保存豆包语音 Agent 配置。
@@ -113,36 +113,6 @@ public interface AgentConfigService {
      * @return 是否保存成功
      */
     boolean saveSpeechConfig(SpeechAgentConfigRequest request);
-
-    /**
-     * 查询聊天历史总结 Agent 配置详情。
-     *
-     * @return 聊天历史总结 Agent 配置
-     */
-    ChatHistorySummaryAgentConfigVo getChatHistorySummaryConfig();
-
-    /**
-     * 保存聊天历史总结 Agent 配置。
-     *
-     * @param request 聊天历史总结 Agent 配置请求
-     * @return 是否保存成功
-     */
-    boolean saveChatHistorySummaryConfig(ChatHistorySummaryAgentConfigRequest request);
-
-    /**
-     * 查询聊天标题生成 Agent 配置详情。
-     *
-     * @return 聊天标题生成 Agent 配置
-     */
-    ChatTitleAgentConfigVo getChatTitleConfig();
-
-    /**
-     * 保存聊天标题生成 Agent 配置。
-     *
-     * @param request 聊天标题生成 Agent 配置请求
-     * @return 是否保存成功
-     */
-    boolean saveChatTitleConfig(ChatTitleAgentConfigRequest request);
 
     /**
      * 查询向量模型选项列表。

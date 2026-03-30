@@ -28,19 +28,9 @@ public class AgentConfigsCache implements Serializable {
     private ClientAssistantAgentConfig clientAssistant;
 
     /**
-     * 图片识别相关 Agent 配置。
+     * 通用能力相关 Agent 配置。
      */
-    private ImageRecognitionAgentConfig imageRecognition;
-
-    /**
-     * 聊天历史总结相关 Agent 配置。
-     */
-    private ChatHistorySummaryAgentConfig chatHistorySummary;
-
-    /**
-     * 聊天标题生成相关 Agent 配置。
-     */
-    private ChatTitleAgentConfig chatTitle;
+    private CommonCapabilityAgentConfig commonCapability;
 
     public KnowledgeBaseAgentConfig getKnowledgeBase() {
         return knowledgeBase;
@@ -84,27 +74,21 @@ public class AgentConfigsCache implements Serializable {
         this.clientAssistant = clientAssistant;
     }
 
-    public ImageRecognitionAgentConfig getImageRecognition() {
-        return imageRecognition;
+    /**
+     * 读取通用能力相关 Agent 配置。
+     *
+     * @return 通用能力相关 Agent 配置
+     */
+    public CommonCapabilityAgentConfig getCommonCapability() {
+        return commonCapability;
     }
 
-    public void setImageRecognition(ImageRecognitionAgentConfig imageRecognition) {
-        this.imageRecognition = imageRecognition;
-    }
-
-    public ChatHistorySummaryAgentConfig getChatHistorySummary() {
-        return chatHistorySummary;
-    }
-
-    public void setChatHistorySummary(ChatHistorySummaryAgentConfig chatHistorySummary) {
-        this.chatHistorySummary = chatHistorySummary;
-    }
-
-    public ChatTitleAgentConfig getChatTitle() {
-        return chatTitle;
-    }
-
-    public void setChatTitle(ChatTitleAgentConfig chatTitle) {
-        this.chatTitle = chatTitle;
+    /**
+     * 写入通用能力相关 Agent 配置。
+     *
+     * @param commonCapability 通用能力相关 Agent 配置
+     */
+    public void setCommonCapability(CommonCapabilityAgentConfig commonCapability) {
+        this.commonCapability = commonCapability;
     }
 }

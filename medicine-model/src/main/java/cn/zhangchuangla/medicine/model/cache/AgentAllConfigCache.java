@@ -16,7 +16,7 @@ public class AgentAllConfigCache implements Serializable {
     /**
      * 当前缓存结构版本。
      */
-    public static final int CURRENT_SCHEMA_VERSION = 6;
+    public static final int CURRENT_SCHEMA_VERSION = 7;
 
     /**
      * Redis JSON 结构版本。
@@ -116,48 +116,16 @@ public class AgentAllConfigCache implements Serializable {
      * 兼容旧调用点的只读访问器，不参与 Redis 序列化。
      */
     @JsonIgnore
-    public ImageRecognitionAgentConfig getImageRecognition() {
-        return agentConfigs == null ? null : agentConfigs.getImageRecognition();
+    public CommonCapabilityAgentConfig getCommonCapability() {
+        return agentConfigs == null ? null : agentConfigs.getCommonCapability();
     }
 
     /**
-     * 兼容旧调用点的写访问器，不参与 Redis 序列化。
+     * 写入通用能力配置，不参与 Redis 序列化。
      */
     @JsonIgnore
-    public void setImageRecognition(ImageRecognitionAgentConfig imageRecognition) {
-        ensureAgentConfigs().setImageRecognition(imageRecognition);
-    }
-
-    /**
-     * 兼容旧调用点的只读访问器，不参与 Redis 序列化。
-     */
-    @JsonIgnore
-    public ChatHistorySummaryAgentConfig getChatHistorySummary() {
-        return agentConfigs == null ? null : agentConfigs.getChatHistorySummary();
-    }
-
-    /**
-     * 兼容旧调用点的写访问器，不参与 Redis 序列化。
-     */
-    @JsonIgnore
-    public void setChatHistorySummary(ChatHistorySummaryAgentConfig chatHistorySummary) {
-        ensureAgentConfigs().setChatHistorySummary(chatHistorySummary);
-    }
-
-    /**
-     * 兼容旧调用点的只读访问器，不参与 Redis 序列化。
-     */
-    @JsonIgnore
-    public ChatTitleAgentConfig getChatTitle() {
-        return agentConfigs == null ? null : agentConfigs.getChatTitle();
-    }
-
-    /**
-     * 兼容旧调用点的写访问器，不参与 Redis 序列化。
-     */
-    @JsonIgnore
-    public void setChatTitle(ChatTitleAgentConfig chatTitle) {
-        ensureAgentConfigs().setChatTitle(chatTitle);
+    public void setCommonCapability(CommonCapabilityAgentConfig commonCapability) {
+        ensureAgentConfigs().setCommonCapability(commonCapability);
     }
 
     private AgentConfigsCache ensureAgentConfigs() {

@@ -247,20 +247,25 @@ public class AgentConfigServiceImpl implements AgentConfigService, BaseService {
     }
 
     /**
-     * 查询图片识别 Agent 配置详情。
+     * 查询通用能力 Agent 配置详情。
      *
-     * @return 图片识别 Agent 配置
+     * @return 通用能力 Agent 配置
      */
     @Override
-    public ImageRecognitionAgentConfigVo getImageRecognitionConfig() {
-        ImageRecognitionAgentConfigVo vo = new ImageRecognitionAgentConfigVo();
+    public CommonCapabilityAgentConfigVo getCommonCapabilityConfig() {
+        CommonCapabilityAgentConfigVo vo = new CommonCapabilityAgentConfigVo();
         AgentAllConfigCache cache = agentConfigRuntimeSyncService.readCache();
-        ImageRecognitionAgentConfig config = cache.getImageRecognition();
+        CommonCapabilityAgentConfig config = cache.getCommonCapability();
         if (config == null) {
             return vo;
         }
-        vo.setImageRecognitionModel(toAgentModelSelectionVo(getEnabledProviderOrNull(),
-                config.getImageRecognitionModel(), LlmModelTypeConstants.CHAT));
+        LlmProvider provider = getEnabledProviderOrNull();
+        vo.setImageRecognitionModel(toAgentModelSelectionVo(provider, config.getImageRecognitionModel(),
+                LlmModelTypeConstants.CHAT));
+        vo.setChatHistorySummaryModel(toAgentModelSelectionVo(provider, config.getChatHistorySummaryModel(),
+                LlmModelTypeConstants.CHAT));
+        vo.setChatTitleModel(toAgentModelSelectionVo(provider, config.getChatTitleModel(),
+                LlmModelTypeConstants.CHAT));
         return vo;
     }
 
@@ -275,23 +280,27 @@ public class AgentConfigServiceImpl implements AgentConfigService, BaseService {
     }
 
     /**
-     * 保存图片识别 Agent 配置。
+     * 保存通用能力 Agent 配置。
      *
-     * @param request 图片识别 Agent 配置请求
+     * @param request 通用能力 Agent 配置请求
      * @return 是否保存成功
      */
     @Override
-    public boolean saveImageRecognitionConfig(ImageRecognitionAgentConfigRequest request) {
-        Assert.notNull(request, "图片识别Agent配置不能为空");
-        validateImageRecognitionRequest(request);
+    public boolean saveCommonCapabilityConfig(CommonCapabilityAgentConfigRequest request) {
+        Assert.notNull(request, "通用能力Agent配置不能为空");
+        validateCommonCapabilityRequest(request);
 
         LlmProvider provider = getRequiredEnabledProvider();
-        ImageRecognitionAgentConfig config = new ImageRecognitionAgentConfig();
+        CommonCapabilityAgentConfig config = new CommonCapabilityAgentConfig();
         config.setImageRecognitionModel(resolveRequiredSlotConfig(provider, request.getImageRecognitionModel(),
                 LlmModelTypeConstants.CHAT, true, VISION_MODEL_MISSING_MESSAGE));
+        config.setChatHistorySummaryModel(resolveRequiredSlotConfig(provider, request.getChatHistorySummaryModel(),
+                LlmModelTypeConstants.CHAT, false, CHAT_MODEL_MISSING_MESSAGE));
+        config.setChatTitleModel(resolveRequiredSlotConfig(provider, request.getChatTitleModel(),
+                LlmModelTypeConstants.CHAT, false, CHAT_MODEL_MISSING_MESSAGE));
 
         AgentAllConfigCache cache = agentConfigRuntimeSyncService.readCache();
-        cache.setImageRecognition(config);
+        cache.setCommonCapability(config);
         agentConfigRuntimeSyncService.saveCache(cache, provider, currentOperator());
         return true;
     }
@@ -312,86 +321,6 @@ public class AgentConfigServiceImpl implements AgentConfigService, BaseService {
 
         cache.setSpeech(buildSpeechConfig(request, existingConfig));
         agentConfigRuntimeSyncService.saveCache(cache, getEnabledProviderOrNull(), currentOperator());
-        return true;
-    }
-
-    /**
-     * 查询聊天历史总结 Agent 配置详情。
-     *
-     * @return 聊天历史总结 Agent 配置
-     */
-    @Override
-    public ChatHistorySummaryAgentConfigVo getChatHistorySummaryConfig() {
-        ChatHistorySummaryAgentConfigVo vo = new ChatHistorySummaryAgentConfigVo();
-        AgentAllConfigCache cache = agentConfigRuntimeSyncService.readCache();
-        ChatHistorySummaryAgentConfig config = cache.getChatHistorySummary();
-        if (config == null) {
-            return vo;
-        }
-        vo.setChatHistorySummaryModel(toAgentModelSelectionVo(getEnabledProviderOrNull(),
-                config.getChatHistorySummaryModel(), LlmModelTypeConstants.CHAT));
-        return vo;
-    }
-
-    /**
-     * 保存聊天历史总结 Agent 配置。
-     *
-     * @param request 聊天历史总结 Agent 配置请求
-     * @return 是否保存成功
-     */
-    @Override
-    public boolean saveChatHistorySummaryConfig(ChatHistorySummaryAgentConfigRequest request) {
-        Assert.notNull(request, "聊天历史总结Agent配置不能为空");
-        validateChatHistorySummaryRequest(request);
-
-        LlmProvider provider = getRequiredEnabledProvider();
-        ChatHistorySummaryAgentConfig config = new ChatHistorySummaryAgentConfig();
-        config.setChatHistorySummaryModel(resolveRequiredSlotConfig(provider, request.getChatHistorySummaryModel(),
-                LlmModelTypeConstants.CHAT, false, CHAT_MODEL_MISSING_MESSAGE));
-
-        AgentAllConfigCache cache = agentConfigRuntimeSyncService.readCache();
-        cache.setChatHistorySummary(config);
-        agentConfigRuntimeSyncService.saveCache(cache, provider, currentOperator());
-        return true;
-    }
-
-    /**
-     * 查询聊天标题生成 Agent 配置详情。
-     *
-     * @return 聊天标题生成 Agent 配置
-     */
-    @Override
-    public ChatTitleAgentConfigVo getChatTitleConfig() {
-        ChatTitleAgentConfigVo vo = new ChatTitleAgentConfigVo();
-        AgentAllConfigCache cache = agentConfigRuntimeSyncService.readCache();
-        ChatTitleAgentConfig config = cache.getChatTitle();
-        if (config == null) {
-            return vo;
-        }
-        vo.setChatTitleModel(toAgentModelSelectionVo(getEnabledProviderOrNull(),
-                config.getChatTitleModel(), LlmModelTypeConstants.CHAT));
-        return vo;
-    }
-
-    /**
-     * 保存聊天标题生成 Agent 配置。
-     *
-     * @param request 聊天标题生成 Agent 配置请求
-     * @return 是否保存成功
-     */
-    @Override
-    public boolean saveChatTitleConfig(ChatTitleAgentConfigRequest request) {
-        Assert.notNull(request, "聊天标题生成Agent配置不能为空");
-        validateChatTitleRequest(request);
-
-        LlmProvider provider = getRequiredEnabledProvider();
-        ChatTitleAgentConfig config = new ChatTitleAgentConfig();
-        config.setChatTitleModel(resolveRequiredSlotConfig(provider, request.getChatTitleModel(),
-                LlmModelTypeConstants.CHAT, false, CHAT_MODEL_MISSING_MESSAGE));
-
-        AgentAllConfigCache cache = agentConfigRuntimeSyncService.readCache();
-        cache.setChatTitle(config);
-        agentConfigRuntimeSyncService.saveCache(cache, provider, currentOperator());
         return true;
     }
 
@@ -1023,31 +952,15 @@ public class AgentConfigServiceImpl implements AgentConfigService, BaseService {
     }
 
     /**
-     * 校验图片识别请求中的高级参数范围。
+     * 校验通用能力请求中的高级参数范围。
      *
-     * @param request 图片识别配置请求
+     * @param request 通用能力配置请求
      */
-    private void validateImageRecognitionRequest(ImageRecognitionAgentConfigRequest request) {
+    private void validateCommonCapabilityRequest(CommonCapabilityAgentConfigRequest request) {
         validateSlotAdvancedParams(request.getImageRecognitionModel(), IMAGE_RECOGNITION_MAX_TOKENS_MIN,
                 IMAGE_RECOGNITION_MAX_TOKENS_MAX, "图片识别模型");
-    }
-
-    /**
-     * 校验聊天历史总结请求中的高级参数范围。
-     *
-     * @param request 聊天历史总结配置请求
-     */
-    private void validateChatHistorySummaryRequest(ChatHistorySummaryAgentConfigRequest request) {
         validateSlotAdvancedParams(request.getChatHistorySummaryModel(), CHAT_HISTORY_SUMMARY_MAX_TOKENS_MIN,
                 CHAT_HISTORY_SUMMARY_MAX_TOKENS_MAX, "聊天历史总结模型");
-    }
-
-    /**
-     * 校验聊天标题生成请求中的高级参数范围。
-     *
-     * @param request 聊天标题生成配置请求
-     */
-    private void validateChatTitleRequest(ChatTitleAgentConfigRequest request) {
         validateSlotAdvancedParams(request.getChatTitleModel(), CHAT_TITLE_MAX_TOKENS_MIN,
                 CHAT_TITLE_MAX_TOKENS_MAX, "聊天标题生成模型");
     }

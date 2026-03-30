@@ -134,20 +134,20 @@ public class AgentConfigRuntimeSyncService {
             new SlotBinding(
                     LlmModelTypeConstants.CHAT,
                     true, // 必须支持图片理解
-                    cache -> cache.getImageRecognition() == null ? null : cache.getImageRecognition().getImageRecognitionModel(),
-                    (cache, slot) -> ensureImageRecognition(cache).setImageRecognitionModel(slot)
+                    cache -> cache.getCommonCapability() == null ? null : cache.getCommonCapability().getImageRecognitionModel(),
+                    (cache, slot) -> ensureCommonCapability(cache).setImageRecognitionModel(slot)
             ),
             new SlotBinding(
                     LlmModelTypeConstants.CHAT,
                     false,
-                    cache -> cache.getChatHistorySummary() == null ? null : cache.getChatHistorySummary().getChatHistorySummaryModel(),
-                    (cache, slot) -> ensureChatHistorySummary(cache).setChatHistorySummaryModel(slot)
+                    cache -> cache.getCommonCapability() == null ? null : cache.getCommonCapability().getChatHistorySummaryModel(),
+                    (cache, slot) -> ensureCommonCapability(cache).setChatHistorySummaryModel(slot)
             ),
             new SlotBinding(
                     LlmModelTypeConstants.CHAT,
                     false,
-                    cache -> cache.getChatTitle() == null ? null : cache.getChatTitle().getChatTitleModel(),
-                    (cache, slot) -> ensureChatTitle(cache).setChatTitleModel(slot)
+                    cache -> cache.getCommonCapability() == null ? null : cache.getCommonCapability().getChatTitleModel(),
+                    (cache, slot) -> ensureCommonCapability(cache).setChatTitleModel(slot)
             )
     );
 
@@ -227,37 +227,13 @@ public class AgentConfigRuntimeSyncService {
     }
 
     /**
-     * 确保缓存中存在图片识别配置节点。
+     * 确保缓存中存在通用能力配置节点。
      */
-    private static ImageRecognitionAgentConfig ensureImageRecognition(AgentAllConfigCache cache) {
-        ImageRecognitionAgentConfig config = cache.getImageRecognition();
+    private static CommonCapabilityAgentConfig ensureCommonCapability(AgentAllConfigCache cache) {
+        CommonCapabilityAgentConfig config = cache.getCommonCapability();
         if (config == null) {
-            config = new ImageRecognitionAgentConfig();
-            cache.setImageRecognition(config);
-        }
-        return config;
-    }
-
-    /**
-     * 确保缓存中存在聊天记录总结配置节点。
-     */
-    private static ChatHistorySummaryAgentConfig ensureChatHistorySummary(AgentAllConfigCache cache) {
-        ChatHistorySummaryAgentConfig config = cache.getChatHistorySummary();
-        if (config == null) {
-            config = new ChatHistorySummaryAgentConfig();
-            cache.setChatHistorySummary(config);
-        }
-        return config;
-    }
-
-    /**
-     * 确保缓存中存在聊天标题生成配置节点。
-     */
-    private static ChatTitleAgentConfig ensureChatTitle(AgentAllConfigCache cache) {
-        ChatTitleAgentConfig config = cache.getChatTitle();
-        if (config == null) {
-            config = new ChatTitleAgentConfig();
-            cache.setChatTitle(config);
+            config = new CommonCapabilityAgentConfig();
+            cache.setCommonCapability(config);
         }
         return config;
     }
