@@ -1,14 +1,20 @@
 package cn.zhangchuangla.medicine.agent.service.client;
 
-import cn.zhangchuangla.medicine.model.dto.ClientAgentOrderCancelCheckDto;
-import cn.zhangchuangla.medicine.model.dto.ClientAgentOrderDetailDto;
-import cn.zhangchuangla.medicine.model.dto.ClientAgentOrderShippingDto;
-import cn.zhangchuangla.medicine.model.dto.ClientAgentOrderTimelineDto;
+import cn.zhangchuangla.medicine.model.dto.*;
 
 /**
  * 客户端智能体订单服务接口。
  */
 public interface ClientAgentOrderService {
+
+    /**
+     * 查询订单卡摘要。
+     *
+     * @param orderId 订单主键ID
+     * @param userId  当前用户ID
+     * @return 订单卡摘要
+     */
+    ClientAgentOrderCardSummaryDto getOrderCardSummary(Long orderId, Long userId);
 
     /**
      * 查询订单详情。

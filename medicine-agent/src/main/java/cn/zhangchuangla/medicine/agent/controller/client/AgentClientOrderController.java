@@ -1,16 +1,10 @@
 package cn.zhangchuangla.medicine.agent.controller.client;
 
-import cn.zhangchuangla.medicine.agent.model.vo.client.ClientAgentOrderCancelCheckVo;
-import cn.zhangchuangla.medicine.agent.model.vo.client.ClientAgentOrderDetailVo;
-import cn.zhangchuangla.medicine.agent.model.vo.client.ClientAgentOrderShippingVo;
-import cn.zhangchuangla.medicine.agent.model.vo.client.ClientAgentOrderTimelineVo;
+import cn.zhangchuangla.medicine.agent.model.vo.client.*;
 import cn.zhangchuangla.medicine.agent.service.client.ClientAgentOrderService;
 import cn.zhangchuangla.medicine.common.core.base.AjaxResult;
 import cn.zhangchuangla.medicine.common.security.base.BaseController;
-import cn.zhangchuangla.medicine.model.dto.ClientAgentOrderCancelCheckDto;
-import cn.zhangchuangla.medicine.model.dto.ClientAgentOrderDetailDto;
-import cn.zhangchuangla.medicine.model.dto.ClientAgentOrderShippingDto;
-import cn.zhangchuangla.medicine.model.dto.ClientAgentOrderTimelineDto;
+import cn.zhangchuangla.medicine.model.dto.*;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -33,6 +27,26 @@ public class AgentClientOrderController extends BaseController {
      * 客户端智能体订单服务。
      */
     private final ClientAgentOrderService clientAgentOrderService;
+
+    /**
+     * 根据订单主键查询当前登录用户订单卡摘要。
+     *
+     * @param orderId 订单主键ID
+     * @return 订单卡摘要
+     */
+    @GetMapping("/summary/{orderId}")
+    @Operation(summary = "获取订单卡摘要", description = "根据订单主键获取当前登录用户的订单卡摘要")
+    public AjaxResult<ClientAgentOrderCardSummaryVo> getOrderCardSummary(
+            @Parameter(description = "订单主键ID", required = true)
+            @PathVariable Long orderId
+    ) {
+        ClientAgentOrderCardSummaryDto summary = clientAgentOrderService.getOrderCardSummary(orderId, getUserId());
+        ClientAgentOrderCardSummaryVo target = copyProperties(summary, ClientAgentOrderCardSummaryVo.class);
+        if (summary.getPreviewProduct() != null) {
+            target.setPreviewProduct(copyProperties(summary.getPreviewProduct(), ClientAgentOrderCardSummaryVo.PreviewProduct.class));
+        }
+        return success(target);
+    }
 
     /**
      * 根据订单编号查询当前登录用户订单详情。

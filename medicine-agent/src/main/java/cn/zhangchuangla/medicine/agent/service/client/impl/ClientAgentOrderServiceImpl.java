@@ -1,10 +1,7 @@
 package cn.zhangchuangla.medicine.agent.service.client.impl;
 
 import cn.zhangchuangla.medicine.agent.service.client.ClientAgentOrderService;
-import cn.zhangchuangla.medicine.model.dto.ClientAgentOrderCancelCheckDto;
-import cn.zhangchuangla.medicine.model.dto.ClientAgentOrderDetailDto;
-import cn.zhangchuangla.medicine.model.dto.ClientAgentOrderShippingDto;
-import cn.zhangchuangla.medicine.model.dto.ClientAgentOrderTimelineDto;
+import cn.zhangchuangla.medicine.model.dto.*;
 import cn.zhangchuangla.medicine.rpc.client.ClientAgentOrderRpcService;
 import org.apache.dubbo.config.annotation.DubboReference;
 import org.springframework.stereotype.Service;
@@ -21,6 +18,18 @@ public class ClientAgentOrderServiceImpl implements ClientAgentOrderService {
     @DubboReference(group = "medicine-client", version = "1.0.0", check = false, timeout = 10000, retries = 0,
             url = "${dubbo.references.medicine-client.url:}")
     private ClientAgentOrderRpcService clientAgentOrderRpcService;
+
+    /**
+     * 调用订单模块查询当前用户订单卡摘要。
+     *
+     * @param orderId 订单主键ID
+     * @param userId  当前用户ID
+     * @return 订单卡摘要
+     */
+    @Override
+    public ClientAgentOrderCardSummaryDto getOrderCardSummary(Long orderId, Long userId) {
+        return clientAgentOrderRpcService.getOrderCardSummary(orderId, userId);
+    }
 
     /**
      * 调用订单模块查询当前用户订单详情。

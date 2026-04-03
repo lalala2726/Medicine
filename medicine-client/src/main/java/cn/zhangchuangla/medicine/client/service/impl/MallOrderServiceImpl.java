@@ -1209,6 +1209,48 @@ public class MallOrderServiceImpl extends ServiceImpl<MallOrderMapper, MallOrder
     }
 
     /**
+     * 按订单主键和指定用户ID查询订单卡摘要。
+     *
+     * @param orderId 订单主键ID
+     * @param userId  指定用户ID
+     * @return 订单卡摘要
+     */
+    @Override
+    public ClientAgentOrderCardSummaryDto getOrderCardSummary(Long orderId, Long userId) {
+        MallOrder mallOrder = getOwnedOrderById(orderId, userId);
+        List<MallOrderItem> sortedOrderItems = mallOrderItemService.getOrderItemByOrderId(orderId).stream()
+                .sorted(Comparator.comparing(MallOrderItem::getId, Comparator.nullsLast(Long::compareTo)))
+                .toList();
+        if (sortedOrderItems.isEmpty()) {
+            throw new ServiceException(ResponseCode.RESULT_IS_NULL, "订单商品不存在");
+        }
+
+        MallOrderItem previewItem = sortedOrderItems.getFirst();
+        int productCount = sortedOrderItems.stream()
+                .map(MallOrderItem::getQuantity)
+                .filter(Objects::nonNull)
+                .mapToInt(Integer::intValue)
+                .sum();
+        OrderStatusEnum orderStatusEnum = OrderStatusEnum.fromCode(mallOrder.getOrderStatus());
+
+        return ClientAgentOrderCardSummaryDto.builder()
+                .orderId(mallOrder.getId())
+                .orderNo(mallOrder.getOrderNo())
+                .orderStatus(mallOrder.getOrderStatus())
+                .orderStatusText(orderStatusEnum == null ? null : orderStatusEnum.getName())
+                .previewProduct(ClientAgentOrderCardSummaryDto.PreviewProduct.builder()
+                        .productId(previewItem.getProductId())
+                        .productName(previewItem.getProductName())
+                        .imageUrl(previewItem.getImageUrl())
+                        .build())
+                .productCount(productCount)
+                .payAmount(mallOrder.getPayAmount())
+                .totalAmount(mallOrder.getTotalAmount())
+                .createTime(mallOrder.getCreateTime())
+                .build();
+    }
+
+    /**
      * 查询当前用户范围内的订单。
      *
      * @param orderNo 订单编号
@@ -1218,6 +1260,24 @@ public class MallOrderServiceImpl extends ServiceImpl<MallOrderMapper, MallOrder
     private MallOrder getOwnedOrderByOrderNo(String orderNo, Long userId) {
         MallOrder mallOrder = lambdaQuery()
                 .eq(MallOrder::getOrderNo, orderNo)
+                .eq(MallOrder::getUserId, userId)
+                .one();
+        if (mallOrder == null) {
+            throw new ServiceException(ResponseCode.RESULT_IS_NULL, "订单不存在");
+        }
+        return mallOrder;
+    }
+
+    /**
+     * 查询当前用户范围内的订单。
+     *
+     * @param orderId 订单主键ID
+     * @param userId  用户ID
+     * @return 订单实体
+     */
+    private MallOrder getOwnedOrderById(Long orderId, Long userId) {
+        MallOrder mallOrder = lambdaQuery()
+                .eq(MallOrder::getId, orderId)
                 .eq(MallOrder::getUserId, userId)
                 .one();
         if (mallOrder == null) {

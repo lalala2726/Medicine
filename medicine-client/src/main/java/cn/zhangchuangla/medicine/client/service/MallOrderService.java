@@ -4,6 +4,7 @@ import cn.zhangchuangla.medicine.client.model.request.*;
 import cn.zhangchuangla.medicine.client.model.vo.*;
 import cn.zhangchuangla.medicine.model.dto.AlipayNotifyDTO;
 import cn.zhangchuangla.medicine.model.dto.ClientAgentOrderCancelCheckDto;
+import cn.zhangchuangla.medicine.model.dto.ClientAgentOrderCardSummaryDto;
 import cn.zhangchuangla.medicine.model.dto.ClientAgentOrderTimelineDto;
 import cn.zhangchuangla.medicine.model.entity.MallOrder;
 import cn.zhangchuangla.medicine.model.vo.OrderShippingVo;
@@ -92,6 +93,15 @@ public interface MallOrderService extends IService<MallOrder> {
      * @return 订单详情
      */
     OrderDetailVo getOrderDetail(String orderNo, Long userId);
+
+    /**
+     * 按指定用户查询订单卡摘要。
+     *
+     * @param orderId 订单主键ID
+     * @param userId  用户ID
+     * @return 订单卡摘要
+     */
+    ClientAgentOrderCardSummaryDto getOrderCardSummary(Long orderId, Long userId);
 
     /**
      * 按指定用户查询订单时间线。

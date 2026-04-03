@@ -1,14 +1,20 @@
 package cn.zhangchuangla.medicine.rpc.client;
 
-import cn.zhangchuangla.medicine.model.dto.ClientAgentOrderCancelCheckDto;
-import cn.zhangchuangla.medicine.model.dto.ClientAgentOrderDetailDto;
-import cn.zhangchuangla.medicine.model.dto.ClientAgentOrderShippingDto;
-import cn.zhangchuangla.medicine.model.dto.ClientAgentOrderTimelineDto;
+import cn.zhangchuangla.medicine.model.dto.*;
 
 /**
  * 客户端智能体订单只读 RPC。
  */
 public interface ClientAgentOrderRpcService {
+
+    /**
+     * 根据订单主键查询当前用户订单卡摘要。
+     *
+     * @param orderId 订单主键ID
+     * @param userId  当前用户ID
+     * @return 订单卡摘要
+     */
+    ClientAgentOrderCardSummaryDto getOrderCardSummary(Long orderId, Long userId);
 
     /**
      * 根据订单号查询当前用户订单详情。

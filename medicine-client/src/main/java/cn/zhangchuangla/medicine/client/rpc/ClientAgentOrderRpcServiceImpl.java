@@ -2,10 +2,7 @@ package cn.zhangchuangla.medicine.client.rpc;
 
 import cn.zhangchuangla.medicine.client.model.vo.OrderDetailVo;
 import cn.zhangchuangla.medicine.client.service.MallOrderService;
-import cn.zhangchuangla.medicine.model.dto.ClientAgentOrderCancelCheckDto;
-import cn.zhangchuangla.medicine.model.dto.ClientAgentOrderDetailDto;
-import cn.zhangchuangla.medicine.model.dto.ClientAgentOrderShippingDto;
-import cn.zhangchuangla.medicine.model.dto.ClientAgentOrderTimelineDto;
+import cn.zhangchuangla.medicine.model.dto.*;
 import cn.zhangchuangla.medicine.model.enums.OrderItemAfterSaleStatusEnum;
 import cn.zhangchuangla.medicine.model.vo.OrderShippingVo;
 import cn.zhangchuangla.medicine.rpc.client.ClientAgentOrderRpcService;
@@ -25,6 +22,18 @@ public class ClientAgentOrderRpcServiceImpl implements ClientAgentOrderRpcServic
      * 客户端订单服务。
      */
     private final MallOrderService mallOrderService;
+
+    /**
+     * 按用户范围查询订单卡摘要。
+     *
+     * @param orderId 订单主键ID
+     * @param userId  当前用户ID
+     * @return 订单卡摘要 DTO
+     */
+    @Override
+    public ClientAgentOrderCardSummaryDto getOrderCardSummary(Long orderId, Long userId) {
+        return mallOrderService.getOrderCardSummary(orderId, userId);
+    }
 
     /**
      * 按用户范围查询订单详情并转换为共享 DTO。
