@@ -46,25 +46,7 @@ class AgentConfigRequestJsonTests {
     void adminAssistantRequest_ShouldDeserialize() throws Exception {
         String json = """
                 {
-                  "routeModel": {
-                    "modelName": "gpt-4.1-mini",
-                    "reasoningEnabled": false,
-                    "maxTokens": 1024,
-                    "temperature": 0.0
-                  },
-                  "businessNodeSimpleModel": {
-                    "modelName": "gpt-4.1-mini",
-                    "reasoningEnabled": false,
-                    "maxTokens": 2048,
-                    "temperature": 0.3
-                  },
-                  "businessNodeComplexModel": {
-                    "modelName": "gpt-4.1",
-                    "reasoningEnabled": true,
-                    "maxTokens": 8192,
-                    "temperature": 0.2
-                  },
-                  "chatModel": {
+                  "adminNodeModel": {
                     "modelName": "qwen-max",
                     "reasoningEnabled": true,
                     "maxTokens": 8192,
@@ -75,10 +57,8 @@ class AgentConfigRequestJsonTests {
 
         AdminAssistantAgentConfigRequest request = objectMapper.readValue(json, AdminAssistantAgentConfigRequest.class);
 
-        assertEquals("gpt-4.1-mini", request.getRouteModel().getModelName());
-        assertEquals("gpt-4.1", request.getBusinessNodeComplexModel().getModelName());
-        assertEquals("qwen-max", request.getChatModel().getModelName());
-        assertEquals(8192, request.getChatModel().getMaxTokens());
+        assertEquals("qwen-max", request.getAdminNodeModel().getModelName());
+        assertEquals(8192, request.getAdminNodeModel().getMaxTokens());
     }
 
     @Test
@@ -91,43 +71,19 @@ class AgentConfigRequestJsonTests {
                     "maxTokens": 1024,
                     "temperature": 0.0
                   },
+                  "businessNodeModel": {
+                    "modelName": "gpt-4.1-mini",
+                    "reasoningEnabled": false,
+                    "maxTokens": 2048,
+                    "temperature": 0.3
+                  },
                   "chatModel": {
                     "modelName": "gpt-4.1",
                     "reasoningEnabled": true,
                     "maxTokens": 4096,
                     "temperature": 0.7
                   },
-                  "orderModel": {
-                    "modelName": "gpt-4.1-mini",
-                    "reasoningEnabled": false,
-                    "maxTokens": 2048,
-                    "temperature": 0.3
-                  },
-                  "productModel": {
-                    "modelName": "gpt-4.1-mini",
-                    "reasoningEnabled": false,
-                    "maxTokens": 2048,
-                    "temperature": 0.3
-                  },
-                  "afterSaleModel": {
-                    "modelName": "gpt-4.1-mini",
-                    "reasoningEnabled": false,
-                    "maxTokens": 2048,
-                    "temperature": 0.3
-                  },
-                  "consultationComfortModel": {
-                    "modelName": "gpt-4.1-mini",
-                    "reasoningEnabled": false,
-                    "maxTokens": 2048,
-                    "temperature": 1.2
-                  },
-                  "consultationQuestionModel": {
-                    "modelName": "gpt-4.1",
-                    "reasoningEnabled": true,
-                    "maxTokens": 4096,
-                    "temperature": 0.2
-                  },
-                  "consultationFinalDiagnosisModel": {
+                  "diagnosisNodeModel": {
                     "modelName": "gpt-4.1",
                     "reasoningEnabled": true,
                     "maxTokens": 4096,
@@ -139,14 +95,14 @@ class AgentConfigRequestJsonTests {
         ClientAssistantAgentConfigRequest request = objectMapper.readValue(json, ClientAssistantAgentConfigRequest.class);
 
         assertEquals("gpt-4.1-mini", request.getRouteModel().getModelName());
+        assertEquals("gpt-4.1-mini", request.getBusinessNodeModel().getModelName());
         assertEquals("gpt-4.1", request.getChatModel().getModelName());
-        assertEquals("gpt-4.1-mini", request.getAfterSaleModel().getModelName());
-        assertEquals("gpt-4.1", request.getConsultationQuestionModel().getModelName());
-        assertEquals(4096, request.getConsultationFinalDiagnosisModel().getMaxTokens());
+        assertEquals("gpt-4.1", request.getDiagnosisNodeModel().getModelName());
+        assertEquals(4096, request.getDiagnosisNodeModel().getMaxTokens());
     }
 
     @Test
-    void imageRecognitionRequest_ShouldDeserialize() throws Exception {
+    void commonCapabilityRequest_ShouldDeserialize() throws Exception {
         String json = """
                 {
                   "imageRecognitionModel": {
@@ -154,42 +110,13 @@ class AgentConfigRequestJsonTests {
                     "reasoningEnabled": true,
                     "maxTokens": 4096,
                     "temperature": 0.2
-                  }
-                }
-                """;
-
-        ImageRecognitionAgentConfigRequest request = objectMapper.readValue(json, ImageRecognitionAgentConfigRequest.class);
-
-        assertNotNull(request.getImageRecognitionModel());
-        assertEquals("qwen2.5-vl-72b-instruct", request.getImageRecognitionModel().getModelName());
-        assertEquals(Boolean.TRUE, request.getImageRecognitionModel().getReasoningEnabled());
-    }
-
-    @Test
-    void chatHistorySummaryRequest_ShouldDeserialize() throws Exception {
-        String json = """
-                {
+                  },
                   "chatHistorySummaryModel": {
                     "modelName": "gpt-4.1-mini",
                     "reasoningEnabled": false,
                     "maxTokens": 4096,
                     "temperature": 0.3
-                  }
-                }
-                """;
-
-        ChatHistorySummaryAgentConfigRequest request = objectMapper.readValue(
-                json, ChatHistorySummaryAgentConfigRequest.class);
-
-        assertNotNull(request.getChatHistorySummaryModel());
-        assertEquals("gpt-4.1-mini", request.getChatHistorySummaryModel().getModelName());
-        assertEquals(4096, request.getChatHistorySummaryModel().getMaxTokens());
-    }
-
-    @Test
-    void chatTitleRequest_ShouldDeserialize() throws Exception {
-        String json = """
-                {
+                  },
                   "chatTitleModel": {
                     "modelName": "gpt-4.1-mini",
                     "reasoningEnabled": false,
@@ -199,9 +126,14 @@ class AgentConfigRequestJsonTests {
                 }
                 """;
 
-        ChatTitleAgentConfigRequest request = objectMapper.readValue(
-                json, ChatTitleAgentConfigRequest.class);
+        CommonCapabilityAgentConfigRequest request = objectMapper.readValue(json, CommonCapabilityAgentConfigRequest.class);
 
+        assertNotNull(request.getImageRecognitionModel());
+        assertEquals("qwen2.5-vl-72b-instruct", request.getImageRecognitionModel().getModelName());
+        assertEquals(Boolean.TRUE, request.getImageRecognitionModel().getReasoningEnabled());
+        assertNotNull(request.getChatHistorySummaryModel());
+        assertEquals("gpt-4.1-mini", request.getChatHistorySummaryModel().getModelName());
+        assertEquals(4096, request.getChatHistorySummaryModel().getMaxTokens());
         assertNotNull(request.getChatTitleModel());
         assertEquals("gpt-4.1-mini", request.getChatTitleModel().getModelName());
         assertEquals(32, request.getChatTitleModel().getMaxTokens());

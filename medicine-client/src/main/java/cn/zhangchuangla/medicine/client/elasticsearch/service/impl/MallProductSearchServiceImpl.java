@@ -145,9 +145,7 @@ public class MallProductSearchServiceImpl implements MallProductSearchService {
         int limit = Math.max(1, Math.min(size, MAX_SUGGEST_SIZE));
         String normalizedKeyword = keyword.trim();
 
-        Criteria criteria = new Criteria("name").startsWith(normalizedKeyword)
-                .or(new Criteria("categoryName").startsWith(normalizedKeyword))
-                .or(new Criteria("name").matches(normalizedKeyword));
+        Criteria criteria = buildSuggestCriteria(normalizedKeyword);
 
         CriteriaQuery query = new CriteriaQuery(criteria);
         int fetchSize = Math.min(Math.max(limit * 2, limit), MAX_PAGE_SIZE);
@@ -168,6 +166,35 @@ public class MallProductSearchServiceImpl implements MallProductSearchService {
             }
         }
         return suggestions.stream().limit(limit).toList();
+    }
+
+    /**
+     * 构建自动补全检索条件。
+     *
+     * @param keyword 归一化后的关键字
+     * @return 自动补全检索条件
+     */
+    private Criteria buildSuggestCriteria(String keyword) {
+        boolean hasWhitespace = keyword.chars().anyMatch(Character::isWhitespace);
+
+        Criteria[] matchFields = {
+                new Criteria("name").matches(keyword),
+                new Criteria("categoryName").matches(keyword),
+                new Criteria("brand").matches(keyword),
+                new Criteria("commonName").matches(keyword)
+        };
+        Criteria suggestCriteria = combineWithOr(matchFields);
+
+        if (!hasWhitespace) {
+            Criteria[] prefixFields = {
+                    new Criteria("name.keyword").startsWith(keyword),
+                    new Criteria("categoryName").startsWith(keyword),
+                    new Criteria("brand.keyword").startsWith(keyword),
+                    new Criteria("commonName.keyword").startsWith(keyword)
+            };
+            suggestCriteria = suggestCriteria.or(combineWithOr(prefixFields));
+        }
+        return suggestCriteria;
     }
 
     /**

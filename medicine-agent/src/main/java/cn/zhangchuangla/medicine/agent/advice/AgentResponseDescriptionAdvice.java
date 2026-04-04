@@ -26,6 +26,11 @@ public class AgentResponseDescriptionAdvice implements ResponseBodyAdvice<Object
 
     private static final TypeReference<LinkedHashMap<String, Object>> MAP_TYPE = new TypeReference<>() {
     };
+    /**
+     * 列表响应转换为结构化行数据时使用的类型定义。
+     */
+    private static final TypeReference<List<LinkedHashMap<String, Object>>> LIST_MAP_TYPE = new TypeReference<>() {
+    };
 
     private final AgentVoDescriptionResolver descriptionResolver;
     private final ObjectMapper objectMapper;
@@ -95,8 +100,9 @@ public class AgentResponseDescriptionAdvice implements ResponseBodyAdvice<Object
             return;
         }
 
+        List<LinkedHashMap<String, Object>> rowData = objectMapper.convertValue(listData, LIST_MAP_TYPE);
         LinkedHashMap<String, Object> wrappedListData = new LinkedHashMap<>();
-        wrappedListData.put("rows", listData);
+        wrappedListData.put("rows", rowData);
         wrappedListData.put("meta", buildMeta(metaOptional.get()));
         setData(ajaxResult, wrappedListData);
     }

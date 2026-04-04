@@ -6,10 +6,7 @@ import cn.zhangchuangla.medicine.agent.support.AgentVoDescriptionResolver;
 import cn.zhangchuangla.medicine.common.core.exception.GlobalExceptionHandel;
 import cn.zhangchuangla.medicine.common.security.entity.AuthUser;
 import cn.zhangchuangla.medicine.common.security.entity.SysUserDetails;
-import cn.zhangchuangla.medicine.model.dto.ClientAgentOrderCancelCheckDto;
-import cn.zhangchuangla.medicine.model.dto.ClientAgentOrderDetailDto;
-import cn.zhangchuangla.medicine.model.dto.ClientAgentOrderShippingDto;
-import cn.zhangchuangla.medicine.model.dto.ClientAgentOrderTimelineDto;
+import cn.zhangchuangla.medicine.model.dto.*;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.json.JsonMapper;
 import org.junit.jupiter.api.AfterEach;
@@ -242,10 +239,13 @@ class AgentClientOrderControllerTests {
 
     private static class StubClientAgentOrderService implements ClientAgentOrderService {
 
+        private ClientAgentOrderCardSummaryDto orderCardSummary;
         private ClientAgentOrderDetailDto orderDetail;
         private ClientAgentOrderShippingDto orderShipping;
         private ClientAgentOrderTimelineDto orderTimeline;
         private ClientAgentOrderCancelCheckDto orderCancelCheck;
+        private Long capturedOrderId;
+        private Long capturedSummaryUserId;
         private String capturedOrderNo;
         private Long capturedUserId;
         private String capturedShippingOrderNo;
@@ -254,6 +254,13 @@ class AgentClientOrderControllerTests {
         private Long capturedTimelineUserId;
         private String capturedCancelCheckOrderNo;
         private Long capturedCancelCheckUserId;
+
+        @Override
+        public ClientAgentOrderCardSummaryDto getOrderCardSummary(Long orderId, Long userId) {
+            this.capturedOrderId = orderId;
+            this.capturedSummaryUserId = userId;
+            return orderCardSummary;
+        }
 
         @Override
         public ClientAgentOrderDetailDto getOrderDetail(String orderNo, Long userId) {

@@ -5,7 +5,7 @@
     <parent>
         <groupId>org.springframework.boot</groupId>
         <artifactId>spring-boot-starter-parent</artifactId>
-        <version>3.5.5</version>
+        <version>4.0.5</version>
         <relativePath/>
     </parent>
     <groupId>cn.zhangchuangla.medicine</groupId>
@@ -28,11 +28,11 @@
         <url/>
     </scm>
     <properties>
-        <java.version>21</java.version>
-        <mybatis-plus.version>3.5.12</mybatis-plus.version>
-        <druid.version>1.2.24</druid.version>
-        <mysql.version>8.3.0</mysql.version>
-        <springdoc.version>2.8.3</springdoc.version>
+        <java.version>25</java.version>
+        <mybatis-plus.version>3.5.16</mybatis-plus.version>
+        <druid.version>1.2.28</druid.version>
+        <mysql.version>9.6.0</mysql.version>
+        <springdoc.version>3.0.2</springdoc.version>
         <okhttp.version>4.12.0</okhttp.version>
         <jjwt.version>0.11.5</jjwt.version>
         <guava.version>32.1.2-jre</guava.version>
@@ -44,16 +44,13 @@
         <h2.version>2.3.232</h2.version>
         <exp4j.version>0.4.8</exp4j.version>
         <zxing.version>3.5.2</zxing.version>
-        <netty.version>4.2.5.Final</netty.version>
         <poi.version>5.4.0</poi.version>
         <minio.version>8.6.0</minio.version>
         <nimbus-jose-jwt.version>10.0.2</nimbus-jose-jwt.version>
         <grpc.version>1.75.0</grpc.version>
-        <spring.security.version>6.5.4</spring.security.version>
-        <spring.framework.version>6.2.11</spring.framework.version>
-        <tomcat.version>10.1.47</tomcat.version>
+        <netty.version>4.2.12.Final</netty.version>
         <thumbnailator.version>0.4.20</thumbnailator.version>
-        <dubbo.version>3.3.2</dubbo.version>
+        <dubbo.version>3.3.6</dubbo.version>
     </properties>
     <dependencyManagement>
         <dependencies>
@@ -135,7 +132,7 @@
             <!-- MyBatis-Plus JSqlParser，提供分页插件支持 -->
             <dependency>
                 <groupId>com.baomidou</groupId>
-                <artifactId>mybatis-plus-spring-boot3-starter</artifactId>
+                <artifactId>mybatis-plus-spring-boot4-starter</artifactId>
                 <version>${mybatis-plus.version}</version>
             </dependency>
             <dependency>
@@ -150,7 +147,7 @@
             </dependency>
             <dependency>
                 <groupId>com.alibaba</groupId>
-                <artifactId>druid-spring-boot-3-starter</artifactId>
+                <artifactId>druid-spring-boot-4-starter</artifactId>
                 <version>${druid.version}</version>
             </dependency>
             <dependency>
@@ -203,7 +200,7 @@
                 <artifactId>swagger-annotations</artifactId>
                 <version>${swagger-annotations.version}</version>
             </dependency>
-            <!-- Pin Netty to 4.2.5.Final to address CVE-2025-58056/58057 -->
+            <!-- Pin Netty to the latest validated 4.2.x line -->
             <dependency>
                 <groupId>io.netty</groupId>
                 <artifactId>netty-bom</artifactId>
@@ -211,7 +208,6 @@
                 <type>pom</type>
                 <scope>import</scope>
             </dependency>
-            <!-- Security updates -->
             <dependency>
                 <groupId>com.nimbusds</groupId>
                 <artifactId>nimbus-jose-jwt</artifactId>
@@ -236,25 +232,6 @@
                 <groupId>com.squareup.okhttp3</groupId>
                 <artifactId>okhttp</artifactId>
                 <version>${okhttp.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.springframework.security</groupId>
-                <artifactId>spring-security-bom</artifactId>
-                <version>${spring.security.version}</version>
-                <type>pom</type>
-                <scope>import</scope>
-            </dependency>
-            <dependency>
-                <groupId>org.springframework</groupId>
-                <artifactId>spring-framework-bom</artifactId>
-                <version>${spring.framework.version}</version>
-                <type>pom</type>
-                <scope>import</scope>
-            </dependency>
-            <dependency>
-                <groupId>org.apache.tomcat.embed</groupId>
-                <artifactId>tomcat-embed-core</artifactId>
-                <version>${tomcat.version}</version>
             </dependency>
             <dependency>
                 <groupId>cn.zhangchuangla.medicine</groupId>

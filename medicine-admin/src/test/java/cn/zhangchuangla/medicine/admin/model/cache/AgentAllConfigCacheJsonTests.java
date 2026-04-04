@@ -20,15 +20,13 @@ class AgentAllConfigCacheJsonTests {
         cache.setKnowledgeBase(buildKnowledgeBaseConfig());
         cache.setAdminAssistant(buildAdminAssistantConfig());
         cache.setClientAssistant(buildClientAssistantConfig());
-        cache.setImageRecognition(buildImageRecognitionConfig());
-        cache.setChatHistorySummary(buildChatHistorySummaryConfig());
-        cache.setChatTitle(buildChatTitleConfig());
+        cache.setCommonCapability(buildCommonCapabilityConfig());
         cache.setSpeech(buildSpeechConfig());
 
         String json = objectMapper.writeValueAsString(cache);
         JsonNode root = objectMapper.readTree(json);
 
-        assertEquals(4, root.path("schemaVersion").asInt());
+        assertEquals(7, root.path("schemaVersion").asInt());
         assertTrue(root.has("llm"));
         assertTrue(root.has("agentConfigs"));
         assertTrue(root.has("speech"));
@@ -52,15 +50,15 @@ class AgentAllConfigCacheJsonTests {
         assertEquals("gpt-4.1-mini",
                 root.path("agentConfigs").path("knowledgeBase").path("rankingModel").asText());
         assertEquals("gpt-4.1-mini",
-                root.path("agentConfigs").path("adminAssistant").path("chatModel").path("modelName").asText());
+                root.path("agentConfigs").path("adminAssistant").path("adminNodeModel").path("modelName").asText());
         assertEquals("gpt-4.1",
-                root.path("agentConfigs").path("clientAssistant").path("consultationFinalDiagnosisModel").path("modelName").asText());
+                root.path("agentConfigs").path("clientAssistant").path("diagnosisNodeModel").path("modelName").asText());
         assertEquals("qwen2.5-vl-72b-instruct",
-                root.path("agentConfigs").path("imageRecognition").path("imageRecognitionModel").path("modelName").asText());
+                root.path("agentConfigs").path("commonCapability").path("imageRecognitionModel").path("modelName").asText());
         assertEquals("gpt-4.1-mini",
-                root.path("agentConfigs").path("chatHistorySummary").path("chatHistorySummaryModel").path("modelName").asText());
+                root.path("agentConfigs").path("commonCapability").path("chatHistorySummaryModel").path("modelName").asText());
         assertEquals(32,
-                root.path("agentConfigs").path("chatTitle").path("chatTitleModel").path("maxTokens").asInt());
+                root.path("agentConfigs").path("commonCapability").path("chatTitleModel").path("maxTokens").asInt());
         assertEquals("seed-tts-2.0",
                 root.path("speech").path("textToSpeech").path("resourceId").asText());
 
@@ -121,40 +119,28 @@ class AgentAllConfigCacheJsonTests {
 
     private AdminAssistantAgentConfig buildAdminAssistantConfig() {
         AdminAssistantAgentConfig config = new AdminAssistantAgentConfig();
-        config.setRouteModel(buildSlot("gpt-4.1-mini", false, 1024, 0.0));
-        config.setBusinessNodeSimpleModel(buildSlot("gpt-4.1-mini", false, 2048, 0.3));
-        config.setBusinessNodeComplexModel(buildSlot("gpt-4.1", true, 8192, 0.2));
-        config.setChatModel(buildSlot("gpt-4.1-mini", true, 8192, 0.7));
+        config.setAdminNodeModel(buildSlot("gpt-4.1-mini", true, 8192, 0.7));
         return config;
     }
 
     private ClientAssistantAgentConfig buildClientAssistantConfig() {
         ClientAssistantAgentConfig config = new ClientAssistantAgentConfig();
         config.setRouteModel(buildSlot("gpt-4.1-mini", false, 1024, 0.0));
+        config.setBusinessNodeModel(buildSlot("gpt-4.1-mini", false, 2048, 0.3));
         config.setChatModel(buildSlot("gpt-4.1", true, 4096, 0.7));
-        config.setOrderModel(buildSlot("gpt-4.1-mini", false, 2048, 0.3));
-        config.setProductModel(buildSlot("gpt-4.1-mini", false, 2048, 0.3));
-        config.setAfterSaleModel(buildSlot("gpt-4.1-mini", false, 2048, 0.3));
-        config.setConsultationComfortModel(buildSlot("gpt-4.1-mini", false, 2048, 1.2));
-        config.setConsultationQuestionModel(buildSlot("gpt-4.1", true, 4096, 0.2));
-        config.setConsultationFinalDiagnosisModel(buildSlot("gpt-4.1", true, 4096, 0.2));
+        config.setDiagnosisNodeModel(buildSlot("gpt-4.1", true, 4096, 0.2));
         return config;
     }
 
-    private ImageRecognitionAgentConfig buildImageRecognitionConfig() {
-        ImageRecognitionAgentConfig config = new ImageRecognitionAgentConfig();
+    /**
+     * 构建通用能力配置测试数据。
+     *
+     * @return 通用能力配置测试数据
+     */
+    private CommonCapabilityAgentConfig buildCommonCapabilityConfig() {
+        CommonCapabilityAgentConfig config = new CommonCapabilityAgentConfig();
         config.setImageRecognitionModel(buildSlot("qwen2.5-vl-72b-instruct", true, 4096, 0.2));
-        return config;
-    }
-
-    private ChatHistorySummaryAgentConfig buildChatHistorySummaryConfig() {
-        ChatHistorySummaryAgentConfig config = new ChatHistorySummaryAgentConfig();
         config.setChatHistorySummaryModel(buildSlot("gpt-4.1-mini", false, 4096, 0.3));
-        return config;
-    }
-
-    private ChatTitleAgentConfig buildChatTitleConfig() {
-        ChatTitleAgentConfig config = new ChatTitleAgentConfig();
         config.setChatTitleModel(buildSlot("gpt-4.1-mini", false, 32, 0.2));
         return config;
     }

@@ -6,6 +6,9 @@ dubbo:
     # 序列化安全检查级别（STRICT/WARN/DISABLE）。
     # 示例: WARN
     serialize-check-status: WARN
+    # QoS 管理端口（避免多服务本地启动端口冲突）。
+    # 示例: 22224
+    qos-port: ${MEDICINE_CLIENT_DUBBO_QOS_PORT:22224}
   scan:
     # Dubbo 服务扫描包。
     # 示例: cn.zhangchuangla.medicine

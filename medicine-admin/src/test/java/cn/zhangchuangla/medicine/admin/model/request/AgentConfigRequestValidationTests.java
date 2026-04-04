@@ -118,12 +118,8 @@ class AgentConfigRequestValidationTests {
     void clientAssistantRequest_ShouldFail_WhenRouteModelMissing() {
         ClientAssistantAgentConfigRequest request = new ClientAssistantAgentConfigRequest();
         request.setChatModel(buildSelection());
-        request.setOrderModel(buildSelection());
-        request.setProductModel(buildSelection());
-        request.setAfterSaleModel(buildSelection());
-        request.setConsultationComfortModel(buildSelection());
-        request.setConsultationQuestionModel(buildSelection());
-        request.setConsultationFinalDiagnosisModel(buildSelection());
+        request.setBusinessNodeModel(buildSelection());
+        request.setDiagnosisNodeModel(buildSelection());
 
         var violations = validator.validate(request);
 
